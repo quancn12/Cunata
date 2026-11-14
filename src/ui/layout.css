@@ -1,0 +1,514 @@
+/* ==========================================================================
+   Cunata Exam Platform — Scoped UI Layout & Accessibility Styles
+   Conforms to WEB-contract.md §5, §9 and Shared Product Contract v2.0
+   Responsive viewports: 320px / 390px / 768px / 1280px
+   WCAG AA Contrast (text >= 4.5:1, UI >= 3:1), Zoom 200%, Touch targets >= 44px
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Scoped Layout Root & Reset
+   -------------------------------------------------------------------------- */
+.cunata-ui,
+.cunata-layout-root {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #0f172a; /* text-slate-900: contrast >= 16:1 against #ffffff */
+  background-color: transparent;
+  line-height: 1.5;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.cunata-ui *,
+.cunata-ui *::before,
+.cunata-ui *::after,
+.cunata-layout-root *,
+.cunata-layout-root *::before,
+.cunata-layout-root *::after {
+  box-sizing: border-box;
+}
+
+/* Skip to content link for keyboard accessibility */
+.cunata-skip-link {
+  position: absolute;
+  top: -9999px;
+  left: 16px;
+  z-index: 100000;
+  padding: 12px 16px;
+  background-color: #1d4ed8;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 6px;
+  text-decoration: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.cunata-skip-link:focus,
+.cunata-skip-link:focus-visible {
+  top: 16px;
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   2. Touch Targets (Minimum 44px x 44px & 8px Spacing)
+   -------------------------------------------------------------------------- */
+.cunata-ui button,
+.cunata-ui input[type="button"],
+.cunata-ui input[type="submit"],
+.cunata-ui input[type="reset"],
+.cunata-ui .cunata-btn,
+.cunata-ui .cunata-touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px 16px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #0f172a;
+  cursor: pointer;
+  touch-action: manipulation;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.cunata-ui input[type="text"],
+.cunata-ui input[type="search"],
+.cunata-ui textarea,
+.cunata-ui select {
+  min-height: 44px;
+  padding: 8px 12px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #94a3b8;
+  background-color: #ffffff;
+  color: #0f172a;
+  width: 100%;
+}
+
+/* Spacing between adjacent interactive targets to prevent accidental taps */
+.cunata-actions-row,
+.cunata-palette-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Question navigation palette items */
+.cunata-palette-item {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background-color: #f8fafc;
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  text-align: center;
+}
+
+.cunata-palette-item.is-answered {
+  background-color: #e0f2fe;
+  border-color: #0284c7;
+  color: #0369a1;
+}
+
+.cunata-palette-item.is-current {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   3. Accessible Focus Indicators
+   -------------------------------------------------------------------------- */
+.cunata-ui :focus-visible,
+.cunata-dialog :focus-visible,
+.cunata-math-overflow-guard:focus-visible,
+.cunata-table-responsive-wrapper:focus-visible {
+  outline: 3px solid #1d4ed8; /* blue-700: 4.8:1 contrast on white */
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   4. Overflow Guards: Math, Tables & Images
+   -------------------------------------------------------------------------- */
+/* Math Overflow Guard: prevents LaTeX / OMML formulas from breaking layout or covering choices */
+.cunata-math-overflow-guard {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  display: block;
+  margin: 6px 0;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.cunata-math-overflow-guard:focus {
+  outline: 2px dashed #1d4ed8;
+  outline-offset: 1px;
+}
+
+/* Table Responsive Wrapper */
+.cunata-table-responsive-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  margin: 12px 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.cunata-table-responsive-wrapper:focus {
+  outline: 2px dashed #1d4ed8;
+  outline-offset: 1px;
+}
+
+.cunata-table-responsive-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.cunata-table-responsive-wrapper th,
+.cunata-table-responsive-wrapper td {
+  border: 1px solid #cbd5e1;
+  padding: 10px 14px;
+  vertical-align: top;
+}
+
+.cunata-table-responsive-wrapper th {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Responsive Images */
+.cunata-image-responsive {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   5. ARIA Status Badges & Presentation
+   -------------------------------------------------------------------------- */
+.cunata-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.cunata-status--local_saved {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border-color: #93c5fd;
+}
+
+.cunata-status--queued {
+  background-color: #fefce8;
+  color: #854d0e;
+  border-color: #fde047;
+}
+
+.cunata-status--sending {
+  background-color: #f0fdf4;
+  color: #166534;
+  border-color: #86efac;
+}
+
+.cunata-status--server_confirmed {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border-color: #6ee7b7;
+}
+
+.cunata-status--failed,
+.cunata-status--error {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+.cunata-status--offline {
+  background-color: #f8fafc;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+/* --------------------------------------------------------------------------
+   6. Modal Dialog Presentation
+   -------------------------------------------------------------------------- */
+.cunata-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.cunata-dialog {
+  background-color: #ffffff;
+  color: #0f172a;
+  border-radius: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 540px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 24px;
+  outline: none;
+  border: 1px solid #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cunata-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 12px;
+}
+
+.cunata-dialog-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.cunata-dialog-body {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #334155;
+  word-break: break-word;
+}
+
+.cunata-dialog-warning-box {
+  padding: 12px 16px;
+  border-radius: 6px;
+  background-color: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+  font-weight: 500;
+  margin: 12px 0;
+}
+
+.cunata-dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 16px;
+}
+
+/* Primary confirm button */
+.cunata-btn-primary {
+  background-color: #1d4ed8;
+  color: #ffffff;
+  border-color: #1d4ed8;
+}
+
+.cunata-btn-primary:hover:not(:disabled) {
+  background-color: #1e40af;
+  border-color: #1e40af;
+}
+
+/* Danger action button */
+.cunata-btn-danger {
+  background-color: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+.cunata-btn-danger:hover:not(:disabled) {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+}
+
+/* Disabled button state */
+.cunata-ui button:disabled,
+.cunata-ui .cunata-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   7. Responsive Layout Containers & Breakpoints
+   -------------------------------------------------------------------------- */
+.cunata-layout-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.cunata-layout-header {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cunata-layout-main {
+  flex: 1 1 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+.cunata-layout-palette-drawer {
+  width: 100%;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+/* --- Mobile Small: 320px Viewport --- */
+@media (max-width: 320px) {
+  .cunata-layout-header {
+    padding: 8px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cunata-layout-main {
+    padding: 8px;
+    gap: 12px;
+  }
+
+  .cunata-dialog {
+    padding: 16px;
+    max-height: calc(100vh - 16px);
+  }
+
+  .cunata-dialog-footer {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .cunata-dialog-footer button {
+    width: 100%;
+  }
+}
+
+/* --- Mobile Standard: 390px Viewport --- */
+@media (min-width: 321px) and (max-width: 480px) {
+  .cunata-layout-header {
+    padding: 12px;
+  }
+
+  .cunata-layout-main {
+    padding: 12px;
+  }
+}
+
+/* --- Tablet: 768px Viewport --- */
+@media (min-width: 768px) {
+  .cunata-layout-main {
+    padding: 20px;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .cunata-layout-content {
+    flex: 1 1 65%;
+    min-width: 0; /* prevents flex child overflow */
+  }
+
+  .cunata-layout-palette-drawer {
+    flex: 0 0 35%;
+    max-width: 340px;
+    position: sticky;
+    top: 16px;
+  }
+}
+
+/* --- Desktop: 1280px Viewport --- */
+@media (min-width: 1025px) {
+  .cunata-layout-container {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .cunata-layout-main {
+    padding: 24px;
+    gap: 24px;
+  }
+
+  .cunata-layout-content {
+    flex: 1 1 72%;
+  }
+
+  .cunata-layout-palette-drawer {
+    flex: 0 0 28%;
+    max-width: 360px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   8. Zoom 200% & Fluid Text Support
+   -------------------------------------------------------------------------- */
+/* Ensures containers never cut off content with fixed pixel heights */
+.cunata-fluid-container {
+  min-height: auto;
+  height: auto;
+  overflow: visible;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------------------
+   9. Reduced Motion Preference
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

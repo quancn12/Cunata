@@ -30,7 +30,7 @@ npx --no-install tsc -p tsconfig.web.json
 ```
 
 ### 2.3. Chạy toàn bộ Test Suite
-Chạy toàn bộ test suite (394 unit, acceptance, oracle và E2E tests):
+Chạy toàn bộ test suite (686 unit, domain, acceptance, oracle và E2E tests):
 ```bash
 npm test
 ```
@@ -38,6 +38,8 @@ hoặc chạy bằng `node:test`:
 ```bash
 node --test "test/**/*.test.ts"
 ```
+> [!NOTE]
+> Các bài kiểm thử E2E hiện tại chạy trên môi trường Node VM với DOM/storage/fetch stubs. Kiểm thử trên trình duyệt đồ họa thật (Chromium/Firefox/WebKit), kiểm thử bộ gõ OS IME (Telex/VNI) thật và CORS live với Google hiện được đánh dấu trung thực là `NOT_RUN` trong báo cáo kỹ thuật.
 
 ---
 
@@ -154,7 +156,10 @@ Khởi tạo một web server cục bộ qua Python hoặc Node để tải tài
 
 ---
 
-## 6. Tiếp Nhận Kết Quả Qua Google Sheets (Apps Script Collector)
+## 6. Tiếp Nhận Kết Quả Qua Google Sheets (Apps Script Collector — Bản Tham Khảo Chưa Triển Khai)
+
+> [!WARNING]
+> Bản mẫu `apps-script/Code.js` là thiết kế kỹ thuật tham khảo, **hiện chưa được triển khai lên Google Cloud / production** và **chưa được nghiệm thu CORS / preflight thật** từ trình duyệt tới máy chủ Google (xem Hợp đồng kỹ thuật §7 và quyết định D04). Chế độ mặc định của ứng dụng là làm bài và xuất kết quả cục bộ (local-first).
 
 Nhằm phục vụ giáo viên và chủ dự án thu thập kết quả thi trực tuyến chi phí 0 đồng, thư mục `apps-script/` cung cấp giải pháp Backend Web App Google Apps Script tích hợp chặt chẽ với Google Sheets:
 

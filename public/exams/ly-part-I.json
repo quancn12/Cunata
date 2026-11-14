@@ -1,0 +1,300 @@
+{
+  "schemaVersion": "web-exam-v1",
+  "examId": "exam-thpt-ly-part-i-demo",
+  "examVersionId": "v1.0.0",
+  "title": "Đề Tùy Chỉnh Minh Họa Môn Vật Lí — GDPT 2018 (20 Câu Trắc Nghiệm Phần I)",
+  "subject": "Vật lí",
+  "grade": 12,
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "settings": {
+    "durationMinutes": 30,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  },
+  "assets": [],
+  "questions": [
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q01-kelvin",
+      "title": "Câu 1 (Phần I)",
+      "content": "Mối liên hệ giữa nhiệt độ theo thang Kelvin ($T$) và nhiệt độ theo thang Celsius ($t$) là $T(\\text{K}) = t(^\\circ\\text{C}) + 273,15$. Nhiệt độ $27^\\circ\\text{C}$ tương ứng với bao nhiêu Kelvin?",
+      "options": [
+        { "optionId": "opt-1a", "label": "A", "text": "$300,15\\text{ K}$" },
+        { "optionId": "opt-1b", "label": "B", "text": "$246,15\\text{ K}$" },
+        { "optionId": "opt-1c", "label": "C", "text": "$300\\text{ K}$" },
+        { "optionId": "opt-1d", "label": "D", "text": "$273,15\\text{ K}$" }
+      ],
+      "correctOptionId": "opt-1a",
+      "explanation": "Ta có $T = 27 + 273,15 = 300,15\\text{ K}$."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q02-boyle",
+      "title": "Câu 2 (Phần I)",
+      "content": "Quá trình biến đổi trạng thái của một lượng khí xác định trong đó nhiệt độ được giữ không đổi gọi là quá trình đẳng nhiệt. Quá trình này tuân theo định luật nào?",
+      "options": [
+        { "optionId": "opt-2a", "label": "A", "text": "Định luật Charles" },
+        { "optionId": "opt-2b", "label": "B", "text": "Định luật Boyle" },
+        { "optionId": "opt-2c", "label": "C", "text": "Định luật Gay-Lussac" },
+        { "optionId": "opt-2d", "label": "D", "text": "Định luật Dalton" }
+      ],
+      "correctOptionId": "opt-2b",
+      "explanation": "Định luật Boyle phát biểu rằng trong quá trình đẳng nhiệt của một khối lượng khí xác định, áp suất tỉ lệ nghịch với thể tích: $p V = \\text{hằng số}$."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q03-nong-chay",
+      "title": "Câu 3 (Phần I)",
+      "content": "Nhiệt lượng cần cung cấp để làm nóng chảy hoàn toàn một vật rắn có khối lượng $m$ ở nhiệt độ nóng chảy được tính theo công thức nào dưới đây (với $\\lambda$ là nhiệt nóng chảy riêng)?",
+      "options": [
+        { "optionId": "opt-3a", "label": "A", "text": "$Q = mc\\Delta t$" },
+        { "optionId": "opt-3b", "label": "B", "text": "$Q = Lm$" },
+        { "optionId": "opt-3c", "label": "C", "text": "$Q = \\lambda m$" },
+        { "optionId": "opt-3d", "label": "D", "text": "$Q = qm$" }
+      ],
+      "correctOptionId": "opt-3c",
+      "explanation": "Nhiệt lượng làm nóng chảy hoàn toàn khối lượng $m$ chất rắn ở nhiệt độ nóng chảy là $Q = \\lambda m$."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q04-tu-truong",
+      "title": "Câu 4 (Phần I)",
+      "content": "Từ trường là một dạng vật chất đặc biệt tồn tại trong không gian xung quanh:",
+      "options": [
+        { "optionId": "opt-4a", "label": "A", "text": "Các điện tích đứng yên" },
+        { "optionId": "opt-4b", "label": "B", "text": "Các hạt neutron đứng yên" },
+        { "optionId": "opt-4c", "label": "C", "text": "Các vật có khối lượng đứng yên" },
+        { "optionId": "opt-4d", "label": "D", "text": "Các điện tích chuyển động hoặc dòng điện" }
+      ],
+      "correctOptionId": "opt-4d",
+      "explanation": "Từ trường tồn tại xung quanh nam châm, dòng điện hoặc các hạt điện tích chuyển động."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q05-luc-tu",
+      "title": "Câu 5 (Phần I)",
+      "content": "Đoạn dây dẫn thẳng có chiều dài $L$ mang dòng điện có cường độ $I$ đặt vuông góc với cảm ứng từ $\\vec{B}$. Độ lớn lực từ tác dụng lên đoạn dây là:",
+      "options": [
+        { "optionId": "opt-5a", "label": "A", "text": "$F = B I L$" },
+        { "optionId": "opt-5b", "label": "B", "text": "$F = \\frac{B I}{L}$" },
+        { "optionId": "opt-5c", "label": "C", "text": "$F = \\frac{B}{I L}$" },
+        { "optionId": "opt-5d", "label": "D", "text": "$F = \\frac{I L}{B}$" }
+      ],
+      "correctOptionId": "opt-5a",
+      "explanation": "Lực từ tác dụng lên đoạn dây mang dòng điện: $F = B I L \\sin\\alpha$. Khi dây vuông góc với từ trường, $\\alpha = 90^\\circ \\Rightarrow \\sin\\alpha = 1 \\Rightarrow F = B I L$."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q06-don-vi-b",
+      "title": "Câu 6 (Phần I)",
+      "content": "Trong hệ đơn vị quốc tế (SI), đơn vị đo của cảm ứng từ là:",
+      "options": [
+        { "optionId": "opt-6a", "label": "A", "text": "Weber (Wb)" },
+        { "optionId": "opt-6b", "label": "B", "text": "Tesla (T)" },
+        { "optionId": "opt-6c", "label": "C", "text": "Henry (H)" },
+        { "optionId": "opt-6d", "label": "D", "text": "Volt (V)" }
+      ],
+      "correctOptionId": "opt-6b",
+      "explanation": "Đơn vị cảm ứng từ trong hệ SI là Tesla, kí hiệu là T."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q07-tu-thong",
+      "title": "Câu 7 (Phần I)",
+      "content": "Từ thông $\\Phi$ gửi qua diện tích phẳng $S$ đặt trong từ trường đều $\\vec{B}$ hợp với vectơ pháp tuyến $\\vec{n}$ của mặt phẳng góc $\\alpha$ được xác định bởi công thức:",
+      "options": [
+        { "optionId": "opt-7a", "label": "A", "text": "$\\Phi = B S \\sin\\alpha$" },
+        { "optionId": "opt-7b", "label": "B", "text": "$\\Phi = B S \\tan\\alpha$" },
+        { "optionId": "opt-7c", "label": "C", "text": "$\\Phi = B S \\cos\\alpha$" },
+        { "optionId": "opt-7d", "label": "D", "text": "$\\Phi = \\frac{B S}{\\cos\\alpha}$" }
+      ],
+      "correctOptionId": "opt-7c",
+      "explanation": "Từ thông qua diện tích $S$ được tính theo công thức: $\\Phi = B S \\cos\\alpha$, trong đó $\\alpha = (\\vec{n}, \\vec{B})$."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q08-faraday",
+      "title": "Câu 8 (Phần I)",
+      "content": "Theo định luật Faraday, độ lớn của suất điện động cảm ứng xuất hiện trong mạch kín tỉ lệ với:",
+      "options": [
+        { "optionId": "opt-8a", "label": "A", "text": "Độ biến thiên điện áp mạch ngoài" },
+        { "optionId": "opt-8b", "label": "B", "text": "Cường độ dòng điện qua mạch" },
+        { "optionId": "opt-8c", "label": "C", "text": "Điện trở toàn phần của mạch kín" },
+        { "optionId": "opt-8d", "label": "D", "text": "Tốc độ biến thiên từ thông qua mạch kín" }
+      ],
+      "correctOptionId": "opt-8d",
+      "explanation": "Định luật Faraday phát biểu rằng độ lớn của suất điện động cảm ứng trong mạch kín tỉ lệ với tốc độ biến thiên từ thông qua mạch: $|e_c| = |\\frac{\\Delta\\Phi}{\\Delta t}|."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q09-hat-nhan-u",
+      "title": "Câu 9 (Phần I)",
+      "content": "Hạt nhân nguyên tử $^{235}_{92}\\text{U}$ có thành phần cấu tạo gồm:",
+      "options": [
+        { "optionId": "opt-9a", "label": "A", "text": "92 proton và 143 neutron" },
+        { "optionId": "opt-9b", "label": "B", "text": "92 proton và 235 neutron" },
+        { "optionId": "opt-9c", "label": "C", "text": "143 proton và 92 neutron" },
+        { "optionId": "opt-9d", "label": "D", "text": "235 proton và 92 neutron" }
+      ],
+      "correctOptionId": "opt-9a",
+      "explanation": "Số proton $Z = 92$; số neutron $N = A - Z = 235 - 92 = 143$."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q10-do-hut-khoi",
+      "title": "Câu 10 (Phần I)",
+      "content": "Độ hụt khối $\\Delta m$ của hạt nhân $^A_Z\\text{X}$ có khối lượng $m_X$ được xác định theo công thức nào (với $m_p, m_n$ lần lượt là khối lượng proton và neutron)?",
+      "options": [
+        { "optionId": "opt-10a", "label": "A", "text": "$\\Delta m = m_X - [Z m_p + (A - Z)m_n]$" },
+        { "optionId": "opt-10b", "label": "B", "text": "$\\Delta m = [Z m_p + (A - Z)m_n] - m_X$" },
+        { "optionId": "opt-10c", "label": "C", "text": "$\\Delta m = Z m_p - (A - Z)m_n$" },
+        { "optionId": "opt-10d", "label": "D", "text": "$\\Delta m = [Z m_p + A m_n] - m_X$" }
+      ],
+      "correctOptionId": "opt-10b",
+      "explanation": "Độ hụt khối là chênh lệch giữa tổng khối lượng các nucleon tự do và khối lượng hạt nhân: $\\Delta m = [Z m_p + (A - Z)m_n] - m_X$."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q11-nl-lien-ket-rieng",
+      "title": "Câu 11 (Phần I)",
+      "content": "Năng lượng liên kết riêng của một hạt nhân là đại lượng đặc trưng cho:",
+      "options": [
+        { "optionId": "opt-11a", "label": "A", "text": "Năng lượng tỏa ra khi một nucleon phân rã" },
+        { "optionId": "opt-11b", "label": "B", "text": "Khối lượng toàn phần của hạt nhân nguyên tử" },
+        { "optionId": "opt-11c", "label": "C", "text": "Mức độ bền vững của hạt nhân nguyên tử" },
+        { "optionId": "opt-11d", "label": "D", "text": "Tốc độ phóng xạ của hạt nhân nguyên tử" }
+      ],
+      "correctOptionId": "opt-11c",
+      "explanation": "Năng lượng liên kết riêng càng lớn thì hạt nhân càng bền vững."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q12-phong-xa-alpha",
+      "title": "Câu 12 (Phần I)",
+      "content": "Trong hiện tượng phóng xạ $\\alpha$, hạt nhân con sinh ra so với hạt nhân mẹ:",
+      "options": [
+        { "optionId": "opt-12a", "label": "A", "text": "Tiến 1 ô trong bảng tuần hoàn và số khối không đổi" },
+        { "optionId": "opt-12b", "label": "B", "text": "Lùi 1 ô trong bảng tuần hoàn và số khối không đổi" },
+        { "optionId": "opt-12c", "label": "C", "text": "Tiến 2 ô trong bảng tuần hoàn và số khối tăng 4" },
+        { "optionId": "opt-12d", "label": "D", "text": "Lùi 2 ô trong bảng tuần hoàn và số khối giảm 4" }
+      ],
+      "correctOptionId": "opt-12d",
+      "explanation": "Phương trình phóng xạ $\\alpha$: $^A_Z\\text{X} \\rightarrow ^{A-4}_{Z-2}\\text{Y} + ^4_2\\text{He}$. Hạt nhân con lùi 2 ô và số khối giảm 4."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q13-tia-beta-tru",
+      "title": "Câu 13 (Phần I)",
+      "content": "Tia phóng xạ $\\beta^-$ có bản chất là dòng các hạt nào dưới đây?",
+      "options": [
+        { "optionId": "opt-13a", "label": "A", "text": "Dòng các hạt electron ($^0_{-1}e$)" },
+        { "optionId": "opt-13b", "label": "B", "text": "Dòng các hạt positron ($^0_{+1}e$)" },
+        { "optionId": "opt-13c", "label": "C", "text": "Dòng các hạt proton ($^1_1p$)" },
+        { "optionId": "opt-13d", "label": "D", "text": "Dòng các hạt neutron ($^1_0n$)" }
+      ],
+      "correctOptionId": "opt-13a",
+      "explanation": "Tia $\\beta^-$ là dòng hạt electron ($^0_{-1}e$) phóng ra từ hạt nhân với vận tốc rất lớn."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q14-chu-ki-ban-ra",
+      "title": "Câu 14 (Phần I)",
+      "content": "Một chất phóng xạ có chu kì bán rã là $T = 8$ ngày. Sau khoảng thời gian 24 ngày kể từ thời điểm ban đầu, lượng chất phóng xạ còn lại bằng bao nhiêu phần so với ban đầu?",
+      "options": [
+        { "optionId": "opt-14a", "label": "A", "text": "$\\frac{1}{4}$" },
+        { "optionId": "opt-14b", "label": "B", "text": "$\\frac{1}{8}$" },
+        { "optionId": "opt-14c", "label": "C", "text": "$\\frac{1}{16}$" },
+        { "optionId": "opt-14d", "label": "D", "text": "$\\frac{1}{2}$" }
+      ],
+      "correctOptionId": "opt-14b",
+      "explanation": "Thời gian $t = 24 = 3T$. Số hạt nhân còn lại: $N = N_0 \\cdot 2^{-t/T} = N_0 \\cdot 2^{-3} = \\frac{N_0}{8}$."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q15-gia-toc-dddh",
+      "title": "Câu 15 (Phần I)",
+      "content": "Một vật dao động điều hòa theo phương trình li độ $x = A \\cos(\\omega t + \\varphi)$. Gia tốc $a$ của vật biến thiên điều hòa theo thời gian và liên hệ với li độ $x$ qua hệ thức:",
+      "options": [
+        { "optionId": "opt-15a", "label": "A", "text": "$a = \\omega^2 x$" },
+        { "optionId": "opt-15b", "label": "B", "text": "$a = -\\omega x$" },
+        { "optionId": "opt-15c", "label": "C", "text": "$a = -\\omega^2 x$" },
+        { "optionId": "opt-15d", "label": "D", "text": "$a = -\\omega^2 x^2$" }
+      ],
+      "correctOptionId": "opt-15c",
+      "explanation": "Gia tốc là đạo hàm bậc hai của li độ theo thời gian: $a = x'' = -\\omega^2 x$."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q16-con-lac-lo-xo",
+      "title": "Câu 16 (Phần I)",
+      "content": "Tần số góc $\\omega$ của con lắc lò xo gồm vật nhỏ khối lượng $m$ gắn với lò xo nhẹ có độ cứng $k$ là:",
+      "options": [
+        { "optionId": "opt-16a", "label": "A", "text": "$\\omega = \\sqrt{\\frac{m}{k}}$" },
+        { "optionId": "opt-16b", "label": "B", "text": "$\\omega = 2\\pi\\sqrt{\\frac{k}{m}}$" },
+        { "optionId": "opt-16c", "label": "C", "text": "$\\omega = \\frac{1}{2\\pi}\\sqrt{\\frac{k}{m}}$" },
+        { "optionId": "opt-16d", "label": "D", "text": "$\\omega = \\sqrt{\\frac{k}{m}}$" }
+      ],
+      "correctOptionId": "opt-16d",
+      "explanation": "Tần số góc của con lắc lò xo được tính theo công thức: $\\omega = \\sqrt{\\frac{k}{m}}$."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q17-buoc-song",
+      "title": "Câu 17 (Phần I)",
+      "content": "Bước sóng $\\lambda$ của sóng cơ truyền trong môi trường đàn hồi là quãng đường sóng truyền đi được trong khoảng thời gian bằng:",
+      "options": [
+        { "optionId": "opt-17a", "label": "A", "text": "Một chu kì dao động của nguồn sóng" },
+        { "optionId": "opt-17b", "label": "B", "text": "Nửa chu kì dao động của nguồn sóng" },
+        { "optionId": "opt-17c", "label": "C", "text": "Hai chu kì dao động của nguồn sóng" },
+        { "optionId": "opt-17d", "label": "D", "text": "Một đơn vị thời gian (1 giây)" }
+      ],
+      "correctOptionId": "opt-17a",
+      "explanation": "Bước sóng là quãng đường sóng truyền được trong một chu kì dao động: $\\lambda = v T = \\frac{v}{f}$."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q18-song-dung-nut",
+      "title": "Câu 18 (Phần I)",
+      "content": "Trong hiện tượng sóng dừng trên một sợi dây đàn hồi, khoảng cách giữa hai nút sóng liên tiếp bằng:",
+      "options": [
+        { "optionId": "opt-18a", "label": "A", "text": "$\\lambda$" },
+        { "optionId": "opt-18b", "label": "B", "text": "$\\frac{\\lambda}{2}$" },
+        { "optionId": "opt-18c", "label": "C", "text": "$\\frac{\\lambda}{4}$" },
+        { "optionId": "opt-18d", "label": "D", "text": "$2\\lambda$" }
+      ],
+      "correctOptionId": "opt-18b",
+      "explanation": "Khoảng cách giữa hai nút sóng liên tiếp (hoặc hai bụng sóng liên tiếp) trong sóng dừng là $\\frac{\\lambda}{2}$."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q19-i-hieu-dung",
+      "title": "Câu 19 (Phần I)",
+      "content": "Cường độ dòng điện xoay chiều trong một đoạn mạch có biểu thức $i = 2\\sqrt{2} \\cos(100\\pi t)\\text{ (A)}$. Giá trị hiệu dụng của cường độ dòng điện trong đoạn mạch này là:",
+      "options": [
+        { "optionId": "opt-19a", "label": "A", "text": "$2\\sqrt{2}\\text{ A}$" },
+        { "optionId": "opt-19b", "label": "B", "text": "$4\\text{ A}$" },
+        { "optionId": "opt-19c", "label": "C", "text": "$2\\text{ A}$" },
+        { "optionId": "opt-19d", "label": "D", "text": "$\\sqrt{2}\\text{ A}$" }
+      ],
+      "correctOptionId": "opt-19c",
+      "explanation": "Cường độ hiệu dụng $I = \\frac{I_0}{\\sqrt{2}} = \\frac{2\\sqrt{2}}{\\sqrt{2}} = 2\\text{ A}$."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "phy-q20-giao-thoa-young",
+      "title": "Câu 20 (Phần I)",
+      "content": "Trong thí nghiệm giao thoa ánh sáng Young với khoảng vân là $i$, khoảng cách giữa vân sáng bậc 3 và vân tối thứ 3 ở cùng một phía so với vân sáng trung tâm là:",
+      "options": [
+        { "optionId": "opt-20a", "label": "A", "text": "$i$" },
+        { "optionId": "opt-20b", "label": "B", "text": "$1,5i$" },
+        { "optionId": "opt-20c", "label": "C", "text": "$2,5i$" },
+        { "optionId": "opt-20d", "label": "D", "text": "$0,5i$" }
+      ],
+      "correctOptionId": "opt-20d",
+      "explanation": "Tọa độ vân sáng bậc 3: $x_{s3} = 3i$. Tọa độ vân tối thứ 3 cùng phía: $x_{t3} = (3 - 0,5)i = 2,5i$. Khoảng cách là $|3i - 2,5i| = 0,5i$."
+    }
+  ]
+}

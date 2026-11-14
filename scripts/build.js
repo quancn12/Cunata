@@ -1,10 +1,22 @@
 #!/usr/bin/env node
+/**
+ * Cunata Web Demo Build & Verification Wrapper
+ * Conforms to WEB-contract.md §2, §3, §10 and tasks.json (WEB-W2-GLUE).
+ *
+ * Responsibilities:
+ * - Validates legacy assets, styles, Apps Script syntax, and sample-exam schema.
+ * - Prepares module build in dist/ via scripts/web-build.ts with staged output.
+ * - Preserves root index.html as the functional legacy entrypoint throughout W2.
+ * - Exits 0 when all asset validations and module builds pass; exits 1 on failure.
+ */
+
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { validateExamVersion } from '../src/domain/validate.ts';
+import { buildWeb } from './web-build.ts';
 
-console.log('--- Cunata Web Demo Build & Verification ---');
+console.log('--- Cunata Web Demo Build & Verification (Wave 2) ---');
 
 const rootDir = path.resolve('.');
 const filesToCheck = [
@@ -14,9 +26,10 @@ const filesToCheck = [
   'public/q01-bbt.svg',
   'apps-script/Code.js',
   'apps-script/appsscript.json',
-  'apps-script/README.md'
+  'apps-script/README.md',
 ];
 
+// 1. Verify existence of required assets
 for (const rel of filesToCheck) {
   const full = path.join(rootDir, rel);
   if (!fs.existsSync(full)) {
@@ -27,7 +40,7 @@ for (const rel of filesToCheck) {
   console.log(`[OK] Asset verified: ${rel} (${stat.size} bytes)`);
 }
 
-// Validate sample exam
+// 2. Validate sample exam schema
 const sampleExamPath = path.join(rootDir, 'public/sample-exam.json');
 try {
   const exam = JSON.parse(fs.readFileSync(sampleExamPath, 'utf8'));
@@ -42,15 +55,15 @@ try {
   process.exit(1);
 }
 
-// Validate index.html has link to style.css and script logic
+// 3. Validate index.html has link to style.css and script logic (retains legacy demo intact)
 const indexHtml = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
 if (!indexHtml.includes('styles/style.css')) {
   console.error('[ERROR] index.html missing stylesheet link to styles/style.css');
   process.exit(1);
 }
-console.log('[OK] index.html markup & styling linked properly');
+console.log('[OK] index.html markup & styling linked properly (legacy demo retained)');
 
-// Validate apps-script/Code.js syntax
+// 4. Validate apps-script/Code.js syntax
 try {
   const appsScriptCode = fs.readFileSync(path.join(rootDir, 'apps-script/Code.js'), 'utf8');
   new vm.Script(appsScriptCode);
@@ -60,4 +73,24 @@ try {
   process.exit(1);
 }
 
-console.log('--- Build & Asset Verification Complete: READY ---');
+// 5. Run modular ES2022 build via scripts/web-build.ts
+console.log('--- Executing Modular Web Build (ES2022 Staged Emit) ---');
+try {
+  const buildResult = await buildWeb({
+    rootDir,
+    promote: true,
+    silent: false,
+  });
+
+  if (!buildResult.success) {
+    console.error('[ERROR] Modular web build failed:', buildResult.error);
+    process.exit(1);
+  }
+
+  console.log(`[OK] Modular web build emitted and verified (${buildResult.emittedFiles.length} files in dist/)`);
+} catch (err) {
+  console.error('[ERROR] Unexpected error during web build:', err);
+  process.exit(1);
+}
+
+console.log('--- Build & Asset Verification Complete: READY (W2) ---');

@@ -1,0 +1,513 @@
+/**
+ * Cunata Web M3: Teacher Exam Builder & Preview Stylesheet.
+ * Conforms to WEB-contract.md §5, §9, §12 and Shared Product Contract v2.0.
+ *
+ * Scoped under .cunata-teacher-view to prevent polluting external or legacy styles.
+ * WCAG AA accessible contrast, min 44px touch targets, responsive 320px–1280px+.
+ */
+
+.cunata-teacher-view {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #1f2937;
+  background-color: #f9fafb;
+  padding: 1rem;
+  box-sizing: border-box;
+  line-height: 1.5;
+  width: 100%;
+}
+
+.cunata-teacher-view *,
+.cunata-teacher-view *::before,
+.cunata-teacher-view *::after {
+  box-sizing: border-box;
+}
+
+/* AC Disclaimers & Security Banners */
+.cunata-teacher-view .cunata-auth-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #065f46;
+  background-color: #d1fae5;
+  border: 1px solid #a7f3d0;
+  border-radius: 9999px;
+  margin-bottom: 0.5rem;
+}
+
+.cunata-teacher-view .cunata-d08-banner {
+  padding: 0.75rem 1rem;
+  background-color: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  color: #92400e;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+  border-radius: 0.25rem;
+}
+
+/* Header & Controls */
+.cunata-teacher-view .cunata-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 1rem;
+}
+
+.cunata-teacher-view .cunata-header-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.cunata-teacher-view .cunata-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Accessible Interactive Controls (min 44px touch targets) */
+.cunata-teacher-view .cunata-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  border: 1px solid #d1d5db;
+  background-color: #ffffff;
+  color: #374151;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.cunata-teacher-view .cunata-btn:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.cunata-teacher-view .cunata-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.cunata-teacher-view .cunata-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cunata-teacher-view .cunata-btn-primary {
+  background-color: #2563eb;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+
+.cunata-teacher-view .cunata-btn-primary:hover:not(:disabled) {
+  background-color: #1d4ed8;
+  border-color: #1e40af;
+}
+
+.cunata-teacher-view .cunata-btn-danger {
+  background-color: #ef4444;
+  border-color: #dc2626;
+  color: #ffffff;
+}
+
+.cunata-teacher-view .cunata-btn-danger:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.cunata-teacher-view .cunata-btn-secondary {
+  background-color: #4b5563;
+  border-color: #374151;
+  color: #ffffff;
+}
+
+.cunata-teacher-view .cunata-btn[aria-pressed="true"] {
+  background-color: #1e40af;
+  border-color: #1e3a8a;
+  color: #ffffff;
+}
+
+/* Cards & Layout Units */
+.cunata-teacher-view .cunata-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.cunata-teacher-view .cunata-card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+/* Accessible Form Controls */
+.cunata-teacher-view .cunata-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.cunata-teacher-view .cunata-form-group {
+  margin-bottom: 1rem;
+}
+
+.cunata-teacher-view .cunata-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.375rem;
+}
+
+.cunata-teacher-view .cunata-input,
+.cunata-teacher-view .cunata-select,
+.cunata-teacher-view .cunata-textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+  color: #111827;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  touch-action: manipulation;
+}
+
+.cunata-teacher-view .cunata-textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.cunata-teacher-view .cunata-input:focus-visible,
+.cunata-teacher-view .cunata-select:focus-visible,
+.cunata-teacher-view .cunata-textarea:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-color: #2563eb;
+}
+
+.cunata-teacher-view .cunata-input[aria-invalid="true"],
+.cunata-teacher-view .cunata-select[aria-invalid="true"],
+.cunata-teacher-view .cunata-textarea[aria-invalid="true"] {
+  border-color: #ef4444;
+  background-color: #fff5f5;
+}
+
+.cunata-teacher-view .cunata-field-error {
+  display: block;
+  font-size: 0.8125rem;
+  color: #dc2626;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.cunata-teacher-view .cunata-field-hint {
+  display: block;
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+/* Validation Alert Summary */
+.cunata-teacher-view .cunata-validation-summary {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #ef4444;
+  border-radius: 0.375rem;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.cunata-teacher-view .cunata-validation-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #991b1b;
+  margin: 0 0 0.5rem 0;
+}
+
+.cunata-teacher-view .cunata-validation-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  color: #b91c1c;
+}
+
+.cunata-teacher-view .cunata-validation-list li {
+  margin-bottom: 0.25rem;
+}
+
+/* Status Announcer (polite live region) */
+.cunata-teacher-view .cunata-status-announcer {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #1f2937;
+  background-color: #f3f4f6;
+  border-radius: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+/* Sections & Scores Grid */
+.cunata-teacher-view .cunata-score-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.cunata-teacher-view .cunata-score-card {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.cunata-teacher-view .cunata-score-title {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 0.25rem;
+}
+
+.cunata-teacher-view .cunata-score-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.cunata-teacher-view .cunata-score-total {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.cunata-teacher-view .cunata-score-total .cunata-score-value {
+  color: #1d4ed8;
+}
+
+/* Independent Sections Toggles */
+.cunata-teacher-view .cunata-section-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.cunata-teacher-view .cunata-toggle-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+}
+
+.cunata-teacher-view .cunata-toggle-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+/* Questions List & Manager */
+.cunata-teacher-view .cunata-question-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.cunata-teacher-view .cunata-question-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.cunata-teacher-view .cunata-question-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  padding: 0.75rem 1rem;
+  background-color: #ffffff;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.cunata-teacher-view .cunata-question-item.selected {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+.cunata-teacher-view .cunata-question-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.cunata-teacher-view .cunata-question-title-preview {
+  font-weight: 500;
+  color: #111827;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cunata-teacher-view .cunata-question-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.cunata-teacher-view .cunata-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.cunata-teacher-view .cunata-badge-section-I {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.cunata-teacher-view .cunata-badge-section-II {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.cunata-teacher-view .cunata-badge-section-III {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+/* Question Editor Rows */
+.cunata-teacher-view .cunata-option-row,
+.cunata-teacher-view .cunata-statement-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+}
+
+.cunata-teacher-view .cunata-option-label {
+  font-weight: 700;
+  width: 28px;
+  text-align: center;
+}
+
+.cunata-teacher-view .cunata-radio-correct {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+}
+
+/* Preview Presentation */
+.cunata-teacher-view .cunata-preview-container {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.cunata-teacher-view .cunata-preview-header {
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.cunata-teacher-view .cunata-preview-question {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.cunata-teacher-view .cunata-preview-correct-badge {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: #d1fae5;
+  color: #065f46;
+  border-radius: 0.25rem;
+  margin-left: 0.5rem;
+}
+
+/* Publish Panel */
+.cunata-teacher-view .cunata-publish-panel {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border-top: 2px solid #e5e7eb;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+}
+
+.cunata-teacher-view .cunata-publish-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+/* Responsive & Layout adjustments */
+@media (max-width: 640px) {
+  .cunata-teacher-view {
+    padding: 0.5rem;
+  }
+  .cunata-teacher-view .cunata-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cunata-teacher-view .cunata-toolbar {
+    width: 100%;
+  }
+  .cunata-teacher-view .cunata-toolbar .cunata-btn {
+    flex: 1 1 auto;
+  }
+  .cunata-teacher-view .cunata-question-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .cunata-teacher-view .cunata-question-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .cunata-teacher-view .cunata-option-row,
+  .cunata-teacher-view .cunata-statement-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cunata-teacher-view .cunata-btn {
+    transition: none;
+  }
+}

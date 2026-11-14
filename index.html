@@ -2554,6 +2554,12 @@
     }
 
     function scoreAttemptLocally() {
+      if (currentExam && typeof currentExam === 'object') {
+        if (!currentExam.examId) currentExam.examId = 'sample-exam';
+        if (!currentExam.examVersionId) currentExam.examVersionId = 'sample-exam-v1';
+        if (!currentExam.ruleSetId) currentExam.ruleSetId = 'custom-v1';
+        if (!currentExam.inputPolicyId) currentExam.inputPolicyId = 'sa-charset-v1';
+      }
       const val = validateExamVersion(currentExam);
       if (!val.ok) {
         throw new Error('Dữ liệu đề thi không hợp lệ: ' + val.issues.map(i => i.message).join('; '));
@@ -3174,7 +3180,7 @@
           const capturedUrl = collectorUrl;
           const tId = setTimeout(function() {
             scheduledRetryTimers.delete(sentAttemptId);
-            dispatchToServerCollector(capturedPayload, currentRetry, capturedUrl).catch(function(_) {});
+            return dispatchToServerCollector(capturedPayload, currentRetry, capturedUrl).catch(function(_) {});
           }, delay);
           scheduledRetryTimers.set(sentAttemptId, { timerId: tId, nextRetryAt: jobNextRetryAt });
         }
@@ -3231,7 +3237,7 @@
             const capturedUrl = collectorUrl;
             const timerId = setTimeout(function() {
               scheduledRetryTimers.delete(sentAttemptId);
-              dispatchToServerCollector(capturedPayload, currentRetry + 1, capturedUrl).catch(function(_) {});
+              return dispatchToServerCollector(capturedPayload, currentRetry + 1, capturedUrl).catch(function(_) {});
             }, backoffMs);
             scheduledRetryTimers.set(sentAttemptId, { timerId: timerId, nextRetryAt: nextRetryAt });
           }
