@@ -1,0 +1,1416 @@
+{
+  "schema": "m1-fixture-v1",
+  "cases": [
+    {
+      "id": "I-correct-0",
+      "exam": {
+        "examId": "exam:part-I",
+        "examVersionId": "version:part-I",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:0",
+            "options": [
+              {
+                "optionId": "part-I:I:0:option:0"
+              },
+              {
+                "optionId": "part-I:I:0:option:1"
+              },
+              {
+                "optionId": "part-I:I:0:option:2"
+              },
+              {
+                "optionId": "part-I:I:0:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:0:option:0"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:1",
+            "options": [
+              {
+                "optionId": "part-I:I:1:option:0"
+              },
+              {
+                "optionId": "part-I:I:1:option:1"
+              },
+              {
+                "optionId": "part-I:I:1:option:2"
+              },
+              {
+                "optionId": "part-I:I:1:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:1:option:1"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:2",
+            "options": [
+              {
+                "optionId": "part-I:I:2:option:0"
+              },
+              {
+                "optionId": "part-I:I:2:option:1"
+              },
+              {
+                "optionId": "part-I:I:2:option:2"
+              },
+              {
+                "optionId": "part-I:I:2:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:2:option:2"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:3",
+            "options": [
+              {
+                "optionId": "part-I:I:3:option:0"
+              },
+              {
+                "optionId": "part-I:I:3:option:1"
+              },
+              {
+                "optionId": "part-I:I:3:option:2"
+              },
+              {
+                "optionId": "part-I:I:3:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:3:option:3"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:I-correct-0",
+        "examVersionId": "version:part-I",
+        "responses": [
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:0",
+            "selectedOptionId": "part-I:I:0:option:1"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:1",
+            "selectedOptionId": "part-I:I:1:option:0"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:2",
+            "selectedOptionId": "part-I:I:2:option:0"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:3",
+            "selectedOptionId": "part-I:I:3:option:0"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "1"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "0",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "I-correct-1",
+      "exam": {
+        "examId": "exam:part-I",
+        "examVersionId": "version:part-I",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:0",
+            "options": [
+              {
+                "optionId": "part-I:I:0:option:0"
+              },
+              {
+                "optionId": "part-I:I:0:option:1"
+              },
+              {
+                "optionId": "part-I:I:0:option:2"
+              },
+              {
+                "optionId": "part-I:I:0:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:0:option:0"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:1",
+            "options": [
+              {
+                "optionId": "part-I:I:1:option:0"
+              },
+              {
+                "optionId": "part-I:I:1:option:1"
+              },
+              {
+                "optionId": "part-I:I:1:option:2"
+              },
+              {
+                "optionId": "part-I:I:1:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:1:option:1"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:2",
+            "options": [
+              {
+                "optionId": "part-I:I:2:option:0"
+              },
+              {
+                "optionId": "part-I:I:2:option:1"
+              },
+              {
+                "optionId": "part-I:I:2:option:2"
+              },
+              {
+                "optionId": "part-I:I:2:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:2:option:2"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:3",
+            "options": [
+              {
+                "optionId": "part-I:I:3:option:0"
+              },
+              {
+                "optionId": "part-I:I:3:option:1"
+              },
+              {
+                "optionId": "part-I:I:3:option:2"
+              },
+              {
+                "optionId": "part-I:I:3:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:3:option:3"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:I-correct-1",
+        "examVersionId": "version:part-I",
+        "responses": [
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:0",
+            "selectedOptionId": "part-I:I:0:option:0"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:1",
+            "selectedOptionId": "part-I:I:1:option:0"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:2",
+            "selectedOptionId": "part-I:I:2:option:0"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:3",
+            "selectedOptionId": "part-I:I:3:option:0"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "1/4",
+            "max": "1"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "1/4",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "I-correct-4",
+      "exam": {
+        "examId": "exam:part-I",
+        "examVersionId": "version:part-I",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:0",
+            "options": [
+              {
+                "optionId": "part-I:I:0:option:0"
+              },
+              {
+                "optionId": "part-I:I:0:option:1"
+              },
+              {
+                "optionId": "part-I:I:0:option:2"
+              },
+              {
+                "optionId": "part-I:I:0:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:0:option:0"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:1",
+            "options": [
+              {
+                "optionId": "part-I:I:1:option:0"
+              },
+              {
+                "optionId": "part-I:I:1:option:1"
+              },
+              {
+                "optionId": "part-I:I:1:option:2"
+              },
+              {
+                "optionId": "part-I:I:1:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:1:option:1"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:2",
+            "options": [
+              {
+                "optionId": "part-I:I:2:option:0"
+              },
+              {
+                "optionId": "part-I:I:2:option:1"
+              },
+              {
+                "optionId": "part-I:I:2:option:2"
+              },
+              {
+                "optionId": "part-I:I:2:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:2:option:2"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:3",
+            "options": [
+              {
+                "optionId": "part-I:I:3:option:0"
+              },
+              {
+                "optionId": "part-I:I:3:option:1"
+              },
+              {
+                "optionId": "part-I:I:3:option:2"
+              },
+              {
+                "optionId": "part-I:I:3:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:3:option:3"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:I-correct-4",
+        "examVersionId": "version:part-I",
+        "responses": [
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:0",
+            "selectedOptionId": "part-I:I:0:option:0"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:1",
+            "selectedOptionId": "part-I:I:1:option:1"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:2",
+            "selectedOptionId": "part-I:I:2:option:2"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:3",
+            "selectedOptionId": "part-I:I:3:option:3"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "1",
+            "max": "1"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "1",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "I-null",
+      "exam": {
+        "examId": "exam:part-I",
+        "examVersionId": "version:part-I",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:0",
+            "options": [
+              {
+                "optionId": "part-I:I:0:option:0"
+              },
+              {
+                "optionId": "part-I:I:0:option:1"
+              },
+              {
+                "optionId": "part-I:I:0:option:2"
+              },
+              {
+                "optionId": "part-I:I:0:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:0:option:0"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:1",
+            "options": [
+              {
+                "optionId": "part-I:I:1:option:0"
+              },
+              {
+                "optionId": "part-I:I:1:option:1"
+              },
+              {
+                "optionId": "part-I:I:1:option:2"
+              },
+              {
+                "optionId": "part-I:I:1:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:1:option:1"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:2",
+            "options": [
+              {
+                "optionId": "part-I:I:2:option:0"
+              },
+              {
+                "optionId": "part-I:I:2:option:1"
+              },
+              {
+                "optionId": "part-I:I:2:option:2"
+              },
+              {
+                "optionId": "part-I:I:2:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:2:option:2"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:3",
+            "options": [
+              {
+                "optionId": "part-I:I:3:option:0"
+              },
+              {
+                "optionId": "part-I:I:3:option:1"
+              },
+              {
+                "optionId": "part-I:I:3:option:2"
+              },
+              {
+                "optionId": "part-I:I:3:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:3:option:3"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:I-null",
+        "examVersionId": "version:part-I",
+        "responses": [
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:0",
+            "selectedOptionId": null
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "1"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "0",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "I-unknown-option",
+      "exam": {
+        "examId": "exam:part-I",
+        "examVersionId": "version:part-I",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:0",
+            "options": [
+              {
+                "optionId": "part-I:I:0:option:0"
+              },
+              {
+                "optionId": "part-I:I:0:option:1"
+              },
+              {
+                "optionId": "part-I:I:0:option:2"
+              },
+              {
+                "optionId": "part-I:I:0:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:0:option:0"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:1",
+            "options": [
+              {
+                "optionId": "part-I:I:1:option:0"
+              },
+              {
+                "optionId": "part-I:I:1:option:1"
+              },
+              {
+                "optionId": "part-I:I:1:option:2"
+              },
+              {
+                "optionId": "part-I:I:1:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:1:option:1"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:2",
+            "options": [
+              {
+                "optionId": "part-I:I:2:option:0"
+              },
+              {
+                "optionId": "part-I:I:2:option:1"
+              },
+              {
+                "optionId": "part-I:I:2:option:2"
+              },
+              {
+                "optionId": "part-I:I:2:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:2:option:2"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:3",
+            "options": [
+              {
+                "optionId": "part-I:I:3:option:0"
+              },
+              {
+                "optionId": "part-I:I:3:option:1"
+              },
+              {
+                "optionId": "part-I:I:3:option:2"
+              },
+              {
+                "optionId": "part-I:I:3:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:3:option:3"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:I-unknown-option",
+        "examVersionId": "version:part-I",
+        "responses": [
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:0",
+            "selectedOptionId": "unknown-option"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "1"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "0",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "I-other-question-option",
+      "exam": {
+        "examId": "exam:part-I",
+        "examVersionId": "version:part-I",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:0",
+            "options": [
+              {
+                "optionId": "part-I:I:0:option:0"
+              },
+              {
+                "optionId": "part-I:I:0:option:1"
+              },
+              {
+                "optionId": "part-I:I:0:option:2"
+              },
+              {
+                "optionId": "part-I:I:0:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:0:option:0"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:1",
+            "options": [
+              {
+                "optionId": "part-I:I:1:option:0"
+              },
+              {
+                "optionId": "part-I:I:1:option:1"
+              },
+              {
+                "optionId": "part-I:I:1:option:2"
+              },
+              {
+                "optionId": "part-I:I:1:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:1:option:1"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:2",
+            "options": [
+              {
+                "optionId": "part-I:I:2:option:0"
+              },
+              {
+                "optionId": "part-I:I:2:option:1"
+              },
+              {
+                "optionId": "part-I:I:2:option:2"
+              },
+              {
+                "optionId": "part-I:I:2:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:2:option:2"
+          },
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:3",
+            "options": [
+              {
+                "optionId": "part-I:I:3:option:0"
+              },
+              {
+                "optionId": "part-I:I:3:option:1"
+              },
+              {
+                "optionId": "part-I:I:3:option:2"
+              },
+              {
+                "optionId": "part-I:I:3:option:3"
+              }
+            ],
+            "correctOptionId": "part-I:I:3:option:3"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:I-other-question-option",
+        "examVersionId": "version:part-I",
+        "responses": [
+          {
+            "kind": "I",
+            "questionVersionId": "part-I:I:0",
+            "selectedOptionId": "part-I:I:1:option:0"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "1"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "0",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "II-k-0",
+      "exam": {
+        "examId": "exam:part-II",
+        "examVersionId": "version:part-II",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "statements": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "answer": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "answer": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "answer": false
+              }
+            ]
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:II-k-0",
+        "examVersionId": "version:part-II",
+        "responses": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "answers": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "value": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "value": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "value": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "1"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "0",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "II-k-1",
+      "exam": {
+        "examId": "exam:part-II",
+        "examVersionId": "version:part-II",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "statements": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "answer": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "answer": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "answer": false
+              }
+            ]
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:II-k-1",
+        "examVersionId": "version:part-II",
+        "responses": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "answers": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "value": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "value": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "value": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "1/10",
+            "max": "1"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "1/10",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "II-k-2",
+      "exam": {
+        "examId": "exam:part-II",
+        "examVersionId": "version:part-II",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "statements": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "answer": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "answer": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "answer": false
+              }
+            ]
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:II-k-2",
+        "examVersionId": "version:part-II",
+        "responses": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "answers": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "value": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "value": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "value": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "1/4",
+            "max": "1"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "1/4",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "II-k-3",
+      "exam": {
+        "examId": "exam:part-II",
+        "examVersionId": "version:part-II",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "statements": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "answer": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "answer": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "answer": false
+              }
+            ]
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:II-k-3",
+        "examVersionId": "version:part-II",
+        "responses": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "answers": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "value": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "value": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "value": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "1/2",
+            "max": "1"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "1/2",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "II-k-4",
+      "exam": {
+        "examId": "exam:part-II",
+        "examVersionId": "version:part-II",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "statements": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "answer": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "answer": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "answer": false
+              }
+            ]
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:II-k-4",
+        "examVersionId": "version:part-II",
+        "responses": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "answers": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "value": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "value": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "value": true
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "1",
+            "max": "1"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "1",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "II-false-key-all-null",
+      "exam": {
+        "examId": "exam:part-II",
+        "examVersionId": "version:part-II",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "statements": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "answer": false
+              }
+            ]
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:II-false-key-all-null",
+        "examVersionId": "version:part-II",
+        "responses": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "answers": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "value": null
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "value": null
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "value": null
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "1"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "0",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "II-false-key-all-missing",
+      "exam": {
+        "examId": "exam:part-II",
+        "examVersionId": "version:part-II",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "statements": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "answer": false
+              }
+            ]
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:II-false-key-all-missing",
+        "examVersionId": "version:part-II",
+        "responses": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "answers": []
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "1"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "0",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "II-false-key-one-false",
+      "exam": {
+        "examId": "exam:part-II",
+        "examVersionId": "version:part-II",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "statements": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "answer": false
+              }
+            ]
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:II-false-key-one-false",
+        "examVersionId": "version:part-II",
+        "responses": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "answers": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "1/10",
+            "max": "1"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "1/10",
+        "maxTotal": "1"
+      }
+    },
+    {
+      "id": "II-unknown-statement-ignored",
+      "exam": {
+        "examId": "exam:part-II",
+        "examVersionId": "version:part-II",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "statements": [
+              {
+                "statementId": "part-II:II:0:statement:0",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:1",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:2",
+                "answer": false
+              },
+              {
+                "statementId": "part-II:II:0:statement:3",
+                "answer": false
+              }
+            ]
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:II-unknown-statement-ignored",
+        "examVersionId": "version:part-II",
+        "responses": [
+          {
+            "kind": "II",
+            "questionVersionId": "part-II:II:0",
+            "answers": [
+              {
+                "statementId": "unknown-statement",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "1"
+          },
+          "III": {
+            "score": "0",
+            "max": "0"
+          }
+        },
+        "total": "0",
+        "maxTotal": "1"
+      }
+    }
+  ]
+}

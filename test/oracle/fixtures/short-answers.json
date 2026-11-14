@@ -1,0 +1,1619 @@
+{
+  "schema": "m1-fixture-v1",
+  "cases": [
+    {
+      "id": "III-exact",
+      "exam": {
+        "examId": "exam:III-exact",
+        "examVersionId": "version:III-exact",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-exact:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-exact",
+        "examVersionId": "version:III-exact",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-exact:III:0",
+            "raw": "1,5"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "10",
+            "max": "10"
+          }
+        },
+        "total": "10",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-trailing-zero",
+      "exam": {
+        "examId": "exam:III-trailing-zero",
+        "examVersionId": "version:III-trailing-zero",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-trailing-zero:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-trailing-zero",
+        "examVersionId": "version:III-trailing-zero",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-trailing-zero:III:0",
+            "raw": "1,50"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-reverse-trailing-zero",
+      "exam": {
+        "examId": "exam:III-reverse-trailing-zero",
+        "examVersionId": "version:III-reverse-trailing-zero",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-reverse-trailing-zero:III:0",
+            "answerKey": "1,50"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-reverse-trailing-zero",
+        "examVersionId": "version:III-reverse-trailing-zero",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-reverse-trailing-zero:III:0",
+            "raw": "1,5"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-decimal-dot",
+      "exam": {
+        "examId": "exam:III-decimal-dot",
+        "examVersionId": "version:III-decimal-dot",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-decimal-dot:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-decimal-dot",
+        "examVersionId": "version:III-decimal-dot",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-decimal-dot:III:0",
+            "raw": "1.5"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-negative-four",
+      "exam": {
+        "examId": "exam:III-negative-four",
+        "examVersionId": "version:III-negative-four",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-negative-four:III:0",
+            "answerKey": "-0,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-negative-four",
+        "examVersionId": "version:III-negative-four",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-negative-four:III:0",
+            "raw": "-0,5"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "10",
+            "max": "10"
+          }
+        },
+        "total": "10",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-negative-wrong",
+      "exam": {
+        "examId": "exam:III-negative-wrong",
+        "examVersionId": "version:III-negative-wrong",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-negative-wrong:III:0",
+            "answerKey": "-0,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-negative-wrong",
+        "examVersionId": "version:III-negative-wrong",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-negative-wrong:III:0",
+            "raw": "0,5"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-integer",
+      "exam": {
+        "examId": "exam:III-integer",
+        "examVersionId": "version:III-integer",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-integer:III:0",
+            "answerKey": "0"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-integer",
+        "examVersionId": "version:III-integer",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-integer:III:0",
+            "raw": "0"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "10",
+            "max": "10"
+          }
+        },
+        "total": "10",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-four-digits",
+      "exam": {
+        "examId": "exam:III-four-digits",
+        "examVersionId": "version:III-four-digits",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-four-digits:III:0",
+            "answerKey": "1234"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-four-digits",
+        "examVersionId": "version:III-four-digits",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-four-digits:III:0",
+            "raw": "1234"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "10",
+            "max": "10"
+          }
+        },
+        "total": "10",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-too-long",
+      "exam": {
+        "examId": "exam:III-too-long",
+        "examVersionId": "version:III-too-long",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-too-long:III:0",
+            "answerKey": "1234"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-too-long",
+        "examVersionId": "version:III-too-long",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-too-long:III:0",
+            "raw": "12345"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-too-long-prefix",
+      "exam": {
+        "examId": "exam:III-too-long-prefix",
+        "examVersionId": "version:III-too-long-prefix",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-too-long-prefix:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-too-long-prefix",
+        "examVersionId": "version:III-too-long-prefix",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-too-long-prefix:III:0",
+            "raw": "1,500"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-empty",
+      "exam": {
+        "examId": "exam:III-empty",
+        "examVersionId": "version:III-empty",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-empty:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-empty",
+        "examVersionId": "version:III-empty",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-empty:III:0",
+            "raw": ""
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-null",
+      "exam": {
+        "examId": "exam:III-null",
+        "examVersionId": "version:III-null",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-null:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-null",
+        "examVersionId": "version:III-null",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-null:III:0",
+            "raw": null
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-space-before",
+      "exam": {
+        "examId": "exam:III-space-before",
+        "examVersionId": "version:III-space-before",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-space-before:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-space-before",
+        "examVersionId": "version:III-space-before",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-space-before:III:0",
+            "raw": " 1,5"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-space-after",
+      "exam": {
+        "examId": "exam:III-space-after",
+        "examVersionId": "version:III-space-after",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-space-after:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-space-after",
+        "examVersionId": "version:III-space-after",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-space-after:III:0",
+            "raw": "1,5 "
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-space-only",
+      "exam": {
+        "examId": "exam:III-space-only",
+        "examVersionId": "version:III-space-only",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-space-only:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-space-only",
+        "examVersionId": "version:III-space-only",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-space-only:III:0",
+            "raw": " "
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-newline",
+      "exam": {
+        "examId": "exam:III-newline",
+        "examVersionId": "version:III-newline",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-newline:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-newline",
+        "examVersionId": "version:III-newline",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-newline:III:0",
+            "raw": "1,5\n"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-crlf",
+      "exam": {
+        "examId": "exam:III-crlf",
+        "examVersionId": "version:III-crlf",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-crlf:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-crlf",
+        "examVersionId": "version:III-crlf",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-crlf:III:0",
+            "raw": "1,5\r\n"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-tab",
+      "exam": {
+        "examId": "exam:III-tab",
+        "examVersionId": "version:III-tab",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-tab:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-tab",
+        "examVersionId": "version:III-tab",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-tab:III:0",
+            "raw": "\t1,5"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-nbsp",
+      "exam": {
+        "examId": "exam:III-nbsp",
+        "examVersionId": "version:III-nbsp",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-nbsp:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-nbsp",
+        "examVersionId": "version:III-nbsp",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-nbsp:III:0",
+            "raw": "1,5 "
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-zero-width",
+      "exam": {
+        "examId": "exam:III-zero-width",
+        "examVersionId": "version:III-zero-width",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-zero-width:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-zero-width",
+        "examVersionId": "version:III-zero-width",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-zero-width:III:0",
+            "raw": "1,5​"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-bom",
+      "exam": {
+        "examId": "exam:III-bom",
+        "examVersionId": "version:III-bom",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-bom:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-bom",
+        "examVersionId": "version:III-bom",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-bom:III:0",
+            "raw": "﻿1,5"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-unicode-minus",
+      "exam": {
+        "examId": "exam:III-unicode-minus",
+        "examVersionId": "version:III-unicode-minus",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-unicode-minus:III:0",
+            "answerKey": "-0,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-unicode-minus",
+        "examVersionId": "version:III-unicode-minus",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-unicode-minus:III:0",
+            "raw": "−0,5"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-fullwidth-digit",
+      "exam": {
+        "examId": "exam:III-fullwidth-digit",
+        "examVersionId": "version:III-fullwidth-digit",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-fullwidth-digit:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-fullwidth-digit",
+        "examVersionId": "version:III-fullwidth-digit",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-fullwidth-digit:III:0",
+            "raw": "１,5"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-arabic-digit",
+      "exam": {
+        "examId": "exam:III-arabic-digit",
+        "examVersionId": "version:III-arabic-digit",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-arabic-digit:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-arabic-digit",
+        "examVersionId": "version:III-arabic-digit",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-arabic-digit:III:0",
+            "raw": "١,5"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-fullwidth-comma",
+      "exam": {
+        "examId": "exam:III-fullwidth-comma",
+        "examVersionId": "version:III-fullwidth-comma",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-fullwidth-comma:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-fullwidth-comma",
+        "examVersionId": "version:III-fullwidth-comma",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-fullwidth-comma:III:0",
+            "raw": "1，5"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-emoji",
+      "exam": {
+        "examId": "exam:III-emoji",
+        "examVersionId": "version:III-emoji",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-emoji:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-emoji",
+        "examVersionId": "version:III-emoji",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-emoji:III:0",
+            "raw": "😀"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-nul",
+      "exam": {
+        "examId": "exam:III-nul",
+        "examVersionId": "version:III-nul",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-nul:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-nul",
+        "examVersionId": "version:III-nul",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-nul:III:0",
+            "raw": "1\u00005"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-plus",
+      "exam": {
+        "examId": "exam:III-plus",
+        "examVersionId": "version:III-plus",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-plus:III:0",
+            "answerKey": "1"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-plus",
+        "examVersionId": "version:III-plus",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-plus:III:0",
+            "raw": "+1"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-four-codepoints",
+      "exam": {
+        "examId": "exam:III-four-codepoints",
+        "examVersionId": "version:III-four-codepoints",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-four-codepoints:III:0",
+            "answerKey": "1234"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-four-codepoints",
+        "examVersionId": "version:III-four-codepoints",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-four-codepoints:III:0",
+            "raw": "123😀"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-leading-zero",
+      "exam": {
+        "examId": "exam:III-leading-zero",
+        "examVersionId": "version:III-leading-zero",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-leading-zero:III:0",
+            "answerKey": "01"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-leading-zero",
+        "examVersionId": "version:III-leading-zero",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-leading-zero:III:0",
+            "raw": "01"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "10",
+            "max": "10"
+          }
+        },
+        "total": "10",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-negative-zero",
+      "exam": {
+        "examId": "exam:III-negative-zero",
+        "examVersionId": "version:III-negative-zero",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-negative-zero:III:0",
+            "answerKey": "-0"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-negative-zero",
+        "examVersionId": "version:III-negative-zero",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-negative-zero:III:0",
+            "raw": "-0"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "10",
+            "max": "10"
+          }
+        },
+        "total": "10",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-leading-comma",
+      "exam": {
+        "examId": "exam:III-leading-comma",
+        "examVersionId": "version:III-leading-comma",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-leading-comma:III:0",
+            "answerKey": ",5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-leading-comma",
+        "examVersionId": "version:III-leading-comma",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-leading-comma:III:0",
+            "raw": ",5"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "10",
+            "max": "10"
+          }
+        },
+        "total": "10",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-trailing-comma",
+      "exam": {
+        "examId": "exam:III-trailing-comma",
+        "examVersionId": "version:III-trailing-comma",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-trailing-comma:III:0",
+            "answerKey": "1,"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-trailing-comma",
+        "examVersionId": "version:III-trailing-comma",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-trailing-comma:III:0",
+            "raw": "1,"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "10",
+            "max": "10"
+          }
+        },
+        "total": "10",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-double-minus",
+      "exam": {
+        "examId": "exam:III-double-minus",
+        "examVersionId": "version:III-double-minus",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-double-minus:III:0",
+            "answerKey": "--1"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-double-minus",
+        "examVersionId": "version:III-double-minus",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-double-minus:III:0",
+            "raw": "--1"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "10",
+            "max": "10"
+          }
+        },
+        "total": "10",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-double-comma",
+      "exam": {
+        "examId": "exam:III-double-comma",
+        "examVersionId": "version:III-double-comma",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-double-comma:III:0",
+            "answerKey": "1,,"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-double-comma",
+        "examVersionId": "version:III-double-comma",
+        "responses": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-double-comma:III:0",
+            "raw": "1,,"
+          }
+        ]
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "10",
+            "max": "10"
+          }
+        },
+        "total": "10",
+        "maxTotal": "10"
+      }
+    },
+    {
+      "id": "III-missing",
+      "exam": {
+        "examId": "exam:III-missing",
+        "examVersionId": "version:III-missing",
+        "ruleSetId": "custom-v1",
+        "inputPolicyId": "sa-charset-v1",
+        "questions": [
+          {
+            "kind": "III",
+            "questionVersionId": "III-missing:III:0",
+            "answerKey": "1,5"
+          }
+        ]
+      },
+      "attempt": {
+        "attemptId": "attempt:III-missing",
+        "examVersionId": "version:III-missing",
+        "responses": []
+      },
+      "expected": {
+        "sections": {
+          "I": {
+            "score": "0",
+            "max": "0"
+          },
+          "II": {
+            "score": "0",
+            "max": "0"
+          },
+          "III": {
+            "score": "0",
+            "max": "10"
+          }
+        },
+        "total": "0",
+        "maxTotal": "10"
+      }
+    }
+  ]
+}

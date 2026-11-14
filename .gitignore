@@ -1,0 +1,5 @@
+# Log dòng lệnh của worker: có thể chứa nội dung hồ sơ riêng của agent — không bao giờ commit
+.agy_logs/
+node_modules/
+__pycache__/
+*.pyc
