@@ -9,6 +9,8 @@ import type {
   WebExam,
 } from '../schema/types.ts';
 
+import type { StorageLike } from './migrate.ts';
+
 export type {
   AttemptKey,
   AttemptRecord,
@@ -62,6 +64,7 @@ export interface StorageTransactionAdapter {
   ): Promise<T>;
   isAvailable(): Promise<boolean>;
   clearAll(): Promise<void>;
+  close?(): void;
 }
 
 export interface StorageBackupPayload {
@@ -72,4 +75,34 @@ export interface StorageBackupPayload {
   readonly bank: readonly StoredObjectEnvelope[];
   readonly exams: readonly StoredObjectEnvelope[];
   readonly imports: readonly StoredObjectEnvelope[];
+}
+
+export type StorageBroadcastType = 'attempt_saved' | 'attempt_finalized' | 'outbox_updated';
+
+export interface StorageBroadcastNotification {
+  readonly channelName?: string;
+  readonly type: StorageBroadcastType;
+  readonly key: AttemptKey;
+  readonly revision: number;
+  readonly phase?: 'draft' | 'final';
+  readonly timestamp?: number;
+}
+
+export interface BroadcastChannelPort {
+  readonly name: string;
+  postMessage(message: unknown): void;
+  onmessage: ((event: any) => void) | null;
+  close(): void;
+  addEventListener?(type: string, listener: (event: any) => void): void;
+  removeEventListener?(type: string, listener: (event: any) => void): void;
+}
+
+export interface OpenStorageOptions {
+  readonly adapter?: StorageTransactionAdapter;
+  readonly approveD03?: boolean;
+  readonly approvedD03?: boolean;
+  readonly localStorage?: StorageLike;
+  readonly broadcastChannel?: BroadcastChannelPort | null | boolean;
+  readonly channelName?: string;
+  readonly autoBackupOnMigration?: boolean;
 }

@@ -16,12 +16,16 @@ import type {
 import {
   enqueue,
   drainOutbox,
+  resumeOutbox,
+  resetOutboxForRetry,
+  getOutboxStatus,
   validateReceipt,
   computePayloadHash,
   canonicalJson,
   createDisabledCollectorPort,
   DisabledCollectorPort,
   CollectorError,
+  exportResults,
   COLLECTOR_MAX_TOTAL_ATTEMPTS,
   COLLECTOR_BACKOFF_STEPS_MS,
   COLLECTOR_DEFAULT_TIMEOUT_MS,
@@ -896,5 +900,160 @@ describe('M4 Collect: Outbox State Machine & Receipt Validation', () => {
     assert.equal(out3.retryCount, 3, 'Must increment to attempt 3/5 without resetting');
     // For retryCount 2, backoff is 4s (4000ms), so nextRetryAt is 5000 + 4000 = 9000
     assert.equal(out3.nextRetryAt, 9000);
+  });
+
+  it('resumeOutbox resumes interrupted sending status after simulated crash and confirms', async () => {
+    const storage = new InMemoryStorage();
+    const final = createSampleAttempt('att-crash-resume');
+    await storage.create(final);
+    await enqueue(final, storage, 'https://collector.example.com/api');
+
+    const key = { examId: final.examId, examVersionId: final.examVersionId, attemptId: final.attemptId };
+    const initialOut = assertOk(await storage.getOutbox(key))!;
+
+    // Simulate crash while in 'sending' state
+    const crashedSending: OutboxRecord = {
+      ...initialOut,
+      state: 'sending',
+      generation: 2,
+    };
+    storage.outbox.set(`${key.examId}::${key.examVersionId}::${key.attemptId}`, crashedSending);
+
+    const transport = new MockCollectorPort();
+    transport.handler = async () => ({
+      examId: key.examId,
+      examVersionId: key.examVersionId,
+      attemptId: key.attemptId,
+      submissionId: 'sub-crash-resume-01',
+      payloadHash: initialOut.payloadHash,
+      receivedAt: '2026-11-14T08:00:00.000Z',
+      status: 'recorded',
+    });
+
+    // Call resumeOutbox upon app startup
+    const resumeRes = await resumeOutbox(key, { storage, transport, now: () => 10000 });
+    const resumed = assertOk(resumeRes);
+
+    assert.equal(resumed.state, 'server_confirmed');
+    assert.equal(resumed.generation, 4);
+    assert.ok(resumed.receipt);
+    assert.equal(resumed.receipt.status, 'recorded');
+  });
+
+  it('resumeOutbox returns RETRY_BACKOFF_ACTIVE while backoff delay is still running', async () => {
+    const storage = new InMemoryStorage();
+    const final = createSampleAttempt('att-backoff-resume');
+    await storage.create(final);
+    await enqueue(final, storage, 'https://collector.example.com/api');
+
+    const key = { examId: final.examId, examVersionId: final.examVersionId, attemptId: final.attemptId };
+    const transport = new MockCollectorPort();
+    transport.handler = async () => {
+      throw new Error('temporary network blip');
+    };
+
+    // First drain attempt at t=1000 -> fails, schedules backoff nextRetryAt=2000
+    await drainOutbox(key, { storage, transport, now: () => 1000 });
+
+    // Call resumeOutbox at t=1500 (before backoff expired)
+    const resumeRes = await resumeOutbox(key, { storage, transport, now: () => 1500 });
+    const err = assertErr(resumeRes, 'RETRY_BACKOFF_ACTIVE');
+    assert.equal(err.recoverable, true);
+
+    // Call resumeOutbox at t=2000 (backoff expired) -> succeeds in retrying
+    transport.handler = async () => ({
+      examId: key.examId,
+      examVersionId: key.examVersionId,
+      attemptId: key.attemptId,
+      submissionId: 'sub-backoff-01',
+      payloadHash: computePayloadHash(final),
+      receivedAt: '2026-11-14T08:00:00.000Z',
+      status: 'recorded',
+    });
+
+    const resumeRes2 = await resumeOutbox(key, { storage, transport, now: () => 2000 });
+    const confirmed = assertOk(resumeRes2);
+    assert.equal(confirmed.state, 'server_confirmed');
+  });
+
+  it('resetOutboxForRetry resets failed record for controlled manual retry', async () => {
+    const storage = new InMemoryStorage();
+    const final = createSampleAttempt('att-reset-retry');
+    await storage.create(final);
+    await enqueue(final, storage, 'https://collector.example.com/api');
+
+    const key = { examId: final.examId, examVersionId: final.examVersionId, attemptId: final.attemptId };
+    const transport = new MockCollectorPort();
+    transport.handler = async () => {
+      throw new Error('server down');
+    };
+
+    // Exhaust all 5 attempts
+    for (let i = 0; i < 5; i++) {
+      await drainOutbox(key, { storage, transport, now: () => 1000 + i * 10000 });
+    }
+
+    const failedOut = assertOk(await storage.getOutbox(key))!;
+    assert.equal(failedOut.state, 'failed');
+    assert.equal(failedOut.retryCount, 5);
+
+    // Cannot drain while failed
+    const drainFailRes = await drainOutbox(key, { storage, transport, now: () => 60000 });
+    assertErr(drainFailRes, 'RETRY_EXHAUSTED');
+
+    // Perform controlled manual reset
+    const resetRes = await resetOutboxForRetry(key, storage);
+    const resetOut = assertOk(resetRes);
+
+    assert.equal(resetOut.state, 'queued');
+    assert.equal(resetOut.retryCount, 0);
+    assert.equal(resetOut.nextRetryAt, null);
+    assert.equal(resetOut.lastError, null);
+
+    // Now drain succeeds when network is restored
+    transport.handler = async () => ({
+      examId: key.examId,
+      examVersionId: key.examVersionId,
+      attemptId: key.attemptId,
+      submissionId: 'sub-reset-ok',
+      payloadHash: resetOut.payloadHash,
+      receivedAt: '2026-11-14T08:00:00.000Z',
+      status: 'recorded',
+    });
+
+    const retryRes = await drainOutbox(key, { storage, transport, now: () => 61000 });
+    const confirmed = assertOk(retryRes);
+    assert.equal(confirmed.state, 'server_confirmed');
+
+    // Cannot reset a server_confirmed record
+    const invalidReset = await resetOutboxForRetry(key, storage);
+    assertErr(invalidReset, 'ATTEMPT_ALREADY_CONFIRMED');
+  });
+
+  it('getOutboxStatus provides clear view of local storage vs sync state', async () => {
+    const storage = new InMemoryStorage();
+    const final = createSampleAttempt('att-status-inspect');
+    await storage.create(final);
+    await enqueue(final, storage, null); // Local saved (no endpoint)
+
+    const key = { examId: final.examId, examVersionId: final.examVersionId, attemptId: final.attemptId };
+
+    const status1 = assertOk(await getOutboxStatus(key, storage));
+    assert.equal(status1.state, 'local_saved');
+    assert.equal(status1.isLocalSaved, true);
+    assert.equal(status1.isConfirmed, false);
+    assert.equal(status1.retryCount, 0);
+    assert.equal(status1.maxRetries, 5);
+  });
+
+  it('verifies exportResults is re-exported from barrel and produces valid Blobs', () => {
+    const final = createSampleAttempt('att-export-barrel');
+    const jsonBlob = exportResults([final], 'json');
+    assert.equal(jsonBlob.type, 'application/json;charset=utf-8');
+    assert.ok(jsonBlob.size > 0);
+
+    const csvBlob = exportResults([final], 'csv');
+    assert.equal(csvBlob.type, 'text/csv;charset=utf-8');
+    assert.ok(csvBlob.size > 0);
   });
 });

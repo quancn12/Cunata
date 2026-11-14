@@ -61,10 +61,15 @@ import {
   addQuestionToDraft,
   removeQuestionFromDraft,
   updateQuestionInDraft,
+  addBankEntryToDraft,
+  saveQuestionToBank,
+  rollbackPublishedExam,
+  resolveDraftCollisions,
 } from "./index.ts";
 import type {
   ExamDraft,
   StoragePort,
+  BankEntry,
 } from "./types.ts";
 
 import {
@@ -89,6 +94,7 @@ export interface TeacherViewModel {
   readonly publishVersionId?: string;
   readonly isPublishing?: boolean;
   readonly publishedExam?: WebExam | null;
+  readonly bankEntries?: readonly BankEntry[];
 }
 
 export type TeacherActionFn = (value: any) => void;
@@ -101,6 +107,10 @@ export interface TeacherViewActions {
   readonly onError?: (error: WebError) => void;
   readonly onStatus?: (status: string) => void;
   readonly onModeChange?: (mode: "edit" | "preview") => void;
+  readonly onOpenBank?: () => void;
+  readonly onSelectFromBank?: () => void;
+  readonly onAddFromBank?: (entry: BankEntry) => void;
+  readonly onSaveToBank?: (entry: BankEntry) => void;
   readonly [key: string]: TeacherActionFn | undefined;
 }
 
@@ -595,6 +605,78 @@ export class TeacherController {
     return res;
   }
 
+  // --- Question Bank Integration ---
+
+  public openBank(): void {
+    this._actions.onOpenBank?.();
+    this._actions.onSelectFromBank?.();
+  }
+
+  public addFromBank(entry: BankEntry): Result<ExamDraft> {
+    const res = addBankEntryToDraft(this._draft, entry, this._idGen);
+    if (res.ok) {
+      const qs = res.value.exam.questions;
+      if (qs.length > 0) {
+        this._selectedQuestionId = qs[qs.length - 1]!.questionVersionId;
+      }
+      this._statusMessage = `Đã thêm câu hỏi "${entry.questionId}" từ ngân hàng vào đề thi!`;
+      this._actions.onAddFromBank?.(entry);
+      this._actions.onStatus?.(this._statusMessage);
+      return this._applyDraftResult(res);
+    }
+    this._actions.onError?.(res.error);
+    return res;
+  }
+
+  public async saveQuestionToBank(
+    questionVersionId: string,
+    overrideTaxonomy?: Partial<Taxonomy>,
+  ): Promise<Result<BankEntry>> {
+    const targetStorage = this._storage;
+    if (!targetStorage) {
+      const err: WebError = {
+        code: "STORAGE_UNAVAILABLE",
+        path: "storage",
+        message: "Không tìm thấy bộ nhớ lưu trữ StoragePort để lưu câu hỏi vào ngân hàng.",
+        recoverable: false,
+      };
+      this._actions.onError?.(err);
+      return { ok: false, error: err };
+    }
+    const q = this._draft.exam.questions.find((x) => x.questionVersionId === questionVersionId);
+    if (!q) {
+      const err: WebError = {
+        code: "QUESTION_NOT_FOUND",
+        path: "questions",
+        message: `Không tìm thấy câu hỏi với mã "${questionVersionId}" trong đề thi.`,
+        recoverable: true,
+      };
+      this._actions.onError?.(err);
+      return { ok: false, error: err };
+    }
+
+    const tax: Taxonomy = {
+      subject: overrideTaxonomy?.subject || q.subject || this._draft.exam.subject || "Chung",
+      grade: (overrideTaxonomy?.grade ?? q.grade ?? this._draft.exam.grade ?? 12) as 10 | 11 | 12,
+      topic: overrideTaxonomy?.topic || q.topic || "Chủ đề chung",
+      lesson: overrideTaxonomy?.lesson || q.lesson || "Bài học chung",
+      difficulty: (overrideTaxonomy?.difficulty || q.difficulty || "Thông hiểu") as "Nhận biết" | "Thông hiểu" | "Vận dụng",
+    };
+
+    const saveRes = await saveQuestionToBank(q, tax, targetStorage);
+    if (saveRes.ok) {
+      this._statusMessage = `Đã lưu câu hỏi "${saveRes.value.questionId}" vào ngân hàng thành công!`;
+      this._actions.onSaveToBank?.(saveRes.value);
+      this._actions.onStatus?.(this._statusMessage);
+      this._notify();
+    } else {
+      this._actions.onError?.(saveRes.error);
+      this._statusMessage = `Lưu câu hỏi vào ngân hàng thất bại: ${saveRes.error.message}`;
+      this._notify();
+    }
+    return saveRes;
+  }
+
   // --- Validation ---
 
   public validate(): boolean {
@@ -678,6 +760,33 @@ export class TeacherController {
     }
 
     return pubRes;
+  }
+
+  public async rollbackPublish(
+    versionId?: string,
+    overrideStorage?: StoragePort,
+  ): Promise<Result<void>> {
+    const targetStorage = overrideStorage ?? this._storage;
+    if (!targetStorage) {
+      const err: WebError = {
+        code: "STORAGE_UNAVAILABLE",
+        path: "storage",
+        message: "Không tìm thấy bộ nhớ lưu trữ StoragePort để hoàn tác xuất bản.",
+        recoverable: false,
+      };
+      this._actions.onError?.(err);
+      return { ok: false, error: err };
+    }
+    const ver = versionId ?? this._publishVersionId;
+    const res = await rollbackPublishedExam(this._draft.exam.examId, ver, targetStorage);
+    if (res.ok) {
+      this._statusMessage = `Đã hoàn tác xuất bản phiên bản ${ver}!`;
+      this._actions.onStatus?.(this._statusMessage);
+      this._notify();
+    } else {
+      this._actions.onError?.(res.error);
+    }
+    return res;
   }
 
   // --- JSON Import & Export ---
@@ -1350,6 +1459,15 @@ function renderEditMode(
   btnAddIII.onclick = () => controller.addQuestion("III");
   addBtns.appendChild(btnAddIII);
 
+  const btnOpenBank = doc.createElement("button");
+  btnOpenBank.type = "button";
+  btnOpenBank.className = "cunata-btn cunata-btn-secondary";
+  btnOpenBank.id = "btn-open-bank";
+  btnOpenBank.textContent = "➕ Thêm từ ngân hàng";
+  btnOpenBank.setAttribute("aria-label", "Chọn câu hỏi từ ngân hàng câu hỏi");
+  btnOpenBank.onclick = () => controller.openBank();
+  addBtns.appendChild(btnOpenBank);
+
   qActionBar.appendChild(addBtns);
 
   // Filter Buttons
@@ -1516,6 +1634,28 @@ function renderQuestionForm(
   cleanups: (() => void)[],
 ): void {
   const qId = question.questionVersionId;
+
+  // Question Action Bar: Save to Bank
+  const qActionToolbar = doc.createElement("div");
+  qActionToolbar.className = "cunata-toolbar";
+  qActionToolbar.style.marginBottom = "0.75rem";
+
+  const btnSaveToBank = doc.createElement("button");
+  btnSaveToBank.type = "button";
+  btnSaveToBank.className = "cunata-btn cunata-btn-sm cunata-btn-secondary";
+  btnSaveToBank.id = `btn-save-bank-${qId}`;
+  btnSaveToBank.textContent = "💾 Lưu câu hỏi vào ngân hàng";
+  btnSaveToBank.setAttribute("aria-label", `Lưu câu hỏi ${qId} vào ngân hàng câu hỏi`);
+  btnSaveToBank.onclick = async () => {
+    btnSaveToBank.disabled = true;
+    try {
+      await controller.saveQuestionToBank(qId);
+    } finally {
+      btnSaveToBank.disabled = false;
+    }
+  };
+  qActionToolbar.appendChild(btnSaveToBank);
+  container.appendChild(qActionToolbar);
 
   // Taxonomy & Metadata Grid
   const taxGrid = doc.createElement("div");

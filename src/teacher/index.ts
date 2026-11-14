@@ -37,7 +37,13 @@ import type {
   AttemptKey,
   AttemptRecord,
   OutboxRecord,
+  BankEntry,
 } from "./types.ts";
+import {
+  addToDraft,
+  saveBankEntry,
+  validateBankEntry,
+} from "../bank/index.ts";
 
 export type {
   ExamDraft,
@@ -62,6 +68,7 @@ export type {
   AttemptKey,
   AttemptRecord,
   OutboxRecord,
+  BankEntry,
 };
 
 function isRecord(val: unknown): val is Record<string, unknown> {
@@ -629,6 +636,9 @@ export function editDraft(draft: ExamDraft, patch: unknown): Result<ExamDraft> {
       case "duplicate_question":
         return duplicateQuestion(draft, action.questionVersionId, action.idGenerator);
 
+      case "add_from_bank":
+        return addBankEntryToDraft(draft, action.entry, action.idGenerator);
+
       default:
         return {
           ok: false,
@@ -1172,4 +1182,225 @@ export async function publishDraft(
     ok: true,
     value: publishedExam,
   };
+}
+
+/**
+ * Adds a BankEntry to an ExamDraft using bank addToDraft reuse logic.
+ * Connects teacher draft workflows directly with question bank entries.
+ * Handles option/key collision remapping and question identity preservation.
+ */
+export function addBankEntryToDraft(
+  draft: ExamDraft,
+  entry: BankEntry,
+  idGenerator?: () => string,
+): Result<ExamDraft> {
+  let counter = 0;
+  const gen = idGenerator ?? (() => `q-gen-${Date.now()}-${++counter}-${Math.random().toString(36).slice(2, 7)}`);
+  return addToDraft(draft, entry, gen);
+}
+
+/**
+ * Converts a draft WebQuestion into a valid BankEntry for question bank reuse.
+ */
+export function createBankEntryFromQuestion(
+  question: WebQuestion,
+  taxonomy?: Partial<Taxonomy>,
+  options?: { questionId?: string; versionId?: string },
+): Result<BankEntry> {
+  if (!isRecord(question) || typeof question.kind !== "string") {
+    return {
+      ok: false,
+      error: {
+        code: "QUESTION_INVALID",
+        path: "question",
+        message: "Question must be a valid WebQuestion object",
+        recoverable: true,
+      },
+    };
+  }
+
+  const qId = options?.questionId ?? question.questionId ?? `bank-q-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const vId = options?.versionId ?? question.questionVersionId;
+
+  const tax: Taxonomy = {
+    subject: taxonomy?.subject || question.subject || "Chung",
+    grade: (taxonomy?.grade ?? question.grade ?? 12) as 10 | 11 | 12,
+    topic: taxonomy?.topic || question.topic || "Chủ đề chung",
+    lesson: taxonomy?.lesson || question.lesson || "Bài học chung",
+    difficulty: (taxonomy?.difficulty || question.difficulty || "Thông hiểu") as "Nhận biết" | "Thông hiểu" | "Vận dụng",
+  };
+
+  const clonedQ = deepClone(question) as Record<string, unknown>;
+  clonedQ.questionVersionId = vId;
+  clonedQ.questionId = qId;
+  clonedQ.subject = tax.subject;
+  clonedQ.grade = tax.grade;
+  clonedQ.topic = tax.topic;
+  clonedQ.lesson = tax.lesson;
+  clonedQ.difficulty = tax.difficulty;
+
+  const candidate: BankEntry = {
+    questionId: qId,
+    questionVersionId: vId,
+    revision: 0,
+    taxonomy: tax,
+    question: clonedQ as unknown as WebQuestion,
+  };
+
+  return validateBankEntry(candidate);
+}
+
+/**
+ * Saves a WebQuestion from a draft into the Question Bank via StoragePort.
+ */
+export async function saveQuestionToBank(
+  question: WebQuestion,
+  taxonomy: Taxonomy,
+  storage: StoragePort,
+  expectedRevision: number | null = null,
+): Promise<Result<BankEntry>> {
+  const entryRes = createBankEntryFromQuestion(question, taxonomy);
+  if (!entryRes.ok) {
+    return entryRes;
+  }
+  return saveBankEntry(entryRes.value, expectedRevision, storage);
+}
+
+/**
+ * Rolls back a published exam version from storage if a transaction or verification fails.
+ */
+export async function rollbackPublishedExam(
+  examId: string,
+  versionId: string,
+  storage: StoragePort,
+): Promise<Result<void>> {
+  if (!storage || typeof storage.deleteObject !== "function") {
+    return {
+      ok: false,
+      error: {
+        code: "STORAGE_UNAVAILABLE",
+        path: "storage",
+        message: "StoragePort not available for rollback",
+        recoverable: false,
+      },
+    };
+  }
+  const examKey = `${examId}:${versionId}`;
+  const res = await storage.deleteObject("exams", examKey, 1);
+  if (!res.ok) {
+    // Attempt fallback with just versionId if key was stored that way
+    return storage.deleteObject("exams", versionId, 1);
+  }
+  return res;
+}
+
+/**
+ * Scans a draft for option, statement, or version collisions across questions and resolves them.
+ * Preserves correctOptionId and statement boolean mappings.
+ */
+export function resolveDraftCollisions(
+  draft: ExamDraft,
+  idGenerator?: () => string,
+): ExamDraft {
+  let counter = 0;
+  const genId = idGenerator ?? (() => `q-res-${Date.now()}-${++counter}-${Math.random().toString(36).slice(2, 7)}`);
+
+  const seenVersionIds = new Set<string>();
+  const seenOptionIds = new Set<string>();
+  const seenStatementIds = new Set<string>();
+
+  const resolvedQuestions: WebQuestion[] = [];
+
+  for (const q of draft.exam.questions ?? []) {
+    let qVersionId = q.questionVersionId;
+    if (seenVersionIds.has(qVersionId)) {
+      qVersionId = genId();
+    }
+    seenVersionIds.add(qVersionId);
+
+    if (q.kind === "I") {
+      let hasCollidingOption = false;
+      const currentOptIds = new Set<string>();
+      for (const opt of q.options) {
+        if (seenOptionIds.has(opt.optionId) || currentOptIds.has(opt.optionId)) {
+          hasCollidingOption = true;
+          break;
+        }
+        currentOptIds.add(opt.optionId);
+      }
+
+      if (hasCollidingOption) {
+        const idMap = new Map<string, string>();
+        const newOptions: WebOption[] = q.options.map((opt) => {
+          const newOptId = genId();
+          idMap.set(opt.optionId, newOptId);
+          seenOptionIds.add(newOptId);
+          return { ...opt, optionId: newOptId };
+        });
+        const newCorrectId = idMap.get(q.correctOptionId) ?? (newOptions[0]?.optionId ?? "");
+        resolvedQuestions.push({
+          ...q,
+          questionVersionId: qVersionId,
+          options: newOptions,
+          correctOptionId: newCorrectId,
+        });
+      } else {
+        for (const opt of q.options) {
+          seenOptionIds.add(opt.optionId);
+        }
+        resolvedQuestions.push({
+          ...q,
+          questionVersionId: qVersionId,
+        });
+      }
+    } else if (q.kind === "II") {
+      let hasCollidingStmt = false;
+      const currentStmtIds = new Set<string>();
+      for (const st of q.statements) {
+        if (seenStatementIds.has(st.statementId) || currentStmtIds.has(st.statementId)) {
+          hasCollidingStmt = true;
+          break;
+        }
+        currentStmtIds.add(st.statementId);
+      }
+
+      if (hasCollidingStmt) {
+        const newStatements: WebStatement[] = q.statements.map((st) => {
+          const newStmtId = genId();
+          seenStatementIds.add(newStmtId);
+          return { ...st, statementId: newStmtId };
+        });
+        resolvedQuestions.push({
+          ...q,
+          questionVersionId: qVersionId,
+          statements: newStatements,
+        });
+      } else {
+        for (const st of q.statements) {
+          seenStatementIds.add(st.statementId);
+        }
+        resolvedQuestions.push({
+          ...q,
+          questionVersionId: qVersionId,
+        });
+      }
+    } else {
+      // Kind III
+      resolvedQuestions.push({
+        ...q,
+        questionVersionId: qVersionId,
+      });
+    }
+  }
+
+  const updatedExam: WebExam = {
+    ...draft.exam,
+    questions: resolvedQuestions,
+  };
+
+  return Object.freeze({
+    draftId: draft.draftId,
+    revision: draft.revision + 1,
+    exam: deepFreeze(deepClone(updatedExam)),
+  });
 }

@@ -917,17 +917,29 @@ export function mount(
   function handleAddToDraft(entry: BankEntry) {
     if (typeof actions.addToDraft === 'function') {
       actions.addToDraft(entry);
-    } else if (typeof actions.onReuse === 'function') {
-      actions.onReuse(entry);
-    } else if (vm.draft && typeof actions.onDraftUpdated === 'function') {
+    } else if (vm.draft && (typeof actions.onDraftChange === 'function' || typeof actions.onDraftUpdated === 'function')) {
       const idGen = () => `id-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       const res = addToDraft(vm.draft, entry, idGen);
       if (res.ok) {
-        actions.onDraftUpdated(res.value);
+        if (typeof actions.onDraftChange === 'function') {
+          actions.onDraftChange(res.value);
+        }
+        if (typeof actions.onDraftUpdated === 'function') {
+          actions.onDraftUpdated(res.value);
+        }
+        if (typeof actions.onAddFromBank === 'function') {
+          actions.onAddFromBank(entry);
+        }
         showStatus(`Đã thêm câu hỏi "${entry.question.title || entry.questionId}" vào đề nháp!`, 'success');
       } else {
         showStatus(`Không thể thêm vào đề: ${res.error.message}`, 'error');
       }
+    } else if (typeof actions.onAddFromBank === 'function') {
+      actions.onAddFromBank(entry);
+    } else if (typeof actions.onSelectEntry === 'function') {
+      actions.onSelectEntry(entry);
+    } else if (typeof actions.onReuse === 'function') {
+      actions.onReuse(entry);
     } else {
       showStatus(`Đã chọn câu hỏi "${entry.question.title || entry.questionId}" để sử dụng.`, 'info');
     }

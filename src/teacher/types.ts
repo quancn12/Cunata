@@ -19,6 +19,7 @@ import type {
   OutboxRecord,
 } from "../schema/types.ts";
 import type { StoragePort } from "../storage/types.ts";
+import type { BankEntry } from "../bank/types.ts";
 
 export type {
   WebExam,
@@ -40,6 +41,7 @@ export type {
   AttemptKey,
   AttemptRecord,
   OutboxRecord,
+  BankEntry,
 };
 
 export interface ExamDraft {
@@ -59,7 +61,8 @@ export type DraftAction =
   | { readonly action: "update_question"; readonly questionVersionId: string; readonly patch: Partial<WebQuestion> }
   | { readonly action: "reorder_questions"; readonly fromIndex: number; readonly toIndex: number }
   | { readonly action: "reorder_questions_by_id"; readonly order: readonly string[] }
-  | { readonly action: "duplicate_question"; readonly questionVersionId: string; readonly idGenerator?: () => string };
+  | { readonly action: "duplicate_question"; readonly questionVersionId: string; readonly idGenerator?: () => string }
+  | { readonly action: "add_from_bank"; readonly entry: BankEntry; readonly idGenerator?: () => string };
 
 export type DraftPatch =
   | DraftAction

@@ -163,10 +163,44 @@ export class EnhancedMockElement extends MockElement {
 }
 
 export class EnhancedMockDocument extends MockDocument {
+  public visibilityState: "visible" | "hidden" = "visible";
+  public hidden: boolean = false;
+  private docListeners = new Map<string, Function[]>();
+  public defaultView: any;
+
   constructor() {
     super();
     this.head = new EnhancedMockElement("HEAD", this);
     this.body = new EnhancedMockElement("BODY", this);
+    this.defaultView = {
+      addEventListener: (event: string, fn: Function) => this.addEventListener(event, fn),
+      removeEventListener: (event: string, fn: Function) => this.removeEventListener(event, fn),
+      dispatchEvent: (event: MockEvent) => this.dispatchEvent(event),
+    };
+  }
+
+  addEventListener(event: string, fn: Function): void {
+    const list = this.docListeners.get(event) || [];
+    list.push(fn);
+    this.docListeners.set(event, list);
+  }
+
+  removeEventListener(event: string, fn: Function): void {
+    const list = this.docListeners.get(event);
+    if (list) {
+      const idx = list.indexOf(fn);
+      if (idx !== -1) {
+        list.splice(idx, 1);
+      }
+    }
+  }
+
+  dispatchEvent(event: MockEvent): boolean {
+    const list = this.docListeners.get(event.type) || [];
+    for (const fn of list) {
+      fn.call(this, event);
+    }
+    return !event.defaultPrevented;
   }
 
   createElement(tagName: string): EnhancedMockElement {

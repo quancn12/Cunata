@@ -79,6 +79,7 @@ export const DEFAULT_PRECACHE_ENTRIES: readonly PrecacheManifestItem[] = Object.
   { url: 'collect/index.js', critical: false, category: 'script' },
   { url: 'schema/index.js', critical: false, category: 'script' },
   { url: 'domain/index.js', critical: false, category: 'script' },
+  { url: 'offline/index.js', critical: false, category: 'script' },
 ]);
 
 export interface ServiceWorkerLifecycleCallbacks {
@@ -116,7 +117,7 @@ export interface StorageEstimateResult {
 export type ServiceWorkerInboundMessage =
   | { readonly type: 'SKIP_WAITING' }
   | { readonly type: 'CLAIM_CLIENTS' }
-  | { readonly type: 'CHECK_OFFLINE_READY'; readonly requiredUrls?: readonly string[] }
+  | { readonly type: 'CHECK_OFFLINE_READY'; readonly requiredUrls?: readonly string[]; readonly scopeBase?: string }
   | { readonly type: 'GET_VERSION' }
   | { readonly type: 'SET_ATTEMPT_ACTIVE'; readonly active: boolean }
   | { readonly type: 'PING' };
@@ -125,7 +126,8 @@ export type ServiceWorkerOutboundMessage =
   | { readonly type: 'PONG'; readonly version: string }
   | { readonly type: 'VERSION_REPORT'; readonly version: string; readonly cacheName: string }
   | { readonly type: 'OFFLINE_READY_REPORT'; readonly ready: boolean; readonly cachedCount: number; readonly totalCount: number; readonly missingUrls: readonly string[] }
-  | { readonly type: 'ATTEMPT_STATUS_ACK'; readonly active: boolean };
+  | { readonly type: 'ATTEMPT_STATUS_ACK'; readonly active: boolean }
+  | { readonly type: 'UPDATE_DEFERRED_REPORT'; readonly active: boolean };
 
 /**
  * Normalizes relative URLs under a base scope path (e.g. '/' or '/Cunata/').
@@ -144,8 +146,8 @@ export function resolveScopeUrl(scopeBase: string, relativePath: string): string
  * Checks whether a request URL and method are allowed to be cached in CacheStorage.
  * FORBIDDEN from CacheStorage:
  * - Non-GET methods
- * - Collector endpoints (macros.google.com, /collect, /collector, Apps Script)
- * - Private student reports / downloads / attempts
+ * - Collector endpoints (macros.google.com, script.google.com, /collect, /collector, Apps Script)
+ * - Private student reports / downloads / attempts / outbox receipts
  * - Unsupported schemes (chrome-extension:, file:, data:, blob:)
  */
 export function isCacheableRequest(requestUrl: string, method = 'GET'): boolean {
@@ -155,34 +157,59 @@ export function isCacheableRequest(requestUrl: string, method = 'GET'): boolean 
 
   const lower = requestUrl.toLowerCase();
 
-  // Exclude collector and Google Apps Script endpoints
-  if (
-    lower.includes('macros.google.com') ||
-    lower.includes('/collect') ||
-    lower.includes('/collector') ||
-    lower.includes('appsscript') ||
-    lower.includes('google.com/macros')
-  ) {
-    return false;
-  }
-
-  // Exclude private report submissions, attempt persistence, and download endpoints
-  if (
-    lower.includes('/report/download') ||
-    lower.includes('exportresults') ||
-    lower.includes('cunata:attempt') ||
-    lower.includes('cunata:final') ||
-    lower.includes('cunata:active')
-  ) {
-    return false;
-  }
-
-  // Exclude non-http(s) schemes
+  // Exclude unsupported URL schemes
   if (
     lower.startsWith('chrome-extension:') ||
     lower.startsWith('file:') ||
     lower.startsWith('data:') ||
     lower.startsWith('blob:')
+  ) {
+    return false;
+  }
+
+  // Exclude collector endpoints (Google Apps Script, Macros, Collector endpoints)
+  if (
+    lower.includes('script.google.com') ||
+    lower.includes('macros.google.com') ||
+    lower.includes('google.com/macros') ||
+    lower.includes('appsscript')
+  ) {
+    return false;
+  }
+
+  // Distinguish static application files from dynamic data/collector endpoints
+  const isStaticFile =
+    lower.endsWith('.js') ||
+    lower.endsWith('.css') ||
+    lower.endsWith('.svg') ||
+    lower.endsWith('.png') ||
+    lower.endsWith('.jpg') ||
+    lower.endsWith('.jpeg') ||
+    lower.endsWith('.webp') ||
+    lower.endsWith('.json') ||
+    lower.endsWith('.html') ||
+    lower.endsWith('/');
+
+  // If not a static file, reject collector, outbox, receipt, or attempt data paths
+  if (!isStaticFile) {
+    if (
+      lower.includes('/collect') ||
+      lower.includes('/collector') ||
+      lower.includes('outbox') ||
+      lower.includes('receipt')
+    ) {
+      return false;
+    }
+  }
+
+  // Always exclude private report downloads, attempt mutations, and snapshot stores
+  if (
+    lower.includes('/report/download') ||
+    lower.includes('exportresults') ||
+    lower.includes('cunata:attempt') ||
+    lower.includes('cunata:final') ||
+    lower.includes('cunata:active') ||
+    lower.includes('cunata:snapshot')
   ) {
     return false;
   }

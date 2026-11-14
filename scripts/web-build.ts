@@ -1,6 +1,6 @@
 /**
- * Cunata Web M2-M6 — Experimental Module Build & Packaging Pipeline
- * Conforms to WEB-contract.md §2, §3, §10 and tasks.json (WEB-W2-GLUE).
+ * Cunata Web M2-M6 — Modular Web Build & Packaging Pipeline
+ * Conforms to WEB-contract.md §2, §3, §10 and tasks.json (WEB-W3-GLUE).
  *
  * Responsibilities:
  * - Invokes existing TypeScript compiler without new dependencies.

@@ -1,5 +1,5 @@
 import type { AttemptRecord, CollectorPort } from './types.ts';
-import { CollectorError } from './index.ts';
+import { CollectorError, computePayloadHash } from './index.ts';
 import { resolveScoreDTO } from './export.ts';
 import { ENGINE_VERSION } from '../domain/index.ts';
 
@@ -83,6 +83,7 @@ export class HttpCollectorTransport implements CollectorPort {
 
     // 4. Construct canonical web-result-v1 payload
     const scoreDTO = resolveScoreDTO(final);
+    const payloadHash = computePayloadHash(final);
     const durationSeconds =
       final.submittedAt !== null && typeof final.startedAt === 'number'
         ? Math.max(0, Math.round((final.submittedAt - final.startedAt) / 1000))
@@ -98,6 +99,8 @@ export class HttpCollectorTransport implements CollectorPort {
       exam_version_id: final.examVersionId,
       candidateName: final.candidateName,
       candidate_display: final.candidateName,
+      payloadHash,
+      payload_hash: payloadHash,
       startedAt: final.startedAt,
       started_at: typeof final.startedAt === 'number' ? new Date(final.startedAt).toISOString() : '',
       submittedAt: final.submittedAt,

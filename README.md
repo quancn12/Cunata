@@ -40,6 +40,8 @@ npm test
 ```
 hoặc chạy kiểm thử riêng theo từng phân vùng:
 ```bash
+node --test test/acceptance/webParity.test.ts
+node --test "test/glue/wave3/**/*.test.ts"
 node --test "test/glue/wave2/**/*.test.ts"
 node --test "test/glue/wave1/**/*.test.ts"
 node --test "test/e2e/demoFlow.test.ts"

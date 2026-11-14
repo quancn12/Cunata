@@ -773,7 +773,11 @@ export function mount(
       actions.downloadHtml({ report });
     } else if (typeof window !== "undefined") {
       try {
-        const blob = downloadReport(report);
+        const blob = downloadReport(report, {
+          history: historyEntries,
+          currentAttemptId: currentAttemptId,
+          displayPolicy: displayPolicy,
+        });
         const url = URL.createObjectURL(blob);
         const a = doc.createElement("a");
         a.href = url;

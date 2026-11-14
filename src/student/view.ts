@@ -184,11 +184,13 @@ export function mount(
       initialCandidateName = currentRecord.candidateName;
     } else {
       currentRecord = vm.record ?? null;
-      currentExam = vm.exam ?? (currentRecord ? currentRecord.examSnapshot : null);
-      if (vm.candidateName !== undefined) {
-        initialCandidateName = vm.candidateName;
-      } else if (currentRecord) {
+      // Cross-exam resume: prioritize immutable examSnapshot from currentRecord
+      currentExam = currentRecord ? currentRecord.examSnapshot : (vm.exam ?? null);
+      if (currentRecord) {
+        // LC28-F01: hydrate and preserve candidateName from stored record
         initialCandidateName = currentRecord.candidateName;
+      } else if (vm.candidateName !== undefined) {
+        initialCandidateName = vm.candidateName;
       }
     }
     if (vm.availableExams) availableExams = vm.availableExams;
@@ -235,6 +237,43 @@ export function mount(
       .then(() => {})
       .catch(() => {});
   }
+
+  // Flush pending inputs (e.g. ongoing composition, uncommitted text) before submission
+  const flushPendingInputs = async (): Promise<void> => {
+    if (doc.activeElement && typeof (doc.activeElement as HTMLElement).blur === "function") {
+      try {
+        (doc.activeElement as HTMLElement).blur();
+      } catch {
+        // Ignore blur errors
+      }
+    }
+
+    if (candidateInputEl && currentRecord && currentRecord.phase === "draft") {
+      const val = candidateInputEl.value.trim();
+      if (val && val !== currentRecord.candidateName) {
+        queueRename(val);
+      }
+    }
+
+    for (const [qId, inputEl] of shortAnswerInputs) {
+      if (currentRecord && currentRecord.phase === "draft") {
+        const val = inputEl.value;
+        const resp = getResponse(qId);
+        const currentVal = resp?.kind === "III" && typeof resp.raw === "string" ? resp.raw : "";
+        if (val !== currentVal) {
+          const response: ResponseIII = {
+            kind: "III",
+            questionVersionId: qId,
+            raw: val,
+          };
+          localResponses.set(qId, response);
+          queueAnswer(response);
+        }
+      }
+    }
+
+    await saveChain;
+  };
 
   // 1. Loading State
   if ((model as any)?.loading === true) {
@@ -1286,12 +1325,49 @@ export function mount(
 
       const attemptId = (item as any).attemptId || `att-${idx + 1}`;
       const name = (item as any).candidateName || "Thí sinh tự do";
-      const time = (item as any).submittedAt || (item as any).submittedAtFull || "--";
+      let time = (item as any).submittedAt || (item as any).submittedAtFull || "--";
+      if (typeof time === "number") {
+        time = new Date(time).toLocaleString("vi-VN");
+      }
 
       let scoreI = "--";
       let scoreII = "--";
       let scoreIII = "--";
       let totalStr = "--";
+
+      // If item is AttemptRecord, extract fractions from scoreDTO
+      const scoreDTO = (item as any).scoreDTO;
+      if (scoreDTO) {
+        if (scoreDTO.sectionFractions) {
+          if (scoreDTO.sectionFractions.I !== undefined) scoreI = String(scoreDTO.sectionFractions.I);
+          if (scoreDTO.sectionFractions.II !== undefined) scoreII = String(scoreDTO.sectionFractions.II);
+          if (scoreDTO.sectionFractions.III !== undefined) scoreIII = String(scoreDTO.sectionFractions.III);
+        }
+        if (scoreDTO.totalFraction !== undefined) {
+          if ((item as any).examSnapshot) {
+            try {
+              const qs = (item as any).examSnapshot.questions || [];
+              let n1 = 0, n2 = 0, n3 = 0;
+              for (const q of qs) {
+                if (q.kind === "I") n1++;
+                else if (q.kind === "II") n2++;
+                else if (q.kind === "III") n3++;
+              }
+              if (n1 + n2 + n3 > 0) {
+                const maxes = computeExamMax({ n1, n2, n3 });
+                const maxTotal = toFractionString(maxes.maxTotal);
+                totalStr = `${scoreDTO.totalFraction} / ${maxTotal}`;
+              } else {
+                totalStr = String(scoreDTO.totalFraction);
+              }
+            } catch {
+              totalStr = String(scoreDTO.totalFraction);
+            }
+          } else {
+            totalStr = String(scoreDTO.totalFraction);
+          }
+        }
+      }
 
       if ((item as any).scoreIFraction || (item as any).scoreI !== undefined) {
         scoreI = String((item as any).scoreIFraction || (item as any).scoreI);
@@ -1320,9 +1396,11 @@ export function mount(
         tr.appendChild(td);
       });
 
+      tr.setAttribute("data-attempt-id", attemptId);
       tr.style.cursor = "pointer";
       tr.addEventListener("click", () => {
         actions.selectHistoryAttempt?.(attemptId);
+        actions.resumeAttempt?.(item);
       });
 
       tbody.appendChild(tr);
@@ -1353,6 +1431,7 @@ export function mount(
       maxAttemptsNotice.style.display = "none";
       btnRestart.addEventListener("click", () => {
         actions.restart?.(null);
+        actions.startNewAttempt?.(currentExam);
       });
     }
 
@@ -1412,6 +1491,9 @@ export function mount(
     submitBtnEl.addEventListener("click", () => {
       if (currentRecord?.phase === "final") return;
 
+      // Synchronously flush uncommitted inputs to localResponses and queue saves
+      flushPendingInputs();
+
       const { answered, total } = getAnsweredCount();
       const un = total - answered;
 
@@ -1455,8 +1537,10 @@ export function mount(
       modalOverlay.style.display = "none";
     }
 
+    // Flush pending inputs and ensure saveChain settles before controller submits
+    const pending = flushPendingInputs();
     if (controller) {
-      controller.submit("manual").catch(() => {});
+      pending.then(() => controller.submit("manual")).catch(() => {});
     }
     actions.submit?.("manual");
   });
@@ -1509,8 +1593,9 @@ export function mount(
       if (submitBtnEl) submitBtnEl.disabled = true;
       statusAnnouncer.announce("Hết giờ làm bài. Hệ thống đang tự động nộp bài thi.", "assertive");
 
+      const pending = flushPendingInputs();
       if (controller) {
-        controller.submit("deadline").catch(() => {});
+        pending.then(() => controller.submit("deadline")).catch(() => {});
       }
       actions.submit?.("deadline");
     }
@@ -1519,6 +1604,26 @@ export function mount(
   updateTimer();
   if (currentRecord && currentRecord.phase !== "final") {
     timerInterval = setInterval(updateTimer, 1000);
+  }
+
+  // Check deadline on tab visibility change or pageshow (BFCache / background restore)
+  const handleVisibilityOrResume = () => {
+    if (doc.visibilityState === "visible" || !(doc as any).hidden) {
+      updateTimer();
+    }
+  };
+  if (typeof (doc as any).addEventListener === "function") {
+    doc.addEventListener("visibilitychange", handleVisibilityOrResume);
+    cleanupTasks.push(() => {
+      doc.removeEventListener("visibilitychange", handleVisibilityOrResume);
+    });
+  }
+  const win = doc.defaultView || (typeof window !== "undefined" ? window : null);
+  if (win && typeof (win as any).addEventListener === "function") {
+    win.addEventListener("pageshow", handleVisibilityOrResume);
+    cleanupTasks.push(() => {
+      win.removeEventListener("pageshow", handleVisibilityOrResume);
+    });
   }
 
   // ----------------- Controller Event Subscription -----------------

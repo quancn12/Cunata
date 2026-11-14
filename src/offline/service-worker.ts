@@ -28,6 +28,14 @@ import {
 // In-memory worker state (resets per worker lifecycle)
 let isAttemptActive = false;
 
+export function getAttemptActiveState(): boolean {
+  return isAttemptActive;
+}
+
+export function setAttemptActiveState(active: boolean): void {
+  isAttemptActive = active;
+}
+
 export interface InstallOptions {
   readonly cacheName?: string;
   readonly precacheItems?: readonly PrecacheManifestItem[];
@@ -64,7 +72,9 @@ export interface MessageOptions {
 export async function executeInstall(options?: InstallOptions): Promise<void> {
   const cacheName = options?.cacheName ?? CACHE_NAME;
   const items = options?.precacheItems ?? DEFAULT_PRECACHE_ENTRIES;
-  const scopeBase = options?.scopeBase ?? (typeof self !== 'undefined' && 'registration' in self ? (self as any).registration.scope : '/');
+  const scopeBase =
+    options?.scopeBase ??
+    (typeof self !== 'undefined' && 'registration' in self ? (self as any).registration.scope : '/');
   const fetchImpl = options?.fetchFn ?? (typeof fetch !== 'undefined' ? fetch : undefined);
   const cachesImpl = options?.cachesObj ?? (typeof caches !== 'undefined' ? caches : undefined);
 
@@ -89,7 +99,11 @@ export async function executeInstall(options?: InstallOptions): Promise<void> {
         // Non-critical optional asset (e.g. sample exam fixtures not yet built)
         continue;
       }
-      await cache.put(item.resolvedUrl, response);
+      // Store under both resolvedUrl and item.url to ensure matching regardless of base
+      await cache.put(item.resolvedUrl, response.clone());
+      if (item.url !== item.resolvedUrl) {
+        await cache.put(item.url, response);
+      }
     } catch (err) {
       if (item.critical) {
         // Enforce atomic failure: delete partially populated cache and rethrow
@@ -98,7 +112,9 @@ export async function executeInstall(options?: InstallOptions): Promise<void> {
         } catch {
           // ignore cleanup error
         }
-        throw new Error(`Atomic precache failed on critical asset "${item.url}": ${err instanceof Error ? err.message : String(err)}`);
+        throw new Error(
+          `Atomic precache failed on critical asset "${item.url}": ${err instanceof Error ? err.message : String(err)}`
+        );
       }
     }
   }
@@ -112,11 +128,17 @@ export async function executeInstall(options?: InstallOptions): Promise<void> {
 export async function executeActivate(options?: ActivateOptions): Promise<void> {
   const currentCache = options?.currentCacheName ?? CACHE_NAME;
   const cachesImpl = options?.cachesObj ?? (typeof caches !== 'undefined' ? caches : undefined);
-  const claimFn = options?.claimClients ?? (typeof self !== 'undefined' && 'clients' in self && (self as any).clients?.claim ? () => (self as any).clients.claim() : undefined);
+  const claimFn =
+    options?.claimClients ??
+    (typeof self !== 'undefined' && 'clients' in self && (self as any).clients?.claim
+      ? () => (self as any).clients.claim()
+      : undefined);
 
   if (cachesImpl) {
     const keys = await cachesImpl.keys();
-    const oldCunataCaches = keys.filter((key) => key.startsWith(CACHE_NAME_PREFIX) && key !== currentCache);
+    const oldCunataCaches = keys.filter(
+      (key) => key.startsWith(CACHE_NAME_PREFIX) && key !== currentCache
+    );
     await Promise.all(oldCunataCaches.map((k) => cachesImpl.delete(k)));
   }
 
@@ -131,7 +153,10 @@ export async function executeActivate(options?: ActivateOptions): Promise<void> 
  * 2. Cache-first strategy for precached assets (shell, css, scripts, public samples).
  * 3. Network fallback, and cold-start offline fallback to cached shell (index.html) for navigation.
  */
-export async function executeFetch(request: Request | { url: string; method: string; mode?: string }, options?: FetchOptions): Promise<Response> {
+export async function executeFetch(
+  request: Request | { url: string; method: string; mode?: string },
+  options?: FetchOptions
+): Promise<Response> {
   const fetchImpl = options?.fetchFn ?? (typeof fetch !== 'undefined' ? fetch : undefined);
   const cachesImpl = options?.cachesObj ?? (typeof caches !== 'undefined' ? caches : undefined);
   const cacheName = options?.cacheName ?? CACHE_NAME;
@@ -146,7 +171,7 @@ export async function executeFetch(request: Request | { url: string; method: str
   // 1. Check cache first
   if (cachesImpl) {
     const cache = await cachesImpl.open(cacheName);
-    const cachedResponse = await cache.match(request as any);
+    const cachedResponse = (await cache.match(request as any)) || (await cache.match(request.url));
     if (cachedResponse) {
       return cachedResponse;
     }
@@ -172,9 +197,15 @@ export async function executeFetch(request: Request | { url: string; method: str
   }
 
   // 3. Offline fallback for navigation requests (cold-start offline)
-  const isNavigational = (request as any).mode === 'navigate' || request.url.endsWith('/') || request.url.endsWith('.html');
+  const isNavigational =
+    (request as any).mode === 'navigate' || request.url.endsWith('/') || request.url.endsWith('.html');
   if (isNavigational && cachesImpl) {
-    const fallback = (await cachesImpl.match(options?.fallbackShellUrl ?? 'index.html')) || (await cachesImpl.match('./'));
+    const fallback =
+      (await cachesImpl.match(options?.fallbackShellUrl ?? 'index.html')) ||
+      (await cachesImpl.match('./index.html')) ||
+      (await cachesImpl.match('/index.html')) ||
+      (await cachesImpl.match('./')) ||
+      (await cachesImpl.match('/'));
     if (fallback) {
       return fallback;
     }
@@ -198,11 +229,18 @@ export async function executeFetch(request: Request | { url: string; method: str
 /**
  * Handles incoming postMessage commands from client application tabs.
  */
-export async function executeMessage(message: ServiceWorkerInboundMessage, options?: MessageOptions): Promise<void> {
+export async function executeMessage(
+  message: ServiceWorkerInboundMessage,
+  options?: MessageOptions
+): Promise<void> {
   switch (message.type) {
     case 'SKIP_WAITING': {
       // If an exam attempt is active, defer skipWaiting unless explicitly forced
       if (isAttemptActive) {
+        options?.postMessageFn?.({
+          type: 'UPDATE_DEFERRED_REPORT',
+          active: true,
+        });
         return;
       }
       if (options?.skipWaitingFn) {
@@ -242,14 +280,20 @@ export async function executeMessage(message: ServiceWorkerInboundMessage, optio
     case 'CHECK_OFFLINE_READY': {
       const cachesImpl = options?.cachesObj ?? (typeof caches !== 'undefined' ? caches : undefined);
       const cacheName = options?.cacheName ?? CACHE_NAME;
-      const required = message.requiredUrls ?? DEFAULT_PRECACHE_ENTRIES.filter((i) => i.critical).map((i) => i.url);
+      const scopeBase = message.scopeBase ?? '/';
+      const required =
+        message.requiredUrls ?? DEFAULT_PRECACHE_ENTRIES.filter((i) => i.critical).map((i) => i.url);
       const missingUrls: string[] = [];
       let cachedCount = 0;
 
       if (cachesImpl) {
         const cache = await cachesImpl.open(cacheName);
         for (const url of required) {
-          const match = await cache.match(url);
+          const resolved = resolveScopeUrl(scopeBase, url);
+          const match =
+            (await cache.match(url)) ||
+            (await cache.match(resolved)) ||
+            (await cache.match(resolveScopeUrl('/', url)));
           if (match) {
             cachedCount++;
           } else {

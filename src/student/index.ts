@@ -23,6 +23,7 @@ import type {
   StoragePort,
   StudentController,
   StudentControllerDeps,
+  StudentStartOptions,
   WebEvent,
   Result,
   WebError,
@@ -31,6 +32,7 @@ import type {
 export type {
   StudentController,
   StudentControllerDeps,
+  StudentStartOptions,
   AttemptKey,
   AttemptRecord,
   WebExam,
@@ -454,10 +456,56 @@ class StudentControllerImpl implements StudentController {
         if (!finalizeResult.ok) {
           if (finalizeResult.error.code === "STORAGE_CONFLICT") {
             const latest = await this.deps.storage.load(this.currentRecord);
-            if (latest.ok && latest.value && latest.value.phase === "final") {
+            if (latest.ok && latest.value) {
+              if (latest.value.phase === "final") {
+                this.currentRecord = deepFreeze(latest.value);
+                this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
+                return { ok: true, value: this.currentRecord };
+              }
+              // If latest is draft (e.g. concurrent draft save committed right before finalize):
+              // Adopt latest draft and retry finalize with latest revision
               this.currentRecord = deepFreeze(latest.value);
-              this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
-              return { ok: true, value: this.currentRecord };
+              const retryDomainExam = toDomainExam(this.currentRecord.examSnapshot);
+              let retryScoreDTO: unknown;
+              try {
+                const scoreResult = scoreAttempt(retryDomainExam, this.currentRecord.responses);
+                retryScoreDTO = scoreResultToDTO(scoreResult);
+              } catch (err: unknown) {
+                return {
+                  ok: false,
+                  error: {
+                    code: "SCORE_ERROR",
+                    path: "score",
+                    message: err instanceof Error ? err.message : String(err),
+                    recoverable: false,
+                  },
+                };
+              }
+              const retryFinalRecord: AttemptRecord = deepFreeze({
+                ...this.currentRecord,
+                revision: this.currentRecord.revision + 1,
+                phase: "final",
+                submittedAt: currentTime,
+                scoreDTO: retryScoreDTO,
+              });
+              const retryResult = await this.deps.storage.finalize(
+                retryFinalRecord,
+                this.currentRecord.revision
+              );
+              if (retryResult.ok) {
+                this.currentRecord = deepFreeze(retryResult.value);
+                this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
+                return { ok: true, value: this.currentRecord };
+              }
+              if (retryResult.error.code === "STORAGE_CONFLICT") {
+                const recheck = await this.deps.storage.load(this.currentRecord);
+                if (recheck.ok && recheck.value && recheck.value.phase === "final") {
+                  this.currentRecord = deepFreeze(recheck.value);
+                  this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
+                  return { ok: true, value: this.currentRecord };
+                }
+              }
+              return retryResult;
             }
             this.notifyListeners({
               type: "storage_conflict",
@@ -478,12 +526,50 @@ class StudentControllerImpl implements StudentController {
 
     return this.submitPromise;
   }
+
+  async checkDeadline(): Promise<Result<AttemptRecord>> {
+    if (this.isDisposed) {
+      return {
+        ok: false,
+        error: {
+          code: "CONTROLLER_DISPOSED",
+          path: "controller",
+          message: "Controller has been disposed",
+          recoverable: false,
+        },
+      };
+    }
+    if (this.currentRecord.phase === "final") {
+      return { ok: true, value: this.currentRecord };
+    }
+    this.checkClock();
+    if (this.deps.now() >= this.currentRecord.deadline) {
+      return this.submit("deadline");
+    }
+    return { ok: true, value: this.currentRecord };
+  }
+
+  async listHistory(): Promise<Result<readonly AttemptRecord[]>> {
+    return this.deps.storage.listAttempts(
+      this.currentRecord.examId,
+      this.currentRecord.examVersionId
+    );
+  }
+}
+
+export async function listAttemptHistory(
+  examId: string,
+  examVersionId: string,
+  storage: StoragePort
+): Promise<Result<readonly AttemptRecord[]>> {
+  return storage.listAttempts(examId, examVersionId);
 }
 
 export async function startAttempt(
   exam: WebExam,
   candidateName: string,
-  deps: { storage: StoragePort; now: () => number; id: () => string }
+  deps: StudentControllerDeps,
+  options?: StudentStartOptions
 ): Promise<Result<StudentController>> {
   const domainExam = toDomainExam(exam);
   const examValidation = validateExamVersion(domainExam);
@@ -499,7 +585,25 @@ export async function startAttempt(
     };
   }
 
-  const attemptId = deps.id();
+  // Local advisory limit check (WEB-contract.md §6, §9, §11)
+  const maxAttempts = exam.settings.maxAttempts;
+  const bypassLimit = options?.bypassAdvisoryLimit ?? deps.bypassAdvisoryLimit ?? false;
+  if (typeof maxAttempts === "number" && maxAttempts > 0 && !bypassLimit) {
+    const listRes = await deps.storage.listAttempts(exam.examId, exam.examVersionId);
+    if (listRes.ok && listRes.value.length >= maxAttempts) {
+      return {
+        ok: false,
+        error: {
+          code: "ATTEMPT_LIMIT_LOCAL",
+          path: "settings.maxAttempts",
+          message: `Đã đạt giới hạn số lượt làm bài tối đa (${maxAttempts} lượt) cho đề thi này (advisory local).`,
+          recoverable: false,
+        },
+      };
+    }
+  }
+
+  const attemptId = options?.attemptId ?? deps.attemptId ?? deps.id();
   const order = createPresentationOrder(
     domainExam,
     {

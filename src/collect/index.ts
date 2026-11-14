@@ -11,6 +11,25 @@ import type {
   DrainDeps,
 } from './types.ts';
 
+import {
+  exportResults,
+  serializeResultsJson,
+  serializeResultsCsv,
+  buildWebResultPayload,
+  resolveScoreDTO,
+  neutralizeFormula,
+  isFormulaDangerous,
+  escapeCsvCell,
+  CSV_HEADERS,
+  type WebResultV1,
+} from './export.ts';
+
+import {
+  HttpCollectorTransport,
+  createHttpTransport,
+  type HttpTransportOptions,
+} from './transport.ts';
+
 export type {
   AttemptKey,
   AttemptRecord,
@@ -22,6 +41,22 @@ export type {
   StoragePort,
   CollectorPort,
   DrainDeps,
+  WebResultV1,
+  HttpTransportOptions,
+};
+
+export {
+  exportResults,
+  serializeResultsJson,
+  serializeResultsCsv,
+  buildWebResultPayload,
+  resolveScoreDTO,
+  neutralizeFormula,
+  isFormulaDangerous,
+  escapeCsvCell,
+  CSV_HEADERS,
+  HttpCollectorTransport,
+  createHttpTransport,
 };
 
 export const COLLECTOR_MAX_TOTAL_ATTEMPTS = 5;
@@ -458,4 +493,141 @@ export async function drainOutbox(
   };
   await deps.storage.updateOutbox(queuedRecord, activeGeneration);
   return err(errCode, 'transport', `Attempt ${newRetryCount}/5 failed: ${errCode}; retry scheduled in ${backoffMs / 1000}s`, true);
+}
+
+/**
+ * Resumes outbox processing after application restart, reload, or network reconnection.
+ * - If server_confirmed: returns terminal record immediately.
+ * - If local_saved: returns record as endpoint is disabled/not configured.
+ * - If failed: returns RETRY_EXHAUSTED error indicating manual controlled retry is required.
+ * - If retry backoff is still active: returns RETRY_BACKOFF_ACTIVE with remaining time.
+ * - If queued or interrupted sending: executes drainOutbox.
+ */
+export async function resumeOutbox(
+  key: AttemptKey,
+  deps: DrainDeps
+): Promise<Result<OutboxRecord>> {
+  const outboxRes = await deps.storage.getOutbox(key);
+  if (!outboxRes.ok) {
+    return outboxRes;
+  }
+  const current = outboxRes.value;
+  if (!current) {
+    return err('OUTBOX_NOT_FOUND', 'key', 'Outbox record not found for resume', false);
+  }
+
+  // 1. Terminal confirmation check
+  if (current.state === 'server_confirmed') {
+    return ok(current);
+  }
+
+  // 2. Disabled endpoint check
+  if (!current.endpointId) {
+    return ok(current);
+  }
+
+  // 3. Failed / exhausted budget check
+  if (current.state === 'failed' || current.retryCount >= COLLECTOR_MAX_TOTAL_ATTEMPTS) {
+    return err(
+      'RETRY_EXHAUSTED',
+      'retryCount',
+      `Outbox record is in failed state (attempts: ${current.retryCount}/${COLLECTOR_MAX_TOTAL_ATTEMPTS}). Use resetOutboxForRetry for controlled retry.`,
+      false
+    );
+  }
+
+  // 4. Backoff check
+  const now = deps.now();
+  if (current.nextRetryAt !== null && now < current.nextRetryAt) {
+    return err(
+      'RETRY_BACKOFF_ACTIVE',
+      'nextRetryAt',
+      `Retry backoff active until ${current.nextRetryAt} (remaining: ${Math.ceil((current.nextRetryAt - now) / 1000)}s)`,
+      true
+    );
+  }
+
+  // 5. Ready to drain
+  return await drainOutbox(key, deps);
+}
+
+/**
+ * Performs a controlled reset of an outbox record in 'failed' state, enabling manual retry.
+ * In accordance with Section 7 ("failed sau lỗi/quá budget, giữ final/export/retry có kiểm soát"),
+ * this allows the user/teacher to explicitly re-trigger collection after fixing endpoint/network.
+ *
+ * Rules:
+ * - Terminal confirmed records CANNOT be reset.
+ * - Non-terminal records have retryCount reset to 0, nextRetryAt to null, lastError to null,
+ *   state transitioned to 'queued' (if endpointId is present) or 'local_saved'.
+ */
+export async function resetOutboxForRetry(
+  key: AttemptKey,
+  storage: StoragePort
+): Promise<Result<OutboxRecord>> {
+  const outboxRes = await storage.getOutbox(key);
+  if (!outboxRes.ok) {
+    return outboxRes;
+  }
+  const current = outboxRes.value;
+  if (!current) {
+    return err('OUTBOX_NOT_FOUND', 'key', 'Outbox record not found', false);
+  }
+
+  if (current.state === 'server_confirmed') {
+    return err('ATTEMPT_ALREADY_CONFIRMED', 'state', 'Cannot reset terminal confirmed attempt', false);
+  }
+
+  const targetState: SaveState = current.endpointId ? 'queued' : 'local_saved';
+  const resetRecord: OutboxRecord = {
+    ...current,
+    state: targetState,
+    retryCount: 0,
+    nextRetryAt: null,
+    lastError: null,
+  };
+
+  return await storage.updateOutbox(resetRecord, current.generation);
+}
+
+/**
+ * Returns a detailed status summary for an outbox record,
+ * separating durable local storage status from network sync state.
+ */
+export async function getOutboxStatus(
+  key: AttemptKey,
+  storage: StoragePort
+): Promise<Result<{
+  state: SaveState;
+  isConfirmed: boolean;
+  isTerminal: boolean;
+  isLocalSaved: boolean;
+  retryCount: number;
+  maxRetries: number;
+  nextRetryAt: number | null;
+  lastError: string | null;
+  receipt: Receipt | null;
+  payloadHash: string;
+}>> {
+  const outboxRes = await storage.getOutbox(key);
+  if (!outboxRes.ok) {
+    return outboxRes as Result<any>;
+  }
+  const current = outboxRes.value;
+  if (!current) {
+    return err('OUTBOX_NOT_FOUND', 'key', 'Outbox record not found', false);
+  }
+
+  return ok({
+    state: current.state,
+    isConfirmed: current.state === 'server_confirmed',
+    isTerminal: current.state === 'server_confirmed',
+    isLocalSaved: current.state === 'local_saved',
+    retryCount: current.retryCount,
+    maxRetries: COLLECTOR_MAX_TOTAL_ATTEMPTS,
+    nextRetryAt: current.nextRetryAt,
+    lastError: current.lastError,
+    receipt: current.receipt,
+    payloadHash: current.payloadHash,
+  });
 }

@@ -175,7 +175,28 @@ export interface BuildReportOptions {
   readonly displayPolicy?: DisplayPolicy;
 }
 
+export interface AttemptHistoryItem {
+  readonly attemptId: string;
+  readonly submittedAt: string | number;
+  readonly candidateName?: string;
+  readonly scoreI?: string;
+  readonly scoreII?: string;
+  readonly scoreIII?: string;
+  readonly total?: string;
+  readonly maxTotal?: string;
+  readonly serverConfirmed?: boolean;
+  readonly status?: string;
+}
+
 export interface RenderHtmlOptions {
   readonly displayPolicy?: DisplayPolicy;
   readonly title?: string;
+}
+
+export interface DownloadReportOptions extends RenderHtmlOptions {
+  readonly includeHistory?: boolean;
+  readonly history?: readonly (AttemptHistoryItem | AttemptRecord | unknown)[];
+  readonly currentAttemptId?: string;
+  readonly appVersion?: string;
+  readonly embedPrintCss?: boolean;
 }

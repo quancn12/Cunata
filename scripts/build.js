@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
  * Cunata Web Demo Build & Verification Wrapper
- * Conforms to WEB-contract.md §2, §3, §10 and tasks.json (WEB-W2-GLUE).
+ * Conforms to WEB-contract.md §2, §3, §10 and tasks.json (WEB-W3-GLUE).
  *
  * Responsibilities:
  * - Validates legacy assets, styles, Apps Script syntax, and sample-exam schema.
  * - Prepares module build in dist/ via scripts/web-build.ts with staged output.
- * - Preserves root index.html as the functional legacy entrypoint throughout W2.
+ * - Preserves root index.html as the functional legacy entrypoint throughout W3
+ *   while D03 remains unapproved (NEED_DECISION).
  * - Exits 0 when all asset validations and module builds pass; exits 1 on failure.
  */
 
@@ -16,7 +17,7 @@ import vm from 'node:vm';
 import { validateExamVersion } from '../src/domain/validate.ts';
 import { buildWeb } from './web-build.ts';
 
-console.log('--- Cunata Web Demo Build & Verification (Wave 2) ---');
+console.log('--- Cunata Web Demo Build & Verification (Wave 3) ---');
 
 const rootDir = path.resolve('.');
 const filesToCheck = [
@@ -93,4 +94,4 @@ try {
   process.exit(1);
 }
 
-console.log('--- Build & Asset Verification Complete: READY (W2) ---');
+console.log('--- Build & Asset Verification Complete: READY (W3) ---');

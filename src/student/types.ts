@@ -96,6 +96,13 @@ export interface StudentControllerDeps {
   readonly storage: StoragePort;
   readonly now: () => number;
   readonly id: () => string;
+  readonly attemptId?: string;
+  readonly bypassAdvisoryLimit?: boolean;
+}
+
+export interface StudentStartOptions {
+  readonly attemptId?: string;
+  readonly bypassAdvisoryLimit?: boolean;
 }
 
 export interface StudentController {
@@ -105,4 +112,6 @@ export interface StudentController {
   submit(reason: "manual" | "deadline"): Promise<Result<AttemptRecord>>;
   subscribe(listener: (event: WebEvent) => void): () => void;
   dispose(): void;
+  checkDeadline?(): Promise<Result<AttemptRecord>>;
+  listHistory?(): Promise<Result<readonly AttemptRecord[]>>;
 }

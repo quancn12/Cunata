@@ -4,6 +4,9 @@ import type {
   OutboxRecord,
   Result,
   WebError,
+  SaveState,
+  Receipt,
+  WebExam,
   StoragePort,
   StoreName,
   TransactionMode,
@@ -11,7 +14,41 @@ import type {
   StorageTransactionAdapter,
   StoredObjectEnvelope,
   StorageBackupPayload,
+  BroadcastChannelPort,
+  StorageBroadcastType,
+  StorageBroadcastNotification,
+  OpenStorageOptions,
 } from './types.ts';
+
+import {
+  DEFAULT_STORAGE_BROADCAST_CHANNEL,
+  MemoryBroadcastChannel,
+  createStorageBroadcastNotifier,
+  createStorageBroadcastListener,
+  recheckTransactionState,
+} from './broadcast.ts';
+
+import {
+  migrateLegacyStorage,
+  parseLegacyStorageKey,
+  mapLegacyResponsesToDomain,
+  recomputeLegacyScore,
+  exportQuarantineRaw,
+  exportQuarantineRawString,
+  type StorageLike,
+  type MigrationReport,
+  type QuarantineEntry,
+  type MigrationOptions,
+} from './migrate.ts';
+
+import {
+  exportBackup,
+  importBackup as importBackupPayload,
+  deleteConfirmed,
+  validateBackupPayload,
+  type ConfirmedDeletionOptions,
+  type DeletionResult,
+} from './backup.ts';
 
 export type {
   AttemptKey,
@@ -19,6 +56,9 @@ export type {
   OutboxRecord,
   Result,
   WebError,
+  SaveState,
+  Receipt,
+  WebExam,
   StoragePort,
   StoreName,
   TransactionMode,
@@ -26,7 +66,47 @@ export type {
   StorageTransactionAdapter,
   StoredObjectEnvelope,
   StorageBackupPayload,
+  BroadcastChannelPort,
+  StorageBroadcastType,
+  StorageBroadcastNotification,
+  OpenStorageOptions,
+  StorageLike,
+  MigrationReport,
+  QuarantineEntry,
+  MigrationOptions,
+  ConfirmedDeletionOptions,
+  DeletionResult,
 };
+
+export {
+  DEFAULT_STORAGE_BROADCAST_CHANNEL,
+  MemoryBroadcastChannel,
+  createStorageBroadcastNotifier,
+  createStorageBroadcastListener,
+  recheckTransactionState,
+  migrateLegacyStorage,
+  parseLegacyStorageKey,
+  mapLegacyResponsesToDomain,
+  recomputeLegacyScore,
+  exportQuarantineRaw,
+  exportQuarantineRawString,
+  exportBackup,
+  importBackupPayload,
+  deleteConfirmed,
+  validateBackupPayload,
+};
+
+export async function migrateLegacyStorageToStoragePort(
+  storage: StoragePort,
+  localStorage?: StorageLike,
+  approvedD03 = true
+): Promise<Result<MigrationReport>> {
+  return migrateLegacyStorage({
+    storage,
+    localStorage,
+    approvedD03,
+  });
+}
 
 export function attemptKeyToString(k: AttemptKey): string {
   return JSON.stringify([k.examId, k.examVersionId, k.attemptId]);
@@ -112,13 +192,19 @@ function mapStorageError(err: unknown, defaultPath = 'storage'): WebError {
 }
 
 export class MemoryTransactionAdapter implements StorageTransactionAdapter {
-  private readonly data = new Map<StoreName, Map<string, unknown>>();
+  private readonly data: Map<StoreName, Map<string, unknown>>;
   private unavailable = false;
   private quotaExceeded = false;
   private executionQueue = Promise.resolve();
 
-  constructor() {
-    this.initStores();
+  constructor(backingData?: Map<StoreName, Map<string, unknown>>) {
+    if (backingData) {
+      this.data = backingData;
+      this.initStores();
+    } else {
+      this.data = new Map();
+      this.initStores();
+    }
   }
 
   private initStores(): void {
@@ -128,6 +214,14 @@ export class MemoryTransactionAdapter implements StorageTransactionAdapter {
         this.data.set(s, new Map());
       }
     }
+  }
+
+  getBackingData(): Map<StoreName, Map<string, unknown>> {
+    return this.data;
+  }
+
+  close(): void {
+    // Closes active connection; backing data is preserved for reopening
   }
 
   setUnavailable(flag: boolean): void {
@@ -327,6 +421,19 @@ export class IndexedDBTransactionAdapter implements StorageTransactionAdapter {
     return this.dbPromise;
   }
 
+  close(): void {
+    if (this.dbPromise) {
+      this.dbPromise
+        .then((db) => {
+          try {
+            db.close();
+          } catch (_) {}
+        })
+        .catch(() => {});
+      this.dbPromise = null;
+    }
+  }
+
   async isAvailable(): Promise<boolean> {
     try {
       if (typeof indexedDB === 'undefined') return false;
@@ -446,7 +553,12 @@ export class IndexedDBTransactionAdapter implements StorageTransactionAdapter {
   }
 }
 
-export function createStoragePort(adapter: StorageTransactionAdapter): StoragePort {
+export function createStoragePort(
+  adapter: StorageTransactionAdapter,
+  broadcastChannel?: BroadcastChannelPort | null
+): StoragePort {
+  const notify = createStorageBroadcastNotifier(broadcastChannel);
+
   return {
     async load(key: AttemptKey): Promise<Result<AttemptRecord | null>> {
       try {
@@ -463,13 +575,13 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
 
     async create(record: AttemptRecord): Promise<Result<AttemptRecord>> {
       try {
-        return await adapter.runTransaction(['attempts'], 'readwrite', async (tx) => {
+        const res = await adapter.runTransaction(['attempts'], 'readwrite', async (tx) => {
           const keyStr = attemptKeyToString(record);
           const existing = (await tx.get('attempts', keyStr)) as AttemptRecord | null;
           if (existing) {
             if (existing.phase === 'final') {
               return {
-                ok: false,
+                ok: false as const,
                 error: {
                   code: 'ATTEMPT_FINALIZED',
                   path: 'phase',
@@ -479,7 +591,7 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
               };
             }
             return {
-              ok: false,
+              ok: false as const,
               error: {
                 code: 'STORAGE_CONFLICT',
                 path: 'attemptId',
@@ -494,8 +606,13 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
             phase: 'draft',
           };
           await tx.put('attempts', keyStr, toStore);
-          return { ok: true, value: deepClone(toStore) };
+          return { ok: true as const, value: deepClone(toStore) };
         });
+
+        if (res.ok) {
+          notify('attempt_saved', res.value, res.value.revision, 'draft');
+        }
+        return res;
       } catch (err) {
         return { ok: false, error: mapStorageError(err, 'create') };
       }
@@ -503,12 +620,12 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
 
     async saveDraft(record: AttemptRecord, expectedRevision: number): Promise<Result<AttemptRecord>> {
       try {
-        return await adapter.runTransaction(['attempts'], 'readwrite', async (tx) => {
+        const res = await adapter.runTransaction(['attempts'], 'readwrite', async (tx) => {
           const keyStr = attemptKeyToString(record);
           const existing = (await tx.get('attempts', keyStr)) as AttemptRecord | null;
           if (!existing) {
             return {
-              ok: false,
+              ok: false as const,
               error: {
                 code: 'STORAGE_CONFLICT',
                 path: 'attemptId',
@@ -520,7 +637,7 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
 
           if (existing.phase === 'final') {
             return {
-              ok: false,
+              ok: false as const,
               error: {
                 code: 'ATTEMPT_FINALIZED',
                 path: 'phase',
@@ -532,7 +649,7 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
 
           if (existing.revision !== expectedRevision) {
             return {
-              ok: false,
+              ok: false as const,
               error: {
                 code: 'STORAGE_CONFLICT',
                 path: 'revision',
@@ -548,8 +665,13 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
             phase: 'draft',
           };
           await tx.put('attempts', keyStr, updated);
-          return { ok: true, value: deepClone(updated) };
+          return { ok: true as const, value: deepClone(updated) };
         });
+
+        if (res.ok) {
+          notify('attempt_saved', res.value, res.value.revision, 'draft');
+        }
+        return res;
       } catch (err) {
         return { ok: false, error: mapStorageError(err, 'saveDraft') };
       }
@@ -557,14 +679,14 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
 
     async finalize(record: AttemptRecord, expectedRevision: number): Promise<Result<AttemptRecord>> {
       try {
-        return await adapter.runTransaction(['attempts', 'outbox'], 'readwrite', async (tx) => {
+        const res = await adapter.runTransaction(['attempts', 'outbox'], 'readwrite', async (tx) => {
           const keyStr = attemptKeyToString(record);
           const existingAttempt = (await tx.get('attempts', keyStr)) as AttemptRecord | null;
 
           // Terminal existing final: existing final always wins!
           if (existingAttempt && existingAttempt.phase === 'final') {
             return {
-              ok: true,
+              ok: true as const,
               value: deepClone(existingAttempt),
             };
           }
@@ -572,7 +694,7 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
           // Stale revision check when existing is draft
           if (existingAttempt && existingAttempt.revision !== expectedRevision) {
             return {
-              ok: false,
+              ok: false as const,
               error: {
                 code: 'STORAGE_CONFLICT',
                 path: 'revision',
@@ -584,7 +706,7 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
 
           if (!existingAttempt && expectedRevision > 0) {
             return {
-              ok: false,
+              ok: false as const,
               error: {
                 code: 'STORAGE_CONFLICT',
                 path: 'revision',
@@ -621,8 +743,13 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
           await tx.put('attempts', keyStr, finalRecord);
           await tx.put('outbox', keyStr, outboxRecord);
 
-          return { ok: true, value: deepClone(finalRecord) };
+          return { ok: true as const, value: deepClone(finalRecord) };
         });
+
+        if (res.ok) {
+          notify('attempt_finalized', res.value, res.value.revision, 'final');
+        }
+        return res;
       } catch (err) {
         return { ok: false, error: mapStorageError(err, 'finalize') };
       }
@@ -781,7 +908,7 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
 
     async updateOutbox(value: OutboxRecord, expectedGeneration: number | null): Promise<Result<OutboxRecord>> {
       try {
-        return await adapter.runTransaction(['outbox'], 'readwrite', async (tx) => {
+        const res = await adapter.runTransaction(['outbox'], 'readwrite', async (tx) => {
           const keyStr = attemptKeyToString(value);
           const existing = (await tx.get('outbox', keyStr)) as OutboxRecord | null;
 
@@ -792,10 +919,10 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
                 generation: 1,
               };
               await tx.put('outbox', keyStr, initial);
-              return { ok: true, value: deepClone(initial) };
+              return { ok: true as const, value: deepClone(initial) };
             }
             return {
-              ok: false,
+              ok: false as const,
               error: {
                 code: 'STORAGE_CONFLICT',
                 path: 'generation',
@@ -808,7 +935,7 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
           // Terminal state: server_confirmed cannot be downgraded
           if (existing.state === 'server_confirmed' && value.state !== 'server_confirmed') {
             return {
-              ok: false,
+              ok: false as const,
               error: {
                 code: 'STORAGE_CONFLICT',
                 path: 'state',
@@ -820,7 +947,7 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
 
           if (expectedGeneration !== null && existing.generation !== expectedGeneration) {
             return {
-              ok: false,
+              ok: false as const,
               error: {
                 code: 'STORAGE_CONFLICT',
                 path: 'generation',
@@ -836,8 +963,13 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
             generation: nextGen,
           };
           await tx.put('outbox', keyStr, updated);
-          return { ok: true, value: deepClone(updated) };
+          return { ok: true as const, value: deepClone(updated) };
         });
+
+        if (res.ok) {
+          notify('outbox_updated', res.value, res.value.generation);
+        }
+        return res;
       } catch (err) {
         return { ok: false, error: mapStorageError(err, 'updateOutbox') };
       }
@@ -971,7 +1103,51 @@ export function createStoragePort(adapter: StorageTransactionAdapter): StoragePo
   };
 }
 
-export async function openStorage(adapter?: StorageTransactionAdapter): Promise<Result<StoragePort>> {
+export async function openStorage(
+  adapterOrOptions?: StorageTransactionAdapter | OpenStorageOptions,
+  maybeOptions?: OpenStorageOptions
+): Promise<Result<StoragePort>> {
+  let adapter: StorageTransactionAdapter | undefined;
+  let options: OpenStorageOptions;
+
+  if (adapterOrOptions && 'runTransaction' in adapterOrOptions) {
+    adapter = adapterOrOptions;
+    options = maybeOptions ?? {};
+  } else if (adapterOrOptions && typeof adapterOrOptions === 'object') {
+    options = adapterOrOptions;
+    adapter = options.adapter;
+  } else {
+    options = maybeOptions ?? {};
+  }
+
+  // Resolve broadcast channel:
+  let resolvedBc: BroadcastChannelPort | null = null;
+  if (
+    options.broadcastChannel &&
+    typeof options.broadcastChannel === 'object' &&
+    'postMessage' in options.broadcastChannel
+  ) {
+    resolvedBc = options.broadcastChannel;
+  } else if (
+    options.broadcastChannel === true ||
+    (options.broadcastChannel === undefined &&
+      typeof window !== 'undefined' &&
+      typeof BroadcastChannel !== 'undefined')
+  ) {
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel(options.channelName ?? DEFAULT_STORAGE_BROADCAST_CHANNEL);
+        if (typeof (bc as any).unref === 'function') {
+          (bc as any).unref();
+        }
+        resolvedBc = bc;
+      }
+    } catch {
+      resolvedBc = null;
+    }
+  }
+
+  let port: StoragePort;
   if (adapter) {
     const available = await adapter.isAvailable().catch(() => false);
     if (!available) {
@@ -985,47 +1161,75 @@ export async function openStorage(adapter?: StorageTransactionAdapter): Promise<
         },
       };
     }
-    return { ok: true, value: createStoragePort(adapter) };
-  }
-
-  // Without injected adapter, default to platform IndexedDB
-  if (typeof indexedDB === 'undefined') {
-    return {
-      ok: false,
-      error: {
-        code: 'STORAGE_UNAVAILABLE',
-        path: 'indexedDB',
-        message: 'IndexedDB không khả dụng trong môi trường này (D03 pending / không có IDB runtime)',
-        recoverable: false,
-      },
-    };
-  }
-
-  try {
-    const idbAdapter = new IndexedDBTransactionAdapter();
-    const available = await idbAdapter.isAvailable();
-    if (!available) {
+    port = createStoragePort(adapter, resolvedBc);
+  } else {
+    // Without injected adapter, default to platform IndexedDB
+    if (typeof indexedDB === 'undefined') {
       return {
         ok: false,
         error: {
           code: 'STORAGE_UNAVAILABLE',
           path: 'indexedDB',
-          message: 'IndexedDB không thể khởi tạo trong môi trường này',
+          message: 'IndexedDB không khả dụng trong môi trường này (D03 pending / không có IDB runtime)',
           recoverable: false,
         },
       };
     }
-    return { ok: true, value: createStoragePort(idbAdapter) };
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return {
-      ok: false,
-      error: {
-        code: 'STORAGE_UNAVAILABLE',
-        path: 'indexedDB',
-        message: `Không thể mở lưu trữ IndexedDB: ${message}`,
-        recoverable: false,
-      },
-    };
+
+    try {
+      const idbAdapter = new IndexedDBTransactionAdapter();
+      const available = await idbAdapter.isAvailable();
+      if (!available) {
+        return {
+          ok: false,
+          error: {
+            code: 'STORAGE_UNAVAILABLE',
+            path: 'indexedDB',
+            message: 'IndexedDB không thể khởi tạo trong môi trường này',
+            recoverable: false,
+          },
+        };
+      }
+      port = createStoragePort(idbAdapter, resolvedBc);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        ok: false,
+        error: {
+          code: 'STORAGE_UNAVAILABLE',
+          path: 'indexedDB',
+          message: `Không thể mở lưu trữ IndexedDB: ${message}`,
+          recoverable: false,
+        },
+      };
+    }
   }
+
+  // Wire migration and backup into openStorage ONLY after D03 approval; otherwise leave disabled
+  const isD03Approved = options.approveD03 === true || options.approvedD03 === true;
+  if (isD03Approved) {
+    const ls = options.localStorage ?? (typeof localStorage !== 'undefined' ? localStorage : undefined);
+    if (ls) {
+      if (options.autoBackupOnMigration) {
+        try {
+          await port.exportBackup();
+        } catch {
+          // non-fatal backup before migration
+        }
+      }
+      const migResult = await migrateLegacyStorage({
+        storage: port,
+        localStorage: ls,
+        approvedD03: true,
+      });
+      if (!migResult.ok && migResult.error.code === 'STORAGE_QUOTA') {
+        return {
+          ok: false,
+          error: migResult.error,
+        };
+      }
+    }
+  }
+
+  return { ok: true, value: port };
 }
