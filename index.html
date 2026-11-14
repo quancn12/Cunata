@@ -1688,8 +1688,12 @@
     let collectorRetryCount = 0;
     const collectorRetryMap = new Map();
     const inFlightDispatches = new Map();
+    const inFlightGenerationMap = new Map();
     const scheduledRetryTimers = new Map();
     const COLLECTOR_MAX_RETRIES = 5;
+    const COLLECTOR_REQUEST_TIMEOUT_MS = 15000;
+    const _platformSetTimeout = (typeof setTimeout === 'function') ? setTimeout : null;
+    const _platformClearTimeout = (typeof clearTimeout === 'function') ? clearTimeout : null;
 
     function isValidServerReceipt(receipt, attemptId) {
       if (!receipt || typeof receipt !== 'object') return false;
@@ -2068,7 +2072,7 @@
               collectorRetryCount = parsed.retryCount;
               collectorRetryMap.set(studentState.attemptId, parsed.retryCount);
             }
-            if (parsed.retryExhausted === true || (typeof parsed.retryCount === 'number' && parsed.retryCount >= COLLECTOR_MAX_RETRIES)) {
+            if (parsed.retryExhausted === true || (typeof parsed.retryCount === 'number' && parsed.retryCount > COLLECTOR_MAX_RETRIES)) {
               studentState.retryExhausted = true;
               collectorRetryMap.set(studentState.attemptId, COLLECTOR_MAX_RETRIES + 1);
             }
@@ -2105,7 +2109,7 @@
             submitExam();
           }
           if (studentState.submitted && studentState.scoreResult && !studentState.serverConfirmed) {
-            const isExhausted = studentState.retryExhausted === true || (collectorRetryMap.get(studentState.attemptId) || 0) >= COLLECTOR_MAX_RETRIES;
+            const isExhausted = studentState.retryExhausted === true || (collectorRetryMap.get(studentState.attemptId) || 0) > COLLECTOR_MAX_RETRIES;
             if (!isExhausted && !inFlightDispatches.has(studentState.attemptId) && !scheduledRetryTimers.has(studentState.attemptId)) {
               if (typeof dispatchToServerCollector === 'function') {
                 dispatchToServerCollector().catch(function(_) {});
@@ -2945,12 +2949,29 @@
           if (typeof studentState !== 'undefined' && studentState && studentState.attemptId === item.attemptId && studentState.submitted) {
             continue;
           }
-          // LC38-F02: In-flight or scheduled guard prevents duplicate chains
-          if (inFlightDispatches.has(item.attemptId) || scheduledRetryTimers.has(item.attemptId)) {
+          // LC38-F02, LC42-F01: In-flight with timeout detection or scheduled guard prevents duplicate chains
+          if (inFlightDispatches.has(item.attemptId)) {
+            const inFlightInfo = inFlightDispatches.get(item.attemptId);
+            const now = Date.now();
+            const timeoutMs = (typeof window !== 'undefined' && typeof window.COLLECTOR_REQUEST_TIMEOUT_MS === 'number')
+              ? window.COLLECTOR_REQUEST_TIMEOUT_MS
+              : COLLECTOR_REQUEST_TIMEOUT_MS;
+            const startedAt = (inFlightInfo && inFlightInfo.startedAt) ? inFlightInfo.startedAt : 0;
+            if (startedAt > 0 && (now - startedAt >= timeoutMs)) {
+              if (inFlightInfo.abort && typeof inFlightInfo.abort === 'function') {
+                try { inFlightInfo.abort(); } catch (_) {}
+              }
+              inFlightDispatches.delete(item.attemptId);
+              inFlightGenerationMap.set(item.attemptId, (inFlightGenerationMap.get(item.attemptId) || 0) + 1);
+            } else {
+              continue;
+            }
+          }
+          if (scheduledRetryTimers.has(item.attemptId)) {
             continue;
           }
           const itemRetry = collectorRetryMap.has(item.attemptId) ? (collectorRetryMap.get(item.attemptId) || 0) : (typeof item.retryCount === 'number' ? item.retryCount : 0);
-          if (itemRetry >= COLLECTOR_MAX_RETRIES || item.retryExhausted === true) {
+          if (itemRetry > COLLECTOR_MAX_RETRIES || item.retryExhausted === true) {
             continue;
           }
 
@@ -3103,8 +3124,7 @@
         collectorRetryMap.set(sentAttemptId, currentRetry);
       }
       const isExhausted = currentRetry > COLLECTOR_MAX_RETRIES ||
-                          (typeof retryCount !== 'number' && currentRetry >= COLLECTOR_MAX_RETRIES) ||
-                          (storedFinalObj && (storedFinalObj.retryExhausted === true || storedFinalObj.retryCount > COLLECTOR_MAX_RETRIES || (typeof retryCount !== 'number' && typeof storedFinalObj.retryCount === 'number' && storedFinalObj.retryCount >= COLLECTOR_MAX_RETRIES))) ||
+                          (storedFinalObj && (storedFinalObj.retryExhausted === true || storedFinalObj.retryCount > COLLECTOR_MAX_RETRIES)) ||
                           (studentState && studentState.attemptId === sentAttemptId && studentState.retryExhausted === true);
       if (isExhausted) {
         collectorRetryMap.set(sentAttemptId, COLLECTOR_MAX_RETRIES + 1);
@@ -3253,69 +3273,124 @@
         }
       }
 
+      // LC42-F01: Generation tracking and timeout protection against hanging requests
+      const dispatchGeneration = (inFlightGenerationMap.get(sentAttemptId) || 0) + 1;
+      inFlightGenerationMap.set(sentAttemptId, dispatchGeneration);
+
+      let abortController = null;
+      let requestSignal = null;
+      let customTimeoutId = null;
+
+      const requestTimeoutMs = (typeof window !== 'undefined' && typeof window.COLLECTOR_REQUEST_TIMEOUT_MS === 'number')
+        ? window.COLLECTOR_REQUEST_TIMEOUT_MS
+        : COLLECTOR_REQUEST_TIMEOUT_MS;
+
+      if (typeof AbortController === 'function') {
+        try { abortController = new AbortController(); } catch (_) {}
+      }
+
+      if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function' && abortController && typeof AbortSignal.any === 'function') {
+        try {
+          requestSignal = AbortSignal.any([abortController.signal, AbortSignal.timeout(requestTimeoutMs)]);
+        } catch (_) {
+          requestSignal = abortController ? abortController.signal : null;
+        }
+      } else if (abortController) {
+        requestSignal = abortController.signal;
+      }
+
       const dispatchPromise = (async () => {
         try {
-          const resp = await fetch(collectorUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payload)
-          });
-          if (resp && resp.ok) {
-            const result = await resp.json();
-            // LC29-F04, LC31-F03: Strict receipt verification:
-            // Must match sentAttemptId and have valid recorded status
-            if (isValidServerReceipt(result, sentAttemptId)) {
-              collectorRetryCount = 0;
-              collectorRetryMap.delete(sentAttemptId);
-              if (scheduledRetryTimers.has(sentAttemptId)) {
-                try { clearTimeout(scheduledRetryTimers.get(sentAttemptId).timerId); } catch (_) {}
-                scheduledRetryTimers.delete(sentAttemptId);
-              }
+          let timeoutPromise = null;
+          if (typeof window !== 'undefined' && typeof window.scheduleCollectorRequestTimeout === 'function') {
+            timeoutPromise = new Promise((_, reject) => {
+              customTimeoutId = window.scheduleCollectorRequestTimeout(() => {
+                if (abortController && typeof abortController.abort === 'function') {
+                  try { abortController.abort(); } catch (_) {}
+                }
+                reject(new Error('COLLECTOR_TIMEOUT: Request timed out'));
+              }, requestTimeoutMs);
+            });
+          }
 
-              // LC29-F03: Update the record for the SENT attempt, not current exam if user switched
-              try {
-                const rawFinal = localStorage.getItem(targetFinalKey);
-                if (rawFinal) {
-                  const finalObj = JSON.parse(rawFinal);
-                  if (finalObj && typeof finalObj === 'object') {
-                    finalObj.serverConfirmed = true;
-                    finalObj.serverReceipt = result;
-                    delete finalObj.nextRetryAt;
-                    delete finalObj.retryExhausted;
-                    localStorage.setItem(targetFinalKey, JSON.stringify(finalObj));
-                  }
-                }
-                const rawDraft = localStorage.getItem(targetDraftKey);
-                if (rawDraft) {
-                  const draftObj = JSON.parse(rawDraft);
-                  if (draftObj && typeof draftObj === 'object') {
-                    draftObj.serverConfirmed = true;
-                    draftObj.serverReceipt = result;
-                    delete draftObj.nextRetryAt;
-                    delete draftObj.retryExhausted;
-                    localStorage.setItem(targetDraftKey, JSON.stringify(draftObj));
-                  }
-                }
-              } catch (_) {}
-
-              // ONLY mutate active studentState if studentState is STILL the same attempt!
-              if (studentState &&
-                  studentState.attemptId === sentAttemptId &&
-                  studentState.examId === sentExamId &&
-                  studentState.examVersionId === sentExamVersionId) {
-                studentState.serverConfirmed = true;
-                studentState.serverReceipt = result;
-                if (syncText) syncText.textContent = 'Đã ghi nhận trên máy chủ';
-                if (syncStatus) {
-                  syncStatus.classList.remove('sync-sending', 'sync-error', 'sync-saved');
-                  syncStatus.classList.add('sync-confirmed');
-                }
-                try {
-                  recordAttemptToHistory(currentExam, studentState);
-                } catch (_) {}
-              }
-              return result;
+          const networkWork = (async () => {
+            const fetchOpts = {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(payload)
+            };
+            if (requestSignal) {
+              fetchOpts.signal = requestSignal;
             }
+            const resp = await fetch(collectorUrl, fetchOpts);
+            if (resp && resp.ok) {
+              return await resp.json();
+            }
+            return null;
+          })();
+
+          const result = timeoutPromise ? await Promise.race([networkWork, timeoutPromise]) : await networkWork;
+          if (customTimeoutId && typeof window !== 'undefined' && typeof window.clearCollectorRequestTimeout === 'function') {
+            try { window.clearCollectorRequestTimeout(customTimeoutId); } catch (_) {}
+            customTimeoutId = null;
+          }
+
+          // Guard against superseded generation
+          if (inFlightGenerationMap.get(sentAttemptId) !== dispatchGeneration) {
+            return;
+          }
+
+          if (result && isValidServerReceipt(result, sentAttemptId)) {
+            collectorRetryCount = 0;
+            collectorRetryMap.delete(sentAttemptId);
+            if (scheduledRetryTimers.has(sentAttemptId)) {
+              try { clearTimeout(scheduledRetryTimers.get(sentAttemptId).timerId); } catch (_) {}
+              scheduledRetryTimers.delete(sentAttemptId);
+            }
+
+            // LC29-F03: Update the record for the SENT attempt, not current exam if user switched
+            try {
+              const rawFinal = localStorage.getItem(targetFinalKey);
+              if (rawFinal) {
+                const finalObj = JSON.parse(rawFinal);
+                if (finalObj && typeof finalObj === 'object') {
+                  finalObj.serverConfirmed = true;
+                  finalObj.serverReceipt = result;
+                  delete finalObj.nextRetryAt;
+                  delete finalObj.retryExhausted;
+                  localStorage.setItem(targetFinalKey, JSON.stringify(finalObj));
+                }
+              }
+              const rawDraft = localStorage.getItem(targetDraftKey);
+              if (rawDraft) {
+                const draftObj = JSON.parse(rawDraft);
+                if (draftObj && typeof draftObj === 'object') {
+                  draftObj.serverConfirmed = true;
+                  draftObj.serverReceipt = result;
+                  delete draftObj.nextRetryAt;
+                  delete draftObj.retryExhausted;
+                  localStorage.setItem(targetDraftKey, JSON.stringify(draftObj));
+                }
+              }
+            } catch (_) {}
+
+            // ONLY mutate active studentState if studentState is STILL the same attempt!
+            if (studentState &&
+                studentState.attemptId === sentAttemptId &&
+                studentState.examId === sentExamId &&
+                studentState.examVersionId === sentExamVersionId) {
+              studentState.serverConfirmed = true;
+              studentState.serverReceipt = result;
+              if (syncText) syncText.textContent = 'Đã ghi nhận trên máy chủ';
+              if (syncStatus) {
+                syncStatus.classList.remove('sync-sending', 'sync-error', 'sync-saved');
+                syncStatus.classList.add('sync-confirmed');
+              }
+              try {
+                recordAttemptToHistory(currentExam, studentState);
+              } catch (_) {}
+            }
+            return result;
           }
           if (studentState && studentState.attemptId === sentAttemptId) {
             if (syncText) syncText.textContent = 'Đã nộp & lưu cục bộ (Chờ máy chủ)';
@@ -3326,6 +3401,13 @@
           }
           scheduleNextRetryOrExhaust();
         } catch (err) {
+          if (customTimeoutId && typeof window !== 'undefined' && typeof window.clearCollectorRequestTimeout === 'function') {
+            try { window.clearCollectorRequestTimeout(customTimeoutId); } catch (_) {}
+            customTimeoutId = null;
+          }
+          if (inFlightGenerationMap.get(sentAttemptId) !== dispatchGeneration) {
+            return;
+          }
           if (studentState && studentState.attemptId === sentAttemptId) {
             if (syncText) syncText.textContent = 'Đã nộp & lưu cục bộ (Mất kết nối máy chủ)';
             if (syncStatus) {
@@ -3335,10 +3417,22 @@
           }
           scheduleNextRetryOrExhaust();
         } finally {
-          inFlightDispatches.delete(sentAttemptId);
+          if (customTimeoutId && typeof window !== 'undefined' && typeof window.clearCollectorRequestTimeout === 'function') {
+            try { window.clearCollectorRequestTimeout(customTimeoutId); } catch (_) {}
+            customTimeoutId = null;
+          }
+          if (inFlightGenerationMap.get(sentAttemptId) === dispatchGeneration) {
+            inFlightDispatches.delete(sentAttemptId);
+          }
         }
       })();
 
+      dispatchPromise.startedAt = Date.now();
+      dispatchPromise.abort = () => {
+        if (abortController && typeof abortController.abort === 'function') {
+          try { abortController.abort(); } catch (_) {}
+        }
+      };
       inFlightDispatches.set(sentAttemptId, dispatchPromise);
       return dispatchPromise;
     }
@@ -3350,7 +3444,7 @@
         }
         if (typeof studentState !== 'undefined' && studentState && studentState.submitted && !studentState.serverConfirmed) {
           const aId = studentState.attemptId;
-          const isExhausted = (collectorRetryMap.get(aId) >= COLLECTOR_MAX_RETRIES) || studentState.retryExhausted;
+          const isExhausted = (collectorRetryMap.get(aId) > COLLECTOR_MAX_RETRIES) || studentState.retryExhausted;
           const now = Date.now();
           const inBackoff = typeof studentState.nextRetryAt === 'number' && now < studentState.nextRetryAt;
           if (!isExhausted && !inFlightDispatches.has(aId) && !scheduledRetryTimers.has(aId) && !inBackoff) {
@@ -5130,7 +5224,9 @@
       window.syncUnconfirmedFinalSubmissions = syncUnconfirmedFinalSubmissions;
       window.collectorRetryMap = collectorRetryMap;
       window.inFlightDispatches = inFlightDispatches;
+      window.inFlightGenerationMap = inFlightGenerationMap;
       window.scheduledRetryTimers = scheduledRetryTimers;
+      window.COLLECTOR_REQUEST_TIMEOUT_MS = COLLECTOR_REQUEST_TIMEOUT_MS;
     }
 
     // Khởi động ứng dụng khi trang sẵn sàng

@@ -1,0 +1,329 @@
+# WEB — Hợp đồng kỹ thuật M2–M6, v1.0 (2026-11-14)
+
+## 1. Nguồn, phạm vi và baseline
+
+Shared Product Contract v2.0 thắng mọi tài liệu; kế thừa toàn bộ M1-scoring-contract.md. Đây là thiết kế và backlog để review, KHÔNG chứng nhận M2–M6 hoàn thành hoặc phê duyệt các policy còn mở. Task WEB-PLAN chỉ viết file này và ops/web/tasks.json; không code sản phẩm, install, commit hay deploy. base_commit trong manifest là HEAD theo yêu cầu; snapshot đọc thực tế: `038a7a9a420c2eea1afba7a3f724c8cc00d7580b`. Điều phối phải chụp SHA/diff mới trước mỗi wave, giữ các thay đổi có sẵn của người khác.
+
+Đã đối chiếu src/domain/*, index.html, scripts/build.js, package.json, hai tsconfig, README, test/domain, acceptance, e2e và oracle; review bắt buộc LOOP-28-codex.md. Code hiện tại đã tiến xa hơn LC28: inline shuffle, snapshot, lịch sử, builder/bank và collector tồn tại. Không được giao worker viết lại toàn bộ tính năng từ mô tả LC28. Trích xuất hành vi có test, sửa sai có regression, bổ sung phần thiếu.
+
+Baseline chạy thật trong WEB-PLAN: `node --test --test-reporter=tap "test/**/*.test.ts"` exit 1: 394 tests, 59 suites, 393 pass, 1 fail, 0 skip. Test fail: `LC35-F03 regression: attempt A exhausting retry budget does not starve attempt B of its retry budget`, tại test/e2e/demoFlow.test.ts:4141, assertion `Retry callback 1 must exist` tại :4180. Không xóa/skip/làm yếu test để xanh. Cả `npx --no-install tsc -p tsconfig.json` và `npx --no-install tsc -p tsconfig.web.json` exit 0. `node scripts/build.js` exit 0 nhưng hiện chỉ kiểm asset/schema/syntax Apps Script, KHÔNG emit dist. `python -B test/oracle/oracle.py --check` exit 0, 11 pass, 0 fail; 1.632 fixtures, 5.849 maxima configs, 9 negative controls. Test tên e2e hiện là Node VM với DOM/storage/fetch stubs, không phải browser thật. Browser/IME/AT/CORS live trong phiên lập kế hoạch: NOT_RUN.
+
+## 2. Quy tắc worker, ownership và gate
+
+- ops/web/tasks.json là phân công duy nhất. Engine anti cho mọi code; WEB-REVIEW là codex, review_only=true. Không sửa src/domain; mọi chấm, validation điểm, rational, shuffle phải import qua `src/domain/index.ts`, không deep import và không giữ bản scorer inline thứ hai sau cutover.
+- Mỗi wave 6–10 task, scope không giao nhau (kể cả glob cha/con). File wave trước là read-only trừ khi scope wave sau nhận lại. Chỉ đúng một task mỗi wave được sở hữu bất kỳ file nào trong index.html/scripts/build.js/README.md; gọi là glue. Task khác không sửa cả ba file này. Chỉ glue sửa tsconfig dùng chung. Không sửa package/lock/dependency. Test worker ở test/<vùng>/**/*.test.ts, node:test + assert/strict; ghi lệnh/exit/pass/fail/skip, typecheck cả hai config. NOT_RUN phải có lý do, không dùng mock thay bằng chứng live.
+- Wave barrier: không bắt đầu wave sau trước khi API wave trước tồn tại, tests/typecheck/build gate xanh hoặc điều phối ghi blocker. Trong wave chỉ type-import API đã có từ wave trước; không tự tạo stub production hay bản sao file worker khác. Glue có thể làm chuẩn bị song song nhưng tích hợp sau khi các module cùng wave hoàn tất. Scope mismatch → bàn giao blocker, không lấn vùng.
+- W1 sửa baseline đỏ và LC28-F01 trước; gate cuối W1 bắt buộc full suite xanh. W1–W2 giữ index.html legacy chạy được trực tiếp, không thay entrypoint bằng module chưa kiểm. W3 là wave cutover có compatibility harness; root demo vẫn mở được; module build chạy qua HTTP. W4 hardening. W5 nghiệm thu sau sửa, không deploy.
+- Wave 5: WEB-FINAL-DOCS là glue duy nhất (README + wrapper scripts/build.js). WEB-FINAL-INTEGRATE sửa src/app và scripts/web-build.ts, KHÔNG sửa ba file glue. Chuẩn bị docs/review có thể song song; trình tự chốt trong wave: các fix → integrate → docs/wrapper → WEB-REVIEW đọc snapshot ổn định. Review bị invalidated nếu source đổi sau SHA/hash đã kiểm; không review trước rồi coi code đến sau đã được duyệt.
+- Handoff từng task theo M1 §2; cập nhật typecheck theo compiler thực tế 7.0.2, không chép NOT_RUN cũ. Mỗi wave có evidence + changelog + rollback dưới docs/web/wave-N.md do glue sở hữu. Không tuyên bố DONE nếu còn blocker/critical, test fail hoặc owner chưa nghiệm thu milestone.
+
+## 3. Thư mục và hướng phụ thuộc
+
+| Vùng | Trách nhiệm và entrypoint |
+| --- | --- |
+| src/domain (giữ nguyên) | Scoring M1, API index.ts, bigint Rational |
+| src/schema | types.ts, exam.ts: DTO/JSON, metadata/rich content, validate/normalize tương thích |
+| src/storage | index.ts: IndexedDB, localStorage migration, transactions, backup/delete |
+| src/student | index.ts, view.ts: controller attempt, timer, palette/input/history |
+| src/report | index.ts, view.ts, download.ts: projection theo policy, HTML/print |
+| src/ui | index.ts: DOM an toàn, component focus/dialog/status, CSS vùng riêng |
+| src/teacher | index.ts, view.ts: draft soạn đề, preview/publish immutable |
+| src/bank | index.ts, view.ts: taxonomy/query/version reuse |
+| src/collect | index.ts, export.ts: outbox, transport, JSON/CSV, receipt |
+| src/import/zip | index.ts: ZIP reader gốc + giới hạn |
+| src/import/docx | index.ts: XML DOCX → IR |
+| src/import/pdf | index.ts: PDF preview/manual fallback có giới hạn |
+| src/import/preview | index.ts: hiệu đính IR/confirm, không tự publish |
+| src/app | main.ts, shell.html, legacy.ts: composition root/routes/adapters |
+| src/offline | service-worker.ts: cache shell/assets đề đã chọn, version/update |
+| scripts/web-build.ts | build không dependency; scripts/build.js là wrapper do glue |
+| apps-script/sample | mẫu riêng; code cũ apps-script/Code.js không phải dịch vụ đã deploy |
+
+schema chỉ phụ thuộc type/API domain; UI chỉ render dữ liệu đã chiếu; student phụ thuộc schema + domain + StoragePort; teacher/bank phụ thuộc schema + StoragePort + domain; importer chỉ sinh IR, preview gọi teacher qua callback; collect nhận immutable final, không điều khiển timer; app nối ports. Không circular import, không module dùng global studentState/currentExam. Native API bọc qua ports để unit-test thời gian/storage/transport. Không dependency runtime, CDN, framework, OCR/LLM trả phí hoặc npm install. Mọi TS dùng erasable syntax, import `.ts`, `import type`, Node >=24.
+
+## 4. Hợp đồng dữ liệu đề và JSON
+
+Kiểu dưới đây do src/schema/types.ts sở hữu; import các kiểu M1 từ ../domain/index.ts. Các trường readonly và deep-clone/freeze tại publish/start, không chỉ readonly compile-time.
+
+```ts
+import type { ExamVersion, QuestionI, QuestionII, QuestionIII, ChoiceOption, StatementII, Response, AttemptResponses,
+  PresentationOrder, ScoreResult, Validated, ValidationIssue } from '../domain/index.ts';
+export type Section = 'I'|'II'|'III';
+export type ReleasePolicy = 'immediate'|'after_deadline';
+export interface Taxonomy {
+  readonly subject: string; readonly grade: 10|11|12;
+  readonly topic: string; readonly lesson: string;
+  readonly difficulty: 'Nhận biết'|'Thông hiểu'|'Vận dụng';
+}
+export type Block =
+  | { readonly type:'text'; readonly text:string }
+  | { readonly type:'math'; readonly source:string; readonly format:'latex'|'omml'; readonly verified:boolean }
+  | { readonly type:'image'; readonly assetId:string; readonly alt:string }
+  | { readonly type:'table'; readonly rows:readonly (readonly Cell[])[] };
+export interface Cell { readonly blocks:readonly Block[]; readonly rowSpan:number; readonly colSpan:number }
+export interface Provenance { readonly sourceId:string; readonly location:string;
+  readonly confidence:number|null; readonly flags:readonly string[] }
+export interface Asset { readonly assetId:string; readonly mime:string; readonly data:string; readonly alt:string }
+export interface WebOption extends ChoiceOption { readonly label?:string; readonly text:string }
+export interface WebStatement extends StatementII {
+  readonly label?:string; readonly text:string; readonly explanation?:string;
+}
+export interface QuestionContent extends Partial<Taxonomy> {
+  readonly questionId?:string; readonly title?:string; readonly content?:string;
+  readonly image?:string; readonly explanation?:string; readonly blocks?:readonly Block[];
+  readonly provenance?:Provenance;
+}
+export type WebQuestion =
+  | (Omit<QuestionI,'options'> & QuestionContent & { readonly options:readonly WebOption[] })
+  | (Omit<QuestionII,'statements'> & QuestionContent & { readonly statements:readonly WebStatement[] })
+  | (QuestionIII & QuestionContent);
+export interface ExamSettings {
+  readonly durationMinutes:number; readonly maxAttempts:number|null;
+  readonly releasePolicy:ReleasePolicy;
+  readonly shuffleQuestions:boolean; readonly shuffleOptions:boolean;
+}
+export interface WebExam extends Omit<ExamVersion,'questions'> {
+  readonly schemaVersion:'web-exam-v1'; readonly title:string;
+  readonly subject:string; readonly grade:10|11|12;
+  readonly settings:ExamSettings; readonly questions:readonly WebQuestion[];
+  readonly assets:readonly Asset[];
+}
+export interface AttemptKey { readonly examId:string; readonly examVersionId:string; readonly attemptId:string }
+export interface AttemptRecord extends AttemptKey {
+  readonly schemaVersion:'web-attempt-v1'; readonly revision:number;
+  readonly candidateName:string; readonly examSnapshot:WebExam;
+  readonly presentationOrder:PresentationOrder; readonly responses:AttemptResponses;
+  readonly startedAt:number; readonly deadline:number;
+  readonly phase:'draft'|'final'; readonly submittedAt:number|null;
+  readonly scoreDTO:unknown|null;
+}
+export type SaveState = 'local_saved'|'queued'|'sending'|'server_confirmed'|'failed';
+export interface Receipt extends AttemptKey { readonly submissionId:string;
+  readonly payloadHash:string; readonly receivedAt:string; readonly status:'recorded'|'already_recorded' }
+export interface OutboxRecord extends AttemptKey {
+  readonly state:SaveState; readonly finalRevision:number; readonly payloadHash:string;
+  readonly endpointId:string|null; readonly retryCount:number; readonly nextRetryAt:number|null;
+  readonly generation:number; readonly receipt:Receipt|null; readonly lastError:string|null;
+}
+export interface WebError { readonly code:string; readonly path:string; readonly message:string; readonly recoverable:boolean }
+export type Result<T> = {readonly ok:true;readonly value:T}|{readonly ok:false;readonly error:WebError};
+export interface ImportJob { readonly jobId:string; readonly sourceId:string;
+  readonly format:'docx'|'pdf'; readonly state:'reading'|'preview'|'confirmed'|'failed';
+  readonly blocks:readonly Block[]; readonly drafts:readonly ImportDraft[];
+  readonly flags:readonly string[] }
+export interface ImportDraft { readonly draftId:string; readonly question:Partial<WebQuestion>;
+  readonly provenance:Provenance; readonly confirmed:boolean }
+```
+
+`WebQuestion` I/II giữ `text`, `label`, explanation trên options/statements như sample hiện tại. Không làm mất text nested khi projection domain hoặc export roundtrip. `Response` III chỉ string|null, không input type=number, không trim/normalize/cắt/Number/parseFloat. Validation nhập liệu chỉ charset/4 code point của M1, grammar chưa duyệt không thêm regex hẹp.
+
+API schema: `parseExam(input:unknown):Validated<WebExam>`; `toDomainExam(exam:WebExam):ExamVersion`; `exportExam(exam:WebExam):string`; `validateImportDraft(draft:ImportDraft):readonly ValidationIssue[]`. Kiểm metadata riêng rồi gọi validateExamVersion qua barrel. Giữ đúng ID đáp án; không suy từ label A/B/C/D. Đề không có đáp án → lỗi dữ liệu/chờ hiệu đính, không chấm thành 0.
+
+### 4.1 Tương thích sample và legacy
+
+JSON canonical xuất ra có schemaVersion web-exam-v1, ruleSetId custom-v1, inputPolicyId sa-charset-v1, questions giống domain cộng metadata; score luôn chuỗi phân số chuẩn qua scoreResultToDTO/FromDTO. Không JSON.stringify bigint trực tiếp. Metadata không phải quyền truy cập.
+
+`public/sample-exam.json` thiếu schemaVersion/settings/assets vẫn phải nạp được, bảo toàn examId/examVersionId, content Markdown, image, options text/label và statements explanation. Legacy durationMinutes/shuffleSettings/releasePolicy/maxAttempts ở top-level được chuyển vào settings. Thứ tự ưu tiên: canonical settings > legacy top-level > embedded demo defaults có nhãn kế thừa; nếu hai giá trị explicit mâu thuẫn, báo EXAM_SETTINGS_CONFLICT, không âm thầm chọn. Defaults legacy: durationMinutes có sẵn hoặc 50 của demo; shuffle false, maxAttempts null, release immediate. Đây là adapter kế thừa cho fixture luyện tập, không policy mới cho đề publish. Builder phải yêu cầu settings explicit. collectorUrl từ file đề là dữ liệu không tin cậy; không tự gửi tới URL nhập vào; chỉ endpoint owner-approved ngoài đề.
+
+Asset nội bộ giữ relative public/... của sample; export portable đóng gói data/asset map, whitelist MIME PNG/JPEG/WebP và SVG nội bộ đã kiểm; SVG nhập từ người dùng chỉ giữ nguồn inert/cảnh báo, không inject DOM. Chặn javascript:, external relationships/fetch tự động, file path traversal. Text/LaTeX hiển thị escaped; không hứa renderer LaTeX hoàn chỉnh khi không có thư viện, giữ source có nhãn cho ký pháp chưa hỗ trợ.
+
+### 4.2 Fixtures môn học
+
+W1 schema tạo public/exams/{toan-full,ly-part-I,hoa-repeating}.json, nhãn **đề tùy chỉnh minh họa**, không giả mẫu thi chuẩn Bộ. Toán đầy đủ I/II/III (có thể kế thừa sample); Lý 20 câu chỉ I → max 5; Hóa 3 câu chỉ III → mỗi câu 10/3, tổng 10. Đáp án và lời giải được kiểm tay theo nội dung; thêm golden max 15/16 và 10/7 bằng fixtures test, không cần bịa đề chuẩn. Test dùng API domain, điểm expected độc lập, metadata Unicode và export/import giữ ID/text. Mẫu chuẩn chỉ triển khai sau quyết định D05.
+
+## 5. Chữ ký giữa module, sự kiện và lifecycle
+
+Các entrypoint export đúng các chữ ký dưới đây, các kiểu dùng từ schema/types.ts và domain barrel. Helper riêng được phép trong vùng. Callback trả unsubscribe; mọi promise reject phải được app bắt và hiển thị lỗi trung thực.
+
+```ts
+// storage/index.ts
+export interface StoragePort {
+  load(key:AttemptKey):Promise<Result<AttemptRecord|null>>;
+  create(record:AttemptRecord):Promise<Result<AttemptRecord>>;
+  saveDraft(record:AttemptRecord, expectedRevision:number):Promise<Result<AttemptRecord>>;
+  finalize(record:AttemptRecord, expectedRevision:number):Promise<Result<AttemptRecord>>;
+  listAttempts(examId:string, examVersionId:string):Promise<Result<readonly AttemptRecord[]>>;
+  getObject(store:'bank'|'exams'|'imports', id:string):Promise<Result<unknown|null>>;
+  putObject(store:'bank'|'exams'|'imports', id:string, value:unknown, expectedRevision:number|null):Promise<Result<number>>;
+  deleteObject(store:'bank'|'exams'|'imports', id:string, expectedRevision:number):Promise<Result<void>>;
+  getOutbox(key:AttemptKey):Promise<Result<OutboxRecord|null>>;
+  updateOutbox(value:OutboxRecord, expectedGeneration:number|null):Promise<Result<OutboxRecord>>;
+  exportBackup():Promise<Result<Blob>>;
+  importBackup(input:unknown):Promise<Result<void>>;
+  clearAll(confirmed:boolean):Promise<Result<void>>;
+}
+export function openStorage():Promise<Result<StoragePort>>;
+// student/index.ts: injected clock/id generators; không global DOM
+export interface StudentController {
+  getSnapshot():AttemptRecord;
+  answer(response:Response):Promise<Result<AttemptRecord>>;
+  rename(raw:string):Promise<Result<AttemptRecord>>;
+  submit(reason:'manual'|'deadline'):Promise<Result<AttemptRecord>>;
+  subscribe(listener:(event:WebEvent)=>void):()=>void;
+  dispose():void;
+}
+export function startAttempt(exam:WebExam, candidateName:string,
+  deps:{storage:StoragePort;now:()=>number;id:()=>string}):Promise<Result<StudentController>>;
+export function resumeAttempt(key:AttemptKey,
+  deps:{storage:StoragePort;now:()=>number;id:()=>string}):Promise<Result<StudentController>>;
+// report/index.ts
+export interface ReportQuestion {
+  readonly questionVersionId:string; readonly kind:Section;
+  readonly title:string; readonly blocks:readonly Block[]; readonly response:Response|null;
+  readonly status:'full'|'partial'|'wrong'|'unanswered'|'invalid';
+  readonly points:string; readonly maxPoints:string;
+}
+export interface ReleasedReportQuestion extends ReportQuestion {
+  readonly answer: string | readonly {readonly statementId:string;readonly answer:boolean}[];
+  readonly explanation:readonly Block[];
+}
+export interface ReportBase { readonly attempt:AttemptKey; readonly candidateName:string;
+  readonly startedAt:number; readonly submittedAt:number; readonly scoreDTO:unknown;
+  readonly assets:readonly Asset[] }
+export type ReportModel = ReportBase & (
+  | {readonly released:false; readonly questions:readonly ReportQuestion[]}
+  | {readonly released:true; readonly questions:readonly ReleasedReportQuestion[]});
+export function buildReport(final:AttemptRecord, now:number):Result<ReportModel>;
+export function renderReportHtml(model:ReportModel):string;
+export function downloadReport(model:ReportModel):Blob;
+// teacher/index.ts
+export interface ExamDraft { readonly draftId:string; readonly revision:number; readonly exam:WebExam }
+export function createDraft(exam:WebExam, draftId:string):ExamDraft;
+export function editDraft(draft:ExamDraft, patch:unknown):Result<ExamDraft>;
+export function publishDraft(draft:ExamDraft, newVersionId:string, storage:StoragePort):Promise<Result<WebExam>>;
+// bank/index.ts
+export interface BankEntry { readonly questionId:string; readonly questionVersionId:string;
+  readonly revision:number; readonly taxonomy:Taxonomy; readonly question:WebQuestion }
+export function queryBank(entries:readonly BankEntry[], filter:Partial<Taxonomy> & {text?:string;kind?:Section}):readonly BankEntry[];
+export function saveBankEntry(entry:BankEntry, expectedRevision:number|null, storage:StoragePort):Promise<Result<BankEntry>>;
+export function addToDraft(draft:ExamDraft, entry:BankEntry, id:()=>string):Result<ExamDraft>;
+// collect/index.ts, export.ts: transport nhận endpoint đã duyệt do app inject
+export interface CollectorPort { send(final:AttemptRecord, signal:AbortSignal):Promise<unknown> }
+export function enqueue(final:AttemptRecord, storage:StoragePort, endpointId:string|null):Promise<Result<OutboxRecord>>;
+export function drainOutbox(key:AttemptKey, deps:{storage:StoragePort;transport:CollectorPort;now:()=>number}):Promise<Result<OutboxRecord>>;
+export function validateReceipt(input:unknown, expected:OutboxRecord):Result<Receipt>;
+export function exportResults(finals:readonly AttemptRecord[], format:'json'|'csv'):Blob;
+// import/zip/index.ts
+export interface ZipLimits { readonly maxInputBytes:number; readonly maxEntries:number;
+  readonly maxExpandedBytes:number; readonly maxEntryBytes:number }
+export interface ZipEntry { readonly name:string; readonly bytes:Uint8Array }
+export function readZip(bytes:Uint8Array, limits:ZipLimits, signal:AbortSignal):Promise<Result<readonly ZipEntry[]>>;
+// import/docx/index.ts, import/pdf/index.ts
+export function importDocx(file:File, signal:AbortSignal):Promise<Result<ImportJob>>;
+export function importPdf(file:File, signal:AbortSignal):Promise<Result<ImportJob>>;
+// import/preview/index.ts
+export function editImport(job:ImportJob, draftId:string, patch:unknown):Result<ImportJob>;
+export function confirmImport(job:ImportJob, exam:ExamDraft):Result<ExamDraft>;
+// ui/index.ts + views (student/report/teacher/bank/preview) cùng convention
+export function mount(root:HTMLElement, model:unknown, actions:Readonly<Record<string,(value:unknown)=>void>>):()=>void;
+// app/main.ts
+export function bootstrap(root:HTMLElement):Promise<()=>void>;
+```
+
+ReportModel là projection mới, không spread WebQuestion có keys vào model chưa release; answer phần I là optionId, III là raw key, II là array theo statementId. Nội dung/response/status và điểm phân số hiện cả khi chưa release; không thêm field key/explanation vào nhánh released:false. `unknown` ở biên DTO/view không được cast để bỏ validation; test xác nhận chưa release không chứa key/explanation trong DOM/HTML/Blob/print/history. buildReport gọi scoreAttempt(snapshot, responses), so scoreDTO lưu với kết quả recompute; mismatch → SCORE_MISMATCH/quarantine. Không tin stored/client score là authoritative. Mỗi port/type nằm tại vùng ghi trong comment, các vùng khác type-import entrypoint đó; schema không sao chép StoragePort/StudentController/ReportModel/ExamDraft để tránh hai nguồn kiểu.
+
+Sự kiện do schema/types.ts sở hữu:
+```ts
+export type WebEvent =
+ | {readonly type:'attempt_changed';readonly record:AttemptRecord}
+ | {readonly type:'attempt_finalized';readonly record:AttemptRecord}
+ | {readonly type:'sync_changed';readonly key:AttemptKey;readonly outbox:OutboxRecord}
+ | {readonly type:'storage_conflict';readonly key:AttemptKey;readonly revision:number}
+ | {readonly type:'error';readonly error:WebError};
+```
+Không dùng sự kiện làm nguồn sự thật: nhận event phải đọc lại transaction record; BroadcastChannel chỉ phát key/revision/phase, không nickname/answer key. UI unsubscribe/dispose khi chuyển route. async collector callback phải pin tuple AttemptKey + payloadHash + generation, không lấy attempt đang mở để cập nhật.
+
+## 6. Lưu trữ, timer, offline và hai tab
+
+Thiết kế đề xuất D03: IndexedDB `cunata-web`, version 1, stores attempts (key [examId,examVersionId,attemptId]), outbox (cùng key), bank (questionVersionId), exams ([examId,examVersionId]), imports (jobId), meta/quarantine. bank/exams/imports dùng revision envelope. Một readwrite transaction attempts+outbox thực hiện finalize và tạo local_saved record; existing final luôn thắng, không ghi đè score/responses/name/order. saveDraft đọc revision và phase trong cùng transaction, stale revision → STORAGE_CONFLICT. updateOutbox CAS generation chỉ cập nhật sync metadata riêng, không sửa immutable final. LocalStorage chỉ prefs và đọc dữ liệu legacy, không coi read→write là atomic. Nếu D03 chưa duyệt: có thể code/test adapter nhưng không bật migration/cutover mặc định.
+
+Migration đọc các key thực tế `cunata:active_attempt:*`, `cunata:attempt:*`, `cunata:final:*`, `cunata:history:*`, `cunata:snapshot:*`, `cunata:active_exam_snapshot`, `cunata:question_bank`, `cunata_exam_attempt_v1` và STORAGE_KEY legacy trong index. Xác minh prefix/encoding bằng helper thật trước viết mapper. Không đoán delimiter khi ID có `:`. Map responses record cũ → domain arrays giữ own special IDs bằng Map/Object.hasOwn; không ép II thiếu/null thành false. Chuẩn hóa legacy score từ recompute, không lấy number cũ làm rational. Main/final/legacy cùng quy tắc validation; dữ liệu hỏng đưa quarantine, giải thích và cho export raw, không im lặng bỏ mất bài. Migration copy/validate/commit/mark; retry idempotent, không xóa nguồn trước khi xác nhận backup/khôi phục. Không đổi snapshot attempt cũ bằng sample mới. Unknown future schema → STORAGE_VERSION_UNSUPPORTED, giữ nguyên nguồn.
+
+Timer epoch ms: deadline = startedAt + duration, remaining = max(0, ceil((deadline-now)/1000)); interval chỉ render. visibilitychange/pageshow/resume luôn kiểm deadline, autosubmit exactly-once qua transaction. Không reset deadline nếu clock lùi; báo CLOCK_CHANGED, vẫn không thể chống sửa giờ client tuyệt đối. Restore hydrate nickname/state trước mọi autosubmit (LC28-F01), manual submit flush input đã commit composition. Hai tab khác attempt độc lập; cùng attempt stale write bị reject, adopt final đầy đủ metadata. BroadcastChannel/storage event là notification, không khóa. Private/quota/IDB unavailable → báo lỗi lưu, cho tải khẩn cấp, không giả local_saved hoặc silently fallback mất bảo đảm.
+
+Cold-start offline: src/offline/service-worker.ts cache versioned shell, JS/CSS và sample/asset cùng origin; đề người dùng/snapshot dùng IDB, không cache dữ liệu collector hoặc report của người khác. Chỉ hiện “sẵn sàng offline” sau precache verified; lần đầu chưa online thì không hứa mở được. Không activate SW mới giữa bài; báo cập nhật sau khi nộp. HTTP localhost/HTTPS, path-relative hỗ trợ GitHub Pages subpath. file:// demo legacy vẫn mở trực tiếp, SW/IDB/module capability có giới hạn phải ghi rõ. Xóa dữ liệu gồm IDB/local keys/cache có xác nhận, export backup trước xóa; nickname không xác thực, không chứa dữ liệu thật trong fixtures.
+
+## 7. M4 — thu kết quả và giới hạn trust
+
+Mặc định chỉ local practice/export JSON/CSV. collector disabled khi chưa có D04; không lấy endpoint tùy ý từ đề/localStorage. Các trạng thái là sync state riêng với phase draft/final: local_saved chỉ sau durable transaction; queued chỉ khi đã ghi outbox sẵn gửi; sending khi request thật đã bắt đầu; server_confirmed chỉ sau readable validated receipt khớp tuple/hash; failed sau lỗi/quá budget, giữ final/export/retry có kiểm soát. Lỗi lưu local phải có trạng thái UI “chưa lưu/lỗi lưu” ngoài SaveState, không nhầm failed network với mất local.
+
+Budget kỹ thuật đề xuất: tối đa 5 lần gửi gồm lần đầu, backoff 1/2/4/8 giây, timeout 10 giây, nextRetryAt/retryCount durable theo từng tuple; reload/online/chuyển đề không reset budget. Không retry 4xx/receipt sai; network/timeout/5xx có giới hạn. CAS generation chặn response cũ, server_confirmed terminal; mất response sau server write phải retry cùng idempotency key và body, không thêm bản ghi. Server phải atomic dedupe tuple + hash; cùng tuple khác hash → conflict, không overwrite. Export payload `schemaVersion:web-result-v1`, exam/attempt IDs, engine/rules/input policy, started/submitted, raw responses, scoreDTO chuỗi rational; hạn chế PII. Nếu cần trusted grading server dùng key/exam version tin cậy và recompute, không tin key/điểm client.
+
+CSV quote mọi ô, double quote nội bộ, CRLF; chống formula injection cho mọi trường untrusted (nickname, ID, raw III, nội dung): phát hiện prefix = + - @, whitespace/control và dạng fullwidth tương đương; thêm apostrophe, vẫn giữ raw nguyên trong JSON. `-0,5` không bị tính thành công thức; test mở/đọc bằng parser độc lập, có chú thích CSV safe encoding khác raw. JSON không dùng CSV sanitization làm thay đổi đáp án.
+
+Apps Script mẫu ở apps-script/sample/{Code.js,appsscript.json,README.md}: ghi nhãn **“chưa triển khai, chưa kiểm CORS thật”**, không credentials/token/URL ghi lâu dài. Đọc code cũ để giữ regression injection/dedupe nhưng không coi VM mock là xác nhận Google thật. Không fetch no-cors rồi báo success; opaque response không receipt. Nghiệm thu live chỉ sau owner duyệt dịch vụ/quyền: browser origin thật → CORS/redirect/preflight khi có → write → receipt → owner readback Sheets/Drive → retry dedupe; NOT_RUN nếu chưa có quyền, không tuyên bố đã gửi Drive. Static web không có admin auth, không secret URL; teacher/bank là công cụ soạn cục bộ. Key bundled/client-side chỉ phù hợp luyện tập; ẩn DOM theo release là UX, không bảo mật key. Bài kiểm tra cần giấu key hoặc tin điểm phải gated trusted service, không giả cung cấp bằng static-only.
+
+## 8. M5 — DOCX/PDF, IR, preview/hiệu đính
+
+Pipeline bắt buộc đọc → parse → IR → preview/sửa → xác nhận → lưu/xuất; không tự thêm bank/publish khi đọc xong. IR Block/ImportDraft có provenance location (DOCX part/paragraph/table, PDF page/manual region), confidence null nếu không đo, flags rõ. Thiếu key giữ draft chưa hoàn tất, không đoán. Nguồn lỗi hoặc không hỗ trợ giữ file/source inert có đường tải về.
+
+DOCX: ZIP central directory với stored/deflate, DecompressionStream('deflate-raw') + feature detect. Kiểm CRC/size, duplicate names, offsets, overlap, zip slip, encrypted/ZIP64 unsupported; reject trước cấp phát quá lớn, tính tổng bytes thực khi stream decompress để chống zip bomb. XML DOMParser với parsererror, chặn DOCTYPE/entities, không external resolution. Đọc word/document.xml, relationships, styles/numbering nếu có; giữ paragraphs/runs/table rowSpan-colSpan/media nội bộ, alt text và OMML nguồn. Không execute macro, embed HTML, fetch external rel; font/ảnh không hỗ trợ có flag, không xóa âm thầm. OMML→LaTeX chỉ subset có tests đối chiếu; còn lại giữ nguồn và cảnh báo. Câu/phần/option/key nhận dạng heuristic có provenance, bắt buộc người sửa xác nhận.
+
+PDF không có API trình duyệt gốc để trích xuất text/layout tổng quát; DecompressionStream không thay PDF parser. Phạm vi được phép: kiểm signature/size, preview bằng native viewer khi có + tải/mở file, người dùng copy text hoặc nhập thủ công vào IR, đánh dấu `PDF_MANUAL_REVIEW_REQUIRED`. Không hứa tự trích text-layer, multi-column, ảnh, công thức hoặc OCR scan; scan → `PDF_OCR_UNAVAILABLE`, cho nhập/chèn ảnh thủ công có nguồn. Unsupported encrypted/corrupt/không viewer: cảnh báo, không gọi hoàn tất. D06 quyết định có nâng stack sau hay chấp nhận MVP manual. Chưa có quyết định thì không quảng cáo “nhập PDF tự động”. Không tạo PDF parser sơ sài rồi silently sai layout.
+
+Resource caps kỹ thuật đề xuất D07: input 10 MiB; ZIP 2.000 entries; expanded 50 MiB; entry 10 MiB; parse 15 giây, hủy bằng AbortSignal, preview phân trang/lazy, reject đúng boundary. Không áp cap mới lên legacy âm thầm; owner quyết trước bật. Corpus tests: Unicode/Telex, nhiều cột, numbering, bảng gộp, ảnh, OMML unsupported, thiếu keys, malformed XML/ZIP, external relationship, zip bomb, PDF text/scan/encrypted; fixtures synthetic không dữ liệu cá nhân/copyright ngoài quyền.
+
+## 9. Màn hình và acceptance
+
+| Màn hình | Gate chấp nhận |
+| --- | --- |
+| Chọn/nhập đề + nickname | 3 đề mẫu; JSON invalid không mất attempt; tên không xác thực có nhãn; maxAttempts chỉ advisory local, không claim chống lách; đổi đề không đổi snapshot cũ |
+| Làm bài | I bốn lựa chọn ID, II bốn ý true/false/null, III raw string; palette trạng thái; trộn 2 cờ độc lập; reload giữ ID/order/input/timer; IME composition/paste không cắt hoặc nhảy cursor |
+| Trạng thái lưu/mạng | Phân biệt offline/local/error/queue/sending/receipt; quota không badge success; reload lạnh offline đã cache; hai tab thật không stale overwrite |
+| Xác nhận nộp | Focus dialog/return focus, cảnh báo chưa làm, double click/deadline chỉ một final, LC28 restore tên đúng, lỗi scoring không chốt final sai |
+| Báo cáo/lịch sử | Tổng và I/II/III đạt/tối đa, có 12/15, 11/16, 5 max, 10/3 exact; thời gian/ID/name, partial II không full; key/explanation theo release; immutable history |
+| HTML download/print | Blob UTF-8 self-contained, images embedded, không external tracking/key ẩn; mở khi mất mạng; window.print có CSS và không claim tự ghi PDF; chờ release thì tải lại bản mới, không nhúng key hẹn giờ vào bản cũ |
+| Soạn đề | Bật/tắt phần, max lấy computeExamMax; draft chưa hợp lệ được sửa nhưng không publish; edit/reorder/duplicate remap ID+key; publish version mới, snapshot cũ bất biến |
+| Bank | 5 tầng taxonomy, search/filter đồng thời, immutable versions, reuse không sửa nguồn; import/export/backup/delete có xác nhận; duplicate source cảnh báo |
+| Thu kết quả | JSON/CSV offline usable; queued/sending/failed thật; isolation attempt A/B, late receipt/reload/timeout/idempotency; live Google gated, không giả quyền |
+| Nhập/preview | DOCX IR giữ text/bảng/ảnh/OMML hoặc flag; PDF giới hạn §8; edit/key mapping/confirm từng draft; cancel/fail không ghi một nửa vào bank |
+
+M6 xuyên màn hình: tiếng Việt, 320/390/768/1280 CSS px, zoom 200%, keyboard-only, focus visible/không trap ngoài modal, labels/fieldset/legend, status aria-live không đọc timer từng giây, contrast WCAG AA (4.5:1 text/3:1 UI lớn), touch target mục tiêu 44px. Telex/VNI thật cần người/công cụ nhập OS, dispatch composition event chỉ test mô phỏng. Math/table/image không overflow che đáp án. Reduced-motion, không cảnh báo alert chặn timer dài. Ghi screenshot/trace/log thật, thiếu browser/axe/Lighthouse thì NOT_RUN, không cài tool tự ý.
+
+Performance mục tiêu kỹ thuật để đo, không claim đã đạt: 1000 câu (cap M1 chưa duyệt) không render toàn DOM ngay; input→paint p95 <100ms trên môi trường ghi rõ; initial compressed shell <500 KiB không tính đề/media; lần hiển thị đầu <2 giây trên local HTTP đã ghi máy/trình duyệt; import caps §8. Benchmark trước/sau, heap/long tasks nếu API hỗ trợ; không giả kết quả từ unit tests.
+
+## 10. Build, local run, parity và rollback
+
+Đích một lệnh `node scripts/build.js` → validate + typecheck + emit module ES2022 sang dist/ + copy shell/styles/public + SW, exit khác 0 khi asset thiếu/type/error. scripts/web-build.ts dùng child_process gọi `npx --no-install tsc` hiện có với config emit riêng tsconfig.build.json (noEmit false, rewriteRelativeImportExtensions true, allowImportingTsExtensions phù hợp), không bundler/dependency mới. Config build chỉ src runtime, không test/node scripts; imports `.ts` thành `.js`; module graph kiểm không còn bare import/server paths. Hai tsconfig kiểm tra hiện tại vẫn sạch. Glue W1 chuẩn bị config; W2 chuẩn bị build trong khi legacy còn chạy; W3 mới cutover.
+
+dist/index.html module entry src/app/main.js theo outDir/rootDir thực tế, assets relative, hoạt động dưới subpath `/Cunata/`. Root index giữ demo legacy suốt W1–W2. W3 có src/app/legacy.ts bridge tới module cho HTTP và fallback artifact cho mở root file trực tiếp; cách tạo fallback dùng cùng source compiler/output, không duy trì scorer viết tay thứ hai. Fallback có thể dùng TypeScript compiler API đã cài ở build-time để chuyển static module graph sang IIFE với bảng exports (AST, không regex xóa imports), reject cycle/dynamic import chưa hỗ trợ; không đưa TypeScript runtime vào browser bundle. Test source/module/fallback differential cùng fixtures. Nếu chưa chứng minh file:// fallback thì không thay root legacy; ghi cutover BLOCKED, không nhận mất khả năng mở demo. Không gọi scripts/update-index.js cũ (có thể tái sinh implementation lỗi).
+
+Xem build: `python -m http.server 8000 --directory dist`, mở http://localhost:8000/; test thêm subpath bằng server repo mở /dist/ và mô phỏng /Cunata/. Không `npx serve` có thể tải package. Offline cần localhost/HTTPS và đã cache lần đầu. HTML report là file portable, PDF dùng window.print, không dependency.
+
+Parity gate trước đổi root: chạy legacy và module trên cùng 1.632 fixtures oracle, so total/max/từng phần/status/raw/order; legacy sai theo contract thì regression ghi rõ corrected behavior, không giữ bug để parity. VM e2e cũ phải xanh qua bridge/harness dùng chung domain, giữ các assertions hành vi, không xóa test. Browser thật làm→refresh→offline→deadline/manual→nộp→báo cáo→download/in, hai tab, Unicode name; compare semantic JSON + screenshots theo viewport, không chỉ DOM contains. Các test acceptance/oracle/domain phải xanh mỗi wave. Không ghi count cố định là bảo đảm.
+
+Rollback: mỗi docs/web/wave-N.md ghi SHA/hash trước/sau, API changed, checks và giới hạn. Build tạo staging rồi promote dist khi checks qua, không để build fail phá demo. Bản legacy có hash làm mốc, không ghi đè source bằng helper cũ. Migration giữ nguồn/backup; rollback UI không downgrade DB destructive; schema mới unsupported phải báo và cho export, owner duyệt recovery. Điều phối mới commit theo đợt, worker không commit. Không có deploy trong backlog này.
+
+## 11. Mã lỗi và xử lý
+
+Giữ nguyên codes domain/ValidationIssue, không đổi sang lỗi điểm 0. Web Result error gồm code/path/message/recoverable, message tiếng Việt escaped, không secret/raw PII trong console. Tối thiểu:
+
+| Nhóm | Codes và hành động |
+| --- | --- |
+| Schema | EXAM_SETTINGS_CONFLICT, EXAM_SCHEMA_UNSUPPORTED, ASSET_UNSAFE, PAYLOAD_LIMIT; từ chối import, giữ bài cũ |
+| Storage | STORAGE_UNAVAILABLE, STORAGE_QUOTA, STORAGE_CONFLICT, STORAGE_CORRUPT, STORAGE_VERSION_UNSUPPORTED; không success giả, export/quarantine |
+| Attempt | ATTEMPT_FINALIZED, ATTEMPT_LIMIT_LOCAL, CLOCK_CHANGED, SCORE_MISMATCH; adopt final/không reset deadline, cảnh báo trust |
+| Collector | COLLECTOR_DISABLED, COLLECTOR_TIMEOUT, COLLECTOR_NETWORK, COLLECTOR_HTTP, RECEIPT_INVALID, PAYLOAD_CONFLICT, RETRY_EXHAUSTED; giữ final, không server_confirmed |
+| Import | ZIP_INVALID, ZIP_UNSUPPORTED, ZIP_LIMIT, XML_INVALID, DOCX_UNSUPPORTED, IMPORT_CANCELLED, IMPORT_KEY_MISSING, IMPORT_UNCONFIRMED, PDF_MANUAL_REVIEW_REQUIRED, PDF_OCR_UNAVAILABLE; preview/cảnh báo, không tự publish |
+| Download | REPORT_POLICY_LOCKED, REPORT_ASSET_MISSING, DOWNLOAD_FAILED; không embed key trước release, cho retry |
+
+## 12. Cần Trưởng phòng chốt
+
+Không thấy bằng chứng phê duyệt thay thế các quyết định mở LC28. Chưa chốt không ngăn viết plan, sửa bug hoặc test ports; chặn bật tính năng/policy và nghiệm thu tương ứng. Status bàn giao WEB-PLAN: NEED_DECISION theo yêu cầu task; đủ hai file để review, không tự biến lựa chọn kỹ thuật đề xuất thành quyết định nghiệp vụ.
+
+| ID | 2–3 phương án và gate |
+| --- | --- |
+| D01 Grammar III | A giữ charset/4 ký tự sa-charset-v1 tạm; B grammar hẹp bằng inputPolicyId mới; C policy riêng theo preset đã duyệt. Chặn validator nghiệp vụ mới, không đổi scoring hiện có. |
+| D02 Điểm hiển thị | A chỉ phân số exact; B số thập phân với digits/mode do owner chọn, vẫn rational; C exact kèm decimal xấp xỉ có nhãn. Chặn chốt format báo cáo, API nhận policy không tự đặt rounding chính thức. |
+| D03 Storage/report | A localStorage demo + HTML, giới hạn race nêu rõ, chưa nghiệm thu hai tab; B IndexedDB transactional + localStorage migration + HTML/print đề xuất §6; C B + PDF engine sau đánh giá riêng. Chặn bật migration/cutover và nghiệm thu M2; không tự phê duyệt chỉ vì API native được phép. |
+| D04 Collector/quyền | A local/export, chưa thu Google; B owner-controlled Apps Script pilot, kiểm CORS/receipt/readback thật; C trung gian serverless được duyệt để grading/release đáng tin. Chặn gửi mạng, production M4; không URL token dài hạn trong bundle. |
+| D05 Preset chuẩn | A chỉ custom-v1; B chọn môn/năm/văn bản chính thức để verify trước khi thêm ruleSet. Chặn nhãn “chuẩn THPT”, không chặn ba đề minh họa. |
+| D06 PDF | A chấp nhận native preview + manual IR, không OCR/auto extraction; B duyệt thư viện/parser riêng sau đánh giá; C hoãn PDF tự động sang milestone sau. Chặn claim importer đầy đủ và nghiệm thu phần tự động của M5. |
+| D07 Limits/grouping | A duyệt M1 1000 câu, nhóm I→II→III khi trộn, caps §8; B đổi limits/grouping có version/migration/regression. Chặn áp giới hạn mới như policy đã duyệt. |
+| D08 Release/assessment | A luyện tập keys client, immediate; B luyện tập after_deadline chỉ UX, chấp nhận hạn chế clock/key; C kiểm tra giấu key/trusted grading cần dịch vụ duyệt D04. Chặn quảng cáo bảo mật bài kiểm tra chỉ bằng web tĩnh. |
+
+## 13. Lịch thực thi và evidence cuối
+
+Manifest gồm 5 wave: 10 / 10 / 8 / 8 / 6 task (42 tổng). W1 APIs/ports/ZIP/sửa regression; W2 views/DOCX/PDF/build; W3 ghép module và offline; W4 hardening/browser/security/performance; W5 sửa cuối/tích hợp/docs/review ổn định. Không phải mọi mục cần owner quyết đều có thể hoàn tất trong 5 wave nếu chưa nhận quyết định; task phụ thuộc phải bàn giao NEED_DECISION/NOT_IMPLEMENTED đúng nghĩa, không demo giả.
+
+WEB-REVIEW kiểm diff source + working tree và dependency/permission changes, không chỉ HEAD (worker không commit); ghi SHA/hash và test evidence, findings severity/file:line/repro/fix/regression, coverage gaps, verdict. Final release không được APPROVED nếu còn blocker/critical hoặc suite đỏ; policy chưa chốt ghi NEEDS_OWNER_DECISION. Owner acceptance theo M2–M6 độc lập với kế hoạch READY_FOR_REVIEW. Evidence baseline ở §1 chỉ xác minh code có sẵn, không test một implementation tương lai.
