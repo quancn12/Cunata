@@ -16,30 +16,44 @@ Dự án chú trọng tính chuẩn xác tuyệt đối trong quy tắc chấm �
 
 ## 2. Lệnh Build & Xác Minh Hệ Thống
 
-### 2.1. Kiểm tra tài nguyên và tính hợp lệ của đề mẫu
-Kiểm tra toàn bộ tài nguyên frontend (`index.html`, `styles/style.css`, `public/sample-exam.json`, `public/q01-bbt.svg`) và kiểm tra schema của đề thi:
+### 2.1. Đóng gói module và kiểm tra tài nguyên hệ thống
+Lệnh một bước xác minh toàn bộ tài nguyên frontend, kiểm tra schema đề thi mẫu, và thực thi quy trình build module ES2022 theo cơ chế staged dist:
 ```bash
 node scripts/build.js
 ```
+Hoặc gọi trực tiếp pipeline build web module:
+```bash
+node scripts/web-build.ts
+```
 
 ### 2.2. Kiểm tra kiểu tĩnh (Typecheck)
-Kiểm tra type safety với TypeScript cho domain và web harness:
+Kiểm tra type safety với TypeScript cho domain, composition root, router và web harness:
 ```bash
 npx --no-install tsc -p tsconfig.json
 npx --no-install tsc -p tsconfig.web.json
 ```
 
 ### 2.3. Chạy toàn bộ Test Suite
-Chạy toàn bộ test suite (686 unit, domain, acceptance, oracle và E2E tests):
+Chạy toàn bộ test suite unit, domain, acceptance, oracle và E2E tests:
 ```bash
 npm test
 ```
-hoặc chạy bằng `node:test`:
+hoặc chạy kiểm thử riêng theo từng phân vùng:
 ```bash
-node --test "test/**/*.test.ts"
+node --test "test/glue/wave2/**/*.test.ts"
+node --test "test/glue/wave1/**/*.test.ts"
+node --test "test/e2e/demoFlow.test.ts"
+node --test "test/schema/**/*.test.ts"
 ```
 > [!NOTE]
 > Các bài kiểm thử E2E hiện tại chạy trên môi trường Node VM với DOM/storage/fetch stubs. Kiểm thử trên trình duyệt đồ họa thật (Chromium/Firefox/WebKit), kiểm thử bộ gõ OS IME (Telex/VNI) thật và CORS live với Google hiện được đánh dấu trung thực là `NOT_RUN` trong báo cáo kỹ thuật.
+
+### 2.4. Trải nghiệm bản build module độc lập (`dist/`)
+Sau khi chạy build, bạn có thể khởi chạy server cục bộ để kiểm tra bản phát hành module hóa:
+```bash
+python -m http.server 8000 --directory dist
+```
+Truy cập: `http://localhost:8000/` (hỗ trợ đầy đủ đường dẫn relative và subpath GitHub Pages `/Cunata/`).
 
 ---
 

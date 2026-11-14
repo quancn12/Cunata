@@ -25,13 +25,79 @@ export class EnhancedMockElement extends MockElement {
     // Stub for scrollIntoView
   }
 
+  click(): void {
+    if (this.disabled || this.hasAttribute("disabled")) {
+      return;
+    }
+    this.dispatchEvent(new MockEvent("click"));
+  }
+
   querySelector<T extends MockElement>(selector: string): T | null {
     const all = this.querySelectorAll<T>(selector);
     return all[0] ?? null;
   }
 
   querySelectorAll<T extends MockElement>(selector: string): T[] {
-    const results: T[] = [];
+    const trimmed = selector.trim();
+    if (!trimmed) return [];
+
+    // Helper to split by top-level delimiter (ignoring commas/spaces inside brackets or quotes)
+    const splitTopLevel = (str: string, delimiter: "," | " "): string[] => {
+      const parts: string[] = [];
+      let inBracket = false;
+      let inQuote: string | null = null;
+      let cur = "";
+      for (let i = 0; i < str.length; i++) {
+        const ch = str[i]!;
+        if (inQuote) {
+          if (ch === inQuote) inQuote = null;
+          cur += ch;
+        } else if (ch === '"' || ch === "'") {
+          inQuote = ch;
+          cur += ch;
+        } else if (ch === "[") {
+          inBracket = true;
+          cur += ch;
+        } else if (ch === "]") {
+          inBracket = false;
+          cur += ch;
+        } else if (delimiter === "," && ch === "," && !inBracket) {
+          parts.push(cur.trim());
+          cur = "";
+        } else if (delimiter === " " && /\s/.test(ch) && !inBracket) {
+          if (cur.trim()) {
+            parts.push(cur.trim());
+            cur = "";
+          }
+        } else {
+          cur += ch;
+        }
+      }
+      if (cur.trim()) parts.push(cur.trim());
+      return parts;
+    };
+
+    // Support comma-separated selectors (top-level only)
+    const commaParts = splitTopLevel(trimmed, ",");
+    if (commaParts.length > 1) {
+      const results: T[] = [];
+      for (const sel of commaParts) {
+        results.push(...this.querySelectorAll<T>(sel));
+      }
+      return results;
+    }
+
+    // Support space-separated descendant selectors e.g. "tbody tr" (top-level only)
+    const spaceParts = splitTopLevel(trimmed, " ");
+    if (spaceParts.length > 1) {
+      const firstMatches = this.querySelectorAll<T>(spaceParts[0]!);
+      const remainingSel = spaceParts.slice(1).join(" ");
+      const descendantResults: T[] = [];
+      for (const parent of firstMatches) {
+        descendantResults.push(...parent.querySelectorAll<T>(remainingSel));
+      }
+      return descendantResults;
+    }
 
     const matchesSingle = (el: MockElement, sel: string): boolean => {
       let current = sel.trim();
@@ -56,7 +122,7 @@ export class EnhancedMockElement extends MockElement {
           if (!m || !el.classList.contains(m[1]!)) return false;
           current = current.slice(m[0].length);
         } else if (current.startsWith("[")) {
-          const m = current.match(/^\[([a-zA-Z0-9_-]+)(?:=([^\],]+))?\]/);
+          const m = current.match(/^\[([a-zA-Z0-9_-]+)(?:=("[^"]*"|'[^']*'|[^\]]+))?\]/);
           if (!m) return false;
           const attrName = m[1]!.toLowerCase();
           const attrVal = m[2] ? m[2].replace(/^["']|["']$/g, "") : null;
@@ -72,25 +138,18 @@ export class EnhancedMockElement extends MockElement {
           if (matchesSingle(el, m[1]!)) return false;
           current = current.slice(m[0].length);
         } else {
-          break;
+          return false;
         }
       }
 
       return true;
     };
 
+    const results: T[] = [];
     const traverse = (node: MockNode) => {
       for (const child of node.childNodes) {
         if (child instanceof MockElement) {
-          const subSelectors = selector.split(",").map((s) => s.trim());
-          let matched = false;
-          for (const sel of subSelectors) {
-            if (matchesSingle(child, sel)) {
-              matched = true;
-              break;
-            }
-          }
-          if (matched) {
+          if (matchesSingle(child, trimmed)) {
             results.push(child as unknown as T);
           }
           traverse(child);
@@ -112,7 +171,6 @@ export class EnhancedMockDocument extends MockDocument {
 
   createElement(tagName: string): EnhancedMockElement {
     const el = new EnhancedMockElement(tagName, this);
-    // Add toggle to classList if not present
     if (typeof (el.classList as any).toggle !== "function") {
       (el.classList as any).toggle = function (className: string, force?: boolean): boolean {
         const has = this.contains(className);

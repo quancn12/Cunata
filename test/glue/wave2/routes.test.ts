@@ -123,8 +123,9 @@ describe('WEB-W2-GLUE — Router & Hash Management', () => {
     }
 
     assert.ok(notifiedState);
-    assert.equal(notifiedState.route, 'report');
-    assert.equal(notifiedState.params.attemptId, 'att-xyz');
+    const finalState = notifiedState as RouteState;
+    assert.equal(finalState.route, 'report');
+    assert.equal(finalState.params.attemptId, 'att-xyz');
 
     // Calling navigate updates window.location.hash
     router.navigate('exam');

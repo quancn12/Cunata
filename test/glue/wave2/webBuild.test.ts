@@ -5,9 +5,14 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import path from 'node:path';
-import os from 'node:os';
+import rawFs from 'node:fs';
+import rawPath from 'node:path';
+// @ts-ignore
+import rawOs from 'node:os';
+
+const fs = rawFs as any;
+const path = rawPath as any;
+const os = rawOs as any;
 import {
   validateBrowserEmit,
   prepareShellAndAssets,

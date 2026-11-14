@@ -578,40 +578,31 @@ function parseTable(
   }
 
   // Calculate rowspan matrix
-  // Matrix tracking active vertical merges: colIndex -> { cellRef, startRow }
   const activeMerges = new Map<number, { cell: Cell; rowSpan: number }>();
   const finalRows: (readonly Cell[])[] = [];
 
   for (let r = 0; r < rawRows.length; r++) {
     const rawRow = rawRows[r]!;
     const rowCells: Cell[] = [];
-    let currentPhysicalCol = 0;
+    let colIdx = 0;
 
     for (let c = 0; c < rawRow.cells.length; c++) {
       const rawCell = rawRow.cells[c]!;
-
-      // Skip physical columns already occupied by vertical merges
-      while (activeMerges.has(currentPhysicalCol)) {
-        currentPhysicalCol++;
-      }
-
-      const assignedCol = currentPhysicalCol;
 
       if (rawCell.vMerge === "restart") {
         const cellObj: Cell = {
           blocks: rawCell.blocks,
           colSpan: rawCell.colSpan,
-          rowSpan: 1, // Will be updated as continuation rows appear
+          rowSpan: 1,
         };
-        activeMerges.set(assignedCol, { cell: cellObj, rowSpan: 1 });
+        activeMerges.set(colIdx, { cell: cellObj, rowSpan: 1 });
         rowCells.push(cellObj);
       } else if (rawCell.vMerge === "continue") {
-        const mergeState = activeMerges.get(assignedCol);
+        const mergeState = activeMerges.get(colIdx);
         if (mergeState) {
           mergeState.rowSpan += 1;
           (mergeState.cell as { rowSpan: number }).rowSpan = mergeState.rowSpan;
         } else {
-          // Fallback if no restart row preceded
           rowCells.push({
             blocks: rawCell.blocks,
             colSpan: rawCell.colSpan,
@@ -619,8 +610,7 @@ function parseTable(
           });
         }
       } else {
-        // No vMerge
-        activeMerges.delete(assignedCol);
+        activeMerges.delete(colIdx);
         rowCells.push({
           blocks: rawCell.blocks,
           colSpan: rawCell.colSpan,
@@ -628,7 +618,7 @@ function parseTable(
         });
       }
 
-      currentPhysicalCol += rawCell.colSpan;
+      colIdx += rawCell.colSpan;
     }
 
     finalRows.push(rowCells);

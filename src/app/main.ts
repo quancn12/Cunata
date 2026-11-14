@@ -145,8 +145,8 @@ export async function bootstrap(
   });
 
   const storageRes = await openStorage(options?.storageAdapter);
-  if (!storageRes.ok) {
-    console.warn('[Bootstrap] Storage unavailable, operating with in-memory fallback:', storageRes.error);
+  if (!storageRes.ok && options?.storageAdapter) {
+    console.warn('[Bootstrap] Injected storage unavailable, operating with in-memory fallback:', storageRes.error);
   }
   const storage: StoragePort = storageRes.ok
     ? storageRes.value
@@ -167,7 +167,15 @@ export async function bootstrap(
       };
 
   const router = createRouter(options?.initialRoute ?? 'exam');
-  const announcer = createStatusAnnouncer();
+  const doc = root.ownerDocument || (typeof document !== 'undefined' ? document : null);
+  let announcer: ReturnType<typeof createStatusAnnouncer> | null = null;
+  if (doc) {
+    try {
+      announcer = createStatusAnnouncer({ document: doc as Document });
+    } catch {
+      announcer = null;
+    }
+  }
 
   const ctx: AppContext = {
     storage,

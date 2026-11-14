@@ -63,32 +63,38 @@ describe("WEB-W2-DOCX: End-to-End DOCX Importer & Semantic Segmentation", () => 
       const d1 = job.drafts[0]!;
       assert.strictEqual(d1.confirmed, false);
       assert.strictEqual(d1.question.kind, "I");
-      assert.strictEqual(d1.question.title, "Câu 1");
-      assert.strictEqual(d1.provenance.location, "part:I,question:1");
-      assert.strictEqual(d1.provenance.confidence, null);
-      assert.strictEqual(d1.question.options?.length, 4);
-      // Option A was bolded in source -> resolved
-      assert.strictEqual(d1.question.correctOptionId, "opt-1-A");
+      if (d1.question.kind === "I") {
+        assert.strictEqual(d1.question.title, "Câu 1");
+        assert.strictEqual(d1.provenance.location, "part:I,question:1");
+        assert.strictEqual(d1.provenance.confidence, null);
+        assert.strictEqual(d1.question.options?.length, 4);
+        // Option A was bolded in source -> resolved
+        assert.strictEqual(d1.question.correctOptionId, "opt-1-A");
+      }
 
       // Draft 2 (Part II)
       const d2 = job.drafts[1]!;
       assert.strictEqual(d2.confirmed, false);
       assert.strictEqual(d2.question.kind, "II");
-      assert.strictEqual(d2.question.title, "Câu 2");
-      assert.strictEqual(d2.provenance.location, "part:II,question:2");
-      assert.strictEqual(d2.question.statements?.length, 4);
-      assert.strictEqual(d2.question.statements?.[0]?.answer, true);
-      assert.strictEqual(d2.question.statements?.[1]?.answer, true);
-      assert.strictEqual(d2.question.statements?.[2]?.answer, false);
-      assert.strictEqual(d2.question.statements?.[3]?.answer, false);
+      if (d2.question.kind === "II") {
+        assert.strictEqual(d2.question.title, "Câu 2");
+        assert.strictEqual(d2.provenance.location, "part:II,question:2");
+        assert.strictEqual(d2.question.statements?.length, 4);
+        assert.strictEqual(d2.question.statements?.[0]?.answer, true);
+        assert.strictEqual(d2.question.statements?.[1]?.answer, true);
+        assert.strictEqual(d2.question.statements?.[2]?.answer, false);
+        assert.strictEqual(d2.question.statements?.[3]?.answer, false);
+      }
 
       // Draft 3 (Part III)
       const d3 = job.drafts[2]!;
       assert.strictEqual(d3.confirmed, false);
       assert.strictEqual(d3.question.kind, "III");
-      assert.strictEqual(d3.question.title, "Câu 3");
-      assert.strictEqual(d3.question.answerKey, "2");
-      assert.ok(d3.question.explanation?.includes("Lời giải"));
+      if (d3.question.kind === "III") {
+        assert.strictEqual(d3.question.title, "Câu 3");
+        assert.strictEqual(d3.question.answerKey, "2");
+        assert.ok(d3.question.explanation?.includes("Lời giải"));
+      }
     }
   });
 
@@ -117,8 +123,11 @@ describe("WEB-W2-DOCX: End-to-End DOCX Importer & Semantic Segmentation", () => 
 
     if (res.ok) {
       const d1 = res.value.drafts[0]!;
-      assert.strictEqual(d1.question.correctOptionId, "opt-1-B");
-      assert.ok(!d1.provenance.flags.includes("KEY_MISSING"));
+      assert.strictEqual(d1.question.kind, "I");
+      if (d1.question.kind === "I") {
+        assert.strictEqual(d1.question.correctOptionId, "opt-1-B");
+        assert.ok(!d1.provenance.flags.includes("KEY_MISSING"));
+      }
     }
   });
 
@@ -144,10 +153,13 @@ describe("WEB-W2-DOCX: End-to-End DOCX Importer & Semantic Segmentation", () => 
 
     if (res.ok) {
       const d1 = res.value.drafts[0]!;
-      assert.strictEqual(d1.question.correctOptionId, undefined);
-      assert.ok(d1.provenance.flags.includes("KEY_MISSING"));
-      assert.strictEqual(d1.provenance.confidence, null);
-      assert.strictEqual(d1.confirmed, false);
+      assert.strictEqual(d1.question.kind, "I");
+      if (d1.question.kind === "I") {
+        assert.strictEqual(d1.question.correctOptionId, undefined);
+        assert.ok(d1.provenance.flags.includes("KEY_MISSING"));
+        assert.strictEqual(d1.provenance.confidence, null);
+        assert.strictEqual(d1.confirmed, false);
+      }
     }
   });
 
@@ -519,6 +531,171 @@ describe("WEB-W2-DOCX: End-to-End DOCX Importer & Semantic Segmentation", () => 
       if (!res.ok) {
         assert.strictEqual(res.error.code, "IMPORT_CANCELLED");
         assert.strictEqual(res.error.recoverable, true);
+      }
+    });
+
+    it("parses inline choices on a single line (A. ... B. ... C. ... D. ...)", async () => {
+      const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>PHẦN I. Trắc nghiệm</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Câu 1. Nghiệm của phương trình 2x - 4 = 0 là:</w:t></w:r></w:p>
+    <w:p><w:r><w:t>A. x = 1    B. x = 2    C. x = -2    D. x = 0</w:t></w:r></w:p>
+  </w:body>
+</w:document>`;
+
+      const docxBytes = await buildSyntheticDocx({ documentXml });
+      const file = createMockDocxFile(docxBytes);
+      const ac = new AbortController();
+
+      const res = await importDocx(file, ac.signal);
+      assert.strictEqual(res.ok, true);
+      if (res.ok) {
+        assert.strictEqual(res.value.drafts.length, 1);
+        const d1 = res.value.drafts[0]!;
+        assert.strictEqual(d1.question.kind, "I");
+        if (d1.question.kind === "I") {
+          assert.strictEqual(d1.question.options?.length, 4);
+          assert.strictEqual(d1.question.options?.[0]?.label, "A");
+          assert.strictEqual(d1.question.options?.[0]?.text, "x = 1");
+          assert.strictEqual(d1.question.options?.[1]?.label, "B");
+          assert.strictEqual(d1.question.options?.[1]?.text, "x = 2");
+          assert.strictEqual(d1.question.options?.[2]?.label, "C");
+          assert.strictEqual(d1.question.options?.[2]?.text, "x = -2");
+          assert.strictEqual(d1.question.options?.[3]?.label, "D");
+          assert.strictEqual(d1.question.options?.[3]?.text, "x = 0");
+        }
+      }
+    });
+
+    it("flags KEY_LENGTH_EXCEEDED when short answer key exceeds 4 characters", async () => {
+      const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>PHẦN III. Trả lời ngắn</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Câu 1. Tìm giá trị của hằng số pi:</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Đáp án: 3,14159</w:t></w:r></w:p>
+  </w:body>
+</w:document>`;
+
+      const docxBytes = await buildSyntheticDocx({ documentXml });
+      const file = createMockDocxFile(docxBytes);
+      const ac = new AbortController();
+
+      const res = await importDocx(file, ac.signal);
+      assert.strictEqual(res.ok, true);
+      if (res.ok) {
+        const d1 = res.value.drafts[0]!;
+        assert.ok(d1.provenance.flags.includes("KEY_LENGTH_EXCEEDED"));
+      }
+    });
+
+    it("extracts MathType legacy OLE preview images with FALLBACK_MATHTYPE_IMAGE flag", async () => {
+      const wmfBytes = new Uint8Array([0xd7, 0xcd, 0xc6, 0x9a, 0x00, 0x00]);
+      const relsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rIdOle" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/imageOle.wmf"/>
+</Relationships>`;
+
+      const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+            xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+            xmlns:v="urn:schemas-microsoft-com:vml"
+            xmlns:o="urn:schemas-microsoft-com:office:office">
+  <w:body>
+    <w:p>
+      <w:r>
+        <w:object>
+          <v:shape id="_x0000_i1025" type="#_x0000_t75">
+            <v:imagedata r:id="rIdOle"/>
+          </v:shape>
+          <o:OLEObject ProgID="Equation.3" r:id="rIdOle"/>
+        </w:object>
+      </w:r>
+    </w:p>
+  </w:body>
+</w:document>`;
+
+      const docxBytes = await buildSyntheticDocx({
+        documentXml,
+        relsXml,
+        mediaEntries: [{ name: "media/imageOle.wmf", bytes: wmfBytes }],
+      });
+
+      const file = createMockDocxFile(docxBytes);
+      const ac = new AbortController();
+
+      const res = await importDocx(file, ac.signal);
+      assert.strictEqual(res.ok, true);
+      if (res.ok) {
+        assert.ok(res.value.flags.includes("FALLBACK_MATHTYPE_IMAGE"));
+        assert.ok(res.value.flags.includes("DOCX_UNSUPPORTED_VECTOR_IMAGE"));
+      }
+    });
+
+    it("rejects malformed XML in word/document.xml with XML_INVALID", async () => {
+      const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body><w:p><w:r><w:t>Unclosed tag</w:body>
+</w:document>`;
+
+      const docxBytes = await buildSyntheticDocx({ documentXml });
+      const file = createMockDocxFile(docxBytes);
+      const ac = new AbortController();
+
+      const res = await importDocx(file, ac.signal);
+      assert.strictEqual(res.ok, false);
+      if (!res.ok) {
+        assert.strictEqual(res.error.code, "XML_INVALID");
+      }
+    });
+
+    it("rejects package exceeding custom zip limits with ZIP_LIMIT", async () => {
+      const docxBytes = await buildSyntheticDocx({});
+      const file = createMockDocxFile(docxBytes);
+      const ac = new AbortController();
+
+      // Custom limit with maxInputBytes smaller than file size
+      const tightLimits = {
+        maxInputBytes: 100, // 100 bytes limit
+        maxEntries: 10,
+        maxExpandedBytes: 1000,
+        maxEntryBytes: 500,
+      };
+
+      const res = await importDocx(file, ac.signal, { limits: tightLimits });
+      assert.strictEqual(res.ok, false);
+      if (!res.ok) {
+        assert.strictEqual(res.error.code, "ZIP_LIMIT");
+      }
+    });
+
+    it("preserves complex Vietnamese Unicode text and mathematical notations without corruption", async () => {
+      const vietnamesePrompt = "Cho hàm số f(x) liên tục và có đạo hàm f'(x) trên khoảng (0; +∞). Biết rằng ∫_0^1 f(x)dx = 2/3 và f(1) = √3.";
+      const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>PHẦN I. Câu trắc nghiệm</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Câu 1. ${vietnamesePrompt}</w:t></w:r></w:p>
+    <w:p><w:r><w:t>A. 1/3</w:t></w:r></w:p>
+    <w:p><w:r><w:t>B. 2/3</w:t></w:r></w:p>
+    <w:p><w:r><w:t>C. √3</w:t></w:r></w:p>
+    <w:p><w:r><w:t>D. π</w:t></w:r></w:p>
+  </w:body>
+</w:document>`;
+
+      const docxBytes = await buildSyntheticDocx({ documentXml });
+      const file = createMockDocxFile(docxBytes);
+      const ac = new AbortController();
+
+      const res = await importDocx(file, ac.signal);
+      assert.strictEqual(res.ok, true);
+      if (res.ok) {
+        const d1 = res.value.drafts[0]!;
+        assert.ok(d1.question.content?.includes("Cho hàm số"));
+        assert.ok(d1.question.content?.includes("đạo hàm"));
+        assert.ok(d1.question.content?.includes("khoảng (0; +∞)"));
+        assert.ok(d1.question.content?.includes("√3"));
       }
     });
   });

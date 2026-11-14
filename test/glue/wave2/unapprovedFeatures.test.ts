@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { DisabledCollectorPort, enqueue, drainOutbox } from '../../../src/collect/index.ts';
-import { checkShortAnswer, rational, toFractionString } from '../../../src/domain/index.ts';
+import { checkShortAnswer, judgeIII, rational, add, toFractionString } from '../../../src/domain/index.ts';
 import type { StoragePort, AttemptRecord } from '../../../src/storage/index.ts';
 
 describe('WEB-W2-GLUE — Unapproved Features Isolation & Legacy Parity (D01-D08)', () => {
@@ -20,36 +20,36 @@ describe('WEB-W2-GLUE — Unapproved Features Isolation & Legacy Parity (D01-D08
         await disabledPort.send({} as AttemptRecord, new AbortController().signal);
       },
       {
-        message: 'Collector is disabled pending decision D04',
+        message: 'Collector endpoint is disabled by default',
       }
     );
 
     // Enqueue without endpoint must record local_saved only (no queued state)
-    const mockStorage: StoragePort = {
-      // @ts-ignore
-      async updateOutbox(rec) {
+    const mockStorage = {
+      async getOutbox() {
+        return { ok: true, value: null };
+      },
+      async updateOutbox(rec: unknown) {
         return { ok: true, value: rec };
       },
-    };
+    } as unknown as StoragePort;
 
-    const mockFinal: AttemptRecord = {
+    const mockFinal = {
       examId: 'ex1',
       examVersionId: 'v1',
       attemptId: 'att1',
       schemaVersion: 'web-attempt-v1',
       revision: 1,
       candidateName: 'Thí sinh',
-      // @ts-ignore
       examSnapshot: { examId: 'ex1', examVersionId: 'v1', questions: [] },
-      // @ts-ignore
       presentationOrder: {},
-      responses: {},
+      responses: { attemptId: 'att1', examVersionId: 'v1', responses: [] },
       startedAt: 1000,
       deadline: 4000,
       phase: 'final',
       submittedAt: 2000,
       scoreDTO: null,
-    };
+    } as unknown as AttemptRecord;
 
     const enqRes = await enqueue(mockFinal, mockStorage, null);
     assert.equal(enqRes.ok, true);
@@ -59,20 +59,31 @@ describe('WEB-W2-GLUE — Unapproved Features Isolation & Legacy Parity (D01-D08
     }
   });
 
-  it('D01: Short Answer Part III preserves exact character string equality', () => {
+  it('D01: Short Answer Part III preserves exact character string equality and charset validation', () => {
     // 1,5 vs 1.5 vs 1,50
-    assert.equal(checkShortAnswer('1,5', '1,5'), true);
-    assert.equal(checkShortAnswer('1,5', '1.5'), false, '1,5 must not match 1.5');
-    assert.equal(checkShortAnswer('1,5', '1,50'), false, '1,5 must not match 1,50');
-    assert.equal(checkShortAnswer('1,5', ' 1,5'), false, 'Leading space must not match');
-    assert.equal(checkShortAnswer('-0,5', '-0,5'), true, '-0,5 must match exactly');
+    assert.deepEqual(checkShortAnswer('1,5'), []);
+    assert.deepEqual(checkShortAnswer('-0,5'), []);
+    assert.ok(checkShortAnswer('1,500').includes('too_long'));
+    assert.ok(checkShortAnswer('1.5').includes('bad_char'));
+
+    const q = { kind: 'III' as const, questionId: 'q1', questionVersionId: 'qv1', answerKey: '1,5' };
+    const rCorrect = { kind: 'III' as const, questionVersionId: 'qv1', raw: '1,5' };
+    const rDot = { kind: 'III' as const, questionVersionId: 'qv1', raw: '1.5' };
+    const rZero = { kind: 'III' as const, questionVersionId: 'qv1', raw: '1,50' };
+    const rSpace = { kind: 'III' as const, questionVersionId: 'qv1', raw: ' 1,5' };
+
+    assert.equal(judgeIII(q, rCorrect), 'correct');
+    assert.equal(judgeIII(q, rDot), 'wrong', '1,5 must not match 1.5');
+    assert.equal(judgeIII(q, rZero), 'wrong', '1,5 must not match 1,50');
+    assert.equal(judgeIII(q, rSpace), 'wrong', 'Leading space must not match');
+    assert.equal(judgeIII(q, undefined), 'unanswered');
   });
 
   it('D02: Score rational precision is preserved without floating-point drift', () => {
     const r1 = rational(10n, 3n);
     const r2 = rational(20n, 3n);
-    const sum = rational(r1.n * r2.d + r2.n * r1.d, r1.d * r2.d);
-    // (10*3 + 20*3) / (3*3) = 90 / 9 = 10 / 1
+    const sum = add(r1, r2);
+    // 10/3 + 20/3 = 30/3 = 10
     assert.equal(toFractionString(r1), '10/3');
     assert.equal(toFractionString(sum), '10');
   });

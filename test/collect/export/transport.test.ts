@@ -8,6 +8,7 @@ import type {
   Result,
   StoragePort,
   WebExam,
+  WebError,
 } from '../../../src/collect/types.ts';
 import {
   CollectorError,
@@ -18,6 +19,21 @@ import {
   HttpCollectorTransport,
   createHttpTransport,
 } from '../../../src/collect/transport.ts';
+
+function assertOk<T>(res: Result<T>, message?: string): T {
+  assert.equal(res.ok, true, message || (res.ok ? '' : (res as any).error?.message));
+  if (!res.ok) throw new Error('Expected ok');
+  return res.value;
+}
+
+function assertErr<T>(res: Result<T>, expectedCode?: string, message?: string): WebError {
+  assert.equal(res.ok, false, message || 'Expected error');
+  if (res.ok) throw new Error('Expected error');
+  if (expectedCode) {
+    assert.equal(res.error.code, expectedCode);
+  }
+  return res.error;
+}
 
 function createDummyExam(): WebExam {
   return {
@@ -498,9 +514,8 @@ describe('M4 Native Transport: Integration with drainOutbox', () => {
     await storage.finalize(final, 1);
 
     const enqueueRes = await enqueue(final, storage, APPROVED_URL);
-    assert.equal(enqueueRes.ok, true);
-
-    const payloadHash = enqueueRes.value.payloadHash;
+    const enqueued = assertOk(enqueueRes);
+    const payloadHash = enqueued.payloadHash;
 
     const mockFetch: typeof fetch = async () => {
       const validReceipt: Receipt = {
@@ -529,10 +544,10 @@ describe('M4 Native Transport: Integration with drainOutbox', () => {
       { storage, transport, now: () => Date.now(), timeoutMs: 5000 }
     );
 
-    assert.equal(drainRes.ok, true);
-    assert.equal(drainRes.value.state, 'server_confirmed');
-    assert.ok(drainRes.value.receipt);
-    assert.equal(drainRes.value.receipt?.submissionId, 'sub-test-01');
+    const drained = assertOk(drainRes);
+    assert.equal(drained.state, 'server_confirmed');
+    assert.ok(drained.receipt);
+    assert.equal(drained.receipt?.submissionId, 'sub-test-01');
   });
 
   it('transitions outbox to failed state on 4xx HTTP client error', async () => {
@@ -560,15 +575,16 @@ describe('M4 Native Transport: Integration with drainOutbox', () => {
       { storage, transport, now: () => Date.now(), timeoutMs: 5000 }
     );
 
-    assert.equal(drainRes.ok, false);
-    assert.equal(drainRes.error.code, 'COLLECTOR_HTTP');
+    const drainErr = assertErr(drainRes, 'COLLECTOR_HTTP');
+    assert.equal(drainErr.code, 'COLLECTOR_HTTP');
 
     const outboxAfter = await storage.getOutbox({
       examId: final.examId,
       examVersionId: final.examVersionId,
       attemptId: final.attemptId,
     });
-    assert.equal(outboxAfter.value?.state, 'failed');
+    const finalOutbox = assertOk(outboxAfter);
+    assert.equal(finalOutbox?.state, 'failed');
   });
 });
 

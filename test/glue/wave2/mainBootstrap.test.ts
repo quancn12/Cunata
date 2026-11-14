@@ -137,9 +137,9 @@ describe('WEB-W2-GLUE — Composition Root & Bootstrap Lifecycle', () => {
 
     const cleanup = await bootstrap(root);
 
-    const btnSubmit = root.querySelector('#btnSubmit') as MockElement;
-    const submitModal = root.querySelector('#submitModal') as MockElement;
-    const btnCancelSubmit = root.querySelector('#btnCancelSubmit') as MockElement;
+    const btnSubmit = root.querySelector('#btnSubmit') as unknown as MockElement;
+    const submitModal = root.querySelector('#submitModal') as unknown as MockElement;
+    const btnCancelSubmit = root.querySelector('#btnCancelSubmit') as unknown as MockElement;
 
     assert.equal(submitModal.style.display, 'none');
 
@@ -167,8 +167,8 @@ describe('WEB-W2-GLUE — Composition Root & Bootstrap Lifecycle', () => {
     });
 
     // Clicking submit after disposal must not crash or trigger handlers
-    const btnSubmit = root.querySelector('#btnSubmit') as MockElement;
-    const submitModal = root.querySelector('#submitModal') as MockElement;
+    const btnSubmit = root.querySelector('#btnSubmit') as unknown as MockElement;
+    const submitModal = root.querySelector('#submitModal') as unknown as MockElement;
     btnSubmit.click();
     assert.equal(submitModal.style.display, 'none', 'Handlers should be detached after cleanup');
   });

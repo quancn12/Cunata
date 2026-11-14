@@ -3,7 +3,7 @@
  * Creates byte-level controlled DOCX files without external dependencies.
  */
 
-import { buildZipArchive } from "../import-zip/builder.ts";
+import { buildSyntheticZip } from "../import-zip/builder.ts";
 import type { SyntheticZipEntry } from "../import-zip/builder.ts";
 
 const utf8Encoder = new TextEncoder();
@@ -129,7 +129,7 @@ export async function buildSyntheticDocx(options: SyntheticDocxOptions = {}): Pr
     }
   }
 
-  return buildZipArchive({ entries });
+  return buildSyntheticZip({ entries });
 }
 
 /**

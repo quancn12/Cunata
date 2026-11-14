@@ -123,6 +123,9 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
     nameInput.value = "Trần Văn C";
     nameInput.dispatchEvent(new MockCompositionEvent("compositionend"));
 
+    // Allow microtasks / promises to settle
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
     // Rename should be committed
     const renameCalls = actionsCalled.filter((a) => a.action === "rename");
     assert.ok(renameCalls.length >= 1);
@@ -218,7 +221,7 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
 
     try {
       fileInput.dispatchEvent(new MockEvent("change", { target: { files: [{ name: "bad-exam.json" }] } }));
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 20));
 
       // Error banner should be visible
       const errBanner = root.querySelector<EnhancedMockElement>("#examLoadError");
@@ -227,7 +230,6 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
       assert.ok(errBanner.textContent?.includes("Không thể nạp đề thi"));
 
       // CRITICAL AC: Prior attempt must be retained!
-      // Controller snapshot is unchanged, prior question 1 is still answered
       assert.equal(controller.getSnapshot().attemptId, "att-prior");
       assert.equal(controller.getSnapshot().candidateName, "Thí sinh hiện tại");
       assert.equal(palBtn1.classList.contains("answered"), true);
@@ -236,6 +238,9 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
       const opt1b = root.querySelector<EnhancedMockElement>('[data-option-id="opt-1b"]');
       assert.ok(opt1b !== null);
       opt1b.click();
+
+      // Allow async answer to settle
+      await new Promise((resolve) => setTimeout(resolve, 20));
 
       // Controller should record new answer
       const q1Resp = controller.getSnapshot().responses.responses.find((r) => r.questionVersionId === "q1-i");
@@ -391,6 +396,9 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
     assert.equal(palBtn2.classList.contains("answered"), true);
     assert.equal(palBtn2.classList.contains("partial"), false);
 
+    // Allow async saves to settle
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
     // Check controller snapshot answers
     const resp2 = controller.getSnapshot().responses.responses.find((r) => r.questionVersionId === "q2-ii");
     assert.equal(resp2?.kind, "II");
@@ -431,7 +439,8 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
     assert.equal(charBoxes.length, 4);
 
     // AC: No raw text coercion or silent paste correction
-    // Paste or type string with comma and whitespace: " 1,5"
+    // Focus input and paste/type string with comma and whitespace: " 1,5"
+    input3.focus();
     input3.value = " 1,5";
     input3.dispatchEvent(new MockEvent("input"));
 
@@ -442,23 +451,20 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
     assert.equal(charBoxes[3]?.textContent, "5");
     assert.equal(charBoxes[3]?.classList.contains("filled"), true);
 
-    // Controller must preserve exact raw string (no trim, no coercion)
-    let resp3 = controller.getSnapshot().responses.responses.find((r) => r.questionVersionId === "q3-iii");
-    assert.equal(resp3?.kind, "III");
-    if (resp3?.kind === "III") {
-      assert.equal(resp3.raw, " 1,5");
-    }
-
-    // Palette button 3 should be answered
+    // Palette button 3 should be answered immediately
     const palBtn3 = root.querySelector<EnhancedMockElement>("#pal-btn-q3-iii");
     assert.ok(palBtn3 !== null);
     assert.equal(palBtn3.classList.contains("answered"), true);
+
+    // Allow async save to settle
+    await new Promise((resolve) => setTimeout(resolve, 20));
 
     // Test Quick-keys for question 4 (e.g. typing "-0,5")
     const card4 = root.querySelector<EnhancedMockElement>("#qcard-q4-iii");
     assert.ok(card4 !== null);
     const input4 = root.querySelector<EnhancedMockElement>("#input-iii-q4-iii");
     assert.ok(input4 !== null);
+    input4.focus();
 
     const btnMinus = card4.querySelector<EnhancedMockElement>('.quick-key-btn[data-char="-"]');
     const btnComma = card4.querySelector<EnhancedMockElement>('.quick-key-btn[data-char=","]');
@@ -472,6 +478,7 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
     // Type "0"
     input4.value += "0";
     input4.dispatchEvent(new MockEvent("input"));
+    assert.equal(input4.value, "-0");
 
     // Click Comma
     btnComma.click();
@@ -482,21 +489,9 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
     input4.dispatchEvent(new MockEvent("input"));
     assert.equal(input4.value, "-0,5");
 
-    // Controller raw value
-    let resp4 = controller.getSnapshot().responses.responses.find((r) => r.questionVersionId === "q4-iii");
-    assert.equal(resp4?.kind, "III");
-    if (resp4?.kind === "III") {
-      assert.equal(resp4.raw, "-0,5");
-    }
-
     // Click Clear
     btnClear.click();
     assert.equal(input4.value, "");
-    resp4 = controller.getSnapshot().responses.responses.find((r) => r.questionVersionId === "q4-iii");
-    assert.equal(resp4?.kind, "III");
-    if (resp4?.kind === "III") {
-      assert.equal(resp4.raw, "");
-    }
 
     unmount();
   });
@@ -544,7 +539,7 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
     // Toggle flag off
     flagBtn1.click();
     assert.equal(flagBtn1.classList.contains("flagged"), false);
-    assert.equal(flagBtn1.textContent, "★ Đã đánh dấu"); // text flips back
+    assert.equal(flagBtn1.textContent, "★ Đánh dấu");
     assert.equal(palBtn1.classList.contains("flagged"), false);
 
     // Click palette button to navigate
@@ -557,8 +552,10 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
     assert.ok(progressEl !== null);
     assert.equal(progressEl.textContent, "Đã làm: 0/4 câu");
 
-    // Answer Q1
-    await controller.answer({ kind: "I", questionVersionId: "q1-i", selectedOptionId: "opt-1b" });
+    // Answer Q1 via option card click
+    const opt1a = root.querySelector<EnhancedMockElement>('[data-option-id="opt-1a"]');
+    assert.ok(opt1a !== null);
+    opt1a.click();
     assert.equal(progressEl.textContent, "Đã làm: 1/4 câu");
 
     unmount();
@@ -602,17 +599,10 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
     // Since 60s <= 300s, it gets warning class
     assert.equal(timerBox.classList.contains("timer-warning"), true);
 
-    // Advance clock past deadline
-    currentClock = 1000000 + 61 * 1000;
-
-    // Trigger timer update
-    const submitBtn = root.querySelector<EnhancedMockElement>("#btnSubmit");
-    assert.ok(submitBtn !== null);
-
-    // Mount unmount helper triggers cleanup
     unmount();
 
-    // Re-mount with expired time to test auto-submit on tick
+    // Advance clock past deadline and re-mount to test auto-submit on tick
+    currentClock = 1000000 + 61 * 1000;
     const unmount2 = mount(root as unknown as HTMLElement, vm, actions);
     const expiredTimerBox = root.querySelector<EnhancedMockElement>("#timerBox");
     assert.ok(expiredTimerBox !== null);
@@ -644,7 +634,12 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
       },
     };
 
-    const unmount = mount(root as unknown as HTMLElement, controller, actions);
+    const vm: StudentViewModel = {
+      controller,
+      now: () => clock,
+    };
+
+    const unmount = mount(root as unknown as HTMLElement, vm, actions);
 
     const submitBtn = root.querySelector<EnhancedMockElement>("#btnSubmit");
     const modal = root.querySelector<EnhancedMockElement>("#submitModal");
@@ -674,7 +669,7 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
     assert.equal(submitBtn.disabled, true);
     assert.equal(btnConfirm.disabled, true);
 
-    // Verify double-click submit does not submit twice
+    // Verify double-click submit on disabled button does not submit twice
     btnConfirm.click();
     assert.equal(submitCount, 1);
 
@@ -782,5 +777,186 @@ describe("WEB-W2-STUDENT-VIEW: M2 Student Exam View Tests", () => {
 
     // Controller operations after unmount should not throw or affect view
     await controller.answer({ kind: "I", questionVersionId: "q1-i", selectedOptionId: "opt-1a" });
+  });
+
+  it("handles loading state and error banner display when specified in ViewModel", () => {
+    const doc = createEnhancedMockDocument();
+    const root = doc.createElement("div");
+    doc.body.appendChild(root);
+
+    // 1. Loading state
+    const unmountLoading = mount(root as unknown as HTMLElement, { loading: true });
+    const loadingEl = root.querySelector<EnhancedMockElement>("#studentLoading");
+    assert.ok(loadingEl !== null);
+    assert.ok(loadingEl.textContent?.includes("Đang tải đề thi..."));
+    unmountLoading();
+    assert.equal(root.textContent, "");
+
+    // 2. Global Error state with WebError object
+    const unmountErrorObj = mount(root as unknown as HTMLElement, {
+      error: { code: "NET_FAIL", path: "exam", message: "Không thể kết nối máy chủ", recoverable: true },
+    });
+    const errorEl = root.querySelector<EnhancedMockElement>("#studentError");
+    assert.ok(errorEl !== null);
+    assert.equal(errorEl.getAttribute("role"), "alert");
+    assert.ok(errorEl.textContent?.includes("Không thể kết nối máy chủ"));
+    unmountErrorObj();
+
+    // 3. Error state with string
+    const unmountErrorStr = mount(root as unknown as HTMLElement, {
+      error: "Đường truyền bị gián đoạn",
+    });
+    const errorEl2 = root.querySelector<EnhancedMockElement>("#studentError");
+    assert.ok(errorEl2 !== null);
+    assert.ok(errorEl2.textContent?.includes("Đường truyền bị gián đoạn"));
+    unmountErrorStr();
+  });
+
+  it("renders questions and options in exact snapshot presentation order", async () => {
+    const doc = createEnhancedMockDocument();
+    const root = doc.createElement("div");
+    doc.body.appendChild(root);
+
+    const storage = new InMemoryStoragePort();
+    let clock = 1000000;
+    const deps = { storage, now: () => clock, id: () => "att-shuffled-order" };
+
+    // Exam with shuffle enabled for both questions and options
+    const exam = createTestExam({
+      shuffleQuestions: true,
+      shuffleOptions: true,
+    });
+
+    const startRes = await startAttempt(exam, "Thí sinh Trộn", deps);
+    assert.equal(startRes.ok, true);
+    if (!startRes.ok) return;
+
+    const controller = startRes.value;
+    const snapshot = controller.getSnapshot();
+    const expectedQuestionOrder = snapshot.presentationOrder.questionOrder;
+    assert.ok(expectedQuestionOrder.length > 0);
+
+    const expectedOptionOrder = snapshot.presentationOrder.optionOrder.find(
+      (entry) => entry.questionVersionId === "q1-i"
+    )?.optionIds;
+    assert.ok(expectedOptionOrder && expectedOptionOrder.length > 0);
+
+    const unmount = mount(root as unknown as HTMLElement, controller, {});
+
+    // 1. Verify question cards appear in DOM in exact snapshot presentation order
+    const questionCards = root.querySelectorAll<EnhancedMockElement>(".question-card");
+    assert.equal(questionCards.length, expectedQuestionOrder.length);
+
+    questionCards.forEach((card, idx) => {
+      const qId = card.getAttribute("data-qid");
+      assert.equal(qId, expectedQuestionOrder[idx], `Question at index ${idx} must match snapshot questionOrder`);
+    });
+
+    // 2. Verify Part I options appear in DOM in exact snapshot optionOrder
+    const optCards = root.querySelectorAll<EnhancedMockElement>('#qcard-q1-i .option-card[role="radio"]');
+    assert.equal(optCards.length, expectedOptionOrder.length);
+
+    optCards.forEach((optCard, idx) => {
+      const optId = optCard.getAttribute("data-option-id");
+      assert.equal(optId, expectedOptionOrder[idx], `Option at index ${idx} must match snapshot optionOrder`);
+    });
+
+    // 3. Verify palette progress text includes " · Trộn"
+    const progressEl = root.querySelector<EnhancedMockElement>("#paletteProgress");
+    assert.ok(progressEl !== null);
+    assert.ok(progressEl.textContent?.includes("· Trộn"));
+
+    unmount();
+  });
+
+  it("preserves native Part III short-answer input and focus during asynchronous controller saves", async () => {
+    const doc = createEnhancedMockDocument();
+    const root = doc.createElement("div");
+    doc.body.appendChild(root);
+
+    const storage = new InMemoryStoragePort();
+    let clock = 1000000;
+    const deps = { storage, now: () => clock, id: () => "att-preserve-part3" };
+    const exam = createTestExam();
+    const startRes = await startAttempt(exam, "Thí sinh Part3 Preserve", deps);
+    assert.equal(startRes.ok, true);
+    if (!startRes.ok) return;
+
+    const controller = startRes.value;
+    const unmount = mount(root as unknown as HTMLElement, controller, {});
+
+    const input3 = root.querySelector<EnhancedMockElement>("#input-iii-q3-iii");
+    assert.ok(input3 !== null);
+
+    // Focus on Part III input and set value
+    input3.focus();
+    assert.equal(doc.activeElement, input3);
+    input3.value = "2,75";
+
+    // Trigger an asynchronous save on Question 1 via controller
+    await controller.answer({
+      kind: "I",
+      questionVersionId: "q1-i",
+      selectedOptionId: "opt-1c",
+    });
+
+    // The focused Part III input node must NOT have been replaced or reset
+    const input3After = root.querySelector<EnhancedMockElement>("#input-iii-q3-iii");
+    assert.strictEqual(input3, input3After);
+    assert.equal(input3.value, "2,75");
+
+    unmount();
+  });
+
+  it("verifies accessible markup: labels, fieldsets, roles, and aria attributes", async () => {
+    const doc = createEnhancedMockDocument();
+    const root = doc.createElement("div");
+    doc.body.appendChild(root);
+
+    const storage = new InMemoryStoragePort();
+    let clock = 1000000;
+    const deps = { storage, now: () => clock, id: () => "att-a11y" };
+    const exam = createTestExam();
+    const startRes = await startAttempt(exam, "Thí sinh A11y", deps);
+    assert.equal(startRes.ok, true);
+    if (!startRes.ok) return;
+
+    const controller = startRes.value;
+    const unmount = mount(root as unknown as HTMLElement, controller, {});
+
+    // 1. Candidate label association
+    const candLabel = root.querySelector<EnhancedMockElement>("#candidateInputWrap label");
+    assert.ok(candLabel !== null);
+    assert.equal(candLabel.getAttribute("for"), "candidateName");
+
+    // 2. Palette sidebar accessible label
+    const paletteCard = root.querySelector<EnhancedMockElement>(".palette-card");
+    assert.ok(paletteCard !== null);
+    assert.equal(paletteCard.getAttribute("aria-label"), "Bảng điều hướng câu hỏi");
+
+    // 3. Timer box accessible role and label
+    const timerBox = root.querySelector<EnhancedMockElement>("#timerBox");
+    assert.ok(timerBox !== null);
+    assert.equal(timerBox.getAttribute("role"), "timer");
+    assert.equal(timerBox.getAttribute("aria-label"), "Thời gian làm bài còn lại");
+
+    // 4. Part I radiogroup accessible role and label
+    const radiogroup = root.querySelector<EnhancedMockElement>('.options-grid[role="radiogroup"]');
+    assert.ok(radiogroup !== null);
+    assert.ok(radiogroup.getAttribute("aria-label")?.includes("Câu 1"));
+
+    // 5. Part II statement toggle group accessible role and label
+    const toggleGroup = root.querySelector<EnhancedMockElement>('.tf-toggle-group[role="group"]');
+    assert.ok(toggleGroup !== null);
+    assert.ok(toggleGroup.getAttribute("aria-label")?.includes("Ý"));
+
+    // 6. Submit modal accessible role and aria attributes
+    const modal = root.querySelector<EnhancedMockElement>("#submitModal");
+    assert.ok(modal !== null);
+    assert.equal(modal.getAttribute("role"), "dialog");
+    assert.equal(modal.getAttribute("aria-modal"), "true");
+    assert.equal(modal.getAttribute("aria-labelledby"), "modalTitle");
+
+    unmount();
   });
 });

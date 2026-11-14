@@ -50,8 +50,13 @@ function extractInlineOptions(text: string): { label: string; text: string }[] {
     results.push({ label, text: optText });
   }
 
-  // Only return if we found at least 2 distinct option letters in order
+  // Only return if we found at least 2 distinct option letters in strict ascending alphabetical order
   if (results.length >= 2) {
+    for (let k = 1; k < results.length; k++) {
+      if (results[k]!.label.charCodeAt(0) <= results[k - 1]!.label.charCodeAt(0)) {
+        return [];
+      }
+    }
     return results;
   }
   return [];
@@ -82,7 +87,13 @@ function extractInlineStatements(text: string): { label: string; text: string; a
     results.push({ label, text: stmtText, answer });
   }
 
+  // Only return if we found at least 2 distinct statements in strict ascending alphabetical order
   if (results.length >= 2) {
+    for (let k = 1; k < results.length; k++) {
+      if (results[k]!.label.charCodeAt(0) <= results[k - 1]!.label.charCodeAt(0)) {
+        return [];
+      }
+    }
     return results;
   }
   return [];
@@ -112,8 +123,8 @@ export function segmentDocument(
     const text = p.text;
     if (!text) continue;
 
-    // 1. Check for Answer Key Section Header
-    if (/(?:BẢNG\s*ĐÁP\s*ÁN|ĐÁP\s*ÁN\s*CHI\s*TIẾT|HƯỚNG\s*DẪN\s*CHẤM|ĐÁP\s*ÁN\b)/i.test(text)) {
+    // 1. Check for Answer Key Section Header (must be a standalone heading, e.g. "BẢNG ĐÁP ÁN" or "ĐÁP ÁN:")
+    if (/^\s*(?:BẢNG\s*ĐÁP\s*ÁN|ĐÁP\s*ÁN\s*CHI\s*TIẾT|HƯỚNG\s*DẪN\s*CHẤM|PHẦN\s*ĐÁP\s*ÁN|\bĐÁP\s*ÁN)\s*[:–-]?\s*$/i.test(text)) {
       if (currentQ) {
         rawQuestions.push(currentQ);
         currentQ = null;
@@ -122,8 +133,8 @@ export function segmentDocument(
       continue;
     }
 
-    // 2. Check for Section Headers
-    if (/(?:PHẦN|PHAN)\s*(?:I\b|THỨ\s*NHẤT|1\b)/i.test(text)) {
+    // 2. Check for Section Headers (must be standalone heading or start of section)
+    if (/^\s*(?:PHẦN|PHAN)\s*(?:I\b|THỨ\s*NHẤT|1\b)(?:[\s.:–-].*)?$/i.test(text)) {
       if (currentQ) {
         rawQuestions.push(currentQ);
         currentQ = null;
@@ -131,7 +142,7 @@ export function segmentDocument(
       currentSection = "I";
       inAnswerKeySection = false;
       continue;
-    } else if (/(?:PHẦN|PHAN)\s*(?:II\b|THỨ\s*HAI|2\b)/i.test(text)) {
+    } else if (/^\s*(?:PHẦN|PHAN)\s*(?:II\b|THỨ\s*HAI|2\b)(?:[\s.:–-].*)?$/i.test(text)) {
       if (currentQ) {
         rawQuestions.push(currentQ);
         currentQ = null;
@@ -139,7 +150,7 @@ export function segmentDocument(
       currentSection = "II";
       inAnswerKeySection = false;
       continue;
-    } else if (/(?:PHẦN|PHAN)\s*(?:III\b|THỨ\s*BA|3\b)/i.test(text)) {
+    } else if (/^\s*(?:PHẦN|PHAN)\s*(?:III\b|THỨ\s*BA|3\b)(?:[\s.:–-].*)?$/i.test(text)) {
       if (currentQ) {
         rawQuestions.push(currentQ);
         currentQ = null;
@@ -187,7 +198,7 @@ export function segmentDocument(
     // 4. Check for Explanation Start ("Lời giải:", "Hướng dẫn giải:", etc.)
     const expMatch = /^(?:Lời\s*giải|Hướng\s*dẫn\s*giải|Giải\s*thích|HDG)[\s.:–-]\s*(.*)/i.exec(text);
     if (expMatch) {
-      currentQ.explanation = expMatch[1] || text;
+      currentQ.explanation = text;
       continue;
     }
 
@@ -199,7 +210,7 @@ export function segmentDocument(
 
     // 5. Parse Section-specific structures
     if (currentQ.section === "I") {
-      // Check for inline choices in this paragraph: A. ... B. ...
+      // Check for inline choices in this paragraph first: A. ... B. ...
       const inlineOpts = extractInlineOptions(text);
       if (inlineOpts.length > 0) {
         for (const opt of inlineOpts) {
@@ -238,7 +249,7 @@ export function segmentDocument(
         continue;
       }
     } else if (currentQ.section === "II") {
-      // Check for inline statements: a) ... b) ...
+      // Check for inline statements in this paragraph first: a) ... b) ...
       const inlineStmts = extractInlineStatements(text);
       if (inlineStmts.length > 0) {
         for (const stmt of inlineStmts) {
