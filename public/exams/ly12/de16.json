@@ -1,0 +1,471 @@
+{
+  "schemaVersion": "web-exam-v1",
+  "examId": "ly12-hang-tuan-de-16",
+  "examVersionId": "v1.0.0",
+  "title": "Vật lí 12 — Đề số 16 hàng tuần",
+  "subject": "Vật lí",
+  "grade": 12,
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  },
+  "assets": [],
+  "questions": [
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-01",
+      "title": "Câu 1 (Phần I)",
+      "content": "Trong các hệ thức sau đây, hệ thức nào không phù hợp với định luật Boyle?",
+      "options": [
+        { "optionId": "ly12-de16-i-01-a", "label": "A", "text": "$p ~ \\frac{1}{V}$" },
+        { "optionId": "ly12-de16-i-01-b", "label": "B", "text": "$V ~ \\frac{1}{p}$" },
+        { "optionId": "ly12-de16-i-01-c", "label": "C", "text": "$V ~ p$" },
+        { "optionId": "ly12-de16-i-01-d", "label": "D", "text": "$p_1 V_1 = p_2 V_2$" }
+      ],
+      "correctOptionId": "ly12-de16-i-01-c",
+      "explanation": "Đáp án C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-02",
+      "title": "Câu 2 (Phần I)",
+      "content": "Chọn phát biểu đúng:",
+      "options": [
+        { "optionId": "ly12-de16-i-02-a", "label": "A", "text": "Càng lên cao áp suất khí quyển càng giảm." },
+        { "optionId": "ly12-de16-i-02-b", "label": "B", "text": "Áp suất khí quyển không phụ thuộc vào nhiệt độ." },
+        { "optionId": "ly12-de16-i-02-c", "label": "C", "text": "Áp suất khí quyển chỉ thay đổi theo độ cao." },
+        { "optionId": "ly12-de16-i-02-d", "label": "D", "text": "Ở độ cao càng thấp so với mực nước biển thì áp suất khí quyển càng giảm." }
+      ],
+      "correctOptionId": "ly12-de16-i-02-a",
+      "explanation": "Đáp án A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-03",
+      "title": "Câu 3 (Phần I)",
+      "content": "Nội năng của một vật là",
+      "options": [
+        { "optionId": "ly12-de16-i-03-a", "label": "A", "text": "tổng động năng và thế năng của vật." },
+        { "optionId": "ly12-de16-i-03-b", "label": "B", "text": "tổng động năng và thế năng của các phân tử cấu tạo nên vật." },
+        { "optionId": "ly12-de16-i-03-c", "label": "C", "text": "tổng nhiệt lượng và công vật nhận được." },
+        { "optionId": "ly12-de16-i-03-d", "label": "D", "text": "nhiệt lượng vật nhận được trong quá trình truyền nhiệt." }
+      ],
+      "correctOptionId": "ly12-de16-i-03-b",
+      "explanation": "Đáp án B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-04",
+      "title": "Câu 4 (Phần I)",
+      "content": "Đặc điểm nào sau đây là đặc điểm của thể rắn?",
+      "options": [
+        { "optionId": "ly12-de16-i-04-a", "label": "A", "text": "Khoảng cách giữa các phân tử rất lớn so với kích thước của chúng." },
+        { "optionId": "ly12-de16-i-04-b", "label": "B", "text": "Lực tương tác giữa các phân tử rất yếu." },
+        { "optionId": "ly12-de16-i-04-c", "label": "C", "text": "Có thể tích và hình dạng riêng xác định." },
+        { "optionId": "ly12-de16-i-04-d", "label": "D", "text": "Các phân tử dao động xung quanh vị trí cân bằng không xác định." }
+      ],
+      "correctOptionId": "ly12-de16-i-04-c",
+      "explanation": "Đáp án C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-05",
+      "title": "Câu 5 (Phần I)",
+      "content": "Tính chất nào sau đây không phải là của phân tử của vật chất ở thể khí?",
+      "options": [
+        { "optionId": "ly12-de16-i-05-a", "label": "A", "text": "Chuyển động hỗn loạn." },
+        { "optionId": "ly12-de16-i-05-b", "label": "B", "text": "Chuyển động không ngừng." },
+        { "optionId": "ly12-de16-i-05-c", "label": "C", "text": "Chuyển động hỗn loạn và không ngừng." },
+        { "optionId": "ly12-de16-i-05-d", "label": "D", "text": "Chuyển động hỗn loạn xung quanh các vị trí cân bằng cố định." }
+      ],
+      "correctOptionId": "ly12-de16-i-05-d",
+      "explanation": "Đáp án D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-06",
+      "title": "Câu 6 (Phần I)",
+      "content": "Nhiệt hóa hơi riêng L của một số loại chất lỏng ở nhiệt độ sôi được cho trong bảng sau:\n\n| Chất lỏng | Rượu | Nước | Ête | Amoniac | Thủy ngân |\n| --- | --- | --- | --- | --- | --- |\n| Nhiệt hóa hơi riêng (J / kg) | $0,9 · 10^6$ | $2,3 · 10^6$ | $0,4 · 10^6$ | $1,4 · 10^6$ | $0,3 · 10^6$ |\n\nChất lỏng nào có nhiệt hóa hơi riêng lớn hơn nhiệt hóa hơi riêng của Amoniac?",
+      "options": [
+        { "optionId": "ly12-de16-i-06-a", "label": "A", "text": "Rượu." },
+        { "optionId": "ly12-de16-i-06-b", "label": "B", "text": "Ête." },
+        { "optionId": "ly12-de16-i-06-c", "label": "C", "text": "Nước." },
+        { "optionId": "ly12-de16-i-06-d", "label": "D", "text": "Thủy ngân." }
+      ],
+      "correctOptionId": "ly12-de16-i-06-c",
+      "explanation": "Đáp án C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-07",
+      "title": "Câu 7 (Phần I)",
+      "content": "Chuyển động nào sau đây không được coi là chuyển động Brown?",
+      "options": [
+        { "optionId": "ly12-de16-i-07-a", "label": "A", "text": "Chuyển động của hạt phấn hoa trên mặt nước." },
+        { "optionId": "ly12-de16-i-07-b", "label": "B", "text": "Chuyển động của các hạt bụi lơ lửng trong không khí khi quan sát dưới ánh nắng mặt trời vào buổi sáng." },
+        { "optionId": "ly12-de16-i-07-c", "label": "C", "text": "Chuyển động của các hạt mực khi nhỏ các giọt mực vào nước." },
+        { "optionId": "ly12-de16-i-07-d", "label": "D", "text": "Chuyển động của các hạt bụi nhỏ trong ống khói của nhà máy xi măng đang vận hành." }
+      ],
+      "correctOptionId": "ly12-de16-i-07-d",
+      "explanation": "Chuyển động của các hạt bụi nhỏ trong ống khói của nhà máy xi măng đang vận hành không phải chuyển động ngẫu nhiên. Chọn D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-08",
+      "title": "Câu 8 (Phần I)",
+      "content": "Nội dung của định luật Boyle?",
+      "options": [
+        { "optionId": "ly12-de16-i-08-a", "label": "A", "text": "Trong quá trình biến đổi đẳng nhiệt đối với một lượng khí lí tưởng xác định, áp suất biến đổi tỷ lệ thuận với thể tích." },
+        { "optionId": "ly12-de16-i-08-b", "label": "B", "text": "Trong quá trình biến đổi đẳng nhiệt đối với một lượng khí lí tưởng xác định, áp suất biến đổi không liên quan tới thể tích." },
+        { "optionId": "ly12-de16-i-08-c", "label": "C", "text": "Trong quá trình biến đổi đẳng nhiệt đối với một lượng khí lí tưởng xác định, áp suất biến đổi tỷ lệ nghịch với thể tích." },
+        { "optionId": "ly12-de16-i-08-d", "label": "D", "text": "Trong quá trình biến đổi đẳng nhiệt đối với một lượng khí lí tưởng xác định, áp suất biến đổi nhưng thể tích vẫn không biến đổi." }
+      ],
+      "correctOptionId": "ly12-de16-i-08-c",
+      "explanation": "Đáp án C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-09",
+      "title": "Câu 9 (Phần I)",
+      "content": "Một khối khí lí tưởng thực hiện quá trình biến đổi đẳng tích ở hai thể tích khác nhau được biểu diễn như hình. Quan hệ giữa $V_1$ và $V_2$ là:\n\n![Hình minh họa](public/exams/ly12/de16/p02-1.png)",
+      "image": "public/exams/ly12/de16/p02-1.png",
+      "options": [
+        { "optionId": "ly12-de16-i-09-a", "label": "A", "text": "$V_1 > V_2$" },
+        { "optionId": "ly12-de16-i-09-b", "label": "B", "text": "$V_1 < V_2$" },
+        { "optionId": "ly12-de16-i-09-c", "label": "C", "text": "$V_1 = V_2$" },
+        { "optionId": "ly12-de16-i-09-d", "label": "D", "text": "không so sánh được." }
+      ],
+      "correctOptionId": "ly12-de16-i-09-a",
+      "explanation": "Đáp án A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-10",
+      "title": "Câu 10 (Phần I)",
+      "content": "Khi nén khí đẳng nhiệt thì số phân tử trong một đơn vị thể tích",
+      "options": [
+        { "optionId": "ly12-de16-i-10-a", "label": "A", "text": "Tăng, tỉ lệ thuận với áp suất" },
+        { "optionId": "ly12-de16-i-10-b", "label": "B", "text": "Không đổi" },
+        { "optionId": "ly12-de16-i-10-c", "label": "C", "text": "Giảm, tỉ lệ nghịch với áp suất" },
+        { "optionId": "ly12-de16-i-10-d", "label": "D", "text": "Tăng, tỉ lệ với bình phương áp suất." }
+      ],
+      "correctOptionId": "ly12-de16-i-10-a",
+      "explanation": "$pV =$ hằng số $\\Rightarrow p ~ \\frac{1}{V} ~ \\frac{N}{V}$. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-11",
+      "title": "Câu 11 (Phần I)",
+      "content": "Để làm nóng 1 kg nước lên 1°C, cần cung cấp cho nó nhiệt lượng khoảng",
+      "options": [
+        { "optionId": "ly12-de16-i-11-a", "label": "A", "text": "1000 J ." },
+        { "optionId": "ly12-de16-i-11-b", "label": "B", "text": "1,00 Wh ." },
+        { "optionId": "ly12-de16-i-11-c", "label": "C", "text": "1,16 Wh." },
+        { "optionId": "ly12-de16-i-11-d", "label": "D", "text": "1160 Wh ." }
+      ],
+      "correctOptionId": "ly12-de16-i-11-c",
+      "explanation": "$Q = mcΔt ≈ 1 · 4186 · 1 = 4186$ J $≈ 1,16$ Wh. Chọn C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-12",
+      "title": "Câu 12 (Phần I)",
+      "content": "Dây mayso sử dụng trong các lò nướng bánh, nấu nhôm khi làm việc có nhiệt độ tối đa lên tới 800°C. Nhiệt độ này tương ứng ở thang Kelvin bằng",
+      "options": [
+        { "optionId": "ly12-de16-i-12-a", "label": "A", "text": "527 K ." },
+        { "optionId": "ly12-de16-i-12-b", "label": "B", "text": "1073 K ." },
+        { "optionId": "ly12-de16-i-12-c", "label": "C", "text": "1224 K ." },
+        { "optionId": "ly12-de16-i-12-d", "label": "D", "text": "2204 K ." }
+      ],
+      "correctOptionId": "ly12-de16-i-12-b",
+      "explanation": "$T(K) ≈ t(°C) + 273 = 800 + 273 = 1073(K)$. Chọn B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-13",
+      "title": "Câu 13 (Phần I)",
+      "content": "Một bình thép chứa khí ở 27°C dưới áp suất $6,3 · 10^5$ Pa, làm lạnh bình tới nhiệt độ -83°C thì áp suất của khí trong bình là bao nhiêu?",
+      "options": [
+        { "optionId": "ly12-de16-i-13-a", "label": "A", "text": "$6,3 · 10^5$ Pa" },
+        { "optionId": "ly12-de16-i-13-b", "label": "B", "text": "$3,99 · 10^5$ Pa" },
+        { "optionId": "ly12-de16-i-13-c", "label": "C", "text": "$4,2 · 10^5$ Pa" },
+        { "optionId": "ly12-de16-i-13-d", "label": "D", "text": "$9,45 · 10^5$ Pa" }
+      ],
+      "correctOptionId": "ly12-de16-i-13-b",
+      "explanation": "Đẳng tích $\\Rightarrow \\frac{p}{T} =$ hằng số $\\Rightarrow \\frac{6,3 · 10^5}{27 + 273} = \\frac{p}{-83 + 273} \\Rightarrow p ≈ 3,99 · 10^5$ Pa. Chọn B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-14",
+      "title": "Câu 14 (Phần I)",
+      "content": "Một bình chứa khí ở nhiệt độ 27°C và áp suất 40 atm. Tính nhiệt độ của chất khí khi áp suất tăng thêm 10 atm. Biết thể tích không đổi.",
+      "options": [
+        { "optionId": "ly12-de16-i-14-a", "label": "A", "text": "175 K ." },
+        { "optionId": "ly12-de16-i-14-b", "label": "B", "text": "375 K ." },
+        { "optionId": "ly12-de16-i-14-c", "label": "C", "text": "75 K ." },
+        { "optionId": "ly12-de16-i-14-d", "label": "D", "text": "275 K ." }
+      ],
+      "correctOptionId": "ly12-de16-i-14-b",
+      "explanation": "$\\frac{p}{T} =$ hằng số $\\Rightarrow \\frac{40}{27 + 273} = \\frac{40 + 10}{T} \\Rightarrow T = 375$ K. Chọn B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-15",
+      "title": "Câu 15 (Phần I)",
+      "content": "Nhiệt nóng chảy riêng của nhôm là $3,9 · 10^5$ J / kg và nhiệt dung riêng của nhôm là 880 J / kgK . Nhiệt độ nóng chảy của nhôm là 658°C. Nhiệt lượng cần cung cấp để làm nóng chảy hoàn toàn thỏi nhôm có khối lượng 8 kg ở 20°C là",
+      "options": [
+        { "optionId": "ly12-de16-i-15-a", "label": "A", "text": "$7,6 · 10^6$ J." },
+        { "optionId": "ly12-de16-i-15-b", "label": "B", "text": "$7,6 · 10^4$ J." },
+        { "optionId": "ly12-de16-i-15-c", "label": "C", "text": "$47 · 10^6$ J." },
+        { "optionId": "ly12-de16-i-15-d", "label": "D", "text": "$4,7 · 10^6$ J." }
+      ],
+      "correctOptionId": "ly12-de16-i-15-a",
+      "explanation": "$Q = mcΔt + mλ = 8 · 880 · (658 - 20) + 8 · 3,9 · 10^5 ≈ 7,6 · 10^6$ J. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-16",
+      "title": "Câu 16 (Phần I)",
+      "content": "Dùng bếp điện công suất 600 W , hiệu suất 89% để đun 1,5 kg nước từ nhiệt độ ban đầu $t_1 = 20°$. Cho biết nhiệt dung riêng của nước là $c = 4,18$ kJ / kgK . Để nước sôi, thời gian cần thiết xấp xỉ",
+      "options": [
+        { "optionId": "ly12-de16-i-16-a", "label": "A", "text": "15 phút." },
+        { "optionId": "ly12-de16-i-16-b", "label": "B", "text": "16 phút." },
+        { "optionId": "ly12-de16-i-16-c", "label": "C", "text": "17 phút." },
+        { "optionId": "ly12-de16-i-16-d", "label": "D", "text": "18 phút." }
+      ],
+      "correctOptionId": "ly12-de16-i-16-b",
+      "explanation": "$Q = mcΔt = 1,5 · 4,18 · 10^3 · (100 - 20) = 501600$ J\n$A = \\frac{Q}{H} = \\frac{501600}{0,89} ≈ 563595,5$ J\n$t = \\frac{A}{P} = \\frac{563595,5}{600} ≈ 939$ s $≈ 15,65$ phút. Chọn B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-17",
+      "title": "Câu 17 (Phần I)",
+      "content": "Cho đồ thị biểu diễn sự thay đổi nhiệt độ của khối chất lỏng theo nhiệt lượng cung cấp có dạng hình bên. Biết nhiệt dung riêng của chất lỏng đó $c = 2500$ J / KgK . Nhiệt hoá hơi riêng của chất lỏng này là:\n\n![Hình minh họa](public/exams/ly12/de16/p02-2.png)",
+      "image": "public/exams/ly12/de16/p02-2.png",
+      "options": [
+        { "optionId": "ly12-de16-i-17-a", "label": "A", "text": "1050 J / g" },
+        { "optionId": "ly12-de16-i-17-b", "label": "B", "text": "1260 J / g" },
+        { "optionId": "ly12-de16-i-17-c", "label": "C", "text": "900 J / g" },
+        { "optionId": "ly12-de16-i-17-d", "label": "D", "text": "180 J / g" }
+      ],
+      "correctOptionId": "ly12-de16-i-17-c",
+      "explanation": "$Q_AB = mcΔt$, $Q_BC = mL$\n$\\Rightarrow \\frac{Q_AB}{Q_BC} = \\frac{cΔt}{L} \\Rightarrow \\frac{180}{1260 - 180} = \\frac{2500 · (80 - 20)}{L} \\Rightarrow L = 9 · 10^5$ J / kg $= 900$ J / g. Chọn C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de16-i-18",
+      "title": "Câu 18 (Phần I)",
+      "content": "Một hỗn hợp gồm 0,2 kg nước đá (thể rắn) ở 0°C và 0,3 kg nước (thể lỏng) ở 40°C. Biết nhiệt nóng chảy riêng của nước đá là 334 kJ / kg và nhiệt dung riêng của nước là 4200 J / kgK . Khối lượng nước đá (thể rắn) còn lại sau khi đạt cân bằng nhiệt là",
+      "options": [
+        { "optionId": "ly12-de16-i-18-a", "label": "A", "text": "0,049 kg." },
+        { "optionId": "ly12-de16-i-18-b", "label": "B", "text": "0,151 kg." },
+        { "optionId": "ly12-de16-i-18-c", "label": "C", "text": "0,194 kg." },
+        { "optionId": "ly12-de16-i-18-d", "label": "D", "text": "0,200 kg ." }
+      ],
+      "correctOptionId": "ly12-de16-i-18-a",
+      "explanation": "Nhiệt lượng nước tỏa ra khi hạ nhiệt độ xuống 0°C là:\n$Q = m_n c Δt = 0,3 · 4200 · 40 = 50400$ J\nKhối lượng nước đá nóng chảy là: $m_d = \\frac{Q}{λ} = \\frac{50400}{334 · 10^3} ≈ 0,151$ kg\nKhối lượng nước đá (thể rắn) còn lại sau khi đạt cân bằng nhiệt là $0,2 - 0,151 ≈ 0,049$ kg. Chọn A."
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de16-ii-01",
+      "title": "Câu 19 (Phần II - Đúng / Sai)",
+      "content": "Một viên đạn bằng bạc, có khối lượng 2,5 g đang bay với vận tốc 200 m / s thì va chạm vào một bức tường gỗ. Biết nhiệt dung riêng của bạc là 234 J / kg·K . Coi viên đạn không trao đổi nhiệt với môi trường bên ngoài.\n\n![Hình minh họa](public/exams/ly12/de16/p02-3.png)",
+      "image": "public/exams/ly12/de16/p02-3.png",
+      "statements": [
+        {
+          "statementId": "ly12-de16-ii-01-a",
+          "label": "a",
+          "text": "Động năng của viên đạn trước khi va chạm vào tường là 40 J .",
+          "answer": false,
+          "explanation": "Sai. $W_d = \\frac{1}{2} m v^2 = \\frac{1}{2} · 2,5 · 10^-3 · 200^2 = 50$ J."
+        },
+        {
+          "statementId": "ly12-de16-ii-01-b",
+          "label": "b",
+          "text": "Trong quá trình va chạm, viên đạn nhận công 50 J .",
+          "answer": true,
+          "explanation": "Đúng. Viên đạn nhận công từ lực cản của tường cho đến khi dừng lại là $A = 50$ J."
+        },
+        {
+          "statementId": "ly12-de16-ii-01-c",
+          "label": "c",
+          "text": "Trong quá trình trên viên đạn không trao đổi nhiệt với bên ngoài do đó $Q = 0$.",
+          "answer": true,
+          "explanation": "Đúng. Viên đạn không trao đổi nhiệt với bên ngoài nên $Q = 0$."
+        },
+        {
+          "statementId": "ly12-de16-ii-01-d",
+          "label": "d",
+          "text": "Nhiệt độ của viên đạn sẽ tăng lên 85,5°C",
+          "answer": true,
+          "explanation": "Đúng. $ΔU = A + Q = 50$ J\n$ΔU = mcΔt \\Rightarrow 50 = 2,5 · 10^-3 · 234 · Δt \\Rightarrow Δt ≈ 85,5°C$."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de16-ii-02",
+      "title": "Câu 20 (Phần II - Đúng / Sai)",
+      "content": "Một bình chứa không khí ở điều kiện tiêu chuẩn, được đậy bằng một vật có khối lượng 2 kg . Tiết diện của miệng bình là 10 cm^2 . Cho biết áp suất khí quyển là $p_0 = 101325$ N / m^2 . Lấy $g = 9,81$ m / s^2 .\n\n![Hình minh họa](public/exams/ly12/de16/p03-1.png)",
+      "image": "public/exams/ly12/de16/p03-1.png",
+      "statements": [
+        {
+          "statementId": "ly12-de16-ii-02-a",
+          "label": "a",
+          "text": "Khi nắp đậy chưa bị bật ra thì quá trình biến đổi trạng thái của chất khí trong bình là quá trình đẳng tích.",
+          "answer": true,
+          "explanation": "Đúng. Thể tích không đổi nên là quá trình đẳng tích."
+        },
+        {
+          "statementId": "ly12-de16-ii-02-b",
+          "label": "b",
+          "text": "Nếu không có ma sát giữa nắp và thành bình chứa thì nhiệt độ lớn nhất của không khí trong bình để nắp không bị bật ra là 55°C",
+          "answer": false,
+          "explanation": "Sai. Áp suất khí khi nắp bắt đầu bật: $p = p_0 + \\frac{mg}{S} = 101325 + \\frac{2 · 9,81}{10 · 10^-4} = 120945$ Pa.\nVì đẳng tích: $\\frac{p_0}{T_0} = \\frac{p}{T} \\Rightarrow \\frac{101325}{273} = \\frac{120945}{T} \\Rightarrow T ≈ 326$ K $≈ 53°C$."
+        },
+        {
+          "statementId": "ly12-de16-ii-02-c",
+          "label": "c",
+          "text": "Trong quá trình tăng nhiệt độ, tần số va chạm của các phân tử khí lên nắp đậy tăng.",
+          "answer": true,
+          "explanation": "Đúng. Trong quá trình tăng nhiệt độ, các phân tử chuyển động nhanh hơn nên số va chạm tăng."
+        },
+        {
+          "statementId": "ly12-de16-ii-02-d",
+          "label": "d",
+          "text": "Trong quá trình tăng nhiệt độ cho đến thời điểm nắp bị bật lên thì mật độ phân tử chất khí giảm.",
+          "answer": false,
+          "explanation": "Sai. Mật độ phân tử khí là $\\frac{N}{V} =$ hằng số (không đổi)."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de16-ii-03",
+      "title": "Câu 21 (Phần II - Đúng / Sai)",
+      "content": "Dùng một bếp dầu đun sôi 1 kg nước đá ở nhiệt độ -20°C trong một ấm nhôm có khối lượng 0,4 kg trong thời gian 10 phút. Biết chỉ có 40% nhiệt lượng do dầu toả ra khi bị đốt cháy được dùng vào việc làm nóng nước đá và ấm nhôm. Biết nhiệt dung riêng của nước đá, nước, và nhôm lần lượt là: 1800 J / kgK; 4200 J / kgK; 880 J / kgK ; nhiệt nóng chảy riêng của nước đá là $λ = 34 · 10^4$ J / kg , nhiệt hoá hơi riêng của nước là $L = 23 · 10^5$ J / kg . Năng suất toả nhiệt của dầu hoả là $44 · 10^6$ J / kg. Coi công suất mà bếp cung cấp là không đổi.",
+      "statements": [
+        {
+          "statementId": "ly12-de16-ii-03-a",
+          "label": "a",
+          "text": "Nhiệt lượng nước đá thu vào đến khi đạt 100°C là 2756 kJ .",
+          "answer": false,
+          "explanation": "Sai. Nhiệt lượng nước đá thu vào đến khi đạt 100°C là: $Q_1 = m_1(c_d Δt_d + λ + c_n Δt_n) = 1 · (1800 · 20 + 34 · 10^4 + 4200 · 100) = 796000$ J $= 796$ kJ."
+        },
+        {
+          "statementId": "ly12-de16-ii-03-b",
+          "label": "b",
+          "text": "Nhiệt lượng bếp dầu tỏa ra dùng vào việc làm nóng nước đá và ấm nhôm xấp xỉ $2,8 · 10^6$ J .",
+          "answer": false,
+          "explanation": "Sai. Nhiệt lượng nhôm thu vào đến khi đạt 100°C là: $Q_2 = m_2 c_2 Δt_2 = 0,4 · 880 · (100 - (-20)) = 42240$ J.\nNhiệt lượng dùng làm nóng nước đá và ấm nhôm là: $Q = Q_1 + Q_2 = 796000 + 42240 = 838240$ J."
+        },
+        {
+          "statementId": "ly12-de16-ii-03-c",
+          "label": "c",
+          "text": "Lượng dầu hoả cần dùng cho quá trình trên vào khoảng 159 g .",
+          "answer": false,
+          "explanation": "Sai. Nhiệt lượng toàn phần do dầu tỏa ra là: $Q_d = \\frac{Q}{H} = \\frac{838240}{0,4} = 2095600$ J.\nKhối lượng dầu hỏa cần dùng là: $m_d = \\frac{Q_d}{q} = \\frac{2095600}{44 · 10^6} ≈ 0,048$ kg $= 48$ g."
+        },
+        {
+          "statementId": "ly12-de16-ii-03-d",
+          "label": "d",
+          "text": "Nếu tiếp tục đun thì sau 8,35 phút lượng nước trên sẽ hoá hơi hoàn toàn.",
+          "answer": false,
+          "explanation": "Sai. Nhiệt lượng cần để hóa hơi hoàn toàn là: $Q_h = m_1 L = 1 · 23 · 10^5 = 23 · 10^5$ J.\nThời gian cần thiết để hóa hơi hoàn toàn là: $t_h = \\frac{Q_h}{Q} · t = \\frac{23 · 10^5}{838240} · 10 ≈ 27,4$ phút."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de16-ii-04",
+      "title": "Câu 22 (Phần II - Đúng / Sai)",
+      "content": "Một vách ngăn thẳng đứng được lắp vào bình hình chữ nhật chính xác ở giữa, chạm tới đáy bình nhưng có chiều cao thấp hơn (xem hình). Ở bên trái của vách ngăn, một chất lỏng có nhiệt độ $t_1 = 20°C$ được đổ vào bình tới mức bằng chiều cao của vách ngăn. Bên phải vách ngăn có một vật loại nhỏ và chất lỏng cùng loại bên trái, chiều cao cũng bằng chiều cao vách ngăn. Vật và chất lỏng bên phải có nhiệt độ $t_2 = 40°C$. Vật được đưa ra từ bên phải và nhanh chóng hạ xuống bên trái của vách ngăn. Sau một thời gian, nhiệt độ $t_3 = 25°C$ được thiết lập ở phần bên trái và $t_4 = 36°C$ ở phần bên phải. Biết khối lượng riêng của vật gấp đôi khối lượng riêng của chất lỏng. Bỏ qua sự trao đổi nhiệt với môi trường và thành bình, cũng như độ dẫn nhiệt của vách ngăn và sự phụ thuộc của khối lượng riêng vào nhiệt độ. Sau khi thả qua bên ngăn bên trái, vật chưa trao đổi nhiệt nhanh với toàn bộ chất lỏng bên trái.\n\n![Hình minh họa](public/exams/ly12/de16/p03-2.png)",
+      "image": "public/exams/ly12/de16/p03-2.png",
+      "statements": [
+        {
+          "statementId": "ly12-de16-ii-04-a",
+          "label": "a",
+          "text": "Tỉ số giữa tổng thể tích của chất lỏng và vật là 3:1",
+          "answer": false,
+          "explanation": "Sai. Gọi tổng thể tích chất lỏng là $V_l$ và thể tích vật là $V_v$.\nThể tích chất lỏng ban đầu ở ngăn trái là $V_1 = \\frac{V_l + V_v}{2}$, ở ngăn phải là $V_2 = \\frac{V_l - V_v}{2}$.\nKhi thả vật sang ngăn trái làm tràn chất lỏng có thể tích $V_v$ ở $t_1 = 20°C$ sang ngăn phải, phương trình cân bằng nhiệt ở ngăn phải:\n$V_v D_l c_l (t_4 - t_1) = V_2 D_l c_l (t_2 - t_4) \\Rightarrow V_v (36 - 20) = \\frac{V_l - V_v}{2} (40 - 36) \\Rightarrow \\frac{V_l}{V_v} = 9$."
+        },
+        {
+          "statementId": "ly12-de16-ii-04-b",
+          "label": "b",
+          "text": "Nếu tổng thể tích của chất lỏng là 1 (lít) thì thể tích ban đầu của chất lỏng ở ngăn bên trái là $\\frac{5}{9}$ (lít)",
+          "answer": true,
+          "explanation": "Đúng. Nếu $V_l = 1$ lít $\\Rightarrow V_v = \\frac{1}{9}$ lít $\\Rightarrow V_1 = \\frac{1 + 1/9}{2} = \\frac{5}{9}$ lít."
+        },
+        {
+          "statementId": "ly12-de16-ii-04-c",
+          "label": "c",
+          "text": "Tỉ số giữa tổng khối lượng của chất lỏng và vật là 9:2",
+          "answer": true,
+          "explanation": "Đúng. Tỉ số giữa tổng khối lượng chất lỏng và vật là: $\\frac{m_l}{m_v} = \\frac{D_l V_l}{D_v V_v} = \\frac{D_l · 9 V_v}{2 D_l · V_v} = \\frac{9}{2}$."
+        },
+        {
+          "statementId": "ly12-de16-ii-04-d",
+          "label": "d",
+          "text": "Tỉ số nhiệt dung riêng của vật và chất lỏng là 2:3",
+          "answer": true,
+          "explanation": "Đúng. Thể tích chất lỏng ngăn trái còn lại là $V_1' = \\frac{V_l - V_v}{2} = \\frac{9V_v - V_v}{2} = 4V_v$.\nPhương trình cân bằng nhiệt ở ngăn trái:\n$V_1' D_l c_l (t_3 - t_1) = V_v D_v c_v (t_2 - t_3) \\Rightarrow 4 c_l · (25 - 20) = 2 c_v · (40 - 25) \\Rightarrow \\frac{c_v}{c_l} = \\frac{2}{3}$."
+        }
+      ]
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de16-iii-01",
+      "title": "Câu 23 (Phần III - Trả lời ngắn)",
+      "content": "Nếu thực hiện công 100 J để nén khí trong một xilanh thì khí truyền ra môi trường xung quanh nhiệt lượng 30 J . Độ thay đổi nội năng của khí trong xilanh bằng bao nhiêu J?",
+      "answerKey": "70",
+      "explanation": "$ΔU = A + Q = 100 - 30 = 70$ J.\nTrả lời ngắn: 70."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de16-iii-02",
+      "title": "Câu 24 (Phần III - Trả lời ngắn)",
+      "content": "Một bóng đèn dây tóc chứa khí trơ ở 27°C và dưới áp suất 0,64 atm. Khi đèn cháy sáng, áp suất khí trong đèn là 1,28 atm và không làm vỡ bóng đèn. Coi dung tích của bóng đèn không đổi. Nhiệt độ khí trong đèn khi cháy sáng bằng bao nhiêu độ C (làm tròn kết quả đến chữ số hàng đơn vị)?",
+      "answerKey": "327",
+      "explanation": "Đẳng tích $\\frac{p}{T} =$ hằng số $\\Rightarrow \\frac{0,64}{27 + 273} = \\frac{1,28}{T} \\Rightarrow T = 600$ K $≈ 327°C$.\nTrả lời ngắn: 327."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de16-iii-03",
+      "title": "Câu 25 (Phần III - Trả lời ngắn)",
+      "content": "Tính thời gian cần thiết bằng bao nhiêu giây để làm nóng chảy hoàn toàn 2 kg đồng có nhiệt độ ban đầu 30°C , trong một lò nung điện có công suất 20000 W . Biết đồng nóng chảy ở nhiệt độ 1084°C . Biết chỉ có 50% năng lượng điện tiêu thụ của lò được dùng vào việc làm đồng nóng lên và nóng chảy hoàn toàn ở nhiệt độ không đổi. Nhiệt dung riêng của đồng là 380 J / kgK ; nhiệt nóng chảy riêng của đồng là $1,8 · 10^5$ J / kg (làm tròn kết quả đến chữ số hàng đơn vị)?",
+      "answerKey": "116",
+      "explanation": "$Q = mcΔt + mλ = 2 · 380 · (1084 - 30) + 2 · 1,8 · 10^5 = 1161040$ J\n$A = \\frac{Q}{H} = \\frac{1161040}{0,5} = 2322080$ J\n$t = \\frac{A}{P} = \\frac{2322080}{20000} ≈ 116$ s.\nTrả lời ngắn: 116."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de16-iii-04",
+      "title": "Câu 26 (Phần III - Trả lời ngắn)",
+      "content": "Người ta dùng bơm có pit-tông diện tích 8 cm^2 và khoảng chạy 25 cm bơm một quả bóng. Ban đầu quả bóng chứa không khí ở áp suất khí quyển $p_0 = 10^5$ Pa và có thể tích là $V_0 = 1500$ cm^3. Sau 10 lần bơm thì thể tích quả bóng là 2000 cm^3. Coi quá trình bơm nhiệt độ không đổi, áp suất khí trong quả bóng sau khi bơm là $X · 10^5$ Pa . Giá trị của X bằng bao nhiêu?",
+      "answerKey": "1,75",
+      "explanation": "Áp suất và thể tích ban đầu: $p_1 = 10^5$ Pa, $V_1 = 1500 + 10 · 8 · 25 = 3500$ cm$^3$.\nÁp suất và thể tích sau khi bơm: $p_2 = p$, $V_2 = 2000$ cm$^3$.\nVì nhiệt độ không đổi: $p_1 V_1 = p_2 V_2 \\Rightarrow 10^5 · 3500 = p · 2000 \\Rightarrow p = 1,75 · 10^5$ Pa.\nDo đó $X = 1,75$.\nTrả lời ngắn: 1,75."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de16-iii-05",
+      "title": "Câu 27 (Phần III - Trả lời ngắn)",
+      "content": "Sử dụng các thông tin sau cho Câu 27 và Câu 28: Đồ thị biểu diễn sự thay đổi nhiệt độ của một miếng chì theo nhiệt lượng cung cấp được mô tả như hình. Biết nhiệt nóng chảy riêng của chì là $0,25 · 10^5$ J / kg.\n\n![Hình minh họa](public/exams/ly12/de16/p04-1.png)\n\nKhối lượng miếng chì bằng bao nhiêu kg ?",
+      "image": "public/exams/ly12/de16/p04-1.png",
+      "answerKey": "0,8",
+      "explanation": "$Q_{nc} = mλ \\Rightarrow (42 - 22) · 10^3 = m · 0,25 · 10^5 \\Rightarrow m = 0,8$ kg.\nTrả lời ngắn: 0,8."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de16-iii-06",
+      "title": "Câu 28 (Phần III - Trả lời ngắn)",
+      "content": "Tiếp nối thông tin từ đồ thị ở câu trước: Nhiệt dung riêng của chì bằng bao nhiêu J / kgK (làm tròn kết quả đến chữ số hàng đơn vị)?\n\n![Hình minh họa](public/exams/ly12/de16/p04-1.png)",
+      "image": "public/exams/ly12/de16/p04-1.png",
+      "answerKey": "126",
+      "explanation": "$Q = mcΔt \\Rightarrow 22 · 10^3 = 0,8 · c · 218 \\Rightarrow c ≈ 126$ J / kgK.\nTrả lời ngắn: 126."
+    }
+  ]
+}

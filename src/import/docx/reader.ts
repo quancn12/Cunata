@@ -137,9 +137,10 @@ export async function importDocx(
     // 3. Decompress ZIP archive with strict limits
     const limits = options?.limits ?? PROPOSED_ZIP_LIMITS;
     let zipResult = await readZip(bytes, limits, internalController.signal);
-    if (!zipResult.ok && file.size >= 22 && readAttempts < maxReadAttempts) {
-      // Possible write collision on minimal.docx by concurrent browser test
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    let zipRetries = 0;
+    while (!zipResult.ok && file.size >= 22 && zipRetries < 5) {
+      zipRetries++;
+      await new Promise((resolve) => setTimeout(resolve, 50 * zipRetries));
       try {
         const retryBuf = await file.arrayBuffer();
         if (retryBuf.byteLength >= 22) {

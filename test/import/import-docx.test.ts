@@ -16,10 +16,43 @@ describe('DOCX parser XML tag lookup', () => {
     }
   });
 
-  it('parses minimal.docx fixture', async () => {
-    const bytes = readFileSync('./test/codex-check/fixtures/minimal.docx');
+  it('parses minimal.docx fixture with table and image preservation', async () => {
+    const raw = readFileSync('./test/codex-check/fixtures/minimal.docx');
+    const bytes = new Uint8Array(raw as any);
     const file = new File([bytes], 'minimal.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
     const res = await importDocx(file, new AbortController().signal);
     assert.equal(res.ok, true);
+    if (res.ok) {
+      assert.equal(res.value.drafts.length, 1);
+      const draft = res.value.drafts[0]!;
+      assert.ok(draft.question.blocks && draft.question.blocks.length > 0);
+      const hasTable = draft.question.blocks.some((b: any) => b.type === 'table');
+      const hasImage = draft.question.blocks.some((b: any) => b.type === 'image' && b.alt === 'IMAGE-KEEP-42');
+      assert.equal(hasTable, true, 'table block preserved');
+      assert.equal(hasImage, true, 'image block preserved');
+      assert.ok((res.value as any).assets?.some((a: any) => a.alt === 'IMAGE-KEEP-42'), 'asset preserved in job.assets');
+    }
+  });
+
+  it('retries reading when first read attempts fail or are incomplete', async () => {
+    const raw = readFileSync('./test/codex-check/fixtures/minimal.docx');
+    const bytes = new Uint8Array(raw as any);
+    let callCount = 0;
+    const mockFile = {
+      name: 'minimal.docx',
+      size: bytes.byteLength,
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      async arrayBuffer() {
+        callCount++;
+        if (callCount < 2) {
+          throw new Error('Simulated temporary file read lock');
+        }
+        return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+      },
+    } as unknown as File;
+
+    const res = await importDocx(mockFile, new AbortController().signal);
+    assert.equal(res.ok, true);
+    assert.ok(callCount >= 2, 'resilient retry invoked');
   });
 });

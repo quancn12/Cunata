@@ -2,6 +2,16 @@
  "version": 1,
  "exams": [
   {
+   "id": "ly12-hang-tuan-de-10",
+   "title": "Vật lí 12 — Đề số 10 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de10.json"
+  },
+  {
    "id": "ly12-hang-tuan-de-11",
    "title": "Vật lí 12 — Đề số 11 hàng tuần",
    "subject": "Vật lí",
@@ -22,6 +32,16 @@
    "url": "public/exams/ly12/de12.json"
   },
   {
+   "id": "ly12-hang-tuan-de-13",
+   "title": "Vật lí 12 — Đề số 13 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de13.json"
+  },
+  {
    "id": "ly12-hang-tuan-de-14",
    "title": "Vật lí 12 — Đề số 14 hàng tuần",
    "subject": "Vật lí",
@@ -32,6 +52,26 @@
    "url": "public/exams/ly12/de14.json"
   },
   {
+   "id": "ly12-hang-tuan-de-15",
+   "title": "Vật lí 12 — Đề số 15 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de15.json"
+  },
+  {
+   "id": "ly12-hang-tuan-de-16",
+   "title": "Vật lí 12 — Đề số 16 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de16.json"
+  },
+  {
    "id": "ly12-hang-tuan-de-17",
    "title": "Vật lí 12 — Đề số 17 hàng tuần",
    "subject": "Vật lí",
@@ -40,6 +80,16 @@
    "questionCount": 28,
    "group": "Vật lí 12 — Đề hàng tuần",
    "url": "public/exams/ly12/de17.json"
+  },
+  {
+   "id": "ly12-hang-tuan-de-18",
+   "title": "Vật lí 12 — Đề số 18 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de18.json"
   },
   {
    "id": "ly12-hang-tuan-de-19",
@@ -60,6 +110,56 @@
    "questionCount": 28,
    "group": "Vật lí 12 — Đề hàng tuần",
    "url": "public/exams/ly12/de20.json"
+  },
+  {
+   "id": "ly12-hang-tuan-de-21",
+   "title": "Vật lí 12 — Đề số 21 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de21.json"
+  },
+  {
+   "id": "ly12-hang-tuan-de-22",
+   "title": "Vật lí 12 — Đề số 22 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de22.json"
+  },
+  {
+   "id": "ly12-hang-tuan-de-23",
+   "title": "Vật lí 12 — Đề số 23 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de23.json"
+  },
+  {
+   "id": "ly12-hang-tuan-de-24",
+   "title": "Vật lí 12 — Đề số 24 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de24.json"
+  },
+  {
+   "id": "ly12-hang-tuan-de-25",
+   "title": "Vật lí 12 — Đề số 25 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de25.json"
   },
   {
    "id": "exam-thpt-hoa-repeating-demo",
