@@ -12,6 +12,7 @@ import {
   validateImportDraft,
   isHostilePath,
   isHostileDataUriOrContent,
+  WHITELISTED_ASSET_MIMES,
   deepFreeze,
 } from "../../schema/index.ts";
 
@@ -31,7 +32,9 @@ import type {
   ExamDraft,
   Provenance,
   Block,
+  Cell,
   Section,
+  Asset,
 } from "./types.ts";
 
 import { PREVIEW_FLAGS } from "./types.ts";
@@ -61,6 +64,31 @@ function defaultIdGen(prefix: string = "imported"): string {
 }
 
 /**
+ * Recursively scans blocks (including nested table cells) for hostile asset paths.
+ */
+function scanBlocksForHostile(blocks: readonly Block[]): { isHostile: boolean; reason?: string } | null {
+  for (const b of blocks) {
+    if (!b || typeof b !== "object") continue;
+    if (b.type === "image") {
+      if (typeof b.assetId === "string" && isHostilePath(b.assetId)) {
+        return { isHostile: true, reason: `Hostile block image assetId: "${b.assetId}"` };
+      }
+    } else if (b.type === "table" && Array.isArray(b.rows)) {
+      for (const row of b.rows) {
+        if (!Array.isArray(row)) continue;
+        for (const cell of row) {
+          if (cell && Array.isArray(cell.blocks)) {
+            const nested = scanBlocksForHostile(cell.blocks);
+            if (nested) return nested;
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * Checks if a question has any hostile image, asset or content references.
  */
 export function checkHostileRefs(
@@ -77,17 +105,77 @@ export function checkHostileRefs(
   }
 
   if (Array.isArray(blocks)) {
-    for (const b of blocks) {
-      if (!b || typeof b !== "object") continue;
-      if (b.type === "image") {
-        if (typeof b.assetId === "string" && isHostilePath(b.assetId)) {
-          return { isHostile: true, reason: `Hostile block image assetId: "${b.assetId}"` };
-        }
-      }
+    const hostileBlock = scanBlocksForHostile(blocks);
+    if (hostileBlock) {
+      return hostileBlock;
     }
   }
 
   return { isHostile: false };
+}
+
+/**
+ * Recursively collects all image asset IDs referenced in a question's image and blocks (including tables).
+ */
+export function collectReferencedAssetIds(
+  image?: string,
+  blocks?: readonly Block[],
+): readonly string[] {
+  const assetIds: string[] = [];
+  if (typeof image === "string" && image.trim() !== "") {
+    assetIds.push(image);
+  }
+  if (Array.isArray(blocks)) {
+    const scan = (bl: readonly Block[]) => {
+      for (const b of bl) {
+        if (!b || typeof b !== "object") continue;
+        if (b.type === "image" && typeof b.assetId === "string" && b.assetId.trim() !== "") {
+          assetIds.push(b.assetId);
+        } else if (b.type === "table" && Array.isArray(b.rows)) {
+          for (const row of b.rows) {
+            if (!Array.isArray(row)) continue;
+            for (const cell of row) {
+              if (cell && Array.isArray(cell.blocks)) {
+                scan(cell.blocks);
+              }
+            }
+          }
+        }
+      }
+    };
+    scan(blocks);
+  }
+  return Object.freeze(assetIds);
+}
+
+/**
+ * Recursively remaps asset IDs in blocks (including nested table cells).
+ */
+export function remapBlocksAssets(
+  blocks: readonly Block[],
+  remap: ReadonlyMap<string, string>,
+): readonly Block[] {
+  return blocks.map((b) => {
+    if (b.type === "image") {
+      const newId = remap.get(b.assetId);
+      if (newId && newId !== b.assetId) {
+        return { ...b, assetId: newId };
+      }
+      return b;
+    }
+    if (b.type === "table" && Array.isArray(b.rows)) {
+      return {
+        ...b,
+        rows: b.rows.map((row) =>
+          row.map((cell: Cell) => ({
+            ...cell,
+            blocks: remapBlocksAssets(cell.blocks, remap),
+          })),
+        ),
+      };
+    }
+    return b;
+  });
 }
 
 /**
@@ -576,6 +664,35 @@ export function confirmImport(
     };
   }
 
+  // Lifecycle check: failed or cancelled jobs must never be confirmed into an exam draft
+  if (job.state === "failed" || (job.flags && job.flags.includes(PREVIEW_FLAGS.IMPORT_CANCELLED))) {
+    return {
+      ok: false,
+      error: {
+        code: job.flags?.includes(PREVIEW_FLAGS.IMPORT_CANCELLED)
+          ? PREVIEW_FLAGS.IMPORT_CANCELLED
+          : "IMPORT_INVALID",
+        path: "job.state",
+        message: job.flags?.includes(PREVIEW_FLAGS.IMPORT_CANCELLED)
+          ? "Tác vụ import đã bị hủy, không thể xác nhận nhập vào đề thi"
+          : "Tác vụ import ở trạng thái thất bại, không thể xác nhận",
+        recoverable: false,
+      },
+    };
+  }
+
+  if (job.state !== "preview" && job.state !== "confirmed") {
+    return {
+      ok: false,
+      error: {
+        code: "IMPORT_INVALID",
+        path: "job.state",
+        message: `Tác vụ import đang ở trạng thái "${job.state}", chưa sẵn sàng để xác nhận`,
+        recoverable: false,
+      },
+    };
+  }
+
   // 1. Filter drafts with confirmed === true
   const confirmedDrafts = job.drafts.filter((d) => d.confirmed === true);
   if (confirmedDrafts.length === 0) {
@@ -590,7 +707,28 @@ export function confirmImport(
     };
   }
 
-  // 2. Filter valid drafts among confirmed
+  // 2. Prepare Asset maps from job and target exam
+  const rawJobAssets: readonly Asset[] = Array.isArray((job as unknown as { assets?: unknown }).assets)
+    ? ((job as unknown as { assets: readonly Asset[] }).assets)
+    : [];
+  const jobAssetMap = new Map<string, Asset>();
+  for (const asset of rawJobAssets) {
+    if (asset && typeof asset === "object" && typeof asset.assetId === "string") {
+      jobAssetMap.set(asset.assetId, asset);
+    }
+  }
+
+  const existingExamAssets: readonly Asset[] = Array.isArray(exam.exam.assets)
+    ? exam.exam.assets
+    : [];
+  const existingAssetMap = new Map<string, Asset>();
+  for (const asset of existingExamAssets) {
+    if (asset && typeof asset === "object" && typeof asset.assetId === "string") {
+      existingAssetMap.set(asset.assetId, asset);
+    }
+  }
+
+  // 3. Filter valid drafts among confirmed, validating answer keys and asset references
   const validConfirmedDrafts: ImportDraft[] = [];
   const invalidConfirmedDrafts: { draftId: string; issues: readonly string[] }[] = [];
 
@@ -599,12 +737,36 @@ export function confirmImport(
     const missingKey = isDraftMissingKey(draft);
     const hostile = checkHostileRefs(draft.question?.image, draft.question?.blocks);
 
-    if (issues.length > 0 || missingKey || hostile.isHostile) {
+    // Validate asset references
+    const referencedAssetIds = collectReferencedAssetIds(
+      draft.question?.image,
+      draft.question?.blocks,
+    );
+    let assetUnsafe = false;
+    for (const assetId of referencedAssetIds) {
+      if (isHostilePath(assetId)) {
+        assetUnsafe = true;
+        break;
+      }
+      const jobAsset = jobAssetMap.get(assetId);
+      if (jobAsset) {
+        if (!WHITELISTED_ASSET_MIMES.has(jobAsset.mime) || isHostileDataUriOrContent(jobAsset.mime, jobAsset.data)) {
+          assetUnsafe = true;
+          break;
+        }
+      } else if (!existingAssetMap.has(assetId) && !assetId.startsWith("public/")) {
+        // Missing asset reference
+        assetUnsafe = true;
+        break;
+      }
+    }
+
+    if (issues.length > 0 || missingKey || hostile.isHostile || assetUnsafe) {
       const errList = issues.map((i) => i.code);
       if (missingKey && !errList.includes(PREVIEW_FLAGS.KEY_MISSING)) {
         errList.push(PREVIEW_FLAGS.KEY_MISSING);
       }
-      if (hostile.isHostile && !errList.includes(PREVIEW_FLAGS.ASSET_UNSAFE)) {
+      if ((hostile.isHostile || assetUnsafe) && !errList.includes(PREVIEW_FLAGS.ASSET_UNSAFE)) {
         errList.push(PREVIEW_FLAGS.ASSET_UNSAFE);
       }
       invalidConfirmedDrafts.push({ draftId: draft.draftId, issues: errList });
@@ -614,22 +776,26 @@ export function confirmImport(
   }
 
   if (validConfirmedDrafts.length === 0) {
+    const hasAssetUnsafe = invalidConfirmedDrafts.some((d) => d.issues.includes(PREVIEW_FLAGS.ASSET_UNSAFE));
     return {
       ok: false,
       error: {
-        code: "IMPORT_KEY_MISSING",
+        code: hasAssetUnsafe ? "ASSET_UNSAFE" : "IMPORT_KEY_MISSING",
         path: "drafts",
-        message: "Các câu hỏi được chọn xác nhận còn thiếu đáp án chuẩn hoặc chưa hợp lệ để nhập vào đề",
+        message: hasAssetUnsafe
+          ? "Các câu hỏi được chọn xác nhận chứa tham chiếu ảnh không hợp lệ, không an toàn hoặc thiếu ảnh gốc"
+          : "Các câu hỏi được chọn xác nhận còn thiếu đáp án chuẩn hoặc chưa hợp lệ để nhập vào đề",
         recoverable: true,
       },
     };
   }
 
-  // 3. Existing IDs in target exam to avoid collision
+  // 4. Existing IDs in target exam to avoid collision
   const existingQuestionIds = new Set<string>();
   const existingOptionIds = new Set<string>();
   const existingStatementIds = new Set<string>();
   const existingProvenanceKeys = new Set<string>();
+  const existingAssetIds = new Set<string>(existingAssetMap.keys());
 
   for (const q of exam.exam.questions) {
     existingQuestionIds.add(q.questionVersionId);
@@ -650,7 +816,39 @@ export function confirmImport(
   const idGen = options?.idGenerator ?? defaultIdGen;
   const dedupeProv = options?.dedupeDuplicateProvenance ?? false;
 
-  // 4. Convert confirmed valid drafts into WebQuestion objects
+  // Remap and collect referenced job assets to resolve ID collisions
+  const jobAssetRemap = new Map<string, string>();
+  const assetsToAdd: Asset[] = [];
+
+  for (const draft of validConfirmedDrafts) {
+    const referencedAssetIds = collectReferencedAssetIds(
+      draft.question?.image,
+      draft.question?.blocks,
+    );
+    for (const oldAssetId of referencedAssetIds) {
+      if (jobAssetRemap.has(oldAssetId)) {
+        continue;
+      }
+      const jobAsset = jobAssetMap.get(oldAssetId);
+      if (jobAsset) {
+        let targetAssetId = oldAssetId;
+        if (existingAssetIds.has(oldAssetId)) {
+          // Collision: remap to unique ID
+          targetAssetId = idGen("asset");
+        }
+        existingAssetIds.add(targetAssetId);
+        jobAssetRemap.set(oldAssetId, targetAssetId);
+        assetsToAdd.push({
+          ...jobAsset,
+          assetId: targetAssetId,
+        });
+      } else if (existingAssetMap.has(oldAssetId)) {
+        jobAssetRemap.set(oldAssetId, oldAssetId);
+      }
+    }
+  }
+
+  // 5. Convert confirmed valid drafts into WebQuestion objects
   const questionsToAdd: WebQuestion[] = [];
 
   for (const draft of validConfirmedDrafts) {
@@ -674,6 +872,12 @@ export function confirmImport(
       qVersionId = idGen("q");
     }
     existingQuestionIds.add(qVersionId);
+
+    // Remap assets in image and blocks
+    const remappedBlocks = rawQ.blocks ? remapBlocksAssets(rawQ.blocks, jobAssetRemap) : undefined;
+    const remappedImage = rawQ.image && jobAssetRemap.has(rawQ.image)
+      ? jobAssetRemap.get(rawQ.image)
+      : rawQ.image;
 
     // Build WebQuestion according to kind
     if (kind === "I") {
@@ -705,9 +909,9 @@ export function confirmImport(
         ...(q1.questionId ? { questionId: q1.questionId } : {}),
         ...(q1.title ? { title: q1.title } : {}),
         ...(q1.content ? { content: q1.content } : {}),
-        ...(q1.image ? { image: q1.image } : {}),
+        ...(remappedImage ? { image: remappedImage } : {}),
         ...(q1.explanation ? { explanation: q1.explanation } : {}),
-        ...(q1.blocks ? { blocks: q1.blocks } : {}),
+        ...(remappedBlocks ? { blocks: Object.freeze(remappedBlocks) } : {}),
         ...(q1.subject ? { subject: q1.subject } : {}),
         ...(q1.grade ? { grade: q1.grade } : {}),
         ...(q1.topic ? { topic: q1.topic } : {}),
@@ -740,9 +944,9 @@ export function confirmImport(
         ...(q2.questionId ? { questionId: q2.questionId } : {}),
         ...(q2.title ? { title: q2.title } : {}),
         ...(q2.content ? { content: q2.content } : {}),
-        ...(q2.image ? { image: q2.image } : {}),
+        ...(remappedImage ? { image: remappedImage } : {}),
         ...(q2.explanation ? { explanation: q2.explanation } : {}),
-        ...(q2.blocks ? { blocks: q2.blocks } : {}),
+        ...(remappedBlocks ? { blocks: Object.freeze(remappedBlocks) } : {}),
         ...(q2.subject ? { subject: q2.subject } : {}),
         ...(q2.grade ? { grade: q2.grade } : {}),
         ...(q2.topic ? { topic: q2.topic } : {}),
@@ -762,9 +966,9 @@ export function confirmImport(
         ...(q3.questionId ? { questionId: q3.questionId } : {}),
         ...(q3.title ? { title: q3.title } : {}),
         ...(q3.content ? { content: q3.content } : {}),
-        ...(q3.image ? { image: q3.image } : {}),
+        ...(remappedImage ? { image: remappedImage } : {}),
         ...(q3.explanation ? { explanation: q3.explanation } : {}),
-        ...(q3.blocks ? { blocks: q3.blocks } : {}),
+        ...(remappedBlocks ? { blocks: Object.freeze(remappedBlocks) } : {}),
         ...(q3.subject ? { subject: q3.subject } : {}),
         ...(q3.grade ? { grade: q3.grade } : {}),
         ...(q3.topic ? { topic: q3.topic } : {}),
@@ -777,14 +981,16 @@ export function confirmImport(
     }
   }
 
-  // 5. Build updated ExamDraft with incremented revision
+  // 6. Build updated ExamDraft with incremented revision and merged assets
   const mergedQuestions = [...exam.exam.questions, ...questionsToAdd];
+  const mergedAssets = [...existingExamAssets, ...assetsToAdd];
   const updatedDraft: ExamDraft = {
     draftId: exam.draftId,
     revision: exam.revision + 1,
     exam: deepFreeze(deepClone({
       ...exam.exam,
       questions: mergedQuestions,
+      assets: mergedAssets,
     })),
   };
 
@@ -795,7 +1001,8 @@ export function confirmImport(
 }
 
 /**
- * Cancels an import job, setting its state to "failed" with the IMPORT_CANCELLED flag.
+ * Cancels an import job, setting its state to "failed" with the IMPORT_CANCELLED flag
+ * and invalidating draft confirmation status.
  */
 export function cancelImport(job: ImportJob): Result<ImportJob> {
   if (!isRecord(job)) {
@@ -813,9 +1020,18 @@ export function cancelImport(job: ImportJob): Result<ImportJob> {
   const flags = new Set<string>(job.flags ?? []);
   flags.add(PREVIEW_FLAGS.IMPORT_CANCELLED);
 
+  // Invalidate confirmed drafts upon cancellation so they cannot be mistakenly confirmed
+  const unconfirmedDrafts = Array.isArray(job.drafts)
+    ? job.drafts.map((d) => ({
+        ...d,
+        confirmed: false,
+      }))
+    : [];
+
   const updatedJob: ImportJob = {
     ...job,
     state: "failed",
+    drafts: Object.freeze(unconfirmedDrafts),
     flags: Object.freeze(Array.from(flags)),
   };
 

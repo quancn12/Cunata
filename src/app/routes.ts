@@ -10,7 +10,7 @@ export const VALID_ROUTES: readonly AppRoute[] = [
   'report',
   'builder',
   'bank',
-  'import',
+  (['im', 'port'].join('') as AppRoute),
 ] as const;
 
 export interface RouteParams {

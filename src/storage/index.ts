@@ -149,6 +149,9 @@ export function computePayloadHash(record: AttemptRecord): string {
 
 function mapStorageError(err: unknown, defaultPath = 'storage'): WebError {
   if (err && typeof err === 'object') {
+    if ('code' in err && 'path' in err && 'message' in err && 'recoverable' in err) {
+      return err as WebError;
+    }
     const name = 'name' in err ? String((err as { name: unknown }).name) : '';
     const message = 'message' in err ? String((err as { message: unknown }).message) : String(err);
 
@@ -160,11 +163,24 @@ function mapStorageError(err: unknown, defaultPath = 'storage'): WebError {
         recoverable: true,
       };
     }
-    if (name === 'SecurityError' || name === 'InvalidStateError') {
+    if (
+      name === 'SecurityError' ||
+      name === 'InvalidStateError' ||
+      name === 'BlockedError' ||
+      message.toLowerCase().includes('blocked')
+    ) {
       return {
         code: 'STORAGE_UNAVAILABLE',
         path: defaultPath,
         message: `Lưu trữ không khả dụng: ${message}`,
+        recoverable: false,
+      };
+    }
+    if (name === 'VersionError') {
+      return {
+        code: 'STORAGE_VERSION_UNSUPPORTED',
+        path: defaultPath,
+        message: `Phiên bản cơ sở dữ liệu không được hỗ trợ (VersionError): ${message}`,
         recoverable: false,
       };
     }
@@ -195,6 +211,8 @@ export class MemoryTransactionAdapter implements StorageTransactionAdapter {
   private readonly data: Map<StoreName, Map<string, unknown>>;
   private unavailable = false;
   private quotaExceeded = false;
+  private blocked = false;
+  private versionError: string | null = null;
   private executionQueue = Promise.resolve();
 
   constructor(backingData?: Map<StoreName, Map<string, unknown>>) {
@@ -232,14 +250,32 @@ export class MemoryTransactionAdapter implements StorageTransactionAdapter {
     this.quotaExceeded = flag;
   }
 
+  setBlocked(flag: boolean): void {
+    this.blocked = flag;
+  }
+
+  setVersionError(message: string | null): void {
+    this.versionError = message;
+  }
+
   async isAvailable(): Promise<boolean> {
-    return !this.unavailable;
+    return !this.unavailable && !this.blocked && !this.versionError;
   }
 
   async clearAll(): Promise<void> {
     if (this.unavailable) {
       const err = new Error('SecurityError: IndexedDB is blocked');
       err.name = 'SecurityError';
+      throw err;
+    }
+    if (this.blocked) {
+      const err = new Error('BlockedError: Database is blocked by another version upgrade');
+      err.name = 'BlockedError';
+      throw err;
+    }
+    if (this.versionError) {
+      const err = new Error(`VersionError: ${this.versionError}`);
+      err.name = 'VersionError';
       throw err;
     }
     for (const store of this.data.values()) {
@@ -255,6 +291,18 @@ export class MemoryTransactionAdapter implements StorageTransactionAdapter {
     if (this.unavailable) {
       const err = new Error('SecurityError: IndexedDB is blocked or private mode');
       err.name = 'SecurityError';
+      throw err;
+    }
+
+    if (this.blocked) {
+      const err = new Error('BlockedError: Database open or transaction blocked by concurrent version upgrade');
+      err.name = 'BlockedError';
+      throw err;
+    }
+
+    if (this.versionError) {
+      const err = new Error(`VersionError: ${this.versionError}`);
+      err.name = 'VersionError';
       throw err;
     }
 
@@ -413,9 +461,25 @@ export class IndexedDBTransactionAdapter implements StorageTransactionAdapter {
             }
           }
         };
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error ?? new Error('Failed to open IndexedDB'));
-        req.onblocked = () => reject(new Error('IndexedDB open blocked'));
+        req.onsuccess = () => {
+          const db = req.result;
+          db.onversionchange = () => {
+            try {
+              db.close();
+            } catch (_) {}
+            this.dbPromise = null;
+          };
+          resolve(db);
+        };
+        req.onerror = () => {
+          this.dbPromise = null;
+          reject(req.error ?? new Error('Failed to open IndexedDB'));
+        };
+        req.onblocked = () => {
+          const err = new Error('BlockedError: IndexedDB open request blocked by another connection');
+          err.name = 'BlockedError';
+          reject(err);
+        };
       });
     }
     return this.dbPromise;
@@ -741,7 +805,11 @@ export function createStoragePort(
           };
 
           await tx.put('attempts', keyStr, finalRecord);
-          await tx.put('outbox', keyStr, outboxRecord);
+
+          const existingOutbox = (await tx.get('outbox', keyStr)) as OutboxRecord | null;
+          if (!existingOutbox) {
+            await tx.put('outbox', keyStr, outboxRecord);
+          }
 
           return { ok: true as const, value: deepClone(finalRecord) };
         });
@@ -932,6 +1000,18 @@ export function createStoragePort(
             };
           }
 
+          if (expectedGeneration !== null && existing.generation !== expectedGeneration) {
+            return {
+              ok: false as const,
+              error: {
+                code: 'STORAGE_CONFLICT',
+                path: 'generation',
+                message: `Xung đột thế hệ sync outbox (kỳ vọng ${expectedGeneration}, thực tế ${existing.generation})`,
+                recoverable: false,
+              },
+            };
+          }
+
           // Terminal state: server_confirmed cannot be downgraded
           if (existing.state === 'server_confirmed' && value.state !== 'server_confirmed') {
             return {
@@ -945,21 +1025,25 @@ export function createStoragePort(
             };
           }
 
-          if (expectedGeneration !== null && existing.generation !== expectedGeneration) {
+          // If existing is server_confirmed, reject un-versioned updates (require explicit generation CAS)
+          if (existing.state === 'server_confirmed' && expectedGeneration === null) {
             return {
               ok: false as const,
               error: {
                 code: 'STORAGE_CONFLICT',
                 path: 'generation',
-                message: `Xung đột thế hệ sync outbox (kỳ vọng ${expectedGeneration}, thực tế ${existing.generation})`,
+                message: 'Bản ghi outbox ở trạng thái server_confirmed yêu cầu expectedGeneration tường minh để cập nhật.',
                 recoverable: false,
               },
             };
           }
 
+          // Invariant: updateOutbox only updates sync metadata; immutable final fields are preserved
           const nextGen = existing.generation + 1;
           const updated: OutboxRecord = {
             ...deepClone(value),
+            payloadHash: existing.payloadHash,
+            finalRevision: existing.finalRevision,
             generation: nextGen,
           };
           await tx.put('outbox', keyStr, updated);
@@ -1026,23 +1110,12 @@ export function createStoragePort(
           }
         }
 
-        if (
-          !parsed ||
-          typeof parsed !== 'object' ||
-          (parsed as { schemaVersion?: unknown }).schemaVersion !== 'cunata-backup-v1'
-        ) {
-          return {
-            ok: false,
-            error: {
-              code: 'STORAGE_CORRUPT',
-              path: 'schemaVersion',
-              message: 'Dữ liệu sao lưu không đúng định dạng cunata-backup-v1',
-              recoverable: false,
-            },
-          };
+        const valRes = validateBackupPayload(parsed);
+        if (!valRes.ok) {
+          return valRes;
         }
 
-        const backup = parsed as StorageBackupPayload;
+        const backup = valRes.value;
 
         return await adapter.runTransaction(
           ['attempts', 'outbox', 'bank', 'exams', 'imports'],

@@ -999,6 +999,19 @@ export async function publishDraft(
     }
     seenQVersionIds.add(q.questionVersionId);
 
+    if (q.title !== undefined && typeof q.title !== "string") {
+      return {
+        ok: false,
+        error: { code: "TYPE_MISMATCH", path: `${qPath}.title`, message: "title must be a string if provided", recoverable: true },
+      };
+    }
+    if (q.content !== undefined && typeof q.content !== "string") {
+      return {
+        ok: false,
+        error: { code: "TYPE_MISMATCH", path: `${qPath}.content`, message: "content must be a string if provided", recoverable: true },
+      };
+    }
+
     if (q.kind === "I") {
       if (!Array.isArray(q.options) || q.options.length !== 4) {
         return {
@@ -1013,6 +1026,12 @@ export async function publishDraft(
           return {
             ok: false,
             error: { code: "ID_EMPTY", path: `${qPath}.options[${j}].optionId`, message: "optionId must not be empty", recoverable: true },
+          };
+        }
+        if (typeof (opt as { text?: unknown }).text !== "string") {
+          return {
+            ok: false,
+            error: { code: "OPTION_TEXT_INVALID", path: `${qPath}.options[${j}].text`, message: "Option text must be a string", recoverable: true },
           };
         }
         if (optIds.has(opt.optionId)) {
@@ -1050,6 +1069,12 @@ export async function publishDraft(
             error: { code: "ID_EMPTY", path: `${qPath}.statements[${j}].statementId`, message: "statementId must not be empty", recoverable: true },
           };
         }
+        if (typeof (stmt as { text?: unknown }).text !== "string") {
+          return {
+            ok: false,
+            error: { code: "STATEMENT_TEXT_INVALID", path: `${qPath}.statements[${j}].text`, message: "Statement text must be a string", recoverable: true },
+          };
+        }
         if (stmtIds.has(stmt.statementId)) {
           return {
             ok: false,
@@ -1070,10 +1095,10 @@ export async function publishDraft(
         }
       }
     } else if (q.kind === "III") {
-      if (typeof q.answerKey !== "string") {
+      if (typeof q.answerKey !== "string" || q.answerKey.trim() === "") {
         return {
           ok: false,
-          error: { code: "TYPE_MISMATCH", path: `${qPath}.answerKey`, message: "answerKey must be a string", recoverable: true },
+          error: { code: "III_KEY_INVALID", path: `${qPath}.answerKey`, message: "answerKey must be a non-empty string", recoverable: true },
         };
       }
       const issues = checkShortAnswer(q.answerKey);

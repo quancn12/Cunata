@@ -1,0 +1,148 @@
+{
+  "examId": "exam:golden-0-4-0",
+  "examVersionId": "version:golden-0-4-0",
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "questions": [
+    {
+      "kind": "II",
+      "questionVersionId": "golden-0-4-0:II:0",
+      "statements": [
+        {
+          "statementId": "golden-0-4-0:II:0:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "golden-0-4-0:II:0:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "golden-0-4-0:II:0:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "golden-0-4-0:II:0:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 1",
+      "content": "Oracle golden-0-4-0-blank câu 1"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "golden-0-4-0:II:1",
+      "statements": [
+        {
+          "statementId": "golden-0-4-0:II:1:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "golden-0-4-0:II:1:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "golden-0-4-0:II:1:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "golden-0-4-0:II:1:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 2",
+      "content": "Oracle golden-0-4-0-blank câu 2"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "golden-0-4-0:II:2",
+      "statements": [
+        {
+          "statementId": "golden-0-4-0:II:2:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "golden-0-4-0:II:2:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "golden-0-4-0:II:2:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "golden-0-4-0:II:2:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 3",
+      "content": "Oracle golden-0-4-0-blank câu 3"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "golden-0-4-0:II:3",
+      "statements": [
+        {
+          "statementId": "golden-0-4-0:II:3:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "golden-0-4-0:II:3:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "golden-0-4-0:II:3:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "golden-0-4-0:II:3:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 4",
+      "content": "Oracle golden-0-4-0-blank câu 4"
+    }
+  ],
+  "schemaVersion": "web-exam-v1",
+  "title": "Oracle golden-0-4-0-blank",
+  "subject": "Toán học",
+  "grade": 12,
+  "assets": [],
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  }
+}

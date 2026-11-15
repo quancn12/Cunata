@@ -828,6 +828,10 @@ export function mount(
       const headerLeft = doc.createElement("div");
       headerLeft.className = "draft-header-left";
 
+      const isFailedOrCancelled =
+        currentJob.state === "failed" ||
+        (currentJob.flags && currentJob.flags.includes(PREVIEW_FLAGS.IMPORT_CANCELLED));
+
       // Confirmed Checkbox
       const checkLabel = doc.createElement("label");
       checkLabel.className = "draft-checkbox-label";
@@ -835,8 +839,10 @@ export function mount(
       chk.type = "checkbox";
       chk.className = "draft-checkbox-input";
       chk.checked = draft.confirmed;
+      chk.disabled = Boolean(isFailedOrCancelled);
       chk.setAttribute("aria-label", `Xác nhận câu ${index + 1}`);
       attachListener(chk, "change", () => {
+        if (isFailedOrCancelled) return;
         const res = editImport(currentJob, draft.draftId, { confirmed: chk.checked });
         if (res.ok) {
           notifyJobChange(res.value);
@@ -920,7 +926,7 @@ export function mount(
       if (Array.isArray(q.blocks) && q.blocks.length > 0) {
         const blocksArea = doc.createElement("div");
         blocksArea.className = "draft-blocks-area";
-        blocksArea.appendChild(renderBlocks(q.blocks, { document: doc }));
+        blocksArea.appendChild(renderBlocks(q.blocks, { document: doc, assets: (currentJob as any).assets }));
         contentArea.appendChild(blocksArea);
       }
 
@@ -1235,12 +1241,20 @@ export function mount(
     container.appendChild(draftList);
 
     // 5. Action Footer
+    const isJobFailedOrCancelled =
+      currentJob.state === "failed" ||
+      (currentJob.flags && currentJob.flags.includes(PREVIEW_FLAGS.IMPORT_CANCELLED));
+
     const footer = doc.createElement("footer");
     footer.className = "preview-action-footer";
 
     const footerLeft = doc.createElement("div");
     footerLeft.className = "footer-left";
-    footerLeft.textContent = `Sẵn sàng nhập: ${confirmedCount} câu hỏi đã xác nhận / ${totalCount} tổng số.`;
+    footerLeft.textContent = isJobFailedOrCancelled
+      ? (currentJob.flags?.includes(PREVIEW_FLAGS.IMPORT_CANCELLED)
+          ? "Tác vụ nhập đề đã bị hủy. Không thể xác nhận vào đề thi."
+          : "Tác vụ nhập đề ở trạng thái thất bại. Không thể xác nhận vào đề thi.")
+      : `Sẵn sàng nhập: ${confirmedCount} câu hỏi đã xác nhận / ${totalCount} tổng số.`;
     footer.appendChild(footerLeft);
 
     const footerRight = doc.createElement("div");
@@ -1250,10 +1264,14 @@ export function mount(
     btnCancel.type = "button";
     btnCancel.className = "preview-btn btn-danger";
     btnCancel.textContent = "Hủy nhập";
+    btnCancel.disabled = Boolean(isJobFailedOrCancelled);
     attachListener(btnCancel, "click", () => {
+      if (isJobFailedOrCancelled) return;
       const cancelRes = cancelImport(currentJob);
       if (cancelRes.ok) {
         currentJob = cancelRes.value;
+        statusMessage = "Đã hủy tác vụ nhập đề.";
+        errorMessage = null;
         if (typeof actions.onCancel === "function") {
           actions.onCancel(currentJob);
         }
@@ -1266,7 +1284,15 @@ export function mount(
     btnConfirm.type = "button";
     btnConfirm.className = "preview-btn btn-success";
     btnConfirm.textContent = "Xác nhận nhập vào đề";
+    btnConfirm.disabled = Boolean(isJobFailedOrCancelled || confirmedCount === 0);
     attachListener(btnConfirm, "click", () => {
+      if (isJobFailedOrCancelled) {
+        errorMessage = currentJob.flags?.includes(PREVIEW_FLAGS.IMPORT_CANCELLED)
+          ? "Tác vụ import đã bị hủy, không thể xác nhận vào đề thi."
+          : "Tác vụ import ở trạng thái thất bại, không thể xác nhận.";
+        render();
+        return;
+      }
       if (!targetExamDraft) {
         // Create an empty dummy target exam draft if none provided
         targetExamDraft = {

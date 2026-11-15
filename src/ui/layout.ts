@@ -59,6 +59,58 @@ export interface ExamLayoutInstance {
   readonly dispose: () => void;
 }
 
+export interface RadioGroupKeyboardOptions {
+  readonly items: readonly HTMLElement[];
+  readonly currentIndex: number;
+  readonly onSelect: (index: number) => void;
+  readonly focusAfterSelect?: boolean;
+}
+
+/**
+ * Handles accessible keyboard navigation for Part I radio groups (WCAG 2.1 & ARIA APG Radio Group Pattern).
+ * - Space / Enter: Selects current item and preserves focus on that item.
+ * - ArrowDown / ArrowRight: Moves selection and focus to next item (with cyclic wrapping).
+ * - ArrowUp / ArrowLeft: Moves selection and focus to previous item (with cyclic wrapping).
+ */
+export function handleRadioGroupKeyDown(
+  e: KeyboardEvent,
+  options: RadioGroupKeyboardOptions
+): boolean {
+  const { items, currentIndex, onSelect, focusAfterSelect = true } = options;
+  if (!items || items.length === 0) return false;
+
+  if (e.key === ' ' || e.key === 'Enter') {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    onSelect(currentIndex);
+    if (focusAfterSelect && items[currentIndex] && typeof items[currentIndex].focus === 'function') {
+      items[currentIndex].focus();
+    }
+    return true;
+  }
+
+  if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    const nextIndex = (currentIndex + 1) % items.length;
+    onSelect(nextIndex);
+    if (focusAfterSelect && items[nextIndex] && typeof items[nextIndex].focus === 'function') {
+      items[nextIndex].focus();
+    }
+    return true;
+  }
+
+  if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    const prevIndex = (currentIndex - 1 + items.length) % items.length;
+    onSelect(prevIndex);
+    if (focusAfterSelect && items[prevIndex] && typeof items[prevIndex].focus === 'function') {
+      items[prevIndex].focus();
+    }
+    return true;
+  }
+
+  return false;
+}
+
 export const LAYOUT_STYLE_ELEMENT_ID = 'cunata-ui-layout-styles';
 
 /**
@@ -149,6 +201,30 @@ export const LAYOUT_CSS = `
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+@media print {
+  .cunata-skip-link, .cunata-actions-row, .cunata-layout-palette-drawer,
+  .cunata-layout-toggle-palette, .cunata-modal-backdrop, .cunata-status-badge,
+  .cunata-btn, button, .btn-submit, .btn-secondary, .report-actions-bar {
+    display: none !important;
+  }
+  .cunata-ui, .cunata-layout-root {
+    color: #000000 !important; background: #ffffff !important; font-size: 11pt !important;
+  }
+  .cunata-layout-main { display: block !important; padding: 0 !important; }
+  .cunata-layout-content { width: 100% !important; }
+  .cunata-question-card, .cunata-report-section, .summary-card, article {
+    page-break-inside: avoid; break-inside: avoid; margin-bottom: 16pt;
+  }
+}
+@media (forced-colors: active) {
+  .cunata-ui button, .cunata-ui .cunata-btn, .cunata-ui input,
+  .cunata-ui textarea, .cunata-ui select, .cunata-touch-target {
+    border: 2px solid ButtonText !important;
+  }
+  .cunata-ui :focus-visible, .cunata-modal-dialog :focus-visible {
+    outline: 3px solid Highlight !important; outline-offset: 2px;
   }
 }
 `;

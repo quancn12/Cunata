@@ -1,0 +1,52 @@
+{
+  "examId": "exam:part-II",
+  "examVersionId": "version:part-II",
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "questions": [
+    {
+      "kind": "II",
+      "questionVersionId": "part-II:II:0",
+      "statements": [
+        {
+          "statementId": "part-II:II:0:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "part-II:II:0:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "part-II:II:0:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "part-II:II:0:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 1",
+      "content": "Oracle II-k-1 câu 1"
+    }
+  ],
+  "schemaVersion": "web-exam-v1",
+  "title": "Oracle II-k-1",
+  "subject": "Toán học",
+  "grade": 12,
+  "assets": [],
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  }
+}

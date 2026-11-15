@@ -37,6 +37,9 @@ export interface DownloadByteInspection {
 }
 
 function escapeHtml(str: string): string {
+  if (typeof str !== "string") {
+    str = String(str ?? "");
+  }
   return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

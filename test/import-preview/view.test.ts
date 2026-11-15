@@ -271,4 +271,75 @@ describe("WEB-W3-IMPORT-PREVIEW: View & Mount Interactivity Tests", () => {
 
     unmount();
   });
+
+  it("WEB-F05: disables confirmation and cancel buttons when job is cancelled or failed", () => {
+    const doc = createMockDocument();
+    const root = doc.createElement("div") as unknown as HTMLElement;
+
+    const targetDraft = createSampleTargetExamDraft();
+    const cancelledJob: ImportJob = {
+      ...createSampleImportJob(),
+      state: "failed",
+      flags: ["IMPORT_CANCELLED"],
+      drafts: [
+        {
+          draftId: "d-cancelled",
+          question: {
+            kind: "III",
+            questionVersionId: "q-canc",
+            title: "Câu bị hủy",
+            content: "Nội dung:",
+            answerKey: "1",
+          },
+          provenance: {
+            sourceId: "cancelled.docx",
+            location: "Trang 1",
+            confidence: 1,
+            flags: [],
+          },
+          confirmed: true,
+        },
+      ],
+    };
+
+    let confirmedCalled = false;
+    let cancelCalled = false;
+
+    const unmount = mount(
+      root,
+      {
+        job: cancelledJob,
+        targetExamDraft: targetDraft,
+      },
+      {
+        onConfirm: () => {
+          confirmedCalled = true;
+        },
+        onCancel: () => {
+          cancelCalled = true;
+        },
+      },
+    );
+
+    const rootEl = root as unknown as MockElement;
+    const btnConfirm = rootEl.querySelector(".btn-success") as MockElement;
+    assert.ok(btnConfirm);
+    assert.equal(btnConfirm.disabled, true);
+
+    const btnCancel = rootEl.querySelector(".btn-danger") as MockElement;
+    assert.ok(btnCancel);
+    assert.equal(btnCancel.disabled, true);
+
+    // Attempting to click confirm button must not trigger onConfirm
+    btnConfirm.dispatchEvent(new MockEvent("click"));
+    assert.equal(confirmedCalled, false);
+
+    // Checkboxes should be disabled
+    const chk = rootEl.querySelector(".draft-checkbox-input") as MockElement;
+    if (chk) {
+      assert.equal(chk.disabled, true);
+    }
+
+    unmount();
+  });
 });

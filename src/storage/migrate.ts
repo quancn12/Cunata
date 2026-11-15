@@ -592,6 +592,16 @@ export async function migrateLegacyStorage(
       if (!raw) continue;
       try {
         const parsed = JSON.parse(raw);
+        if (
+          parsed &&
+          typeof parsed === 'object' &&
+          typeof parsed.schemaVersion === 'string' &&
+          parsed.schemaVersion !== 'web-exam-v1'
+        ) {
+          skippedFutureVersions++;
+          skippedKeys.push(k);
+          continue;
+        }
         const valRes = parseExam(parsed);
         if (valRes.ok) {
           const exam = valRes.value;

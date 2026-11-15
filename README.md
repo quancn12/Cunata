@@ -1,6 +1,6 @@
 # Cunata — Nền Tảng Web Luyện Đề Thi THPT (Chương Trình GDPT 2018)
 
-Cunata là nền tảng web luyện đề và kiểm tra trực tuyến dành cho học sinh THPT (lớp 10–12) theo định hướng chương trình GDPT 2018 của Bộ Giáo dục & Đào tạo. 
+Cunata là nền tảng web luyện đề và kiểm tra trực tuyến dành cho học sinh THPT (lớp 10–12) theo định hướng chương trình GDPT 2018 của Bộ Giáo dục & Đào tạo.
 
 Dự án chú trọng tính chuẩn xác tuyệt đối trong quy tắc chấm điểm 3 phần của GDPT 2018, bảo toàn ký tự và xử lý số học phân số chính xác (BigInt Rational), giao diện tiếng Việt thân thiện, hỗ trợ thiết bị di động, tự động lưu và làm việc ngoại tuyến (offline).
 
@@ -8,16 +8,16 @@ Dự án chú trọng tính chuẩn xác tuyệt đối trong quy tắc chấm �
 
 ## 1. Yêu Cầu Hệ Thống & Cài Đặt
 
-- **Node.js**: Phiên bản `>= 24.0.0` (khuyên dùng Node v24.14.0+ để hỗ trợ native type stripping cho TypeScript).
+- **Node.js**: Phiên bản `>= 24.0.0` (khuyên dùng Node v24.14.0+ để hỗ trợ native type stripping cho TypeScript, cú pháp ESM và Node Test Runner `node:test`).
 - **Trình duyệt**: Bất kỳ trình duyệt web hiện đại nào (Chrome, Edge, Firefox, Safari) hỗ trợ HTML5 và ECMAScript 2022+.
-- **Zero-Install**: Không cần chạy `npm install` hay tải thêm thư viện bên thứ ba khi chạy bản phát hành.
+- **Zero-Install (Không Cần Cài Đặt)**: Kiến trúc hệ thống hoạt động hoàn toàn không cần chạy `npm install` hay tải thêm bất kỳ thư viện bên thứ ba nào khi chạy bản phát hành. Trình biên dịch TypeScript cục bộ được sử dụng trực tiếp qua `npx --no-install tsc`.
 
 ---
 
 ## 2. Lệnh Build & Xác Minh Hệ Thống
 
 ### 2.1. Đóng gói module và kiểm tra tài nguyên hệ thống
-Lệnh một bước xác minh toàn bộ tài nguyên frontend, kiểm tra schema đề thi mẫu, và thực thi quy trình build module ES2022 theo cơ chế staged dist:
+Lệnh một bước xác minh toàn bộ tài nguyên frontend, kiểm tra cú pháp Apps Script, schema đề thi mẫu, và thực thi quy trình build module ES2022 theo cơ chế staged dist:
 ```bash
 node scripts/build.js
 ```
@@ -40,15 +40,15 @@ npm test
 ```
 hoặc chạy kiểm thử riêng theo từng phân vùng:
 ```bash
+node --test "test/docs/**/*.test.ts"
 node --test test/acceptance/webParity.test.ts
-node --test "test/glue/wave3/**/*.test.ts"
-node --test "test/glue/wave2/**/*.test.ts"
-node --test "test/glue/wave1/**/*.test.ts"
+node --test "test/glue/wave4/**/*.test.ts"
+node --test "test/browser/**/*.test.ts"
 node --test "test/e2e/demoFlow.test.ts"
 node --test "test/schema/**/*.test.ts"
 ```
 > [!NOTE]
-> Các bài kiểm thử E2E hiện tại chạy trên môi trường Node VM với DOM/storage/fetch stubs. Kiểm thử trên trình duyệt đồ họa thật (Chromium/Firefox/WebKit), kiểm thử bộ gõ OS IME (Telex/VNI) thật và CORS live với Google hiện được đánh dấu trung thực là `NOT_RUN` trong báo cáo kỹ thuật.
+> Phân vùng `test/browser/**/*.test.ts` chạy kiểm thử tự động trên Chrome thật (`--headless=new`) qua giao thức Chrome DevTools Protocol (CDP) gốc không phụ thuộc bên ngoài. Kiểm thử bộ gõ OS IME (Telex/VNI) thật từ phần cứng hệ điều hành và CORS live với Google hiện được đánh dấu trung thực là `NOT_RUN` / `MANUAL_CHECKLIST` theo tài liệu `docs/web/QA-evidence.md`.
 
 ### 2.4. Trải nghiệm bản build module độc lập (`dist/`)
 Sau khi chạy build, bạn có thể khởi chạy server cục bộ để kiểm tra bản phát hành module hóa:
@@ -63,132 +63,141 @@ Truy cập: `http://localhost:8000/` (hỗ trợ đầy đủ đường dẫn re
 
 Bản demo giao diện người dùng hoàn chỉnh nằm tại `index.html`. Bạn có thể mở theo một trong hai cách sau:
 
-### Cách 1: Mở trực tiếp trong trình duyệt (Nhanh nhất)
+### Cách 1: Mở trực tiếp trong trình duyệt (Nhanh nhất — Direct Root Demo)
 - **Trên Windows PowerShell**:
   ```powershell
   Start-Process index.html
   ```
 - Hoặc nhấp đúp (Double-click) chuột vào file `index.html` trong thư mục dự án.
+- Bản demo gốc tại `index.html` được thiết kế tự chứa hoàn toàn (self-contained), có thể mở trực tiếp qua giao thức `file://` mà không gặp lỗi CORS của trình duyệt đối với ES modules.
 
-### Cách 2: Khởi chạy qua Local Web Server
+### Cách 2: Khởi chạy qua Local Web Server (HTTP Dist & Subpath)
 Khởi tạo một web server cục bộ qua Python hoặc Node để tải tài nguyên qua giao thức HTTP chuẩn:
-- **Dùng Python**:
+- **Dùng Python phục vụ thư mục `dist/`**:
+  ```bash
+  python -m http.server 8000 --directory dist
+  ```
+  Sau đó mở trình duyệt truy cập: `http://localhost:8000/`
+- **Dùng Python phục vụ thư mục gốc dự án**:
   ```bash
   python -m http.server 8000
   ```
-  Sau đó mở trình duyệt truy cập: `http://localhost:8000`
-
-- **Dùng Node / npx**:
-  ```bash
-  npx serve .
-  ```
+  Sau đó mở trình duyệt truy cập: `http://localhost:8000/` hoặc `http://localhost:8000/dist/`
+- Hệ thống hỗ trợ hoàn hảo cả root path `/` lẫn subpath GitHub Pages `/Cunata/`.
 
 ---
 
-## 4. Cấu Trúc Đề Mẫu Chuẩn (`public/sample-exam.json`)
+## 4. Lưu Trữ Ngoại Tuyến & Bộ Nhớ Đệm Lần Đầu (First-Online Cache Limitation)
 
-Đề mẫu khảo sát năng lực Toán 12 gồm 8 câu hỏi mẫu, mô phỏng đầy đủ 3 phần của cấu trúc định dạng đề thi GDPT 2018:
+Ứng dụng tích hợp Service Worker hiện đại (`src/offline/service-worker.ts`) để hỗ trợ làm bài ngoại tuyến (offline-first):
 
-1. **Phần I — Trắc nghiệm nhiều lựa chọn (4 câu)**:
-   - Câu 1: Khảo sát hàm số & bảng biến thiên (có hình SVG minh họa `public/q01-bbt.svg`).
-   - Câu 2: Tích phân & tính chất cơ bản.
-   - Câu 3: Tọa độ $Oxyz$ & vectơ pháp tuyến mặt phẳng.
-   - Câu 4: Xác suất cổ điển (gieo xúc xắc).
-   - *Điểm số*: Mỗi câu đúng nhận đúng **0,25 điểm**; sai hoặc chưa chọn nhận 0 điểm.
-
-2. **Phần II — Trắc nghiệm Đúng / Sai (2 câu, mỗi câu 4 ý độc lập)**:
-   - Câu 5: Đồ thị hàm số bậc ba, cực trị và đạo hàm.
-   - Câu 6: Không gian $Oxyz$, mặt phẳng và phương trình mặt cầu đường kính $AB$.
-   - *Quy tắc chấm GDPT 2018*: Điểm cả câu được tính theo số ý trả lời đúng $k \in \{0, 1, 2, 3, 4\}$ tương ứng với:
-     - 0 ý đúng: **0 điểm**
-     - 1 ý đúng: **0,10 điểm**
-     - 2 ý đúng: **0,25 điểm**
-     - 3 ý đúng: **0,50 điểm**
-     - 4 ý đúng: **1,00 điểm**
-
-3. **Phần III — Trả lời ngắn (2 câu, tối đa 4 ký tự)**:
-   - Câu 7: Tìm giá trị nhỏ nhất của hàm số trên đoạn $[-1; 1]$ (Đáp án chuẩn: `-0,5`).
-   - Câu 8: Ứng dụng tích phân tính vận tốc chuyển động (Đáp án chuẩn: `1,5`).
-   - *Quy tắc so khớp*: So sánh chính xác từng ký tự (Exact string matching), không tự ý trim khoảng trắng, không ép kiểu số (`1,5` khác `1.5` và khác `1,50`).
-   - *Công thức điểm đề tùy chỉnh*: Với $N_1 = 4, N_2 = 2, N_3 = 2$:
-     - $\text{MAX}_I = 4 \times 0,25 = 1,00$
-     - $\text{MAX}_{II} = 2 \times 1,00 = 2,00$
-     - $\text{BASE} = 1,00 + 2,00 = 3,00 < 10 \implies \text{POINT}_{III} = (10 - 3)/2 = 3,50$
-     - $\text{MAX}_{III} = 2 \times 3,50 = 7,00$
-     - $\text{MAX\_TOTAL} = 1,00 + 2,00 + 7,00 = \mathbf{10,00}$ điểm.
+- **Yêu cầu kết nối lần đầu (First-Online Cache)**: Để có thể hoạt động hoàn toàn ngoại tuyến khi mất mạng, người dùng **bắt buộc phải truy cập ứng dụng trực tuyến ít nhất một lần** qua giao thức HTTP (`localhost`) hoặc HTTPS. Trong lần truy cập đầu tiên này, Service Worker sẽ tự động tải trước và lưu vào bộ nhớ đệm (precache) toàn bộ vỏ ứng dụng (shell HTML, JS, CSS) cùng các tài nguyên đề thi mẫu.
+- **Giới hạn khởi động lạnh (Cold-Start Limitation)**: Nếu người dùng chưa từng mở ứng dụng khi có kết nối mạng, trình duyệt sẽ không có sẵn bộ nhớ đệm và không thể mở trang web lần đầu khi đang mất mạng.
+- **Chính sách cập nhật Service Worker**: Service Worker mới không bao giờ tự ý kích hoạt đè khi học sinh đang làm dở bài thi, tránh làm mất dữ liệu bài làm. Thông báo cập nhật phiên bản chỉ hiển thị sau khi thí sinh đã hoàn thành nộp bài.
+- **Môi trường `file://`**: Trình duyệt áp dụng chính sách bảo mật không kích hoạt Service Worker trên giao thức `file://`. Vì vậy, bản demo trực tiếp `index.html` sử dụng cơ chế lưu trữ cục bộ `localStorage` / `IndexedDB` mà không phụ thuộc Service Worker.
 
 ---
 
-## 5. Luồng Làm Bài & Nghiệm Thu Tính Năng
+## 5. Các Bộ Đề Mẫu Minh Họa (Sample Exams)
 
-- **Nhập thông tin**: Thí sinh có thể nhập Tên hoặc Số báo danh (SBD).
-- **Bộ đếm thời gian (Timer)**: Tự động tính thời gian làm bài dựa trên mốc thời gian thực (`deadline = startedAt + duration`), không phụ thuộc vào interval callback; tự động nộp bài khi hết giờ.
-- **Bảng điều hướng (Palette)**:
-  - Hiển thị đầy đủ số lượng câu hỏi của đề thi.
-  - Phân loại rõ ràng trạng thái: *Đã làm* (xanh lá), *Chưa làm* (trắng), *Đang chọn* (viền xanh dương), *Đánh dấu xem lại* (viền cam).
-- **Độ bền dữ liệu & Đa tab (Persistence)**:
-  - Tự động lưu tiến độ vào `localStorage`.
-  - Hiển thị badge trạng thái lưu trung thực (`Chưa lưu`, `Đã lưu cục bộ`, `Lỗi lưu cục bộ (bộ nhớ đầy)`).
-  - Khóa bảo vệ nộp bài: Khi một tab đã nộp bài, các tab cũ hoặc thao tác autosave đến sau không thể ghi đè làm đảo ngược trạng thái `submitted: true`.
-  - Cách ly phiên bản đề: Không khôi phục dữ liệu bài làm của đề khác khi mở phiên bản đề mới.
-- **Thứ tự trình bày & Trộn đề (Presentation Order / Shuffle)**:
-  - Hỗ trợ trộn câu hỏi (giữ nguyên phân nhóm Phần I -> II -> III) và trộn lựa chọn Phần I độc lập dựa trên thuật toán SplitMix32 + MurmurHash3.
-  - Đáp án chuẩn luôn gắn liền với `optionId`, đảm bảo kết quả chấm điểm hoàn toàn bất biến dưới mọi thứ tự hiển thị.
-  - Bộ trộn (`presentationOrder`) được lưu bền vững trong `studentState`, bảo đảm không bao giờ tự ý trộn lại khi học sinh tải lại trang (refresh), back/forward hoặc mất kết nối.
-- **Nạp Đề Tùy Chỉnh (Custom Exam JSON Loader)**:
-  - Tích hợp nút `📁 Nạp đề thi (JSON)` trên bảng điều hướng (Palette), cho phép giáo viên và học sinh tải file đề JSON trực tiếp lên ứng dụng.
-  - Kiểm tra tính hợp lệ toàn diện qua `validateExamVersion` trước khi nạp; từ chối và báo lỗi chi tiết đối với đề thi sai định dạng.
-  - Cách ly trạng thái bài làm và tiến độ độc lập theo từng đề thi (`examId` và `examVersionId`).
-- **Nộp bài & Chấm điểm**:
-  - Modal xác nhận trước khi nộp bài để tránh click nhầm.
-  - Chấm điểm bằng engine phân số chính xác BigInt (`Rational`), tránh trôi sai số dấu phẩy động.
-- **Báo cáo kết quả (Report View)**:
-  - Bảng tổng kết điểm số tổng và điểm chi tiết từng phần I, II, III (hiển thị dạng phân số và số thập phân).
-  - Chi tiết từng câu hỏi: Câu trả lời của thí sinh, đáp án đúng chuẩn, trạng thái câu, điểm đạt được và lời giải chi tiết.
-  - **Chính sách công bố đáp án (`releasePolicy`)**: Khi đề thi kích hoạt chính sách `after_deadline`, đáp án chuẩn và lời giải chi tiết được ẩn hoàn toàn trước khi hết giờ làm bài; tự động công bố khi hết thời gian quy định; áp dụng đồng bộ trên cả giao diện web lẫn bản tải offline HTML.
-  - Hỗ trợ in ấn và xuất PDF trực tiếp từ trình duyệt (`In / Lưu Báo Cáo (PDF)`).
-  - **Tải báo cáo ngoại tuyến (`Tải Báo Cáo Offline (.html)`)**: Xuất toàn bộ kết quả, lời giải chi tiết, bảng điểm và hình ảnh minh họa (được đóng gói dạng data URI tự chứa) thành file HTML độc lập có thể lưu trữ và mở xem lại bất kỳ lúc nào mà không cần kết nối mạng hay phụ thuộc thư mục lưu trữ.
-- **Lịch Sử Lượt Thi & Cấu Hình Giáo Viên (Attempt History & Teacher Settings)**:
-  - Tự động lưu trữ lịch sử các lượt làm bài của từng đề thi theo chuẩn cô lập ID (`cunata:history:<examId>:<version>`).
-  - Hiển thị bảng tổng hợp lịch sử các lượt thi (mã lượt thi, thời gian nộp, tên thí sinh, điểm từng phần I, II, III, tổng điểm đạt được và trạng thái máy chủ) trên cả giao diện báo cáo web và bản tải ngoại tuyến HTML, với nhãn đánh dấu trực quan lượt thi hiện tại.
-  - Hỗ trợ cấu hình giáo viên (`settings`): `maxAttempts` (giới hạn số lượt làm bài, tự động khóa nút làm lại và hiển thị cảnh báo khi học sinh đã đạt hạn mức), `durationMinutes` (thời lượng làm bài tùy chỉnh linh hoạt), `releasePolicy` (`immediate` hoặc `after_deadline`).
-- **Bộ Soạn Đề Thi Tùy Chỉnh (Teacher Exam Builder)**:
-  - Tích hợp công cụ soạn đề trực quan ngay trên trình duyệt (`🛠 Soạn đề thi mới` trên Palette), hoạt động 100% client-side không cần backend.
-  - Cho phép bật/tắt độc lập 3 phần thi (Phần I trắc nghiệm 4 lựa chọn, Phần II đúng/sai 4 ý, Phần III trả lời ngắn $\le 4$ ký tự) hoặc kết hợp linh hoạt.
-  - Tự động tính toán điểm tối đa từng phần ($\text{MAX}_I, \text{MAX}_{II}, \text{POINT}_{III}, \text{MAX}_{III}$) và tổng điểm $\text{MAX\_TOTAL}$ theo đúng công thức chuẩn của `computeExamMax`.
-  - Cấu hình nâng cao: mã đề, phiên bản, môn học, khối lớp (10–12), thời gian thi, số lượt tối đa, chính sách công bố đáp án và tùy chọn trộn đề độc lập.
-  - Hỗ trợ chỉnh sửa câu hỏi trực quan (`✏ Sửa`): cho phép giáo viên chỉnh sửa tiêu đề, môn học (`Môn học`), khối lớp (10–12), nội dung câu hỏi (hỗ trợ công thức LaTeX), các lựa chọn A/B/C/D và đáp án đúng (Phần I), 4 mệnh đề đúng/sai (Phần II), đáp án chuẩn tối đa 4 ký tự có kiểm tra quy chuẩn `checkShortAnswer` (Phần III), lời giải chi tiết, đầy đủ phân cấp chuyên môn (Chủ đề / Chương `topic`, Bài học `lesson`) và mức độ nhận thức (`difficulty`).
-  - Di chuyển thứ tự câu hỏi linh hoạt (`▲ Lên` / `▼ Xuống`) và nhân bản nhanh câu hỏi (`📑 Bản sao`) với tự động tạo định danh câu hỏi và lựa chọn duy nhất.
-  - Hỗ trợ tải đề thi có sẵn từ file JSON (`📥 Nạp đề từ file`) với kiểm tra tính hợp lệ toàn diện qua `validateExamVersion` trước khi nạp vào bộ soạn.
-  - Kiểm tra tính hợp lệ toàn diện trước khi xuất file JSON (`💾 Tải file JSON`) hoặc trực tiếp nạp vào phòng thi (`🚀 Nạp vào phòng thi ngay`) để thử nghiệm.
-- **Ngân Hàng Câu Hỏi Tái Sử Dụng (Question Bank)**:
-  - Lưu trữ câu hỏi bền vững trong `localStorage` (`📚 Ngân hàng câu hỏi`), phân loại theo phân cấp 5 tầng chuẩn GDPT 2018 (Shared §5): Môn học (`subject`) > Khối lớp (10–12) > Chủ đề / Chương (`topic`) > Bài học (`lesson`) > Mức độ nhận thức (`difficulty`: Nhận biết / Thông hiểu / Vận dụng).
-  - Tìm kiếm câu hỏi thời gian thực theo từ khóa (`🔍 Tìm kiếm câu hỏi...`) quét qua tiêu đề, nội dung đề bài, lời giải, chủ đề, bài học và mã câu hỏi.
-  - Bộ lọc đa tiêu chí linh hoạt kết hợp đồng thời giữa Phần thi (Phần I, II, III, Tất cả), Môn học (`Mọi môn`, `Toán học`, `Vật lí`, `Hóa học`...), Khối lớp (`Mọi khối lớp`, `Lớp 10`, `Lớp 11`, `Lớp 12`), Chủ đề / Chương (`bankTopicFilter` tự động trích xuất các chủ đề hiện có trong ngân hàng: Khảo sát hàm số, Nguyên hàm & Tích phân, Hình học Oxyz, Xác suất...), Bài học (`bankLessonFilter` tự động trích xuất các bài học hiện có: Sự đồng biến/nghịch biến, Cực trị, Tích phân, Mặt phẳng, Mặt cầu...) và Mức độ nhận thức (`Nhận biết` / `Thông hiểu` / `Vận dụng`).
-  - Cho phép lưu câu hỏi từ đề đang soạn vào ngân hàng (`💾 Lưu Bank`) hoặc chọn câu hỏi từ ngân hàng đưa vào đề thi (`+ Thêm vào đề`) với cập nhật tức thời cấu trúc điểm số và cơ chế tự động khử trùng ID (`-bk-<suffix>`) bảo vệ đề thi khỏi lỗi `ID_DUPLICATE`.
-  - Hỗ trợ xem trước trực quan nội dung câu hỏi, nhãn phân loại (môn học, khối lớp, chủ đề, bài học, mức độ) và đáp án chuẩn ngay trên thẻ câu hỏi ngân hàng.
-  - Nạp câu hỏi từ file JSON (`📥 Nạp từ JSON`), hỗ trợ cả định dạng danh sách câu hỏi xuất từ ngân hàng hoặc file đề thi đầy đủ; khôi phục câu hỏi mẫu (`Khôi phục câu mẫu`), xuất toàn bộ ngân hàng (`Xuất ngân hàng (JSON)`) và làm trống ngân hàng (`🗑 Xóa toàn bộ`) an toàn.
-  - **Bảo toàn tính độc lập của lượt thi (Shared §5 Invariant)**: Mọi thao tác chỉnh sửa, cập nhật hay xóa câu hỏi trong ngân hàng câu hỏi hoặc bộ soạn sau khi đề thi đã phát hành tuyệt đối không làm ảnh hưởng hay thay đổi tiến trình làm bài, điểm số hay báo cáo đã nộp của thí sinh.
+Dự án cung cấp sẵn 4 bộ đề mẫu minh họa kỹ thuật tại thư mục `public/`:
+
+1. **`public/sample-exam.json` — Đề Khảo Sát Năng Lực Toán 12 (8 câu)**:
+   - Mô phỏng đầy đủ 3 phần cấu trúc đề thi GDPT 2018 (Phần I: 4 câu, Phần II: 2 câu, Phần III: 2 câu), điểm tối đa **10,00**.
+2. **`public/exams/toan-full.json` — Đề Toán 12 Toàn Diện (8 câu)**:
+   - Bộ đề đầy đủ cả 3 phần thi với cấu trúc điểm số tùy chỉnh chuẩn mực.
+3. **`public/exams/ly-part-I.json` — Đề Vật Lí Chỉ Có Phần I (20 câu)**:
+   - 20 câu hỏi trắc nghiệm nhiều lựa chọn Phần I. Điểm tối đa: $20 \times 0,25 = \mathbf{5,00}$ điểm. Minh chứng cho tính năng bật/tắt độc lập các phần thi mà không cưỡng ép tổng điểm về 10.
+4. **`public/exams/hoa-repeating.json` — Đề Hóa Học Chỉ Có Phần III (3 câu)**:
+   - 3 câu hỏi trả lời ngắn Phần III. Điểm mỗi câu: $\frac{10 - 0}{3} = \frac{10}{3} \approx 3,333...$ điểm (phân số tuần hoàn). Điểm tối đa: $\mathbf{10,00}$ điểm. Minh chứng cho tính toán số học phân số chính xác BigInt Rational, không gây trôi sai số làm tròn.
+
+> [!IMPORTANT]
+> **Tuyên bố minh bạch**: Các bộ đề trên là **đề tùy chỉnh minh họa kỹ thuật**, được kiểm tra tính hợp lệ qua `validateExamVersion`. Chúng **KHÔNG phải là đề thi chuẩn chính thức của Bộ Giáo dục & Đào tạo**. Chế độ đề mẫu chuẩn THPT theo từng năm và văn bản chính thức của Bộ hiện đang ở trạng thái chờ Trưởng phòng phê duyệt quyết định D05.
+
+### Bất Biến Chấm Điểm 3 Phần Của GDPT 2018:
+- **Phần I (Trắc nghiệm 4 lựa chọn A/B/C/D)**: Đúng 1 lựa chọn nhận **0,25 điểm**; sai hoặc chưa chọn nhận 0 điểm.
+- **Phần II (Trắc nghiệm Đúng / Sai, 4 ý độc lập)**: Chấm theo số ý trả lời đúng $k \in \{0, 1, 2, 3, 4\}$ cho cả câu:
+  - 0 ý đúng: **0 điểm** | 1 ý đúng: **0,10 điểm** | 2 ý đúng: **0,25 điểm** | 3 ý đúng: **0,50 điểm** | 4 ý đúng: **1,00 điểm**.
+  - Ý bỏ trống không được coi là đúng; không tự động coi thiếu là False.
+- **Phần III (Trả lời ngắn, tối đa 4 ký tự)**:
+  - Chuỗi tối đa 4 ký tự, hỗ trợ chữ số `0-9`, dấu âm `-`, dấu phẩy thập phân `,` (ví dụ: `-0,5`, `1,5`).
+  - **So sánh chính xác từng ký tự (Exact String Matching)**: Không tự ý trim khoảng trắng, không ép kiểu số (`1,5` khác `1.5` và khác `1,50`).
 
 ---
 
-## 6. Tiếp Nhận Kết Quả Qua Google Sheets (Apps Script Collector — Bản Tham Khảo Chưa Triển Khai)
+## 6. Luồng Thao Tác, Báo Cáo & Xuất Dữ Liệu
+
+- **Nhập thông tin thí sinh**: Học sinh có thể nhập Họ tên hoặc Số báo danh (SBD).
+- **Đếm thời gian & Autosubmit**: Đồng hồ đếm thời gian dựa trên mốc thời gian thực (`deadline = startedAt + duration`), tự động nộp bài khi hết giờ kể cả khi chuyển tab hoặc tải lại trang.
+- **Bảng điều hướng câu hỏi (Palette)**: Phân loại trực quan: *Đã làm* (xanh lá), *Chưa làm* (trắng), *Đang chọn* (viền xanh), *Đánh dấu xem lại* (viền cam).
+- **Trộn đề độc lập (Shuffle)**: Trộn câu hỏi và trộn lựa chọn Phần I độc lập dựa trên thuật toán SplitMix32 + MurmurHash3. Thứ tự trộn được lưu bền vững vào lượt làm bài, không bị xáo trộn lại khi tải lại trang.
+- **Xác nhận nộp bài có bẫy focus (Accessible Submit Modal)**: Modal xác nhận nộp bài tuân thủ tiêu chuẩn tiếp cận WCAG (bẫy phím Tab/Shift+Tab, phím Escape đóng modal, tự động hoàn trả tiêu điểm focus về nút bấm ban đầu).
+- **Báo cáo kết quả chi tiết (Report View)**:
+  - Bảng tổng kết điểm đạt được / tối đa cho cả bài thi và riêng từng phần I, II, III (hiển thị cả dạng phân số chính xác và số thập phân).
+  - Chi tiết từng câu: câu trả lời của thí sinh, đáp án chuẩn, trạng thái đúng/sai/chưa làm, điểm nhận được và lời giải chi tiết.
+  - **Chính sách công bố đáp án (`releasePolicy`)**: Khi đề thi đặt cấu hình `after_deadline`, toàn bộ đáp án chuẩn và lời giải chi tiết được ẩn hoàn toàn trước khi hết giờ làm bài; tự động công bố khi hết thời hạn quy định.
+- **In ấn & Xuất báo cáo (Print / Export)**:
+  - **In / Lưu PDF (`window.print()`)**: Tích hợp CSS in ấn chuyên dụng, tối ưu bố cục trang in rõ nét.
+  - **Tải báo cáo ngoại tuyến (`.html`)**: Xuất toàn bộ kết quả, bảng điểm, lời giải và hình ảnh minh họa (được đóng gói dạng Base64 data URI tự chứa) thành file HTML độc lập có thể lưu trữ và mở xem bất kỳ lúc nào mà không cần kết nối mạng.
+  - **Xuất dữ liệu lượt thi (Export JSON / CSV)**: Cho phép xuất kết quả ra định dạng JSON chuẩn `web-result-v1` hoặc file CSV chuẩn RFC 4180 có cơ chế phòng chống tiêm công thức bảng tính (CWE-1236 Formula Injection Protection).
+
+---
+
+## 7. Soạn Đề, Ngân Hàng Câu Hỏi & Quản Trị Dữ Liệu
+
+### 7.1. Bộ Soạn Đề Thi Tùy Chỉnh (Teacher Exam Builder)
+- Tích hợp công cụ soạn đề trực quan ngay trên trình duyệt (`🛠 Soạn đề thi mới` trên Palette), hoạt động 100% client-side không cần backend.
+- Bật/tắt linh hoạt 3 phần thi, tự động tính toán điểm tối đa từng phần và tổng điểm theo công thức `computeExamMax`.
+- Chỉnh sửa câu hỏi, công thức toán LaTeX, 4 lựa chọn Phần I, 4 mệnh đề Phần II, đáp án chuẩn Phần III $\le 4$ ký tự, di chuyển thứ tự và nhân bản câu hỏi nhanh chóng.
+- Nạp đề thi từ file JSON (`📥 Nạp đề từ file`) có kiểm tra tính hợp lệ toàn diện qua `validateExamVersion` trước khi nạp.
+
+### 7.2. Ngân Hàng Câu Hỏi Tái Sử Dụng (Question Bank)
+- Phân loại câu hỏi theo 5 tầng phân cấp chuẩn GDPT 2018: **Môn học > Khối lớp (10–12) > Chủ đề / Chương > Bài học > Mức độ nhận thức (Nhận biết / Thông hiểu / Vận dụng)**.
+- Tìm kiếm theo từ khóa thời gian thực và bộ lọc đa tiêu chí đồng thời.
+- Tái sử dụng câu hỏi: Thêm câu hỏi từ ngân hàng vào đề thi đang soạn với cơ chế tự động khử trùng ID (`-bk-<suffix>`), ngăn chặn triệt để lỗi trùng lặp `ID_DUPLICATE`.
+- **Bất biến cách ly phiên bản (Version Immutability)**: Mọi thao tác chỉnh sửa hay xóa câu hỏi trong ngân hàng sau khi đề thi đã phát hành tuyệt đối không làm ảnh hưởng hay thay đổi tiến trình làm bài, điểm số hay báo cáo đã nộp của thí sinh.
+
+### 7.3. Sao Lưu & Dọn Dẹp Dữ Liệu (Backup & Cleanup)
+- **Sao lưu toàn diện (Export Backup)**: Cho phép xuất toàn bộ cơ sở dữ liệu (các bài thi, ngân hàng câu hỏi, lịch sử bài làm, outbox) ra file sao lưu dạng Blob/JSON để lưu trữ an toàn.
+- **Phục hồi dữ liệu (Import Backup)**: Khôi phục toàn bộ trạng thái dữ liệu từ file sao lưu đã xuất trước đó.
+- **Dọn dẹp an toàn (Clear All)**: Cho phép xóa sạch toàn bộ dữ liệu lưu trữ cục bộ sau khi có hộp thoại xác nhận tường minh từ người dùng (`clearAll(confirmed: true)`).
+
+---
+
+## 8. Nhập Đề Thi & Giới Hạn Tính Năng Trung Thực (Import DOCX / PDF)
+
+Quy trình nhập đề thi tuân thủ nghiêm ngặt pipeline 6 giai đoạn:
+`Đọc file` $\to$ `Phân tích cấu trúc (IR)` $\to$ `Xem trước (Preview)` $\to$ `Hiệu đính (Editor)` $\to$ `Xác nhận (Confirm)` $\to$ `Lưu Bank / Xuất bản`.
+
+### 8.1. Nhập từ file Word (DOCX)
+- Sử dụng trình đọc OpenXML gốc không phụ thuộc bên ngoài: bóc tách các đoạn văn (paragraphs), bảng biểu nhiều hàng/cột (table rowSpan/colSpan), hình ảnh minh họa nội bộ, và công thức toán học OMML.
+- Công thức OMML được chuyển đổi sang mã LaTeX đối với các cấu trúc toán học đã được kiểm chứng; các biểu thức phức tạp chưa hỗ trợ được giữ nguyên mã nguồn kèm nhãn cảnh báo rõ ràng.
+- Bắt buộc giáo viên phải xem trước (preview) và kiểm tra đáp án trước khi nhấn xác nhận nhập đề vào hệ thống.
+
+### 8.2. Giới Hạn Kỹ Thuật Với File PDF (PDF Import Limitations)
+> [!WARNING]
+> **Tuyên bố minh bạch**: Trình duyệt web hiện đại không có API gốc để bóc tách luồng văn bản phức tạp, bố cục nhiều cột hay công thức toán học từ file PDF. Dự án **TUYỆT ĐỐI KHÔNG tuyên bố tính năng tự động trích xuất PDF hoàn chỉnh hay nhận dạng chữ ký tự quang học (OCR) tự động** khi chưa có quyết định D06 của Trưởng phòng.
+
+- **Khả năng hiện tại**: Hệ thống hỗ trợ mở xem trước tài liệu PDF thông qua trình xem PDF có sẵn của trình duyệt (Native PDF Viewer), cho phép giáo viên đối chiếu trực quan và sao chép văn bản hoặc nhập thủ công nội dung vào bộ soạn biểu diễn trung gian (IR).
+- **Cảnh báo minh bạch**: Các tệp PDF dạng scan hình ảnh được đánh dấu trạng thái `PDF_OCR_UNAVAILABLE`; các tệp PDF văn bản phức tạp được đánh dấu `PDF_MANUAL_REVIEW_REQUIRED` yêu cầu người dùng hiệu đính.
+
+---
+
+## 9. Phân Quyền, Danh Tính & Bảo Mật (Roles & Security Truthfulness)
+
+- **Vai trò người dùng theo luồng công việc (Unauthenticated Workflow Roles)**: Phiên bản MVP hiện tại hoạt động **hoàn toàn không cần đăng nhập**. Các vai trò "Học sinh", "Giáo viên", "Quản trị viên" là các vai trò phân định theo luồng giao diện thao tác, **KHÔNG phải là ranh giới phân quyền bảo mật đã được xác thực**.
+- **Thông tin thí sinh (Nickname / SBD)**: Họ tên hoặc mã số báo danh do học sinh nhập chỉ mang tính chất hiển thị tham chiếu trên bài làm và bảng điểm. Hệ thống không suy đoán danh tính thật và **không cam kết khả năng chống gian lận tuyệt đối** trên môi trường máy client khi không có máy chủ xác thực tin cậy.
+- **Lưu trữ cục bộ an toàn**: Toàn bộ công cụ soạn đề và ngân hàng câu hỏi hoạt động 100% phía client trên trình duyệt của người dùng, không tạo ra bất kỳ trang quản trị (Admin Dashboard) công khai nào sử dụng đường dẫn URL bí mật để giả lập bảo mật.
+
+---
+
+## 10. Thu Thập Kết Quả & Cảnh Báo Apps Script (Undeployed / CORS Warning)
 
 > [!WARNING]
-> Bản mẫu `apps-script/Code.js` là thiết kế kỹ thuật tham khảo, **hiện chưa được triển khai lên Google Cloud / production** và **chưa được nghiệm thu CORS / preflight thật** từ trình duyệt tới máy chủ Google (xem Hợp đồng kỹ thuật §7 và quyết định D04). Chế độ mặc định của ứng dụng là làm bài và xuất kết quả cục bộ (local-first).
+> Mã nguồn tại thư mục `apps-script/Code.js` là **bản mẫu thiết kế kỹ thuật tham khảo**, **HIỆN CHƯA ĐƯỢC TRIỂN KHAI LÊN GOOGLE CLOUD / PRODUCTION** và **CHƯA ĐƯỢC NGHIỆM THU CORS / PREFLIGHT THẬT** từ trình duyệt tới máy chủ Google (xem Hợp đồng kỹ thuật §7 và quyết định D04).
+>
+> **Chế độ mặc định của ứng dụng là làm bài và xuất kết quả cục bộ (local-first)**.
 
-Nhằm phục vụ giáo viên và chủ dự án thu thập kết quả thi trực tuyến chi phí 0 đồng, thư mục `apps-script/` cung cấp giải pháp Backend Web App Google Apps Script tích hợp chặt chẽ với Google Sheets:
-
-1. **Phòng chống Tiêm Công Thức Bảng Tính (CWE-1236 Formula Injection)**:
-   - Tự động thêm tiền tố nháy đơn (`'`) vào trước các ô có ký tự kích hoạt công thức nguy hiểm (`=`, `+`, `-`, `@`, tab, xuống dòng, ký tự fullwidth).
-   - Bảo toàn chuỗi số âm Phần III (`-0,5`), ngăn Google Sheets tính toán sai lệch hay tự động đổi dấu.
-
-2. **Chống Ghi Trùng & Tính Lũy Nghiệm (Idempotency)**:
-   - Dựa trên khóa `attempt_id` bất biến. Khi mạng chập chờn hoặc học sinh bấm nộp lại nhiều lần, server nhận diện và trả về biên nhận trước đó (`ALREADY_RECORDED`) mà không tạo thêm dòng trùng.
-
-3. **Kiểm Soát Tranh Chấp Bằng `LockService`**:
-   - Sử dụng ScriptLock chờ tối đa 30s để đồng bộ hóa việc ghi hàng, bảo vệ tính toàn vẹn dữ liệu khi nhiều học sinh nộp bài đồng thời.
-
-4. **Đồng Bộ Ngoại Tuyến & Trạng Thái Server Confirmed**:
-   - Khi cấu hình endpoint collector (`window.CUNATA_COLLECTOR_URL` hoặc trong đề thi), client tự động gửi kết quả sau khi nộp và lưu cục bộ.
-   - Khi server xác nhận thành công, trạng thái chuyển sang `Đã ghi nhận trên máy chủ` và biên nhận được lưu trữ an toàn trong báo cáo. Nếu mất mạng hoặc server bận, bài làm vẫn được bảo vệ nguyên vẹn ở trạng thái cục bộ (`Đã nộp & lưu cục bộ`).
+- **Bảo mật mã nguồn tĩnh**: Trang web tĩnh (như GitHub Pages) tuyệt đối không được nhúng mã bí mật (secrets), khóa API (API keys), tài khoản dịch vụ (service accounts) hoặc token Google Drive có quyền ghi lâu dài vào mã JavaScript công khai.
+- **Minh bạch trạng thái gửi kết quả**: Hệ thống phân định rõ ràng các trạng thái đồng bộ: `Chưa lưu`, `Đã lưu cục bộ` (`local_saved`), `Đang chờ gửi` (`queued`), `Đang gửi` (`sending`), `Đã xác nhận trên máy chủ` (`server_confirmed`), và `Gửi thất bại` (`failed`). Hệ thống **tuyệt đối không bao giờ thông báo "Đã lưu Google Drive"** nếu chưa nhận được biên nhận hợp lệ (`Receipt`) từ máy chủ.
+- **Độ tin cậy của bài kiểm tra**: Các bài kiểm tra chính thức đòi hỏi bảo mật đề thi tuyệt đối, giấu đáp án chuẩn hoặc chấm điểm tin cậy bắt buộc phải được kết nối với dịch vụ backend có xác thực và chấm điểm phía máy chủ (Server-side grading theo quyết định D04/D08), không thể bảo đảm chỉ bằng trang web tĩnh.

@@ -1049,10 +1049,18 @@ export function mount(
     // 3. Status Announcer
     const statusMsg = controller.getStatusMessage();
     if (statusMsg) {
+      const isErr =
+        statusMsg.includes("thất bại") ||
+        statusMsg.includes("Lỗi") ||
+        statusMsg.includes("STORAGE_") ||
+        statusMsg.includes("thất bại:") ||
+        statusMsg.includes("Không tìm thấy");
       const announcerEl = doc.createElement("div");
-      announcerEl.className = "cunata-status-announcer";
-      announcerEl.setAttribute("role", "status");
-      announcerEl.setAttribute("aria-live", "polite");
+      announcerEl.className = isErr
+        ? "cunata-status-announcer cunata-status-error"
+        : "cunata-status-announcer";
+      announcerEl.setAttribute("role", isErr ? "alert" : "status");
+      announcerEl.setAttribute("aria-live", isErr ? "assertive" : "polite");
       announcerEl.textContent = statusMsg;
       root.appendChild(announcerEl);
     }

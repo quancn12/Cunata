@@ -1,6 +1,6 @@
 /**
  * Cunata Web M2-M6 — Legacy Compatibility Bridge & File-Open Fallback
- * Conforms to WEB-contract.md §2, §10 and tasks.json (WEB-W3-GLUE).
+ * Conforms to WEB-contract.md §2, §10 and tasks.json (WEB-W4-GLUE).
  *
  * Responsibilities:
  * - Bridges legacy scoring and data structures to the official domain engine.
@@ -116,7 +116,12 @@ export function isValidCanonicalFraction(s: string): boolean {
 }
 
 export function formatRationalScore(val: string): string {
-  const r = parseFractionString(val);
+  let r: Rational;
+  try {
+    r = parseFractionString(val);
+  } catch {
+    return val;
+  }
   if (!r) return val;
   if (r.den === 1n) return r.num.toString();
   const n = Number(r.num) / Number(r.den);

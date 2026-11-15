@@ -1,0 +1,27 @@
+{
+  "examId": "exam:III-reverse-trailing-zero",
+  "examVersionId": "version:III-reverse-trailing-zero",
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "questions": [
+    {
+      "kind": "III",
+      "questionVersionId": "III-reverse-trailing-zero:III:0",
+      "answerKey": "1,50",
+      "title": "Câu 1",
+      "content": "Oracle III-reverse-trailing-zero câu 1"
+    }
+  ],
+  "schemaVersion": "web-exam-v1",
+  "title": "Oracle III-reverse-trailing-zero",
+  "subject": "Toán học",
+  "grade": 12,
+  "assets": [],
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  }
+}

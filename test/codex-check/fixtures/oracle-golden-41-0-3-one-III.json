@@ -1,0 +1,1230 @@
+{
+  "examId": "exam:golden-41-0-3",
+  "examVersionId": "version:golden-41-0-3",
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "questions": [
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:0",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:0:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:0:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:0:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:0:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:0:option:0",
+      "title": "Câu 1",
+      "content": "Oracle golden-41-0-3-one-III câu 1"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:1",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:1:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:1:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:1:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:1:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:1:option:1",
+      "title": "Câu 2",
+      "content": "Oracle golden-41-0-3-one-III câu 2"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:2",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:2:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:2:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:2:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:2:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:2:option:2",
+      "title": "Câu 3",
+      "content": "Oracle golden-41-0-3-one-III câu 3"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:3",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:3:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:3:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:3:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:3:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:3:option:3",
+      "title": "Câu 4",
+      "content": "Oracle golden-41-0-3-one-III câu 4"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:4",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:4:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:4:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:4:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:4:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:4:option:0",
+      "title": "Câu 5",
+      "content": "Oracle golden-41-0-3-one-III câu 5"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:5",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:5:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:5:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:5:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:5:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:5:option:1",
+      "title": "Câu 6",
+      "content": "Oracle golden-41-0-3-one-III câu 6"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:6",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:6:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:6:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:6:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:6:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:6:option:2",
+      "title": "Câu 7",
+      "content": "Oracle golden-41-0-3-one-III câu 7"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:7",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:7:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:7:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:7:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:7:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:7:option:3",
+      "title": "Câu 8",
+      "content": "Oracle golden-41-0-3-one-III câu 8"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:8",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:8:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:8:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:8:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:8:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:8:option:0",
+      "title": "Câu 9",
+      "content": "Oracle golden-41-0-3-one-III câu 9"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:9",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:9:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:9:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:9:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:9:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:9:option:1",
+      "title": "Câu 10",
+      "content": "Oracle golden-41-0-3-one-III câu 10"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:10",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:10:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:10:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:10:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:10:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:10:option:2",
+      "title": "Câu 11",
+      "content": "Oracle golden-41-0-3-one-III câu 11"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:11",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:11:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:11:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:11:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:11:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:11:option:3",
+      "title": "Câu 12",
+      "content": "Oracle golden-41-0-3-one-III câu 12"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:12",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:12:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:12:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:12:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:12:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:12:option:0",
+      "title": "Câu 13",
+      "content": "Oracle golden-41-0-3-one-III câu 13"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:13",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:13:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:13:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:13:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:13:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:13:option:1",
+      "title": "Câu 14",
+      "content": "Oracle golden-41-0-3-one-III câu 14"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:14",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:14:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:14:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:14:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:14:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:14:option:2",
+      "title": "Câu 15",
+      "content": "Oracle golden-41-0-3-one-III câu 15"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:15",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:15:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:15:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:15:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:15:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:15:option:3",
+      "title": "Câu 16",
+      "content": "Oracle golden-41-0-3-one-III câu 16"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:16",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:16:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:16:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:16:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:16:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:16:option:0",
+      "title": "Câu 17",
+      "content": "Oracle golden-41-0-3-one-III câu 17"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:17",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:17:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:17:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:17:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:17:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:17:option:1",
+      "title": "Câu 18",
+      "content": "Oracle golden-41-0-3-one-III câu 18"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:18",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:18:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:18:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:18:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:18:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:18:option:2",
+      "title": "Câu 19",
+      "content": "Oracle golden-41-0-3-one-III câu 19"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:19",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:19:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:19:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:19:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:19:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:19:option:3",
+      "title": "Câu 20",
+      "content": "Oracle golden-41-0-3-one-III câu 20"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:20",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:20:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:20:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:20:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:20:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:20:option:0",
+      "title": "Câu 21",
+      "content": "Oracle golden-41-0-3-one-III câu 21"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:21",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:21:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:21:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:21:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:21:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:21:option:1",
+      "title": "Câu 22",
+      "content": "Oracle golden-41-0-3-one-III câu 22"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:22",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:22:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:22:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:22:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:22:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:22:option:2",
+      "title": "Câu 23",
+      "content": "Oracle golden-41-0-3-one-III câu 23"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:23",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:23:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:23:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:23:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:23:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:23:option:3",
+      "title": "Câu 24",
+      "content": "Oracle golden-41-0-3-one-III câu 24"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:24",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:24:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:24:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:24:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:24:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:24:option:0",
+      "title": "Câu 25",
+      "content": "Oracle golden-41-0-3-one-III câu 25"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:25",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:25:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:25:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:25:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:25:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:25:option:1",
+      "title": "Câu 26",
+      "content": "Oracle golden-41-0-3-one-III câu 26"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:26",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:26:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:26:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:26:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:26:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:26:option:2",
+      "title": "Câu 27",
+      "content": "Oracle golden-41-0-3-one-III câu 27"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:27",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:27:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:27:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:27:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:27:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:27:option:3",
+      "title": "Câu 28",
+      "content": "Oracle golden-41-0-3-one-III câu 28"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:28",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:28:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:28:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:28:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:28:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:28:option:0",
+      "title": "Câu 29",
+      "content": "Oracle golden-41-0-3-one-III câu 29"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:29",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:29:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:29:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:29:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:29:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:29:option:1",
+      "title": "Câu 30",
+      "content": "Oracle golden-41-0-3-one-III câu 30"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:30",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:30:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:30:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:30:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:30:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:30:option:2",
+      "title": "Câu 31",
+      "content": "Oracle golden-41-0-3-one-III câu 31"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:31",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:31:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:31:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:31:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:31:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:31:option:3",
+      "title": "Câu 32",
+      "content": "Oracle golden-41-0-3-one-III câu 32"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:32",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:32:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:32:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:32:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:32:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:32:option:0",
+      "title": "Câu 33",
+      "content": "Oracle golden-41-0-3-one-III câu 33"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:33",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:33:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:33:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:33:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:33:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:33:option:1",
+      "title": "Câu 34",
+      "content": "Oracle golden-41-0-3-one-III câu 34"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:34",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:34:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:34:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:34:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:34:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:34:option:2",
+      "title": "Câu 35",
+      "content": "Oracle golden-41-0-3-one-III câu 35"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:35",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:35:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:35:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:35:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:35:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:35:option:3",
+      "title": "Câu 36",
+      "content": "Oracle golden-41-0-3-one-III câu 36"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:36",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:36:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:36:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:36:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:36:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:36:option:0",
+      "title": "Câu 37",
+      "content": "Oracle golden-41-0-3-one-III câu 37"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:37",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:37:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:37:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:37:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:37:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:37:option:1",
+      "title": "Câu 38",
+      "content": "Oracle golden-41-0-3-one-III câu 38"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:38",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:38:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:38:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:38:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:38:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:38:option:2",
+      "title": "Câu 39",
+      "content": "Oracle golden-41-0-3-one-III câu 39"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:39",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:39:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:39:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:39:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:39:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:39:option:3",
+      "title": "Câu 40",
+      "content": "Oracle golden-41-0-3-one-III câu 40"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "golden-41-0-3:I:40",
+      "options": [
+        {
+          "optionId": "golden-41-0-3:I:40:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "golden-41-0-3:I:40:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "golden-41-0-3:I:40:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "golden-41-0-3:I:40:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "golden-41-0-3:I:40:option:0",
+      "title": "Câu 41",
+      "content": "Oracle golden-41-0-3-one-III câu 41"
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "golden-41-0-3:III:0",
+      "answerKey": "1,5",
+      "title": "Câu 42",
+      "content": "Oracle golden-41-0-3-one-III câu 42"
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "golden-41-0-3:III:1",
+      "answerKey": "-0,5",
+      "title": "Câu 43",
+      "content": "Oracle golden-41-0-3-one-III câu 43"
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "golden-41-0-3:III:2",
+      "answerKey": "0",
+      "title": "Câu 44",
+      "content": "Oracle golden-41-0-3-one-III câu 44"
+    }
+  ],
+  "schemaVersion": "web-exam-v1",
+  "title": "Oracle golden-41-0-3-one-III",
+  "subject": "Toán học",
+  "grade": 12,
+  "assets": [],
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  }
+}

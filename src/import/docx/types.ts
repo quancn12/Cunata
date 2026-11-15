@@ -78,6 +78,7 @@ export interface XmlParserPort {
 export interface DocxImportOptions {
   readonly xmlParser?: XmlParserPort;
   readonly limits?: ZipLimits;
+  readonly timeoutMs?: number;
   readonly now?: () => number;
   readonly id?: () => string;
 }

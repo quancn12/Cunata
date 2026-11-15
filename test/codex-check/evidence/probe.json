@@ -1,0 +1,215 @@
+{
+  "time": "2026-11-15T17:56:38.780Z",
+  "node": "v24.14.0",
+  "commit": "9979578b24a5e1db1203c395d3694ca1b1cf3cdd",
+  "hashesBefore": {
+    "index.html": "7e44cc681f2abe1a7cfbae4bdb0cf23e055a42cf957b425d826f079508f50aca",
+    "src/app/main.ts": "ba7f11144d6a2c4903483a95d94eb7119dcbf639676c8c9abf53751790ab3284",
+    "src/app/shell.html": "5721a5ec964bc4fd23b8f3ff1e458d4ed3910378c43719e22d5c26a7d2606195",
+    "dist/index.html": "8646b1c3a67f17ea84fd14828c783b0bc719ddeacd087993e32be75668443ce3",
+    "dist/app/main.js": "edd2e9845ec7befd54d45afb9d37c8de8c885da85a63a8beb9898e9d2aa49941",
+    "test/claude-check/harness.mjs": "bc3c5e7a4e24f2cf43549f1199abf98766d54a0945f48f6b7560f9aa1b133a74",
+    "test/claude-check/app.mjs": "606c71163ea8198650aaa04bafbcf6b4da827a68f89f193e7977d4c386774d8f",
+    "test/oracle/fixtures/golden.json": "64a805a63f5fbaa0e7b93b191970168c74e2a3958caa7017fcfe602bc370650d",
+    "test/oracle/fixtures/sections-I-II.json": "1284683c090df0e067cd029d75db26a4d6461ae697bb5b2db95f702320f201fc",
+    "test/oracle/fixtures/short-answers.json": "e021600103115313cf06c42b731c440f16829133021b61f9761bb422cc42c675"
+  },
+  "oracleIds": [
+    "golden-20-0-0-full",
+    "golden-20-0-0-blank",
+    "golden-0-4-0-full",
+    "golden-0-4-0-blank",
+    "golden-20-10-0-full",
+    "golden-20-10-0-blank",
+    "golden-20-10-4-full",
+    "golden-20-10-4-blank",
+    "golden-20-10-4-one-III",
+    "golden-12-4-6-full",
+    "golden-12-4-6-blank",
+    "golden-12-4-6-one-III",
+    "golden-0-0-3-full",
+    "golden-0-0-3-blank",
+    "golden-0-0-3-one-III",
+    "golden-0-0-7-full",
+    "golden-0-0-7-blank",
+    "golden-0-0-7-one-III",
+    "golden-39-0-3-full",
+    "golden-39-0-3-blank",
+    "golden-39-0-3-one-III",
+    "golden-40-0-3-full",
+    "golden-40-0-3-blank",
+    "golden-40-0-3-one-III",
+    "golden-41-0-3-full",
+    "golden-41-0-3-blank",
+    "golden-41-0-3-one-III",
+    "report-11-of-16",
+    "report-12-of-15",
+    "II-k-0",
+    "II-k-1",
+    "II-k-2",
+    "II-k-3",
+    "II-k-4",
+    "II-false-key-all-null",
+    "II-false-key-all-missing",
+    "II-false-key-one-false",
+    "III-exact",
+    "III-trailing-zero",
+    "III-reverse-trailing-zero",
+    "III-negative-four",
+    "III-negative-wrong",
+    "III-integer"
+  ],
+  "targets": [
+    {
+      "target": "root",
+      "version": {
+        "protocolVersion": "1.3",
+        "product": "Chrome/157.0.8103.52",
+        "revision": "@0985600c06a688b9c669e74afde7dacd5aaed047",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+        "jsVersion": "15.7.112.23"
+      },
+      "boot": {
+        "title": "Đề Khảo Sát Năng Lực Môn Toán — GDPT 2018 (Đề Mẫu Tùy Chỉnh)",
+        "cards": 8,
+        "files": [
+          {
+            "id": "examFileInput",
+            "accept": ".json,application/json"
+          },
+          {
+            "id": "builderFileInput",
+            "accept": ".json,application/json"
+          },
+          {
+            "id": "bankFileInput",
+            "accept": ".json,application/json"
+          }
+        ],
+        "modules": [
+          ""
+        ]
+      },
+      "errors": [
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:49486/favicon.ico",
+        "exception: Error: Đáp án Phần III không hợp lệ: empty\n    at saveEditedQuestion (http://127.0.0.1:49486/Cunata/index.html:4407:17)\n    at HTMLButtonElement.<anonymous> (http://127.0.0.1:49486/Cunata/index.html:4833:31)\n    at <anonymous>:1:111\n    at <anonymous>:1:135"
+      ],
+      "badRequests": [
+        "404 http://127.0.0.1:49486/favicon.ico"
+      ],
+      "unsavedEdit": {
+        "dialogsAfterSave": [
+          "alert: Đáp án Phần III không hợp lệ: empty"
+        ],
+        "afterPublish": {
+          "builderVisible": "none",
+          "title": "Đề Thi Tùy Chỉnh GDPT 2018",
+          "cards": 1
+        },
+        "dialogsAfterPublish": [
+          "alert: Đáp án Phần III không hợp lệ: empty",
+          "alert: Đã nạp đề thi \"Đề Thi Tùy Chỉnh GDPT 2018\" thành công! Bạn có thể bắt đầu làm bài."
+        ]
+      },
+      "result": {
+        "sync": "Đã nộp & lưu cục bộ",
+        "buttons": [
+          {
+            "id": "btnPrintReport",
+            "text": "In / Lưu Báo Cáo (PDF)"
+          },
+          {
+            "id": "btnDownloadReportHtml",
+            "text": "Tải Báo Cáo Offline (.html)"
+          },
+          {
+            "id": "btnRestart",
+            "text": "Làm Lại Đề Thi"
+          }
+        ],
+        "subtitle": "Thí sinh: =SUM(1,1) · Nộp bài lúc: 00:56:40"
+      }
+    },
+    {
+      "target": "dist",
+      "version": {
+        "protocolVersion": "1.3",
+        "product": "Chrome/157.0.8103.52",
+        "revision": "@0985600c06a688b9c669e74afde7dacd5aaed047",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+        "jsVersion": "15.7.112.23"
+      },
+      "boot": {
+        "title": "Đề Khảo Sát Năng Lực Môn Toán — GDPT 2018 (Minh Họa)",
+        "cards": 8,
+        "files": [
+          {
+            "id": "examFileInput",
+            "accept": ".json,application/json"
+          },
+          {
+            "id": "builderFileInput",
+            "accept": ".json,application/json"
+          },
+          {
+            "id": "bankFileInput",
+            "accept": ".json,application/json"
+          }
+        ],
+        "modules": [
+          "http://127.0.0.1:57207/Cunata/app/main.js"
+        ]
+      },
+      "errors": [
+        "log: Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:57207/favicon.ico"
+      ],
+      "badRequests": [
+        "404 http://127.0.0.1:57207/favicon.ico"
+      ],
+      "imported": {
+        "title": "Oracle golden-20-0-0-full",
+        "count": 20,
+        "sync": "Chưa lưu"
+      },
+      "answered": {
+        "checked": 20,
+        "sync": "Đã lưu"
+      },
+      "submitted": {
+        "reportDisplay": "grid",
+        "sync": "Đã lưu",
+        "reportText": "Kết Quả Bài Thi\n\nĐiểm tổng: 5 / 5\n\nThí sinh: Codex trạng thái cục bộ",
+        "records": [
+          {
+            "key": "cunata:attempt:exam%3Agolden-20-0-0:version%3Agolden-20-0-0:attempt-mwi4zb4j-si8p",
+            "raw": "{\"examId\":\"exam:golden-20-0-0\",\"examVersionId\":\"version:golden-20-0-0\",\"attemptId\":\"attempt-mwi4zb4j-si8p\",\"candidateName\":\"Codex trạng thái cục bộ\",\"responses\":{\"golden-20-0-0:I:0\":\"golden-20-0-0:I:0:option:0\",\"golden-20-0-0:I:1\":\"golden-20-0-0:I:1:option:1\",\"golden-20-0-0:I:2\":\"golden-20-0-0:I:2:option:2\",\"golden-20-0-0:I:3\":\"golden-20-0-0:I:3:option:3\",\"golden-20-0-0:I:4\":\"golden-20-0-0:I:4:option:0\",\"golden-20-0-0:I:5\":\"golden-20-0-0:I:5:option:1\",\"golden-20-0-0:I:6\":\"golden-20-0-0:I:6:option:2\",\"golden-20-0-0:I:7\":\"golden-20-0-0:I:7:option:3\",\"golden-20-0-0:I:8\":\"golden-20-0-0:I:8:option:0\",\"golden-20-0-0:I:9\":\"golden-20-0-0:I:9:option:1\",\"golden-20-0-0:I:10\":\"golden-20-0-0:I:10:option:2\",\"golden-20-0-0:I:11\":\"golden-20-0-0:I:11:option:3\",\"golden-20-0-0:I:12\":\"golden-20-0-0:I:12:option:0\",\"golden-20-0-0:I:13\":\"golden-20-0-0:I:13:option:1\",\"golden-20-0-0:I:14\":\"golden-20-0-0:I:14:option:2\",\"golden-20-0-0:I:15\":\"golden-20-0-0:I:15:option:3\",\"golden-20-0-0:I:16\":\"golden-20-0-0:I:16:option:0\",\"golden-20-0-0:I:17\":\"golden-20-0-0:I:17:option:1\",\"golden-20-0-0:I:18\":\"golden-20-0-0:I:18:option:2\",\"golden-20-0-0:I:19\":\"golden-20-0-0:I:19:option:3\"},\"startedAt\":1794765401875,\"deadline\":1794768401875,\"submitted\":false,\"scoreResult\":null}"
+          }
+        ]
+      },
+      "dialogs": [],
+      "builder": {
+        "display": "none",
+        "count": "0",
+        "contents": ""
+      },
+      "afterReload": {
+        "reportDisplay": "grid",
+        "examDisplay": "none",
+        "sync": "Đã lưu",
+        "candidateName": "Thí sinh tự do"
+      }
+    }
+  ],
+  "hashesAfter": {
+    "index.html": "7e44cc681f2abe1a7cfbae4bdb0cf23e055a42cf957b425d826f079508f50aca",
+    "src/app/main.ts": "ba7f11144d6a2c4903483a95d94eb7119dcbf639676c8c9abf53751790ab3284",
+    "src/app/shell.html": "5721a5ec964bc4fd23b8f3ff1e458d4ed3910378c43719e22d5c26a7d2606195",
+    "dist/index.html": "8646b1c3a67f17ea84fd14828c783b0bc719ddeacd087993e32be75668443ce3",
+    "dist/app/main.js": "edd2e9845ec7befd54d45afb9d37c8de8c885da85a63a8beb9898e9d2aa49941",
+    "test/claude-check/harness.mjs": "bc3c5e7a4e24f2cf43549f1199abf98766d54a0945f48f6b7560f9aa1b133a74",
+    "test/claude-check/app.mjs": "606c71163ea8198650aaa04bafbcf6b4da827a68f89f193e7977d4c386774d8f",
+    "test/oracle/fixtures/golden.json": "64a805a63f5fbaa0e7b93b191970168c74e2a3958caa7017fcfe602bc370650d",
+    "test/oracle/fixtures/sections-I-II.json": "1284683c090df0e067cd029d75db26a4d6461ae697bb5b2db95f702320f201fc",
+    "test/oracle/fixtures/short-answers.json": "e021600103115313cf06c42b731c440f16829133021b61f9761bb422cc42c675"
+  }
+}

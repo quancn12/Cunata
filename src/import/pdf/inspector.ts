@@ -71,7 +71,7 @@ export function inspectPdf(bytes: Uint8Array): PdfInspectionResult {
   const hasEof = tailText.includes("%%EOF");
 
   let isCorrupt = false;
-  if (!hasEof && bytes.length > 64) {
+  if (!hasEof) {
     isCorrupt = true;
     flags.push(PDF_FLAGS.CORRUPT);
     limitations.push(

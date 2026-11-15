@@ -1,0 +1,27 @@
+{
+  "examId": "exam:III-negative-four",
+  "examVersionId": "version:III-negative-four",
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "questions": [
+    {
+      "kind": "III",
+      "questionVersionId": "III-negative-four:III:0",
+      "answerKey": "-0,5",
+      "title": "Câu 1",
+      "content": "Oracle III-negative-four câu 1"
+    }
+  ],
+  "schemaVersion": "web-exam-v1",
+  "title": "Oracle III-negative-four",
+  "subject": "Toán học",
+  "grade": 12,
+  "assets": [],
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  }
+}

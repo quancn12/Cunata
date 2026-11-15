@@ -72,3 +72,44 @@ export {
   SCOPED_UI_CSS,
   ensureScopedStyles,
 } from './styles.ts';
+
+// 9. Responsive layout, breakpoints, touch targets and overflow wrappers
+export {
+  BREAKPOINTS,
+  LAYOUT_STYLE_ELEMENT_ID,
+  LAYOUT_CSS,
+  classifyBreakpoint,
+  ensureLayoutStyles,
+  enforceTouchTarget,
+  wrapMathOverflow,
+  wrapTableResponsive,
+  createStatusBadge,
+  createSkipLink,
+  isReducedMotionPreferred,
+  createExamLayout,
+  handleRadioGroupKeyDown,
+} from './layout.ts';
+export type {
+  Breakpoint,
+  SaveState,
+  StatusBadgeOptions,
+  ExamLayoutOptions,
+  ExamLayoutInstance,
+  RadioGroupKeyboardOptions,
+} from './layout.ts';
+
+// 10. Accessible dialogs and submit confirmation
+export {
+  createConfirmDialog,
+  createAlertDialog,
+  createSubmitConfirmDialog,
+  createPromptDialog,
+} from './dialog.ts';
+export type {
+  BaseDialogOptions,
+  DialogInstance,
+  ConfirmDialogOptions,
+  AlertDialogOptions,
+  SubmitConfirmDialogOptions,
+  PromptDialogOptions,
+} from './dialog.ts';

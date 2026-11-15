@@ -41,8 +41,9 @@ function normalizeDocxTargetPath(target: string): string {
 export function parseRelationships(
   xmlString: string,
   xmlParser: XmlParserPort,
+  path: string = "word/_rels/document.xml.rels",
 ): Result<RelationshipMap> {
-  const securityCheck = checkXmlSecurity(xmlString, "word/_rels/document.xml.rels");
+  const securityCheck = checkXmlSecurity(xmlString, path);
   if (!securityCheck.ok) {
     return securityCheck;
   }
@@ -55,14 +56,14 @@ export function parseRelationships(
       ok: false,
       error: {
         code: "XML_INVALID",
-        path: "word/_rels/document.xml.rels",
+        path,
         message: `Lỗi phân tích XML relationships: ${String(err)}`,
         recoverable: false,
       },
     };
   }
 
-  const parserCheck = checkParserError(doc, "word/_rels/document.xml.rels");
+  const parserCheck = checkParserError(doc, path);
   if (!parserCheck.ok) {
     return parserCheck;
   }
@@ -86,7 +87,7 @@ export function parseRelationships(
         ok: false,
         error: {
           code: "XML_INVALID",
-          path: "word/_rels/document.xml.rels",
+          path,
           message: `Tài liệu chứa quan hệ ngoại vi không được phép (TargetMode='External', Id='${id}')`,
           recoverable: false,
         },
@@ -102,7 +103,7 @@ export function parseRelationships(
         ok: false,
         error: {
           code: "XML_INVALID",
-          path: "word/_rels/document.xml.rels",
+          path,
           message: `Target quan hệ chứa giao thức ngoại vi hoặc không an toàn: '${trimmedTarget}'`,
           recoverable: false,
         },
@@ -116,7 +117,7 @@ export function parseRelationships(
         ok: false,
         error: {
           code: "XML_INVALID",
-          path: "word/_rels/document.xml.rels",
+          path,
           message: `Target quan hệ chứa đường dẫn vượt giới hạn (path traversal): '${trimmedTarget}'`,
           recoverable: false,
         },

@@ -27,6 +27,8 @@ import type {
   AttemptRecord,
   WebExam,
   WebQuestion,
+  WebOption,
+  WebStatement,
   WebError,
   Result,
   ReportQuestion,
@@ -50,6 +52,8 @@ export type {
   AttemptRecord,
   WebExam,
   WebQuestion,
+  WebOption,
+  WebStatement,
   WebError,
   Result,
   ReportQuestion,
@@ -71,6 +75,9 @@ export {
 } from "./download.ts";
 
 function escapeHtml(str: string): string {
+  if (typeof str !== "string") {
+    str = String(str ?? "");
+  }
   return str
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -108,20 +115,83 @@ export function buildReport(
     };
   }
 
+  // Validate snapshot presence and identity integrity
+  if (
+    !final.examSnapshot ||
+    typeof final.examSnapshot !== "object" ||
+    !Array.isArray(final.examSnapshot.questions)
+  ) {
+    return {
+      ok: false,
+      error: {
+        code: "SNAPSHOT_INVALID",
+        path: "examSnapshot",
+        message: "Dữ liệu snapshot đề thi trong bài làm không hợp lệ hoặc bị thiếu.",
+        recoverable: false,
+      },
+    };
+  }
+
+  if (
+    final.examSnapshot.examId !== final.examId ||
+    final.examSnapshot.examVersionId !== final.examVersionId
+  ) {
+    return {
+      ok: false,
+      error: {
+        code: "SCORE_MISMATCH",
+        path: "examSnapshot",
+        message: "Snapshot đề thi không khớp với mã đề thi hoặc phiên bản đề của bài làm.",
+        recoverable: false,
+      },
+    };
+  }
+
+  if (
+    !final.responses ||
+    typeof final.responses !== "object" ||
+    !Array.isArray(final.responses.responses)
+  ) {
+    return {
+      ok: false,
+      error: {
+        code: "RESPONSES_INVALID",
+        path: "responses",
+        message: "Dữ liệu câu trả lời trong bài làm không hợp lệ hoặc bị thiếu.",
+        recoverable: false,
+      },
+    };
+  }
+
+  if (
+    final.responses.attemptId !== final.attemptId ||
+    final.responses.examVersionId !== final.examVersionId
+  ) {
+    return {
+      ok: false,
+      error: {
+        code: "SCORE_MISMATCH",
+        path: "responses",
+        message: "Dữ liệu trả lời không khớp với mã bài làm hoặc phiên bản đề của bài làm.",
+        recoverable: false,
+      },
+    };
+  }
+
   // Construct domain exam from snapshot for deterministic recomputation
-  const domainQuestions: Question[] = final.examSnapshot.questions.map((q) => {
+  const domainQuestions: Question[] = (final.examSnapshot.questions as readonly WebQuestion[]).map((q: WebQuestion): Question => {
     if (q.kind === "I") {
       return {
         kind: "I",
         questionVersionId: q.questionVersionId,
-        options: q.options.map((o) => ({ optionId: o.optionId })),
+        options: q.options.map((o: WebOption) => ({ optionId: o.optionId })),
         correctOptionId: q.correctOptionId,
       };
     } else if (q.kind === "II") {
       return {
         kind: "II",
         questionVersionId: q.questionVersionId,
-        statements: q.statements.map((s) => ({
+        statements: q.statements.map((s: WebStatement) => ({
           statementId: s.statementId,
           answer: s.answer,
         })),
@@ -178,6 +248,10 @@ export function buildReport(
     }
 
     if (
+      storedParsed.attemptId !== final.attemptId ||
+      storedParsed.examVersionId !== final.examVersionId ||
+      storedParsed.ruleSetId !== recomputedScore.ruleSetId ||
+      storedParsed.inputPolicyId !== recomputedScore.inputPolicyId ||
       !equals(storedParsed.total, recomputedScore.total) ||
       !equals(storedParsed.maxTotal, recomputedScore.maxTotal) ||
       !equals(storedParsed.sections.I.score, recomputedScore.sections.I.score) ||

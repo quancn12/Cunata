@@ -175,6 +175,18 @@ export function parseDocumentXml(
     }
   }
 
+  // Detect multi-column section properties (<w:cols w:num="2" />)
+  const colsElements = findElementsByTagName(doc, "cols");
+  for (const cols of colsElements) {
+    const numStr = getAttr(cols, "w:num") ?? getAttr(cols, "num");
+    if (numStr) {
+      const num = parseInt(numStr, 10);
+      if (num > 1 && !documentFlags.includes("DOCX_MULTICOLUMN_LAYOUT")) {
+        documentFlags.push("DOCX_MULTICOLUMN_LAYOUT");
+      }
+    }
+  }
+
   return {
     ok: true,
     value: {

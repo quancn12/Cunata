@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createPromptDialog, createConfirmDialog } from '../../../src/ui/dialog.ts';
+import { handleRadioGroupKeyDown } from '../../../src/ui/layout.ts';
 import {
   createMockDocument,
   MockEvent,
@@ -185,6 +186,128 @@ describe('WEB-W2-UI-POLISH: Keyboard Navigation Model & IME Composition Preservi
       assert.strictEqual(confirmed, false);
       assert.strictEqual(cancelled, true);
       assert.strictEqual(dialog.isOpened(), false);
+    });
+  });
+
+  describe('handleRadioGroupKeyDown: Part I Radio Group Keyboard Navigation (WCAG / ARIA APG)', () => {
+    it('Space / Enter key selects current option and keeps focus on that option', () => {
+      const doc = createMockDocument();
+      const options = ['opt-a', 'opt-b', 'opt-c', 'opt-d'].map((id) => {
+        const el = doc.createElement('div');
+        el.setAttribute('role', 'radio');
+        el.setAttribute('data-option-id', id);
+        return el as unknown as HTMLElement;
+      });
+
+      let selectedIndex = -1;
+      options[0]!.focus();
+      assert.strictEqual(doc.activeElement, options[0]);
+
+      const spaceEvent = new MockKeyboardEvent('keydown', { key: ' ' });
+      const handled = handleRadioGroupKeyDown(spaceEvent as unknown as KeyboardEvent, {
+        items: options,
+        currentIndex: 0,
+        onSelect: (idx) => {
+          selectedIndex = idx;
+        },
+        focusAfterSelect: true,
+      });
+
+      assert.strictEqual(handled, true);
+      assert.strictEqual(spaceEvent.defaultPrevented, true);
+      assert.strictEqual(selectedIndex, 0);
+      assert.strictEqual(doc.activeElement, options[0], 'Focus must remain on the selected option after Space');
+    });
+
+    it('ArrowDown / ArrowRight advances selection and focus to next option with wrap-around', () => {
+      const doc = createMockDocument();
+      const options = ['opt-a', 'opt-b', 'opt-c', 'opt-d'].map((id) => {
+        const el = doc.createElement('div');
+        el.setAttribute('role', 'radio');
+        el.setAttribute('data-option-id', id);
+        return el as unknown as HTMLElement;
+      });
+
+      let selectedIndex = -1;
+
+      // From index 0 to 1
+      const arrowDownEvent = new MockKeyboardEvent('keydown', { key: 'ArrowDown' });
+      const handled1 = handleRadioGroupKeyDown(arrowDownEvent as unknown as KeyboardEvent, {
+        items: options,
+        currentIndex: 0,
+        onSelect: (idx) => {
+          selectedIndex = idx;
+        },
+        focusAfterSelect: true,
+      });
+
+      assert.strictEqual(handled1, true);
+      assert.strictEqual(arrowDownEvent.defaultPrevented, true);
+      assert.strictEqual(selectedIndex, 1);
+      assert.strictEqual(doc.activeElement, options[1], 'Focus must move to next option (index 1)');
+
+      // From index 3 wrap around to 0
+      const wrapEvent = new MockKeyboardEvent('keydown', { key: 'ArrowRight' });
+      const handled2 = handleRadioGroupKeyDown(wrapEvent as unknown as KeyboardEvent, {
+        items: options,
+        currentIndex: 3,
+        onSelect: (idx) => {
+          selectedIndex = idx;
+        },
+        focusAfterSelect: true,
+      });
+
+      assert.strictEqual(handled2, true);
+      assert.strictEqual(wrapEvent.defaultPrevented, true);
+      assert.strictEqual(selectedIndex, 0);
+      assert.strictEqual(doc.activeElement, options[0], 'Focus must wrap to first option (index 0)');
+    });
+
+    it('ArrowUp / ArrowLeft retreats selection and focus to previous option with wrap-around', () => {
+      const doc = createMockDocument();
+      const options = ['opt-a', 'opt-b', 'opt-c', 'opt-d'].map((id) => {
+        const el = doc.createElement('div');
+        el.setAttribute('role', 'radio');
+        el.setAttribute('data-option-id', id);
+        return el as unknown as HTMLElement;
+      });
+
+      let selectedIndex = -1;
+
+      // From index 0 wrap around to 3
+      const arrowUpEvent = new MockKeyboardEvent('keydown', { key: 'ArrowUp' });
+      const handled = handleRadioGroupKeyDown(arrowUpEvent as unknown as KeyboardEvent, {
+        items: options,
+        currentIndex: 0,
+        onSelect: (idx) => {
+          selectedIndex = idx;
+        },
+        focusAfterSelect: true,
+      });
+
+      assert.strictEqual(handled, true);
+      assert.strictEqual(arrowUpEvent.defaultPrevented, true);
+      assert.strictEqual(selectedIndex, 3);
+      assert.strictEqual(doc.activeElement, options[3], 'Focus must wrap to last option (index 3)');
+    });
+
+    it('ignores non-navigation keys without preventing default', () => {
+      const doc = createMockDocument();
+      const options = [doc.createElement('div') as unknown as HTMLElement];
+      let selected = false;
+
+      const tabEvent = new MockKeyboardEvent('keydown', { key: 'Tab' });
+      const handled = handleRadioGroupKeyDown(tabEvent as unknown as KeyboardEvent, {
+        items: options,
+        currentIndex: 0,
+        onSelect: () => {
+          selected = true;
+        },
+      });
+
+      assert.strictEqual(handled, false);
+      assert.strictEqual(tabEvent.defaultPrevented, false);
+      assert.strictEqual(selected, false);
     });
   });
 });

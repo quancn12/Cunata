@@ -1,0 +1,27 @@
+{
+  "examId": "exam:III-exact",
+  "examVersionId": "version:III-exact",
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "questions": [
+    {
+      "kind": "III",
+      "questionVersionId": "III-exact:III:0",
+      "answerKey": "1,5",
+      "title": "Câu 1",
+      "content": "Oracle III-exact câu 1"
+    }
+  ],
+  "schemaVersion": "web-exam-v1",
+  "title": "Oracle III-exact",
+  "subject": "Toán học",
+  "grade": 12,
+  "assets": [],
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  }
+}

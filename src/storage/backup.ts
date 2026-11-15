@@ -51,6 +51,18 @@ export function validateBackupPayload(input: unknown): Result<StorageBackupPaylo
 
   const raw = input as Record<string, unknown>;
 
+  if (typeof raw.schemaVersion === 'string' && raw.schemaVersion !== 'cunata-backup-v1') {
+    return {
+      ok: false,
+      error: {
+        code: 'STORAGE_VERSION_UNSUPPORTED',
+        path: 'schemaVersion',
+        message: `Phiên bản schema sao lưu '${raw.schemaVersion}' không được hỗ trợ (future schema version)`,
+        recoverable: false,
+      },
+    };
+  }
+
   if (raw.schemaVersion !== 'cunata-backup-v1') {
     return {
       ok: false,

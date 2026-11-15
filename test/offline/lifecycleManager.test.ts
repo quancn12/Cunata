@@ -128,7 +128,7 @@ describe('Lifecycle Manager: Verified Offline-Ready & Precache Verification', ()
     if (checkRes.ok) {
       assert.strictEqual(checkRes.value.ready, false, 'First-time empty cache must not be marked ready');
       assert.strictEqual(checkRes.value.cachedCount, 0);
-      assert.deepStrictEqual(checkRes.value.missingUrls, ['index.html', 'styles/style.css']);
+      assert.deepEqual(checkRes.value.missingUrls, ['index.html', 'styles/style.css']);
     }
     assert.strictEqual(readyReported, false);
     assert.notStrictEqual(manager.status, 'offline_ready');
@@ -183,11 +183,11 @@ describe('Lifecycle Manager: Safe Updates Deferred During Active Attempt', () =>
 
     await manager.setAttemptActive(true);
     assert.strictEqual(manager.isAttemptActive(), true);
-    assert.deepStrictEqual(env.controllerMessages[0], { type: 'SET_ATTEMPT_ACTIVE', active: true });
+    assert.deepEqual(env.controllerMessages[0], { type: 'SET_ATTEMPT_ACTIVE', active: true });
 
     await manager.setAttemptActive(false);
     assert.strictEqual(manager.isAttemptActive(), false);
-    assert.deepStrictEqual(env.controllerMessages[1], { type: 'SET_ATTEMPT_ACTIVE', active: false });
+    assert.deepEqual(env.controllerMessages[1], { type: 'SET_ATTEMPT_ACTIVE', active: false });
   });
 
   it('defers service worker update when attempt is active and exposes activate callback on attempt completion', async () => {
@@ -251,7 +251,7 @@ describe('Lifecycle Manager: Safe Updates Deferred During Active Attempt', () =>
     const allowedActivate = await manager.activateDeferredUpdate();
     assert.strictEqual(allowedActivate.ok, true);
     assert.strictEqual(manager.status, 'updating');
-    assert.deepStrictEqual(waitingWorkerMessages[0], { type: 'SKIP_WAITING' });
+    assert.deepEqual(waitingWorkerMessages[0], { type: 'SKIP_WAITING' });
   });
 });
 

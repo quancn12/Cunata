@@ -1,0 +1,582 @@
+{
+  "[student][report] oracle golden-20-0-0-full": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 839.9367
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 1368.6879
+    }
+  },
+  "[student][report] oracle golden-20-0-0-blank": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 503.6153
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 774.6616
+    }
+  },
+  "[student][report] oracle golden-0-4-0-full": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 670.7468
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 1140.0672
+    }
+  },
+  "[student][report] oracle golden-0-4-0-blank": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 435.9011
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 561.0119
+    }
+  },
+  "[student][report] oracle golden-20-10-0-full": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 1704.0764
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 7004.7438
+    }
+  },
+  "[student][report] oracle golden-20-10-0-blank": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 570.2547
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 811.2333
+    }
+  },
+  "[student][report] oracle golden-20-10-4-full": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 2210.5988
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 7201.9731
+    }
+  },
+  "[student][report] oracle golden-20-10-4-blank": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 535.2869
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 916.1046
+    }
+  },
+  "[student][report] oracle golden-20-10-4-one-III": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 517.5377
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 3885.91
+    }
+  },
+  "[student][report] oracle golden-12-4-6-full": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 1629.0419
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 2611.7271
+    }
+  },
+  "[student][report] oracle golden-12-4-6-blank": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 515.5241
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 552.2509
+    }
+  },
+  "[student][report] oracle golden-12-4-6-one-III": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 452.8109
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 634.1692
+    }
+  },
+  "[student][report] oracle golden-0-0-3-full": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 647.9482
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 626.58
+    }
+  },
+  "[student][report] oracle golden-0-0-3-blank": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 567.9418
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 757.5356
+    }
+  },
+  "[student][report] oracle golden-0-0-3-one-III": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 552.4737
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 815.4626
+    }
+  },
+  "[student][report] oracle golden-0-0-7-full": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 810.1656
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 1554.1285
+    }
+  },
+  "[student][report] oracle golden-0-0-7-blank": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 586.9612
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 864.9086
+    }
+  },
+  "[student][report] oracle golden-0-0-7-one-III": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 564.6985
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 801.8991
+    }
+  },
+  "[student][report] oracle golden-39-0-3-full": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 3359.711
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 4513.4797
+    }
+  },
+  "[student][report] oracle golden-39-0-3-blank": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 1155.1733
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 888.3132
+    }
+  },
+  "[student][report] oracle golden-39-0-3-one-III": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 1327.1227
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 971.1711
+    }
+  },
+  "[student][report] oracle golden-40-0-3-full": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 2779.5934
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 4176.6236
+    }
+  },
+  "[student][report] oracle golden-40-0-3-blank": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 704.2335
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 2231.7694
+    }
+  },
+  "[student][report] oracle golden-40-0-3-one-III": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 913.8252
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 1843.7505
+    }
+  },
+  "[student][report] oracle golden-41-0-3-full": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 3386.9857
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 2477.4157
+    }
+  },
+  "[student][report] oracle golden-41-0-3-blank": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 574.2627
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 659.2954
+    }
+  },
+  "[student][report] oracle golden-41-0-3-one-III": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 658.387
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 850.3251
+    }
+  },
+  "[student][report] oracle report-11-of-16": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 4715.9355
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 3337.7723
+    }
+  },
+  "[student][report] oracle report-12-of-15": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 4404.2572
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 2982.6097
+    }
+  },
+  "[student][report] oracle II-k-0": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 872.6106
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 748.8319
+    }
+  },
+  "[student][report] oracle II-k-1": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 1099.6475
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 727.7662
+    }
+  },
+  "[student][report] oracle II-k-2": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 603.5487
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 594.6806
+    }
+  },
+  "[student][report] oracle II-k-3": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 620.4962
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 1320.4546
+    }
+  },
+  "[student][report] oracle II-k-4": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 459.724
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 1207.1254
+    }
+  },
+  "[student][report] oracle II-false-key-all-null": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 546.0109
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 1104.7694
+    }
+  },
+  "[student][report] oracle II-false-key-all-missing": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 513.6533
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 835.6355
+    }
+  },
+  "[student][report] oracle II-false-key-one-false": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 583.7643
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 735.7285
+    }
+  },
+  "[student][report] oracle III-exact": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 531.5119
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 1013.5055
+    }
+  },
+  "[student][report] oracle III-trailing-zero": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 561.2945
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 894.4259
+    }
+  },
+  "[student][report] oracle III-reverse-trailing-zero": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 492.4897
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 880.6947
+    }
+  },
+  "[student][report] oracle III-negative-four": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 547.0956
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 714.4894
+    }
+  },
+  "[student][report] oracle III-negative-wrong": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 601.9938
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 954.2376
+    }
+  },
+  "[student][report] oracle III-integer": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 536.0061
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 955.4036
+    }
+  },
+  "[teacher] create I/II/III, edit keys, publish, solve and JSON roundtrip": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 2117.7215
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 671.9044
+    }
+  },
+  "[teacher] missing I answer key rejects import and cannot publish malformed replacement": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 1073.5848
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 454.4719
+    }
+  },
+  "[teacher] missing II answer key rejects import and cannot publish malformed replacement": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 1157.2602
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 554.9864
+    }
+  },
+  "[teacher] missing III answer key rejects import and cannot publish malformed replacement": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 965.0148
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 552.8234
+    }
+  },
+  "[teacher] blank III editor key blocks save, correction then publishes": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 457.2465
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 879.1311
+    }
+  },
+  "[bank] restore samples, combine search/kind filters and clear query": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 610.3617
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 625.006
+    }
+  },
+  "[bank][teacher] export, clear, import, reuse and edit without mutating bank": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 1949.9817
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 611.2408
+    }
+  },
+  "[import] generated DOCX preview preserves table/image or explicitly warns": {
+    "root": {
+      "status": "FAIL",
+      "duration_ms": 392.3554
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 707.6852
+    }
+  },
+  "[import][teacher] generated DOCX preview, correction and explicit confirmation": {
+    "root": {
+      "status": "FAIL",
+      "duration_ms": 346.126
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 707.6236
+    }
+  },
+  "[import] cancelled DOCX preview cannot confirm or partially add to draft": {
+    "root": {
+      "status": "FAIL",
+      "duration_ms": 359.142
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 708.2701
+    }
+  },
+  "[collect] JSON raw + CSV formula protection for nickname =": {
+    "root": {
+      "status": "FAIL",
+      "duration_ms": 410.4381
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 872.4091
+    }
+  },
+  "[collect] JSON raw + CSV formula protection for nickname +": {
+    "root": {
+      "status": "FAIL",
+      "duration_ms": 465.8057
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 1070.5115
+    }
+  },
+  "[collect] JSON raw + CSV formula protection for nickname -": {
+    "root": {
+      "status": "FAIL",
+      "duration_ms": 446.2536
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 766.0305
+    }
+  },
+  "[collect] JSON raw + CSV formula protection for nickname @": {
+    "root": {
+      "status": "FAIL",
+      "duration_ms": 408.4826
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 925.3871
+    }
+  },
+  "[collect][storage] no endpoint: honest local status and zero collector requests, including reload": {
+    "root": {
+      "status": "PASS",
+      "duration_ms": 406.4865
+    },
+    "dist": {
+      "status": "FAIL",
+      "duration_ms": 845.4205
+    }
+  }
+}

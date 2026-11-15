@@ -42,6 +42,22 @@
     .text-success { color: var(--success); font-weight: 600; }
     .text-danger { color: var(--danger); font-weight: 600; }
     .text-muted { color: var(--gray-500); }
+    /* WCAG 2.5.5 touch target hardening & accessibility (QA-evidence.md) */
+    #btnSubmit {
+      min-height: 44px;
+      padding: 0.5rem 1rem;
+    }
+    @media (max-width: 480px) {
+      .quick-key-btn {
+        min-height: 44px;
+        min-width: 44px;
+      }
+    }
+    @media (forced-colors: active) {
+      .modal-content, .palette-card, .summary-card, .btn-submit, .btn-secondary {
+        border: 2px solid ButtonText !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -177,6 +193,22 @@
           </svg>
           Tải Báo Cáo Offline (.html)
         </button>
+        <button type="button" class="btn-secondary" id="btnDownloadResultJson">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Tải Kết Quả (JSON)
+        </button>
+        <button type="button" class="btn-secondary" id="btnDownloadResultCsv">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Xuất Kết Quả (CSV)
+        </button>
         <button type="button" class="btn-submit" id="btnRestart">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="1 4 1 10 7 10"></polyline>
@@ -296,6 +328,8 @@
             <button type="button" class="btn-secondary" id="btnLoadSampleToBuilder">Nạp đề mẫu</button>
             <button type="button" class="btn-secondary" id="btnImportExamJson">📥 Nạp đề từ file</button>
             <input type="file" id="builderFileInput" accept=".json,application/json" style="display: none;" />
+            <button type="button" class="btn-secondary" id="btnImportDocx">📄 Nhập từ DOCX</button>
+            <input type="file" id="docxFileInput" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display: none;" />
           </div>
         </div>
         <div id="builderQuestionsContainer" class="builder-questions-list"></div>
@@ -376,6 +410,9 @@
       </div>
     </div>
   </div>
+
+  <!-- ================= Modal Xem Trước & Hiệu Đính Nhập (Import Preview) ================= -->
+  <div class="modal-overlay" id="previewModal" style="display: none; z-index: 1100;" role="dialog" aria-modal="true" aria-label="Xem trước đề nhập"></div>
 
   <!-- ================= Ứng Dụng Client Script (ES Module) ================= -->
   <script type="module">
@@ -722,6 +759,20 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    function updateAriaInvalid(val, el) {
+      if (!el && typeof document !== 'undefined' && typeof document.querySelector === 'function') {
+        el = document.querySelector('.short-answer-input:focus') || document.querySelector('.short-answer-input');
+      }
+      const isValid = /^[0-9,-]{0,4}$/.test(val);
+      if (el && typeof el.setAttribute === 'function') {
+        if (isValid) {
+          if (typeof el.removeAttribute === 'function') el.removeAttribute('aria-invalid');
+        } else {
+          el.setAttribute('aria-invalid', 'true');
+        }
+      }
     }
 
     const MAX_QUESTIONS_PER_EXAM = 1000;
@@ -1804,6 +1855,8 @@
                 if (oIssues.length === 0) studentState.presentationOrder = finalParsed.presentationOrder;
               }
               if (syncText) syncText.textContent = 'Đã nộp & lưu cục bộ';
+              if (timerInterval) clearInterval(timerInterval);
+              showReportView();
               return;
             }
           } catch (_) {}
@@ -1819,6 +1872,8 @@
             if (existing.responses && typeof existing.responses === 'object') studentState.responses = existing.responses;
             if (existing.candidateName) studentState.candidateName = existing.candidateName;
             if (syncText) syncText.textContent = 'Đã nộp & lưu cục bộ';
+            if (timerInterval) clearInterval(timerInterval);
+            showReportView();
             return;
           }
         }
@@ -2369,9 +2424,12 @@
           container.insertBefore(charsPreview, container.querySelector('.quick-keys-bar'));
 
           const inputEl = container.querySelector('.short-answer-input');
+          updateAriaInvalid(inputEl.value, inputEl);
+
           inputEl.addEventListener('input', (e) => {
             if (studentState.submitted) return;
             const val = e.target.value;
+            updateAriaInvalid(val, e && e.target ? e.target : inputEl);
             if (!studentState.responses || typeof studentState.responses !== 'object') studentState.responses = Object.create(null);
             studentState.responses[q.questionVersionId] = val;
             try {
@@ -2387,6 +2445,10 @@
             } catch (_) {}
             saveLocalState();
             renderPalette();
+          });
+          inputEl.addEventListener('change', (e) => {
+            if (studentState.submitted) return;
+            updateAriaInvalid(e.target.value, e && e.target ? e.target : inputEl);
           });
 
           container.querySelectorAll('.quick-key-btn').forEach((btn) => {
@@ -2418,6 +2480,7 @@
                   }
                 }
               } catch (_) {}
+              if (inputEl) updateAriaInvalid(inputEl.value, inputEl);
               saveLocalState();
               renderPalette();
             });
@@ -2515,41 +2578,134 @@
     const btnCancelSubmit = document.getElementById('btnCancelSubmit');
     const btnConfirmSubmit = document.getElementById('btnConfirmSubmit');
 
-    if (btnSubmit) {
-      btnSubmit.addEventListener('click', () => {
-        if (studentState.submitted) return;
-        let answeredCount = 0;
-        (currentExam.questions || []).forEach((q) => {
-          const res = (studentState.responses && Object.hasOwn(studentState.responses, q.questionVersionId)) ? studentState.responses[q.questionVersionId] : undefined;
-          if (q.kind === 'I' && res) answeredCount++;
-          else if (q.kind === 'II' && res && typeof res === 'object' && Object.keys(res).length === 4) answeredCount++;
-          else if (q.kind === 'III' && typeof res === 'string' && res.length > 0) answeredCount++;
-        });
+    let submitModalLastFocus = null;
 
-        const total = (currentExam.questions || []).length;
-        const un = total - answeredCount;
-        const modalBody = document.getElementById('modalBodyText');
-        if (modalBody) {
-          if (un > 0) {
-            modalBody.innerHTML = 'Bạn đã hoàn thành <strong>' + answeredCount + '/' + total + '</strong> câu hỏi. Còn <strong>' + un + '</strong> câu chưa hoàn thành hoặc chưa làm đủ ý.<br><br>Bạn có chắc chắn muốn nộp bài ngay bây giờ?';
-          } else {
-            modalBody.innerHTML = 'Bạn đã hoàn thành toàn bộ <strong>' + total + '/' + total + '</strong> câu hỏi.<br><br>Bạn có chắc chắn muốn nộp bài để xem bảng điểm và lời giải chi tiết?';
-          }
-        }
-        if (submitModal) submitModal.style.display = 'flex';
+    function getModalFocusableElements(container) {
+      if (!container) return [];
+      const selector = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      const elements = Array.from(container.querySelectorAll(selector));
+      return elements.filter((el) => {
+        const style = el.style;
+        if (style && (style.display === 'none' || style.visibility === 'hidden')) return false;
+        return !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true';
       });
+    }
+
+    function openSubmitModal() {
+      if (currentExam && studentState) {
+        const finalKey = getFinalStorageKey(currentExam, studentState);
+        const key = getStorageKey(currentExam, studentState);
+        try {
+          const rawFinal = localStorage.getItem(finalKey) || localStorage.getItem(key);
+          if (rawFinal) {
+            const parsed = JSON.parse(rawFinal);
+            if (parsed && parsed.submitted === true && isSameIdentity(parsed, currentExam, studentState) && isValidScoreResult(parsed.scoreResult, currentExam, parsed)) {
+              studentState.submitted = true;
+              studentState.scoreResult = parsed.scoreResult;
+              if (parsed.responses && typeof parsed.responses === 'object') studentState.responses = parsed.responses;
+              if (parsed.candidateName) studentState.candidateName = parsed.candidateName;
+              if (timerInterval) clearInterval(timerInterval);
+              showReportView();
+              return;
+            }
+          }
+        } catch (_) {}
+      }
+      if (studentState.submitted) {
+        showReportView();
+        return;
+      }
+      let answeredCount = 0;
+      (currentExam.questions || []).forEach((q) => {
+        const res = (studentState.responses && Object.hasOwn(studentState.responses, q.questionVersionId)) ? studentState.responses[q.questionVersionId] : undefined;
+        if (q.kind === 'I' && res) answeredCount++;
+        else if (q.kind === 'II' && res && typeof res === 'object' && Object.keys(res).length === 4) answeredCount++;
+        else if (q.kind === 'III' && typeof res === 'string' && res.length > 0) answeredCount++;
+      });
+
+      const total = (currentExam.questions || []).length;
+      const un = total - answeredCount;
+      const modalBody = document.getElementById('modalBodyText');
+      if (modalBody) {
+        if (un > 0) {
+          modalBody.innerHTML = 'Bạn đã hoàn thành <strong>' + answeredCount + '/' + total + '</strong> câu hỏi. Còn <strong>' + un + '</strong> câu chưa hoàn thành hoặc chưa làm đủ ý.<br><br>Bạn có chắc chắn muốn nộp bài ngay bây giờ?';
+        } else {
+          modalBody.innerHTML = 'Bạn đã hoàn thành toàn bộ <strong>' + total + '/' + total + '</strong> câu hỏi.<br><br>Bạn có chắc chắn muốn nộp bài để xem bảng điểm và lời giải chi tiết?';
+        }
+      }
+      submitModalLastFocus = document.activeElement;
+      if (submitModal) {
+        submitModal.style.display = 'flex';
+        // Focus first actionable element inside modal (Cancel button)
+        if (btnCancelSubmit) {
+          btnCancelSubmit.focus();
+        } else {
+          const focusables = getModalFocusableElements(submitModal);
+          if (focusables.length > 0) focusables[0].focus();
+        }
+      }
+    }
+
+    function closeSubmitModal(restoreFocus = true) {
+      if (submitModal) submitModal.style.display = 'none';
+      if (restoreFocus && submitModalLastFocus && typeof submitModalLastFocus.focus === 'function') {
+        submitModalLastFocus.focus();
+      }
+    }
+
+    if (btnSubmit) {
+      btnSubmit.addEventListener('click', openSubmitModal);
     }
 
     if (btnCancelSubmit) {
       btnCancelSubmit.addEventListener('click', () => {
-        if (submitModal) submitModal.style.display = 'none';
+        closeSubmitModal(true);
       });
     }
 
     if (btnConfirmSubmit) {
       btnConfirmSubmit.addEventListener('click', () => {
-        if (submitModal) submitModal.style.display = 'none';
+        closeSubmitModal(false);
         submitExam();
+      });
+    }
+
+    // Modal focus trap & Escape key handler (WEB-F07)
+    const docListenerTarget = (typeof document !== 'undefined' && typeof document.addEventListener === 'function')
+      ? document
+      : ((typeof window !== 'undefined' && typeof window.addEventListener === 'function') ? window : null);
+    if (docListenerTarget) {
+      docListenerTarget.addEventListener('keydown', (e) => {
+        if (e.isComposing) return;
+        if (submitModal && submitModal.style.display === 'flex') {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+            closeSubmitModal(true);
+            return;
+          }
+          if (e.key === 'Tab') {
+            const focusables = getModalFocusableElements(submitModal);
+            if (focusables.length === 0) {
+              e.preventDefault();
+              return;
+            }
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            const current = document.activeElement;
+            if (e.shiftKey) {
+              if (!current || current === first || !submitModal.contains(current)) {
+                e.preventDefault();
+                last.focus();
+              }
+            } else {
+              if (current === last || !submitModal.contains(current)) {
+                e.preventDefault();
+                first.focus();
+              }
+            }
+          }
+        }
       });
     }
 
@@ -3460,6 +3616,28 @@
           }
         }
       });
+
+      window.addEventListener('storage', function(e) {
+        if (!e.key || !currentExam || !studentState) return;
+        const key = getStorageKey(currentExam, studentState);
+        const finalKey = getFinalStorageKey(currentExam, studentState);
+        if (e.key === finalKey || e.key === key) {
+          try {
+            const raw = localStorage.getItem(finalKey) || localStorage.getItem(key);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed && parsed.submitted === true && isSameIdentity(parsed, currentExam, studentState) && isValidScoreResult(parsed.scoreResult, currentExam, parsed)) {
+                studentState.submitted = true;
+                studentState.scoreResult = parsed.scoreResult;
+                if (parsed.responses && typeof parsed.responses === 'object') studentState.responses = parsed.responses;
+                if (parsed.candidateName) studentState.candidateName = parsed.candidateName;
+                if (timerInterval) clearInterval(timerInterval);
+                showReportView();
+              }
+            }
+          } catch (_) {}
+        }
+      });
     }
 
     function showReportView() {
@@ -3754,6 +3932,99 @@
       btnDownloadHtml.addEventListener('click', () => {
         downloadOfflineReportHtml();
       });
+    }
+
+    function escapeCsvValue(val) {
+      if (val === null || val === undefined) return '""';
+      let str = String(val);
+      // Neutralize spreadsheet formula injection (CWE-1236)
+      if (/^['\s\x00-\x1f\x7f-\x9f\uFEFF\u200B-\u200D\u3000]*[=+\-@|＝＋－＠｜]/u.test(str) || /^[\x00-\x1f\x7f-\x9f]/u.test(str)) {
+        str = "'" + str;
+      }
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+
+    function downloadResultCsv() {
+      if (!studentState || !studentState.scoreResult) return;
+      const res = studentState.scoreResult;
+      const headers = [
+        'attempt_id', 'exam_id', 'exam_version_id', 'candidate_display',
+        'started_at', 'submitted_at', 'duration_seconds',
+        'score_p1', 'max_p1', 'score_p2', 'max_p2', 'score_p3', 'max_p3',
+        'total_score', 'max_total', 'policy_version', 'raw_answers_json'
+      ];
+      const durationSeconds = studentState.startedAt ? Math.max(0, Math.round((Date.now() - studentState.startedAt) / 1000)) : 0;
+      const rawAnswers = JSON.stringify(studentState.responses || {});
+      const row = [
+        escapeCsvValue(studentState.attemptId || 'attempt-1'),
+        escapeCsvValue(studentState.examId || (currentExam && currentExam.examId) || 'exam-1'),
+        escapeCsvValue(studentState.examVersionId || (currentExam && currentExam.examVersionId) || 'v1.0.0'),
+        escapeCsvValue(studentState.candidateName || 'Thí sinh tự do'),
+        escapeCsvValue(studentState.startedAt ? new Date(studentState.startedAt).toISOString() : ''),
+        escapeCsvValue(new Date().toISOString()),
+        escapeCsvValue(String(durationSeconds)),
+        escapeCsvValue(res.scoreIFraction || '0'),
+        escapeCsvValue(res.maxIFraction || '0'),
+        escapeCsvValue(res.scoreIIFraction || '0'),
+        escapeCsvValue(res.maxIIFraction || '0'),
+        escapeCsvValue(res.scoreIIIFraction || '0'),
+        escapeCsvValue(res.maxIIIFraction || '0'),
+        escapeCsvValue(res.totalFraction || '0'),
+        escapeCsvValue(res.maxTotalFraction || '0'),
+        escapeCsvValue((currentExam && currentExam.ruleSetId) || 'custom-v1'),
+        escapeCsvValue(rawAnswers)
+      ];
+      const csvContent = headers.join(',') + '\r\n' + row.join(',') + '\r\n';
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Cunata-KetQua-' + encodeURIComponent(studentState.candidateName || 'ThiSinh') + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadResultJson() {
+      if (!studentState || !studentState.scoreResult) return;
+      const res = studentState.scoreResult;
+      const durationSeconds = studentState.startedAt ? Math.max(0, Math.round((Date.now() - studentState.startedAt) / 1000)) : 0;
+      const payload = {
+        schemaVersion: 'web-result-v1',
+        attemptId: studentState.attemptId || 'attempt-1',
+        examId: studentState.examId || (currentExam && currentExam.examId) || 'exam-1',
+        examVersionId: studentState.examVersionId || (currentExam && currentExam.examVersionId) || 'v1.0.0',
+        candidateName: studentState.candidateName || 'Thí sinh tự do',
+        startedAt: studentState.startedAt || Date.now(),
+        submittedAt: Date.now(),
+        durationSeconds: durationSeconds,
+        ruleSetId: (currentExam && currentExam.ruleSetId) || 'custom-v1',
+        inputPolicyId: (currentExam && currentExam.inputPolicyId) || 'sa-charset-v1',
+        engineVersion: '1.0.0',
+        scoreDTO: res,
+        responses: studentState.responses || {}
+      };
+      payload.results = [payload];
+      const jsonContent = JSON.stringify(payload, null, 2);
+      const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Cunata-KetQua-' + encodeURIComponent(studentState.candidateName || 'ThiSinh') + '.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    const btnDownloadResultJson = document.getElementById('btnDownloadResultJson');
+    if (btnDownloadResultJson) {
+      btnDownloadResultJson.addEventListener('click', downloadResultJson);
+    }
+    const btnDownloadResultCsv = document.getElementById('btnDownloadResultCsv');
+    if (btnDownloadResultCsv) {
+      btnDownloadResultCsv.addEventListener('click', downloadResultCsv);
     }
 
     function restartExam() {
@@ -4764,10 +5035,16 @@
       }
     }
 
+    let builderModalLastFocus = null;
+    let bankModalLastFocus = null;
+
     function openBuilderModal() {
       const modal = document.getElementById('builderModal');
+      builderModalLastFocus = document.activeElement;
       if (modal) modal.style.display = 'flex';
       renderBuilderForm();
+      const focusables = getModalFocusableElements(modal);
+      if (focusables.length > 0) focusables[0].focus();
     }
 
     function closeBuilderModal() {
@@ -4775,20 +5052,94 @@
       if (modal) modal.style.display = 'none';
       const errEl = document.getElementById('builderValidationErrors');
       if (errEl) errEl.style.display = 'none';
+      if (builderModalLastFocus && typeof builderModalLastFocus.focus === 'function') {
+        builderModalLastFocus.focus();
+      }
     }
 
     function openBankModal() {
       const modal = document.getElementById('bankModal');
+      bankModalLastFocus = document.activeElement;
       if (modal) modal.style.display = 'flex';
       if (getQuestionBank().length === 0) {
         seedDefaultQuestionBank();
       }
       renderBankList('all');
+      const focusables = getModalFocusableElements(modal);
+      if (focusables.length > 0) focusables[0].focus();
     }
 
     function closeBankModal() {
       const modal = document.getElementById('bankModal');
       if (modal) modal.style.display = 'none';
+      if (bankModalLastFocus && typeof bankModalLastFocus.focus === 'function') {
+        bankModalLastFocus.focus();
+      }
+    }
+
+    const modalListenerTarget = (typeof document !== 'undefined' && typeof document.addEventListener === 'function')
+      ? document
+      : ((typeof window !== 'undefined' && typeof window.addEventListener === 'function') ? window : null);
+    if (modalListenerTarget) {
+      modalListenerTarget.addEventListener('keydown', (e) => {
+        if (e.isComposing) return;
+        const bModal = document.getElementById('builderModal');
+        if (bModal && bModal.style.display === 'flex') {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+            closeBuilderModal();
+            return;
+          }
+          if (e.key === 'Tab') {
+            const focusables = getModalFocusableElements(bModal);
+            if (focusables.length > 0) {
+              const first = focusables[0];
+              const last = focusables[focusables.length - 1];
+              const current = document.activeElement;
+              if (e.shiftKey) {
+                if (!current || current === first || !bModal.contains(current)) {
+                  e.preventDefault();
+                  last.focus();
+                }
+              } else {
+                if (current === last || !bModal.contains(current)) {
+                  e.preventDefault();
+                  first.focus();
+                }
+              }
+            }
+          }
+        }
+        const kModal = document.getElementById('bankModal');
+        if (kModal && kModal.style.display === 'flex') {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+            closeBankModal();
+            return;
+          }
+          if (e.key === 'Tab') {
+            const focusables = getModalFocusableElements(kModal);
+            if (focusables.length > 0) {
+              const first = focusables[0];
+              const last = focusables[focusables.length - 1];
+              const current = document.activeElement;
+              if (e.shiftKey) {
+                if (!current || current === first || !kModal.contains(current)) {
+                  e.preventDefault();
+                  last.focus();
+                }
+              } else {
+                if (current === last || !kModal.contains(current)) {
+                  e.preventDefault();
+                  first.focus();
+                }
+              }
+            }
+          }
+        }
+      });
     }
 
     let bankActiveFilter = 'all';
@@ -5041,6 +5392,61 @@
           }
         };
         reader.readAsText(file);
+      });
+    }
+
+    const btnImportDocx = document.getElementById('btnImportDocx');
+    const docxFileInput = document.getElementById('docxFileInput');
+    if (docxFileInput) {
+      if (btnImportDocx) {
+        btnImportDocx.addEventListener('click', () => {
+          docxFileInput.value = '';
+          docxFileInput.click();
+        });
+      }
+      docxFileInput.addEventListener('change', async (e) => {
+        const file = e.target && e.target.files && e.target.files[0];
+        if (!file) return;
+        try {
+          const docxMod = await import('./dist/import/docx/index.js');
+          const prevMod = await import('./dist/import/preview/view.js');
+          const res = await docxMod.importDocx(file, new AbortController().signal);
+          if (!res.ok) {
+            if (typeof alert === 'function') alert('Lỗi phân tích DOCX: ' + (res.error?.message || 'Không rõ nguyên nhân'));
+            return;
+          }
+          let previewModal = document.getElementById('previewModal');
+          if (!previewModal) {
+            previewModal = document.createElement('div');
+            previewModal.id = 'previewModal';
+            previewModal.className = 'modal-overlay';
+            previewModal.style.zIndex = '1100';
+            document.body.appendChild(previewModal);
+          }
+          previewModal.style.display = 'flex';
+          const targetDraft = {
+            draftId: 'builder-draft',
+            revision: 1,
+            exam: builderExamState
+          };
+          prevMod.mount(previewModal, { job: res.value, targetExamDraft: targetDraft }, {
+            onConfirm: (confirmedDraft) => {
+              previewModal.style.display = 'none';
+              previewModal.innerHTML = '';
+              if (confirmedDraft && confirmedDraft.exam) {
+                builderExamState = confirmedDraft.exam;
+              }
+              renderBuilderForm();
+            },
+            onCancel: () => {
+              previewModal.style.display = 'none';
+              previewModal.innerHTML = '';
+            }
+          });
+        } catch (err) {
+          console.error('Lỗi nạp DOCX:', err);
+          if (typeof alert === 'function') alert('Lỗi nạp file DOCX: ' + (err && err.message ? err.message : String(err)));
+        }
       });
     }
 

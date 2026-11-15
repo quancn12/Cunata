@@ -1,0 +1,20 @@
+{
+  "current": {
+    "index.html": "7e44cc681f2abe1a7cfbae4bdb0cf23e055a42cf957b425d826f079508f50aca",
+    "src/app/main.ts": "de42fccef8b7074786444300dbc4daa256fd7dcc77546a331bcb98df9f8e5105",
+    "src/app/shell.html": "5721a5ec964bc4fd23b8f3ff1e458d4ed3910378c43719e22d5c26a7d2606195",
+    "dist/index.html": "8646b1c3a67f17ea84fd14828c783b0bc719ddeacd087993e32be75668443ce3",
+    "dist/app/main.js": "edd2e9845ec7befd54d45afb9d37c8de8c885da85a63a8beb9898e9d2aa49941",
+    "test/claude-check/harness.mjs": "bc3c5e7a4e24f2cf43549f1199abf98766d54a0945f48f6b7560f9aa1b133a74",
+    "test/claude-check/app.mjs": "606c71163ea8198650aaa04bafbcf6b4da827a68f89f193e7977d4c386774d8f",
+    "test/oracle/fixtures/golden.json": "64a805a63f5fbaa0e7b93b191970168c74e2a3958caa7017fcfe602bc370650d",
+    "test/oracle/fixtures/sections-I-II.json": "1284683c090df0e067cd029d75db26a4d6461ae697bb5b2db95f702320f201fc",
+    "test/oracle/fixtures/short-answers.json": "e021600103115313cf06c42b731c440f16829133021b61f9761bb422cc42c675"
+  },
+  "drift": {
+    "src/app/main.ts": {
+      "probed": "ba7f11144d6a2c4903483a95d94eb7119dcbf639676c8c9abf53751790ab3284",
+      "current": "de42fccef8b7074786444300dbc4daa256fd7dcc77546a331bcb98df9f8e5105"
+    }
+  }
+}

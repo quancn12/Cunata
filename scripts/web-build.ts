@@ -1,6 +1,6 @@
 /**
  * Cunata Web M2-M6 — Modular Web Build & Packaging Pipeline
- * Conforms to WEB-contract.md §2, §3, §10 and tasks.json (WEB-W3-GLUE).
+ * Conforms to WEB-contract.md §2, §3, §10 and tasks.json (WEB-W4-GLUE).
  *
  * Responsibilities:
  * - Invokes existing TypeScript compiler without new dependencies.
@@ -79,7 +79,11 @@ export interface BuildResult {
 
 export function cleanDirectory(dirPath: string): void {
   if (fs.existsSync(dirPath)) {
-    fs.rmSync(dirPath, { recursive: true, force: true });
+    try {
+      (rawFs as any).rmSync(dirPath, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    } catch {
+      // In case Windows file handles briefly remain open, attempt retry or pass
+    }
   }
 }
 
@@ -246,6 +250,90 @@ export function prepareShellAndAssets(rootDir: string, stagingDir: string): void
   if (fs.existsSync(publicSrcDir)) {
     copyDirectoryRecursive(publicSrcDir, publicDestDir);
   }
+
+  // 4. Prepare Service Worker
+  const swDestPath = path.join(stagingDir, 'service-worker.js');
+  const swContent = `// Cunata Web Native Service Worker
+const CACHE_NAME = 'cunata-cache-v1';
+const CACHE_NAME_PREFIX = 'cunata-cache-';
+const DEFAULT_PRECACHE_ENTRIES = [
+  { url: 'index.html', critical: true },
+  { url: './', critical: true },
+  { url: 'styles/style.css', critical: true },
+  { url: 'public/sample-exam.json', critical: true },
+  { url: 'public/q01-bbt.svg', critical: true },
+  { url: 'public/exams/toan-full.json', critical: false },
+  { url: 'public/exams/ly-part-I.json', critical: false },
+  { url: 'public/exams/hoa-repeating.json', critical: false },
+  { url: 'app/main.js', critical: false },
+  { url: 'app/routes.js', critical: false },
+];
+function resolveScopeUrl(scopeBase, relativePath) {
+  const cleanBase = scopeBase.endsWith('/') ? scopeBase : (scopeBase + '/');
+  const cleanPath = relativePath.startsWith('./') ? relativePath.slice(2) : (relativePath.startsWith('/') ? relativePath.slice(1) : relativePath);
+  return cleanBase + cleanPath;
+}
+function isCacheableRequest(requestUrl, method) {
+  if (method && method.toUpperCase() !== 'GET') return false;
+  const lower = requestUrl.toLowerCase();
+  if (lower.startsWith('chrome-extension:') || lower.startsWith('file:') || lower.startsWith('data:') || lower.startsWith('blob:')) return false;
+  if (lower.includes('script.google.com') || lower.includes('macros.google.com') || lower.includes('appsscript')) return false;
+  return true;
+}
+self.addEventListener('install', (event) => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const scope = (self.registration && self.registration.scope) || '/';
+    for (const item of DEFAULT_PRECACHE_ENTRIES) {
+      const fullUrl = resolveScopeUrl(scope, item.url);
+      try {
+        const resp = await fetch(fullUrl, { cache: 'no-cache' });
+        if (resp && resp.ok) {
+          await cache.put(fullUrl, resp.clone());
+          if (fullUrl !== item.url) await cache.put(item.url, resp);
+        } else if (item.critical) {
+          throw new Error('Critical asset failed: ' + item.url);
+        }
+      } catch (err) {
+        if (item.critical) throw err;
+      }
+    }
+  })());
+});
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    for (const k of keys) {
+      if (k.startsWith(CACHE_NAME_PREFIX) && k !== CACHE_NAME) await caches.delete(k);
+    }
+    if (self.clients && self.clients.claim) await self.clients.claim();
+  })());
+});
+self.addEventListener('fetch', (event) => {
+  const req = event.request;
+  if (!isCacheableRequest(req.url, req.method)) return;
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(req);
+    if (cached) return cached;
+    try {
+      const network = await fetch(req);
+      if (network && network.ok && req.method === 'GET') {
+        cache.put(req, network.clone()).catch(() => {});
+      }
+      return network;
+    } catch (_) {
+      const isNav = req.mode === 'navigate' || req.url.endsWith('/') || req.url.endsWith('.html');
+      if (isNav) {
+        const fallback = await cache.match('index.html') || await cache.match('./index.html') || await cache.match('./') || await cache.match('/');
+        if (fallback) return fallback;
+      }
+      return new Response('Offline', { status: 503, statusText: 'Offline' });
+    }
+  })());
+});
+`;
+  fs.writeFileSync(swDestPath, swContent, 'utf8');
 }
 
 /**

@@ -1,0 +1,948 @@
+{
+  "examId": "exam:report-11-of-16",
+  "examVersionId": "version:report-11-of-16",
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "questions": [
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:0",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:0:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:0:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:0:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:0:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:0:option:0",
+      "title": "Câu 1",
+      "content": "Oracle report-11-of-16 câu 1"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:1",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:1:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:1:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:1:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:1:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:1:option:1",
+      "title": "Câu 2",
+      "content": "Oracle report-11-of-16 câu 2"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:2",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:2:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:2:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:2:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:2:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:2:option:2",
+      "title": "Câu 3",
+      "content": "Oracle report-11-of-16 câu 3"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:3",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:3:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:3:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:3:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:3:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:3:option:3",
+      "title": "Câu 4",
+      "content": "Oracle report-11-of-16 câu 4"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:4",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:4:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:4:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:4:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:4:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:4:option:0",
+      "title": "Câu 5",
+      "content": "Oracle report-11-of-16 câu 5"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:5",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:5:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:5:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:5:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:5:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:5:option:1",
+      "title": "Câu 6",
+      "content": "Oracle report-11-of-16 câu 6"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:6",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:6:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:6:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:6:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:6:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:6:option:2",
+      "title": "Câu 7",
+      "content": "Oracle report-11-of-16 câu 7"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:7",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:7:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:7:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:7:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:7:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:7:option:3",
+      "title": "Câu 8",
+      "content": "Oracle report-11-of-16 câu 8"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:8",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:8:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:8:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:8:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:8:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:8:option:0",
+      "title": "Câu 9",
+      "content": "Oracle report-11-of-16 câu 9"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:9",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:9:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:9:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:9:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:9:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:9:option:1",
+      "title": "Câu 10",
+      "content": "Oracle report-11-of-16 câu 10"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:10",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:10:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:10:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:10:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:10:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:10:option:2",
+      "title": "Câu 11",
+      "content": "Oracle report-11-of-16 câu 11"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:11",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:11:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:11:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:11:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:11:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:11:option:3",
+      "title": "Câu 12",
+      "content": "Oracle report-11-of-16 câu 12"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:12",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:12:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:12:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:12:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:12:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:12:option:0",
+      "title": "Câu 13",
+      "content": "Oracle report-11-of-16 câu 13"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:13",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:13:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:13:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:13:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:13:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:13:option:1",
+      "title": "Câu 14",
+      "content": "Oracle report-11-of-16 câu 14"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:14",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:14:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:14:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:14:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:14:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:14:option:2",
+      "title": "Câu 15",
+      "content": "Oracle report-11-of-16 câu 15"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:15",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:15:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:15:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:15:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:15:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:15:option:3",
+      "title": "Câu 16",
+      "content": "Oracle report-11-of-16 câu 16"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:16",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:16:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:16:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:16:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:16:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:16:option:0",
+      "title": "Câu 17",
+      "content": "Oracle report-11-of-16 câu 17"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:17",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:17:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:17:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:17:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:17:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:17:option:1",
+      "title": "Câu 18",
+      "content": "Oracle report-11-of-16 câu 18"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:18",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:18:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:18:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:18:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:18:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:18:option:2",
+      "title": "Câu 19",
+      "content": "Oracle report-11-of-16 câu 19"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "report-11-of-16:I:19",
+      "options": [
+        {
+          "optionId": "report-11-of-16:I:19:option:0",
+          "label": "A",
+          "text": "Lựa chọn 1"
+        },
+        {
+          "optionId": "report-11-of-16:I:19:option:1",
+          "label": "B",
+          "text": "Lựa chọn 2"
+        },
+        {
+          "optionId": "report-11-of-16:I:19:option:2",
+          "label": "C",
+          "text": "Lựa chọn 3"
+        },
+        {
+          "optionId": "report-11-of-16:I:19:option:3",
+          "label": "D",
+          "text": "Lựa chọn 4"
+        }
+      ],
+      "correctOptionId": "report-11-of-16:I:19:option:3",
+      "title": "Câu 20",
+      "content": "Oracle report-11-of-16 câu 20"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "report-11-of-16:II:0",
+      "statements": [
+        {
+          "statementId": "report-11-of-16:II:0:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "report-11-of-16:II:0:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "report-11-of-16:II:0:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "report-11-of-16:II:0:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 21",
+      "content": "Oracle report-11-of-16 câu 21"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "report-11-of-16:II:1",
+      "statements": [
+        {
+          "statementId": "report-11-of-16:II:1:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "report-11-of-16:II:1:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "report-11-of-16:II:1:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "report-11-of-16:II:1:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 22",
+      "content": "Oracle report-11-of-16 câu 22"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "report-11-of-16:II:2",
+      "statements": [
+        {
+          "statementId": "report-11-of-16:II:2:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "report-11-of-16:II:2:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "report-11-of-16:II:2:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "report-11-of-16:II:2:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 23",
+      "content": "Oracle report-11-of-16 câu 23"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "report-11-of-16:II:3",
+      "statements": [
+        {
+          "statementId": "report-11-of-16:II:3:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "report-11-of-16:II:3:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "report-11-of-16:II:3:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "report-11-of-16:II:3:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 24",
+      "content": "Oracle report-11-of-16 câu 24"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "report-11-of-16:II:4",
+      "statements": [
+        {
+          "statementId": "report-11-of-16:II:4:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "report-11-of-16:II:4:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "report-11-of-16:II:4:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "report-11-of-16:II:4:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 25",
+      "content": "Oracle report-11-of-16 câu 25"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "report-11-of-16:II:5",
+      "statements": [
+        {
+          "statementId": "report-11-of-16:II:5:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "report-11-of-16:II:5:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "report-11-of-16:II:5:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "report-11-of-16:II:5:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 26",
+      "content": "Oracle report-11-of-16 câu 26"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "report-11-of-16:II:6",
+      "statements": [
+        {
+          "statementId": "report-11-of-16:II:6:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "report-11-of-16:II:6:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "report-11-of-16:II:6:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "report-11-of-16:II:6:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 27",
+      "content": "Oracle report-11-of-16 câu 27"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "report-11-of-16:II:7",
+      "statements": [
+        {
+          "statementId": "report-11-of-16:II:7:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "report-11-of-16:II:7:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "report-11-of-16:II:7:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "report-11-of-16:II:7:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 28",
+      "content": "Oracle report-11-of-16 câu 28"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "report-11-of-16:II:8",
+      "statements": [
+        {
+          "statementId": "report-11-of-16:II:8:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "report-11-of-16:II:8:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "report-11-of-16:II:8:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "report-11-of-16:II:8:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 29",
+      "content": "Oracle report-11-of-16 câu 29"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "report-11-of-16:II:9",
+      "statements": [
+        {
+          "statementId": "report-11-of-16:II:9:statement:0",
+          "answer": true,
+          "label": "a",
+          "text": "Mệnh đề 1"
+        },
+        {
+          "statementId": "report-11-of-16:II:9:statement:1",
+          "answer": false,
+          "label": "b",
+          "text": "Mệnh đề 2"
+        },
+        {
+          "statementId": "report-11-of-16:II:9:statement:2",
+          "answer": true,
+          "label": "c",
+          "text": "Mệnh đề 3"
+        },
+        {
+          "statementId": "report-11-of-16:II:9:statement:3",
+          "answer": false,
+          "label": "d",
+          "text": "Mệnh đề 4"
+        }
+      ],
+      "title": "Câu 30",
+      "content": "Oracle report-11-of-16 câu 30"
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "report-11-of-16:III:0",
+      "answerKey": "1,5",
+      "title": "Câu 31",
+      "content": "Oracle report-11-of-16 câu 31"
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "report-11-of-16:III:1",
+      "answerKey": "-0,5",
+      "title": "Câu 32",
+      "content": "Oracle report-11-of-16 câu 32"
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "report-11-of-16:III:2",
+      "answerKey": "0",
+      "title": "Câu 33",
+      "content": "Oracle report-11-of-16 câu 33"
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "report-11-of-16:III:3",
+      "answerKey": "1,50",
+      "title": "Câu 34",
+      "content": "Oracle report-11-of-16 câu 34"
+    }
+  ],
+  "schemaVersion": "web-exam-v1",
+  "title": "Oracle report-11-of-16",
+  "subject": "Toán học",
+  "grade": 12,
+  "assets": [],
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  }
+}

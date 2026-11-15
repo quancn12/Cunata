@@ -112,12 +112,20 @@ class StudentControllerImpl implements StudentController {
   private readonly listeners = new Set<(event: WebEvent) => void>();
   private lastSeenTime: number;
   private isDisposed = false;
+  private opChain: Promise<unknown> = Promise.resolve();
   private submitPromise: Promise<Result<AttemptRecord>> | null = null;
 
   constructor(initialRecord: AttemptRecord, deps: StudentControllerDeps) {
     this.currentRecord = deepFreeze(deepClone(initialRecord));
     this.deps = deps;
     this.lastSeenTime = deps.now();
+  }
+
+  private enqueueOp<T>(op: () => Promise<T>): Promise<T> {
+    const run = () => op();
+    const result = this.opChain.then(run, run);
+    this.opChain = result.catch(() => {});
+    return result;
   }
 
   getSnapshot(): AttemptRecord {
@@ -168,155 +176,248 @@ class StudentControllerImpl implements StudentController {
   }
 
   async answer(response: Response): Promise<Result<AttemptRecord>> {
-    if (this.isDisposed) {
-      return {
-        ok: false,
-        error: {
-          code: "CONTROLLER_DISPOSED",
-          path: "controller",
-          message: "Controller has been disposed",
-          recoverable: false,
-        },
-      };
-    }
-
-    if (this.currentRecord.phase === "final") {
-      return {
-        ok: false,
-        error: {
-          code: "ATTEMPT_FINALIZED",
-          path: "phase",
-          message: "Attempt has already been finalized",
-          recoverable: false,
-        },
-      };
-    }
-
-    this.checkClock();
-    const currentTime = this.deps.now();
-
-    // Check deadline
-    if (currentTime >= this.currentRecord.deadline) {
-      await this.submit("deadline");
-      return {
-        ok: false,
-        error: {
-          code: "ATTEMPT_FINALIZED",
-          path: "deadline",
-          message: "Deadline exceeded; attempt auto-submitted",
-          recoverable: false,
-        },
-      };
-    }
-
-    // Validate question exists in exam snapshot
-    const targetQuestion = this.currentRecord.examSnapshot.questions.find(
-      (q) => q.questionVersionId === response.questionVersionId
-    );
-    if (!targetQuestion) {
-      return {
-        ok: false,
-        error: {
-          code: "QUESTION_NOT_FOUND",
-          path: "response.questionVersionId",
-          message: `Question "${response.questionVersionId}" not found in exam`,
-          recoverable: false,
-        },
-      };
-    }
-
-    if (targetQuestion.kind !== response.kind) {
-      return {
-        ok: false,
-        error: {
-          code: "RESPONSE_KIND_MISMATCH",
-          path: "response.kind",
-          message: `Response kind "${response.kind}" does not match question kind "${targetQuestion.kind}"`,
-          recoverable: false,
-        },
-      };
-    }
-
-    // Normalize response: preserve exact raw III without trimming, handle nulls for II
-    let normalized: Response;
-    if (response.kind === "I") {
-      normalized = {
-        kind: "I",
-        questionVersionId: response.questionVersionId,
-        selectedOptionId: response.selectedOptionId ?? null,
-      };
-    } else if (response.kind === "II") {
-      const rawAnswers = (response as any).answers ?? (response as any).statements ?? [];
-      const answers: StatementAnswer[] = rawAnswers.map((a: any) => ({
-        statementId: a.statementId,
-        value: a.value !== undefined ? a.value : (a.answer !== undefined ? a.answer : null),
-      }));
-      normalized = {
-        kind: "II",
-        questionVersionId: response.questionVersionId,
-        answers,
-      };
-    } else {
-      normalized = {
-        kind: "III",
-        questionVersionId: response.questionVersionId,
-        raw: response.raw !== undefined ? response.raw : null,
-      };
-    }
-
-    const currentResponses = [...this.currentRecord.responses.responses];
-    const idx = currentResponses.findIndex(
-      (r) => r.questionVersionId === normalized.questionVersionId
-    );
-    if (idx >= 0) {
-      currentResponses[idx] = normalized;
-    } else {
-      currentResponses.push(normalized);
-    }
-
-    const nextRevision = this.currentRecord.revision + 1;
-    const newRecord: AttemptRecord = deepFreeze({
-      ...this.currentRecord,
-      revision: nextRevision,
-      responses: deepFreeze({
-        attemptId: this.currentRecord.attemptId,
-        examVersionId: this.currentRecord.examVersionId,
-        responses: currentResponses,
-      }),
-    });
-
-    const saveResult = await this.deps.storage.saveDraft(newRecord, this.currentRecord.revision);
-    if (!saveResult.ok) {
-      if (saveResult.error.code === "STORAGE_CONFLICT") {
-        const latest = await this.deps.storage.load(this.currentRecord);
-        if (latest.ok && latest.value && latest.value.phase === "final") {
-          this.currentRecord = deepFreeze(latest.value);
-          this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
-          return {
-            ok: false,
-            error: {
-              code: "ATTEMPT_FINALIZED",
-              path: "phase",
-              message: "Attempt finalized by another session",
-              recoverable: false,
-            },
-          };
-        }
-        this.notifyListeners({
-          type: "storage_conflict",
-          key: this.currentRecord,
-          revision: latest.ok && latest.value ? latest.value.revision : this.currentRecord.revision,
-        });
+    return this.enqueueOp(async () => {
+      if (this.isDisposed) {
+        return {
+          ok: false,
+          error: {
+            code: "CONTROLLER_DISPOSED",
+            path: "controller",
+            message: "Controller has been disposed",
+            recoverable: false,
+          },
+        };
       }
-      return saveResult;
-    }
 
-    this.currentRecord = deepFreeze(saveResult.value);
-    this.notifyListeners({ type: "attempt_changed", record: this.currentRecord });
-    return { ok: true, value: this.currentRecord };
+      if (this.currentRecord.phase === "final") {
+        return {
+          ok: false,
+          error: {
+            code: "ATTEMPT_FINALIZED",
+            path: "phase",
+            message: "Attempt has already been finalized",
+            recoverable: false,
+          },
+        };
+      }
+
+      this.checkClock();
+      const currentTime = this.deps.now();
+
+      // Check deadline
+      if (currentTime >= this.currentRecord.deadline) {
+        await this.internalSubmit("deadline");
+        return {
+          ok: false,
+          error: {
+            code: "ATTEMPT_FINALIZED",
+            path: "deadline",
+            message: "Deadline exceeded; attempt auto-submitted",
+            recoverable: false,
+          },
+        };
+      }
+
+      // Validate question exists in exam snapshot
+      const targetQuestion = this.currentRecord.examSnapshot.questions.find(
+        (q) => q.questionVersionId === response.questionVersionId
+      );
+      if (!targetQuestion) {
+        return {
+          ok: false,
+          error: {
+            code: "QUESTION_NOT_FOUND",
+            path: "response.questionVersionId",
+            message: `Question "${response.questionVersionId}" not found in exam`,
+            recoverable: false,
+          },
+        };
+      }
+
+      if (targetQuestion.kind !== response.kind) {
+        return {
+          ok: false,
+          error: {
+            code: "RESPONSE_KIND_MISMATCH",
+            path: "response.kind",
+            message: `Response kind "${response.kind}" does not match question kind "${targetQuestion.kind}"`,
+            recoverable: false,
+          },
+        };
+      }
+
+      // Normalize response: preserve exact raw III without trimming, handle nulls for II
+      let normalized: Response;
+      if (response.kind === "I") {
+        normalized = {
+          kind: "I",
+          questionVersionId: response.questionVersionId,
+          selectedOptionId: response.selectedOptionId ?? null,
+        };
+      } else if (response.kind === "II") {
+        const rawAnswers = (response as any).answers ?? (response as any).statements ?? [];
+        const answers: StatementAnswer[] = rawAnswers.map((a: any) => ({
+          statementId: a.statementId,
+          value: a.value !== undefined ? a.value : (a.answer !== undefined ? a.answer : null),
+        }));
+        normalized = {
+          kind: "II",
+          questionVersionId: response.questionVersionId,
+          answers,
+        };
+      } else {
+        normalized = {
+          kind: "III",
+          questionVersionId: response.questionVersionId,
+          raw: response.raw !== undefined ? response.raw : null,
+        };
+      }
+
+      const currentResponses = [...this.currentRecord.responses.responses];
+      const idx = currentResponses.findIndex(
+        (r) => r.questionVersionId === normalized.questionVersionId
+      );
+      if (idx >= 0) {
+        currentResponses[idx] = normalized;
+      } else {
+        currentResponses.push(normalized);
+      }
+
+      const nextRevision = this.currentRecord.revision + 1;
+      const newRecord: AttemptRecord = deepFreeze({
+        ...this.currentRecord,
+        revision: nextRevision,
+        responses: deepFreeze({
+          attemptId: this.currentRecord.attemptId,
+          examVersionId: this.currentRecord.examVersionId,
+          responses: currentResponses,
+        }),
+      });
+
+      const saveResult = await this.deps.storage.saveDraft(newRecord, this.currentRecord.revision);
+      if (!saveResult.ok) {
+        if (saveResult.error.code === "STORAGE_CONFLICT") {
+          const latest = await this.deps.storage.load(this.currentRecord);
+          if (latest.ok && latest.value && latest.value.phase === "final") {
+            this.currentRecord = deepFreeze(latest.value);
+            this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
+            return {
+              ok: false,
+              error: {
+                code: "ATTEMPT_FINALIZED",
+                path: "phase",
+                message: "Attempt finalized by another session",
+                recoverable: false,
+              },
+            };
+          }
+          this.notifyListeners({
+            type: "storage_conflict",
+            key: this.currentRecord,
+            revision: latest.ok && latest.value ? latest.value.revision : this.currentRecord.revision,
+          });
+        } else {
+          this.notifyListeners({
+            type: "error",
+            error: saveResult.error,
+          });
+        }
+        return saveResult;
+      }
+
+      this.currentRecord = deepFreeze(saveResult.value);
+      this.notifyListeners({ type: "attempt_changed", record: this.currentRecord });
+      return { ok: true, value: this.currentRecord };
+    });
   }
 
   async rename(raw: string): Promise<Result<AttemptRecord>> {
+    return this.enqueueOp(async () => {
+      if (this.isDisposed) {
+        return {
+          ok: false,
+          error: {
+            code: "CONTROLLER_DISPOSED",
+            path: "controller",
+            message: "Controller has been disposed",
+            recoverable: false,
+          },
+        };
+      }
+
+      if (this.currentRecord.phase === "final") {
+        return {
+          ok: false,
+          error: {
+            code: "ATTEMPT_FINALIZED",
+            path: "phase",
+            message: "Attempt has already been finalized",
+            recoverable: false,
+          },
+        };
+      }
+
+      this.checkClock();
+      const currentTime = this.deps.now();
+
+      if (currentTime >= this.currentRecord.deadline) {
+        await this.internalSubmit("deadline");
+        return {
+          ok: false,
+          error: {
+            code: "ATTEMPT_FINALIZED",
+            path: "deadline",
+            message: "Deadline exceeded; attempt auto-submitted",
+            recoverable: false,
+          },
+        };
+      }
+
+      const nextRevision = this.currentRecord.revision + 1;
+      const newRecord: AttemptRecord = deepFreeze({
+        ...this.currentRecord,
+        revision: nextRevision,
+        candidateName: raw,
+      });
+
+      const saveResult = await this.deps.storage.saveDraft(newRecord, this.currentRecord.revision);
+      if (!saveResult.ok) {
+        if (saveResult.error.code === "STORAGE_CONFLICT") {
+          const latest = await this.deps.storage.load(this.currentRecord);
+          if (latest.ok && latest.value && latest.value.phase === "final") {
+            this.currentRecord = deepFreeze(latest.value);
+            this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
+            return {
+              ok: false,
+              error: {
+                code: "ATTEMPT_FINALIZED",
+                path: "phase",
+                message: "Attempt finalized by another session",
+                recoverable: false,
+              },
+            };
+          }
+          this.notifyListeners({
+            type: "storage_conflict",
+            key: this.currentRecord,
+            revision: latest.ok && latest.value ? latest.value.revision : this.currentRecord.revision,
+          });
+        } else {
+          this.notifyListeners({
+            type: "error",
+            error: saveResult.error,
+          });
+        }
+        return saveResult;
+      }
+
+      this.currentRecord = deepFreeze(saveResult.value);
+      this.notifyListeners({ type: "attempt_changed", record: this.currentRecord });
+      return { ok: true, value: this.currentRecord };
+    });
+  }
+
+  async submit(reason: "manual" | "deadline"): Promise<Result<AttemptRecord>> {
     if (this.isDisposed) {
       return {
         ok: false,
@@ -328,74 +429,16 @@ class StudentControllerImpl implements StudentController {
         },
       };
     }
-
     if (this.currentRecord.phase === "final") {
-      return {
-        ok: false,
-        error: {
-          code: "ATTEMPT_FINALIZED",
-          path: "phase",
-          message: "Attempt has already been finalized",
-          recoverable: false,
-        },
-      };
+      return { ok: true, value: this.currentRecord };
     }
-
-    this.checkClock();
-    const currentTime = this.deps.now();
-
-    if (currentTime >= this.currentRecord.deadline) {
-      await this.submit("deadline");
-      return {
-        ok: false,
-        error: {
-          code: "ATTEMPT_FINALIZED",
-          path: "deadline",
-          message: "Deadline exceeded; attempt auto-submitted",
-          recoverable: false,
-        },
-      };
+    if (this.submitPromise) {
+      return this.submitPromise;
     }
-
-    const nextRevision = this.currentRecord.revision + 1;
-    const newRecord: AttemptRecord = deepFreeze({
-      ...this.currentRecord,
-      revision: nextRevision,
-      candidateName: raw,
-    });
-
-    const saveResult = await this.deps.storage.saveDraft(newRecord, this.currentRecord.revision);
-    if (!saveResult.ok) {
-      if (saveResult.error.code === "STORAGE_CONFLICT") {
-        const latest = await this.deps.storage.load(this.currentRecord);
-        if (latest.ok && latest.value && latest.value.phase === "final") {
-          this.currentRecord = deepFreeze(latest.value);
-          this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
-          return {
-            ok: false,
-            error: {
-              code: "ATTEMPT_FINALIZED",
-              path: "phase",
-              message: "Attempt finalized by another session",
-              recoverable: false,
-            },
-          };
-        }
-        this.notifyListeners({
-          type: "storage_conflict",
-          key: this.currentRecord,
-          revision: latest.ok && latest.value ? latest.value.revision : this.currentRecord.revision,
-        });
-      }
-      return saveResult;
-    }
-
-    this.currentRecord = deepFreeze(saveResult.value);
-    this.notifyListeners({ type: "attempt_changed", record: this.currentRecord });
-    return { ok: true, value: this.currentRecord };
+    return this.enqueueOp(() => this.internalSubmit(reason));
   }
 
-  async submit(reason: "manual" | "deadline"): Promise<Result<AttemptRecord>> {
+  private async internalSubmit(reason: "manual" | "deadline"): Promise<Result<AttemptRecord>> {
     if (this.isDisposed) {
       return {
         ok: false,
@@ -448,69 +491,72 @@ class StudentControllerImpl implements StudentController {
           scoreDTO,
         });
 
-        const finalizeResult = await this.deps.storage.finalize(
+        let finalizeResult = await this.deps.storage.finalize(
           finalRecord,
           this.currentRecord.revision
         );
 
+        // Robust retry loop for draft/finalize races: adopt latest draft and retry finalize
+        for (
+          let attempt = 0;
+          attempt < 3 && !finalizeResult.ok && finalizeResult.error.code === "STORAGE_CONFLICT";
+          attempt++
+        ) {
+          const latest = await this.deps.storage.load(this.currentRecord);
+          if (!latest.ok || !latest.value) break;
+          if (latest.value.phase === "final") {
+            this.currentRecord = deepFreeze(latest.value);
+            this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
+            return { ok: true, value: this.currentRecord };
+          }
+          // Adopt latest draft state and retry finalize with fresh scoreDTO
+          this.currentRecord = deepFreeze(latest.value);
+          const retryDomainExam = toDomainExam(this.currentRecord.examSnapshot);
+          let retryScoreDTO: unknown;
+          try {
+            const scoreResult = scoreAttempt(retryDomainExam, this.currentRecord.responses);
+            retryScoreDTO = scoreResultToDTO(scoreResult);
+          } catch (err: unknown) {
+            return {
+              ok: false,
+              error: {
+                code: "SCORE_ERROR",
+                path: "score",
+                message: err instanceof Error ? err.message : String(err),
+                recoverable: false,
+              },
+            };
+          }
+          const retryFinalRecord: AttemptRecord = deepFreeze({
+            ...this.currentRecord,
+            revision: this.currentRecord.revision + 1,
+            phase: "final",
+            submittedAt: currentTime,
+            scoreDTO: retryScoreDTO,
+          });
+          finalizeResult = await this.deps.storage.finalize(
+            retryFinalRecord,
+            this.currentRecord.revision
+          );
+        }
+
         if (!finalizeResult.ok) {
           if (finalizeResult.error.code === "STORAGE_CONFLICT") {
             const latest = await this.deps.storage.load(this.currentRecord);
-            if (latest.ok && latest.value) {
-              if (latest.value.phase === "final") {
-                this.currentRecord = deepFreeze(latest.value);
-                this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
-                return { ok: true, value: this.currentRecord };
-              }
-              // If latest is draft (e.g. concurrent draft save committed right before finalize):
-              // Adopt latest draft and retry finalize with latest revision
+            if (latest.ok && latest.value && latest.value.phase === "final") {
               this.currentRecord = deepFreeze(latest.value);
-              const retryDomainExam = toDomainExam(this.currentRecord.examSnapshot);
-              let retryScoreDTO: unknown;
-              try {
-                const scoreResult = scoreAttempt(retryDomainExam, this.currentRecord.responses);
-                retryScoreDTO = scoreResultToDTO(scoreResult);
-              } catch (err: unknown) {
-                return {
-                  ok: false,
-                  error: {
-                    code: "SCORE_ERROR",
-                    path: "score",
-                    message: err instanceof Error ? err.message : String(err),
-                    recoverable: false,
-                  },
-                };
-              }
-              const retryFinalRecord: AttemptRecord = deepFreeze({
-                ...this.currentRecord,
-                revision: this.currentRecord.revision + 1,
-                phase: "final",
-                submittedAt: currentTime,
-                scoreDTO: retryScoreDTO,
-              });
-              const retryResult = await this.deps.storage.finalize(
-                retryFinalRecord,
-                this.currentRecord.revision
-              );
-              if (retryResult.ok) {
-                this.currentRecord = deepFreeze(retryResult.value);
-                this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
-                return { ok: true, value: this.currentRecord };
-              }
-              if (retryResult.error.code === "STORAGE_CONFLICT") {
-                const recheck = await this.deps.storage.load(this.currentRecord);
-                if (recheck.ok && recheck.value && recheck.value.phase === "final") {
-                  this.currentRecord = deepFreeze(recheck.value);
-                  this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
-                  return { ok: true, value: this.currentRecord };
-                }
-              }
-              return retryResult;
+              this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
+              return { ok: true, value: this.currentRecord };
             }
             this.notifyListeners({
               type: "storage_conflict",
               key: this.currentRecord,
               revision: latest.ok && latest.value ? latest.value.revision : this.currentRecord.revision,
+            });
+          } else {
+            this.notifyListeners({
+              type: "error",
+              error: finalizeResult.error,
             });
           }
           return finalizeResult;
@@ -528,25 +574,27 @@ class StudentControllerImpl implements StudentController {
   }
 
   async checkDeadline(): Promise<Result<AttemptRecord>> {
-    if (this.isDisposed) {
-      return {
-        ok: false,
-        error: {
-          code: "CONTROLLER_DISPOSED",
-          path: "controller",
-          message: "Controller has been disposed",
-          recoverable: false,
-        },
-      };
-    }
-    if (this.currentRecord.phase === "final") {
+    return this.enqueueOp(async () => {
+      if (this.isDisposed) {
+        return {
+          ok: false,
+          error: {
+            code: "CONTROLLER_DISPOSED",
+            path: "controller",
+            message: "Controller has been disposed",
+            recoverable: false,
+          },
+        };
+      }
+      if (this.currentRecord.phase === "final") {
+        return { ok: true, value: this.currentRecord };
+      }
+      this.checkClock();
+      if (this.deps.now() >= this.currentRecord.deadline) {
+        return this.internalSubmit("deadline");
+      }
       return { ok: true, value: this.currentRecord };
-    }
-    this.checkClock();
-    if (this.deps.now() >= this.currentRecord.deadline) {
-      return this.submit("deadline");
-    }
-    return { ok: true, value: this.currentRecord };
+    });
   }
 
   async listHistory(): Promise<Result<readonly AttemptRecord[]>> {
@@ -588,7 +636,7 @@ export async function startAttempt(
   // Local advisory limit check (WEB-contract.md §6, §9, §11)
   const maxAttempts = exam.settings.maxAttempts;
   const bypassLimit = options?.bypassAdvisoryLimit ?? deps.bypassAdvisoryLimit ?? false;
-  if (typeof maxAttempts === "number" && maxAttempts > 0 && !bypassLimit) {
+  if (typeof maxAttempts === "number" && maxAttempts >= 0 && !bypassLimit) {
     const listRes = await deps.storage.listAttempts(exam.examId, exam.examVersionId);
     if (listRes.ok && listRes.value.length >= maxAttempts) {
       return {

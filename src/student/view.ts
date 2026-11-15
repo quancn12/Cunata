@@ -226,16 +226,28 @@ export function mount(
   function queueAnswer(resp: Response): void {
     if (!controller) return;
     saveChain = saveChain
-      .then(() => controller!.answer(resp))
-      .then(() => {})
-      .catch(() => {});
+      .then(async () => {
+        const res = await controller!.answer(resp);
+        if (!res.ok) {
+          updateSyncStatus("failed", true);
+        }
+      })
+      .catch(() => {
+        updateSyncStatus("failed", true);
+      });
   }
   function queueRename(newName: string): void {
     if (!controller) return;
     saveChain = saveChain
-      .then(() => controller!.rename(newName))
-      .then(() => {})
-      .catch(() => {});
+      .then(async () => {
+        const res = await controller!.rename(newName);
+        if (!res.ok) {
+          updateSyncStatus("failed", true);
+        }
+      })
+      .catch(() => {
+        updateSyncStatus("failed", true);
+      });
   }
 
   // Flush pending inputs (e.g. ongoing composition, uncommitted text) before submission
@@ -310,7 +322,9 @@ export function mount(
 
   // Container elements references for live preservation
   let candidateInputEl: HTMLInputElement | null = null;
+  let candidateGuard: CompositionGuard | null = null;
   const shortAnswerInputs = new Map<string, HTMLInputElement>();
+  const shortAnswerGuards = new Map<string, CompositionGuard>();
   const shortAnswerCharBoxes = new Map<string, HTMLElement[]>();
   const optionCardElements = new Map<string, HTMLElement[]>();
   const statementBtnElements = new Map<string, { btnTrue: HTMLElement; btnFalse: HTMLElement }>();
@@ -402,10 +416,16 @@ export function mount(
     }
   }
 
-  function updateSyncStatus(state: string): void {
+  function updateSyncStatus(state: string, isLocalSaveError = false): void {
     saveState = state;
     if (!syncStatusEl || !syncTextEl) return;
     syncStatusEl.className = "sync-status-badge";
+
+    if (isLocalSaveError) {
+      syncStatusEl.classList.add("status-failed", "status-local-error");
+      syncTextEl.textContent = "Lỗi lưu cục bộ";
+      return;
+    }
 
     switch (state) {
       case "local_saved":
@@ -426,7 +446,11 @@ export function mount(
         break;
       case "failed":
         syncStatusEl.classList.add("status-failed");
-        syncTextEl.textContent = "Lỗi lưu / gửi";
+        if (currentRecord?.phase === "final") {
+          syncTextEl.textContent = "Lỗi gửi (bản nộp đã lưu an toàn)";
+        } else {
+          syncTextEl.textContent = "Lỗi gửi máy chủ";
+        }
         break;
       default:
         syncTextEl.textContent = "Chưa lưu";
@@ -493,6 +517,7 @@ export function mount(
       actions.updateCandidateName?.(val);
     },
   });
+  candidateGuard = nameGuard;
   cleanupTasks.push(nameGuard.dispose);
 
   candidateWrap.appendChild(candidateInputEl);
@@ -1121,7 +1146,7 @@ export function mount(
 
         const inputEl = doc.createElement("input");
         inputEl.type = "text";
-        inputEl.maxLength = 4;
+        // Do NOT set inputEl.maxLength = 4; allows Vietnamese IME composition buffer
         inputEl.className = "short-answer-input";
         inputEl.id = `input-iii-${qIII.questionVersionId}`;
         inputEl.placeholder = "Ví dụ: -0,5";
@@ -1134,6 +1159,7 @@ export function mount(
         const updateCharBoxes = (val: string) => {
           const boxes = shortAnswerCharBoxes.get(qIII.questionVersionId);
           if (!boxes) return;
+          const isTooLong = val.length > 4;
           for (let i = 0; i < 4; i++) {
             const ch = val[i] || "";
             const box = boxes[i];
@@ -1143,6 +1169,11 @@ export function mount(
               box.classList.add("filled");
             } else {
               box.classList.remove("filled");
+            }
+            if (isTooLong) {
+              box.classList.add("too-long");
+            } else {
+              box.classList.remove("too-long");
             }
           }
         };
@@ -1176,6 +1207,7 @@ export function mount(
             commitAnswer(val);
           },
         });
+        shortAnswerGuards.set(qIII.questionVersionId, iiiGuard);
         cleanupTasks.push(iiiGuard.dispose);
 
         shortAnswerInputs.set(qIII.questionVersionId, inputEl);
@@ -1200,10 +1232,8 @@ export function mount(
         btnMinus.textContent = "- (Dấu âm)";
         btnMinus.addEventListener("click", () => {
           if (currentRecord?.phase === "final") return;
-          if (inputEl.value.length < 4) {
-            inputEl.value += "-";
-            commitAnswer(inputEl.value);
-          }
+          inputEl.value += "-";
+          commitAnswer(inputEl.value);
         });
         quickKeysBar.appendChild(btnMinus);
 
@@ -1214,10 +1244,8 @@ export function mount(
         btnComma.textContent = ", (Dấu phẩy)";
         btnComma.addEventListener("click", () => {
           if (currentRecord?.phase === "final") return;
-          if (inputEl.value.length < 4) {
-            inputEl.value += ",";
-            commitAnswer(inputEl.value);
-          }
+          inputEl.value += ",";
+          commitAnswer(inputEl.value);
         });
         quickKeysBar.appendChild(btnComma);
 
@@ -1527,9 +1555,13 @@ export function mount(
 
   btnConfirmSubmit.addEventListener("click", () => {
     if (btnConfirmSubmit.disabled) return;
-    // Prevent double submission
+    // Prevent double submission and immediately disable interactive elements
     if (submitBtnEl) submitBtnEl.disabled = true;
     btnConfirmSubmit.disabled = true;
+    if (candidateInputEl) candidateInputEl.disabled = true;
+    for (const inputEl of shortAnswerInputs.values()) {
+      inputEl.disabled = true;
+    }
 
     if (activeModalClose) {
       activeModalClose();
@@ -1540,7 +1572,17 @@ export function mount(
     // Flush pending inputs and ensure saveChain settles before controller submits
     const pending = flushPendingInputs();
     if (controller) {
-      pending.then(() => controller.submit("manual")).catch(() => {});
+      pending
+        .then(() => controller.submit("manual"))
+        .then((res) => {
+          if (!res.ok) {
+            updateSyncStatus("failed", true);
+            statusAnnouncer.announce(`Lỗi nộp bài: ${res.error.message}`, "assertive");
+          }
+        })
+        .catch(() => {
+          updateSyncStatus("failed", true);
+        });
     }
     actions.submit?.("manual");
   });
@@ -1549,6 +1591,25 @@ export function mount(
   let timerInterval: ReturnType<typeof setInterval> | null = null;
   const statusAnnouncer: StatusAnnouncer = createStatusAnnouncer({ document: doc });
   cleanupTasks.push(statusAnnouncer.dispose);
+
+  let lastSeenClockTime = clockNow();
+  let clockWarningBanner: HTMLElement | null = null;
+
+  function showClockWarningBanner(message: string): void {
+    if (!clockWarningBanner) {
+      clockWarningBanner = doc.createElement("div");
+      clockWarningBanner.id = "clockWarning";
+      clockWarningBanner.className = "student-warning-banner";
+      clockWarningBanner.setAttribute("role", "alert");
+      if (headerEl.nextSibling && root.contains(headerEl.nextSibling)) {
+        root.insertBefore(clockWarningBanner, headerEl.nextSibling);
+      } else {
+        root.appendChild(clockWarningBanner);
+      }
+    }
+    clockWarningBanner.textContent = `Cảnh báo: ${message}. Thời hạn làm bài không được đặt lại.`;
+    clockWarningBanner.style.display = "block";
+  }
 
   const updateTimer = () => {
     if (!timerBoxEl) return;
@@ -1563,6 +1624,13 @@ export function mount(
     }
 
     const now = clockNow();
+    if (now < lastSeenClockTime) {
+      showClockWarningBanner("Phát hiện lùi giờ hệ thống");
+      statusAnnouncer.announce("Cảnh báo: Phát hiện lùi giờ hệ thống. Thời hạn làm bài không thay đổi.", "assertive");
+    } else {
+      lastSeenClockTime = now;
+    }
+
     const deadline = currentRecord.deadline;
     const remainingSeconds = Math.max(0, Math.ceil((deadline - now) / 1000));
 
@@ -1589,8 +1657,13 @@ export function mount(
         timerInterval = null;
       }
 
-      // Deadline submission
+      // Deadline submission: immediately disable inputs to avoid submit/input race
       if (submitBtnEl) submitBtnEl.disabled = true;
+      if (candidateInputEl) candidateInputEl.disabled = true;
+      for (const inputEl of shortAnswerInputs.values()) {
+        inputEl.disabled = true;
+      }
+
       statusAnnouncer.announce("Hết giờ làm bài. Hệ thống đang tự động nộp bài thi.", "assertive");
 
       const pending = flushPendingInputs();
@@ -1621,8 +1694,12 @@ export function mount(
   const win = doc.defaultView || (typeof window !== "undefined" ? window : null);
   if (win && typeof (win as any).addEventListener === "function") {
     win.addEventListener("pageshow", handleVisibilityOrResume);
+    win.addEventListener("focus", handleVisibilityOrResume);
+    win.addEventListener("resume", handleVisibilityOrResume);
     cleanupTasks.push(() => {
       win.removeEventListener("pageshow", handleVisibilityOrResume);
+      win.removeEventListener("focus", handleVisibilityOrResume);
+      win.removeEventListener("resume", handleVisibilityOrResume);
     });
   }
 
@@ -1641,21 +1718,25 @@ export function mount(
         }
 
         // Preserve native candidate input: DO NOT overwrite if actively focused or composing
-        if (candidateInputEl && doc.activeElement !== candidateInputEl) {
+        const isCandidateComposing = candidateGuard ? candidateGuard.isComposing() : false;
+        if (candidateInputEl && doc.activeElement !== candidateInputEl && !isCandidateComposing) {
           if (candidateInputEl.value !== event.record.candidateName) {
             candidateInputEl.value = event.record.candidateName;
           }
         }
 
-        // Preserve Part III inputs: DO NOT overwrite if actively focused
+        // Preserve Part III inputs: DO NOT overwrite if actively focused or composing
         for (const [qId, inputEl] of shortAnswerInputs) {
-          if (doc.activeElement !== inputEl) {
+          const guard = shortAnswerGuards.get(qId);
+          const isComposing = guard ? guard.isComposing() : false;
+          if (doc.activeElement !== inputEl && !isComposing) {
             const resp = getResponse(qId);
             const raw = resp?.kind === "III" && typeof resp.raw === "string" ? resp.raw : "";
             if (inputEl.value !== raw) {
               inputEl.value = raw;
               const boxes = shortAnswerCharBoxes.get(qId);
               if (boxes) {
+                const isTooLong = raw.length > 4;
                 for (let i = 0; i < 4; i++) {
                   const ch = raw[i] || "";
                   const box = boxes[i];
@@ -1663,6 +1744,8 @@ export function mount(
                   box.textContent = ch;
                   if (ch) box.classList.add("filled");
                   else box.classList.remove("filled");
+                  if (isTooLong) box.classList.add("too-long");
+                  else box.classList.remove("too-long");
                 }
               }
             }
@@ -1706,11 +1789,18 @@ export function mount(
       } else if (event.type === "sync_changed") {
         updateSyncStatus(event.outbox.state);
       } else if (event.type === "storage_conflict") {
-        updateSyncStatus("failed");
+        updateSyncStatus("failed", true);
         statusAnnouncer.announce("Phát hiện xung đột phiên lưu trữ.", "assertive");
       } else if (event.type === "error") {
-        updateSyncStatus("failed");
-        statusAnnouncer.announce(`Lỗi: ${event.error.message}`, "assertive");
+        if (event.error.code === "CLOCK_CHANGED") {
+          showClockWarningBanner(event.error.message);
+          statusAnnouncer.announce(`Cảnh báo: ${event.error.message}`, "assertive");
+        } else if (event.error.code.startsWith("STORAGE_")) {
+          updateSyncStatus("failed", true);
+          statusAnnouncer.announce(`Lỗi lưu cục bộ: ${event.error.message}`, "assertive");
+        } else {
+          statusAnnouncer.announce(`Lỗi: ${event.error.message}`, "assertive");
+        }
       }
     });
     cleanupTasks.push(unsub);

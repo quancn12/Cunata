@@ -1,0 +1,27 @@
+{
+  "examId": "exam:III-trailing-zero",
+  "examVersionId": "version:III-trailing-zero",
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "questions": [
+    {
+      "kind": "III",
+      "questionVersionId": "III-trailing-zero:III:0",
+      "answerKey": "1,5",
+      "title": "Câu 1",
+      "content": "Oracle III-trailing-zero câu 1"
+    }
+  ],
+  "schemaVersion": "web-exam-v1",
+  "title": "Oracle III-trailing-zero",
+  "subject": "Toán học",
+  "grade": 12,
+  "assets": [],
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  }
+}

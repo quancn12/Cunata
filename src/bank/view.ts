@@ -134,6 +134,8 @@ export function mount(
 
   function showStatus(message: string, type: 'info' | 'success' | 'error' = 'info') {
     statusEl.textContent = '';
+    statusEl.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    statusEl.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
     const banner = doc.createElement('div');
     banner.className = `cunata-bank-status ${type}`;
     banner.textContent = message;
@@ -230,10 +232,25 @@ export function mount(
       } else if (vm.storage) {
         const importRes = await importBankTransfer(text, vm.storage, { dedupe: 'skip' });
         if (importRes.ok) {
-          showStatus(
-            `Nhập thành công: ${importRes.value.imported} câu mới, bỏ qua ${importRes.value.skipped} câu trùng lặp.`,
-            'success',
-          );
+          if (importRes.value.errors.length > 0) {
+            if (importRes.value.imported === 0 && importRes.value.updated === 0 && importRes.value.forked === 0) {
+              const firstErr = importRes.value.errors[0]?.error;
+              showStatus(
+                `Nhập thất bại do lỗi lưu trữ: ${firstErr?.message || 'STORAGE_QUOTA hoặc lỗi ghi'} (${importRes.value.errors.length} câu lỗi).`,
+                'error',
+              );
+            } else {
+              showStatus(
+                `Nhập thành công ${importRes.value.imported} câu mới, nhưng có ${importRes.value.errors.length} câu thất bại do lỗi lưu trữ: ${importRes.value.errors[0]?.error.message}`,
+                'error',
+              );
+            }
+          } else {
+            showStatus(
+              `Nhập thành công: ${importRes.value.imported} câu mới, bỏ qua ${importRes.value.skipped} câu trùng lặp.`,
+              'success',
+            );
+          }
         } else {
           showStatus(`Nhập thất bại: ${importRes.error.message}`, 'error');
         }

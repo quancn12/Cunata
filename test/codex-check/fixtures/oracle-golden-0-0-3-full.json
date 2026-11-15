@@ -1,0 +1,41 @@
+{
+  "examId": "exam:golden-0-0-3",
+  "examVersionId": "version:golden-0-0-3",
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "questions": [
+    {
+      "kind": "III",
+      "questionVersionId": "golden-0-0-3:III:0",
+      "answerKey": "1,5",
+      "title": "Câu 1",
+      "content": "Oracle golden-0-0-3-full câu 1"
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "golden-0-0-3:III:1",
+      "answerKey": "-0,5",
+      "title": "Câu 2",
+      "content": "Oracle golden-0-0-3-full câu 2"
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "golden-0-0-3:III:2",
+      "answerKey": "0",
+      "title": "Câu 3",
+      "content": "Oracle golden-0-0-3-full câu 3"
+    }
+  ],
+  "schemaVersion": "web-exam-v1",
+  "title": "Oracle golden-0-0-3-full",
+  "subject": "Toán học",
+  "grade": 12,
+  "assets": [],
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  }
+}

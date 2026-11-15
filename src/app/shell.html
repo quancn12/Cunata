@@ -41,6 +41,22 @@
     .text-success { color: var(--success); font-weight: 600; }
     .text-danger { color: var(--danger); font-weight: 600; }
     .text-muted { color: var(--gray-500); }
+    /* WCAG 2.5.5 touch target hardening & accessibility (QA-evidence.md) */
+    #btnSubmit {
+      min-height: 44px;
+      padding: 0.5rem 1rem;
+    }
+    @media (max-width: 480px) {
+      .quick-key-btn {
+        min-height: 44px;
+        min-width: 44px;
+      }
+    }
+    @media (forced-colors: active) {
+      .modal-content, .palette-card, .summary-card, .btn-submit, .btn-secondary {
+        border: 2px solid ButtonText !important;
+      }
+    }
   </style>
 </head>
 <body>

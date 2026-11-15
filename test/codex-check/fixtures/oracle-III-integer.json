@@ -1,0 +1,27 @@
+{
+  "examId": "exam:III-integer",
+  "examVersionId": "version:III-integer",
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "questions": [
+    {
+      "kind": "III",
+      "questionVersionId": "III-integer:III:0",
+      "answerKey": "0",
+      "title": "Câu 1",
+      "content": "Oracle III-integer câu 1"
+    }
+  ],
+  "schemaVersion": "web-exam-v1",
+  "title": "Oracle III-integer",
+  "subject": "Toán học",
+  "grade": 12,
+  "assets": [],
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  }
+}

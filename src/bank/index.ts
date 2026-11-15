@@ -178,6 +178,12 @@ export function validateBankEntry(entry: unknown): Result<BankEntry> {
           error: { code: 'BANK_ENTRY_INVALID', path: `question.options[${i}].optionId`, message: 'optionId không được rỗng', recoverable: true },
         };
       }
+      if (typeof (opt as { text?: unknown }).text !== 'string') {
+        return {
+          ok: false,
+          error: { code: 'BANK_ENTRY_INVALID', path: `question.options[${i}].text`, message: 'text trong option phải là chuỗi', recoverable: true },
+        };
+      }
       if (optionIds.has(opt.optionId)) {
         return {
           ok: false,
@@ -208,6 +214,12 @@ export function validateBankEntry(entry: unknown): Result<BankEntry> {
           error: { code: 'BANK_ENTRY_INVALID', path: `question.statements[${i}].statementId`, message: 'statementId không được rỗng', recoverable: true },
         };
       }
+      if (typeof (st as { text?: unknown }).text !== 'string') {
+        return {
+          ok: false,
+          error: { code: 'BANK_ENTRY_INVALID', path: `question.statements[${i}].text`, message: 'text trong statement phải là chuỗi', recoverable: true },
+        };
+      }
       if (statementIds.has(st.statementId)) {
         return {
           ok: false,
@@ -223,10 +235,10 @@ export function validateBankEntry(entry: unknown): Result<BankEntry> {
       }
     }
   } else if (q.kind === 'III') {
-    if (typeof q.answerKey !== 'string') {
+    if (typeof q.answerKey !== 'string' || q.answerKey.trim() === '') {
       return {
         ok: false,
-        error: { code: 'BANK_ENTRY_INVALID', path: 'question.answerKey', message: 'answerKey phải là chuỗi', recoverable: true },
+        error: { code: 'BANK_ENTRY_INVALID', path: 'question.answerKey', message: 'answerKey phải là chuỗi không rỗng', recoverable: true },
       };
     }
     const issues = checkShortAnswer(q.answerKey);
@@ -263,8 +275,9 @@ export function queryBank(
     }
 
     // Filter by grade
-    if (filter.grade !== undefined) {
-      if (entry.taxonomy.grade !== filter.grade) {
+    if (filter.grade !== undefined && String(filter.grade).trim() !== '' && String(filter.grade).toLowerCase() !== 'all') {
+      const gNum = Number(filter.grade);
+      if (entry.taxonomy.grade !== gNum) {
         continue;
       }
     }

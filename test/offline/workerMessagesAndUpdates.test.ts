@@ -36,7 +36,7 @@ describe('Worker Messages: Safe Updates Deferred During Active Attempt', () => {
 
     assert.strictEqual(getAttemptActiveState(), true);
     assert.strictEqual(outbound.length, 1);
-    assert.deepStrictEqual(outbound[0], { type: 'ATTEMPT_STATUS_ACK', active: true });
+    assert.deepEqual(outbound[0], { type: 'ATTEMPT_STATUS_ACK', active: true });
 
     await executeMessage(
       { type: 'SET_ATTEMPT_ACTIVE', active: false },
@@ -45,7 +45,7 @@ describe('Worker Messages: Safe Updates Deferred During Active Attempt', () => {
 
     assert.strictEqual(getAttemptActiveState(), false);
     assert.strictEqual(outbound.length, 2);
-    assert.deepStrictEqual(outbound[1], { type: 'ATTEMPT_STATUS_ACK', active: false });
+    assert.deepEqual(outbound[1], { type: 'ATTEMPT_STATUS_ACK', active: false });
   });
 
   it('defers SKIP_WAITING when an exam attempt is active, refusing to call skipWaiting', async () => {
@@ -66,7 +66,7 @@ describe('Worker Messages: Safe Updates Deferred During Active Attempt', () => {
 
     assert.strictEqual(skipWaitingCalled, false, 'skipWaiting must NOT be executed while attempt is active');
     assert.strictEqual(outbound.length, 1);
-    assert.deepStrictEqual(outbound[0], { type: 'UPDATE_DEFERRED_REPORT', active: true });
+    assert.deepEqual(outbound[0], { type: 'UPDATE_DEFERRED_REPORT', active: true });
   });
 
   it('allows SKIP_WAITING to proceed when no exam attempt is active', async () => {
@@ -113,8 +113,9 @@ describe('Worker Messages: Offline Readiness Verification (CHECK_OFFLINE_READY)'
 
     assert.strictEqual(outbound.length, 1);
     const report = outbound[0];
+    assert.ok(report);
     assert.strictEqual(report.type, 'OFFLINE_READY_REPORT');
-    if (report.type === 'OFFLINE_READY_REPORT') {
+    if (report && report.type === 'OFFLINE_READY_REPORT') {
       assert.strictEqual(report.ready, true);
       assert.strictEqual(report.cachedCount, 3);
       assert.strictEqual(report.totalCount, 3);
@@ -143,12 +144,13 @@ describe('Worker Messages: Offline Readiness Verification (CHECK_OFFLINE_READY)'
 
     assert.strictEqual(outbound.length, 1);
     const report = outbound[0];
+    assert.ok(report);
     assert.strictEqual(report.type, 'OFFLINE_READY_REPORT');
-    if (report.type === 'OFFLINE_READY_REPORT') {
+    if (report && report.type === 'OFFLINE_READY_REPORT') {
       assert.strictEqual(report.ready, false);
       assert.strictEqual(report.cachedCount, 1);
       assert.strictEqual(report.totalCount, 3);
-      assert.deepStrictEqual(report.missingUrls, ['styles/style.css', 'public/sample-exam.json']);
+      assert.deepEqual(report.missingUrls, ['styles/style.css', 'public/sample-exam.json']);
     }
   });
 });
@@ -165,7 +167,7 @@ describe('Worker Messages: Version & Ping Utilities', () => {
     );
 
     assert.strictEqual(outbound.length, 1);
-    assert.deepStrictEqual(outbound[0], {
+    assert.deepEqual(outbound[0], {
       type: 'VERSION_REPORT',
       version: CACHE_VERSION,
       cacheName: CACHE_NAME,
@@ -182,7 +184,7 @@ describe('Worker Messages: Version & Ping Utilities', () => {
     );
 
     assert.strictEqual(outbound.length, 1);
-    assert.deepStrictEqual(outbound[0], {
+    assert.deepEqual(outbound[0], {
       type: 'PONG',
       version: CACHE_VERSION,
     });

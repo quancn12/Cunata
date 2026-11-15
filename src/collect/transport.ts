@@ -218,6 +218,46 @@ export class HttpCollectorTransport implements CollectorPort {
       );
     }
 
+    if (parsed && typeof parsed === 'object') {
+      const p = parsed as Record<string, unknown>;
+      if (p.error === 'SERVER_BUSY' || p.status === 503) {
+        throw new CollectorError(
+          'COLLECTOR_HTTP',
+          'response',
+          String(p.message || 'Server busy; retry scheduled'),
+          true,
+          503
+        );
+      }
+      if (p.error === 'SERVER_ERROR' || (typeof p.status === 'number' && p.status >= 500)) {
+        throw new CollectorError(
+          'COLLECTOR_HTTP',
+          'response',
+          String(p.message || 'Server error; retry scheduled'),
+          true,
+          typeof p.status === 'number' ? p.status : 500
+        );
+      }
+      if (p.error === 'PAYLOAD_CONFLICT' || p.status === 409) {
+        throw new CollectorError(
+          'PAYLOAD_CONFLICT',
+          'response',
+          String(p.message || 'Payload conflict'),
+          false,
+          409
+        );
+      }
+      if (p.success === false && typeof p.status === 'number' && p.status >= 400 && p.status < 500) {
+        throw new CollectorError(
+          'COLLECTOR_HTTP',
+          'response',
+          String(p.message || 'Client error'),
+          false,
+          p.status
+        );
+      }
+    }
+
     return parsed;
   }
 }

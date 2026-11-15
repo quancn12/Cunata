@@ -253,7 +253,7 @@
   margin-bottom: 0.25rem;
 }
 
-/* Status Announcer (polite live region) */
+/* Status Announcer (polite live region, assertive on error) */
 .cunata-teacher-view .cunata-status-announcer {
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
@@ -261,6 +261,13 @@
   background-color: #f3f4f6;
   border-radius: 0.25rem;
   margin-bottom: 1rem;
+}
+
+.cunata-teacher-view .cunata-status-announcer.cunata-status-error {
+  color: #991b1b;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  font-weight: 500;
 }
 
 /* Sections & Scores Grid */

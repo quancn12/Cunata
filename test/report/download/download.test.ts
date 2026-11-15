@@ -7,6 +7,7 @@ import {
   toFractionString,
   scoreAttempt,
   scoreResultToDTO,
+  type Response,
 } from "../../../src/domain/index.ts";
 import {
   buildReport,
@@ -39,6 +40,8 @@ function createMockExam(
       durationMinutes: 45,
       maxAttempts: 3,
       releasePolicy: "immediate",
+      shuffleQuestions: false,
+      shuffleOptions: false,
       ...settings,
     },
     questions,
@@ -165,7 +168,7 @@ describe("WEB-W3-REPORT-DOWNLOAD: Self-contained Offline HTML Report & Asset Pol
       const inspection = inspectDownloadBytes(html);
 
       assert.strictEqual(inspection.hasExternalRequests, false);
-      assert.deepStrictEqual(inspection.externalUrlsFound, []);
+      assert.strictEqual(inspection.externalUrlsFound.length, 0);
       assert.strictEqual(html.includes("http://"), false, "Must not contain http://");
       assert.strictEqual(html.includes("https://"), false, "Must not contain https://");
       assert.strictEqual(html.includes("//fonts.googleapis.com"), false, "No external fonts");
@@ -556,7 +559,7 @@ describe("WEB-W3-REPORT-DOWNLOAD: Self-contained Offline HTML Report & Asset Pol
       // 10 Part II (7 correct -> 7 * 1 = 7, 3 wrong -> 0; score 7/10)
       // 0 Part III -> maxTotal = 5 + 10 = 15; total = 5 + 7 = 12/15
       const questions: WebQuestion[] = [];
-      const responses: AttemptRecord["responses"]["responses"] = [];
+      const responses: Response[] = [];
 
       for (let i = 1; i <= 20; i++) {
         const qId = `qI_${i}`;
@@ -582,10 +585,10 @@ describe("WEB-W3-REPORT-DOWNLOAD: Self-contained Offline HTML Report & Asset Pol
           questionVersionId: qId,
           title: `Câu II.${i}`,
           statements: [
-            { statementId: "s1", answer: true },
-            { statementId: "s2", answer: true },
-            { statementId: "s3", answer: true },
-            { statementId: "s4", answer: true },
+            { statementId: "s1", text: "Ý 1", answer: true },
+            { statementId: "s2", text: "Ý 2", answer: true },
+            { statementId: "s3", text: "Ý 3", answer: true },
+            { statementId: "s4", text: "Ý 4", answer: true },
           ],
         });
         // 7 correct, 3 wrong (0/4)
@@ -724,10 +727,10 @@ describe("WEB-W3-REPORT-DOWNLOAD: Self-contained Offline HTML Report & Asset Pol
         questionVersionId: "q-part-II",
         title: "Câu II kiểm tra đúng một phần",
         statements: [
-          { statementId: "s1", answer: true },
-          { statementId: "s2", answer: true },
-          { statementId: "s3", answer: true },
-          { statementId: "s4", answer: true },
+          { statementId: "s1", text: "Ý 1", answer: true },
+          { statementId: "s2", text: "Ý 2", answer: true },
+          { statementId: "s3", text: "Ý 3", answer: true },
+          { statementId: "s4", text: "Ý 4", answer: true },
         ],
       };
 

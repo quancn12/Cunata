@@ -160,6 +160,10 @@ export function validateReceipt(input: unknown, expected: OutboxRecord): Result<
 
   const r = input as Record<string, unknown>;
 
+  if (r.error === 'PAYLOAD_CONFLICT') {
+    return err('PAYLOAD_CONFLICT', 'receipt.payloadHash', String(r.message || 'Receipt payloadHash conflicts with expected outbox record'), false);
+  }
+
   if (typeof r.examId !== 'string' || r.examId !== expected.examId) {
     return err('RECEIPT_INVALID', 'receipt.examId', 'Receipt examId does not match expected attempt', false);
   }
@@ -242,7 +246,12 @@ export async function enqueue(
       return err('PAYLOAD_CONFLICT', 'payloadHash', 'Attempt payload hash conflicts with existing outbox record', false);
     }
 
-    const targetState: SaveState = endpointId ? 'queued' : 'local_saved';
+    const targetState: SaveState =
+      existing.state === 'failed'
+        ? 'failed'
+        : endpointId
+          ? 'queued'
+          : 'local_saved';
     const updated: OutboxRecord = {
       ...existing,
       state: targetState,
@@ -250,7 +259,15 @@ export async function enqueue(
       finalRevision: final.revision,
       generation: existing.generation + 1,
     };
-    return await storage.updateOutbox(updated, existing.generation);
+    const updateRes = await storage.updateOutbox(updated, existing.generation);
+    if (!updateRes.ok) {
+      const recheck = await storage.getOutbox(key);
+      if (recheck.ok && recheck.value && recheck.value.state === 'server_confirmed') {
+        return ok(recheck.value);
+      }
+      return updateRes;
+    }
+    return updateRes;
   }
 
   const state: SaveState = endpointId ? 'queued' : 'local_saved';
@@ -269,7 +286,18 @@ export async function enqueue(
     lastError: null,
   };
 
-  return await storage.updateOutbox(newRecord, null);
+  const createRes = await storage.updateOutbox(newRecord, null);
+  if (!createRes.ok) {
+    const recheck = await storage.getOutbox(key);
+    if (recheck.ok && recheck.value) {
+      if (recheck.value.payloadHash !== payloadHash) {
+        return err('PAYLOAD_CONFLICT', 'payloadHash', 'Attempt payload hash conflicts with existing outbox record', false);
+      }
+      return ok(recheck.value);
+    }
+    return createRes;
+  }
+  return createRes;
 }
 
 /**
@@ -404,6 +432,37 @@ export async function drainOutbox(
   }
 
   // 10. Handle network response or error
+  if (!sendError && rawResponse && typeof rawResponse === 'object') {
+    const p = rawResponse as Record<string, unknown>;
+    if (p.error === 'SERVER_BUSY' || p.status === 503) {
+      sendError = new CollectorError(
+        'COLLECTOR_HTTP',
+        'response',
+        String(p.message || 'Server busy; retry scheduled'),
+        true,
+        503
+      );
+    } else if (p.error === 'PAYLOAD_CONFLICT' || p.status === 409) {
+      const failedRecord: OutboxRecord = {
+        ...latest,
+        state: 'failed',
+        retryCount: COLLECTOR_MAX_TOTAL_ATTEMPTS,
+        nextRetryAt: null,
+        lastError: 'PAYLOAD_CONFLICT',
+      };
+      await deps.storage.updateOutbox(failedRecord, activeGeneration);
+      return err('PAYLOAD_CONFLICT', 'receipt', String(p.message || 'Payload conflict'), false);
+    } else if (p.error === 'SERVER_ERROR' || (typeof p.status === 'number' && p.status >= 500)) {
+      sendError = new CollectorError(
+        'COLLECTOR_HTTP',
+        'response',
+        String(p.message || 'Server error; retry scheduled'),
+        true,
+        typeof p.status === 'number' ? p.status : 500
+      );
+    }
+  }
+
   if (!sendError) {
     // Validate receipt
     const receiptRes = validateReceipt(rawResponse, latest);
@@ -415,7 +474,15 @@ export async function drainOutbox(
         nextRetryAt: null,
         lastError: null,
       };
-      return await deps.storage.updateOutbox(confirmedRecord, activeGeneration);
+      const updateRes = await deps.storage.updateOutbox(confirmedRecord, activeGeneration);
+      if (!updateRes.ok) {
+        const recheck = await deps.storage.getOutbox(key);
+        if (recheck.ok && recheck.value && recheck.value.state === 'server_confirmed') {
+          return ok(recheck.value);
+        }
+        return updateRes;
+      }
+      return updateRes;
     }
 
     // Invalid or opaque receipt: non-retryable per section 7!
@@ -426,7 +493,13 @@ export async function drainOutbox(
       nextRetryAt: null,
       lastError: receiptRes.error.code,
     };
-    await deps.storage.updateOutbox(failedRecord, activeGeneration);
+    const failUpdateRes = await deps.storage.updateOutbox(failedRecord, activeGeneration);
+    if (!failUpdateRes.ok) {
+      const recheck = await deps.storage.getOutbox(key);
+      if (recheck.ok && recheck.value && recheck.value.state === 'server_confirmed') {
+        return ok(recheck.value);
+      }
+    }
     return err(receiptRes.error.code, receiptRes.error.path, receiptRes.error.message, false);
   }
 
@@ -460,7 +533,13 @@ export async function drainOutbox(
       nextRetryAt: null,
       lastError: errCode,
     };
-    await deps.storage.updateOutbox(failedRecord, activeGeneration);
+    const updateRes = await deps.storage.updateOutbox(failedRecord, activeGeneration);
+    if (!updateRes.ok) {
+      const recheck = await deps.storage.getOutbox(key);
+      if (recheck.ok && recheck.value && recheck.value.state === 'server_confirmed') {
+        return ok(recheck.value);
+      }
+    }
     return err(errCode, 'transport', `HTTP ${(sendError as any)?.status} client error (non-retryable)`, false);
   }
 
@@ -475,7 +554,13 @@ export async function drainOutbox(
       nextRetryAt: null,
       lastError: 'RETRY_EXHAUSTED',
     };
-    await deps.storage.updateOutbox(failedRecord, activeGeneration);
+    const updateRes = await deps.storage.updateOutbox(failedRecord, activeGeneration);
+    if (!updateRes.ok) {
+      const recheck = await deps.storage.getOutbox(key);
+      if (recheck.ok && recheck.value && recheck.value.state === 'server_confirmed') {
+        return ok(recheck.value);
+      }
+    }
     return err('RETRY_EXHAUSTED', 'retryCount', `Retry budget exhausted after 5 total attempts (${errCode})`, false);
   }
 
@@ -491,7 +576,13 @@ export async function drainOutbox(
     nextRetryAt,
     lastError: errCode,
   };
-  await deps.storage.updateOutbox(queuedRecord, activeGeneration);
+  const updateRes = await deps.storage.updateOutbox(queuedRecord, activeGeneration);
+  if (!updateRes.ok) {
+    const recheck = await deps.storage.getOutbox(key);
+    if (recheck.ok && recheck.value && recheck.value.state === 'server_confirmed') {
+      return ok(recheck.value);
+    }
+  }
   return err(errCode, 'transport', `Attempt ${newRetryCount}/5 failed: ${errCode}; retry scheduled in ${backoffMs / 1000}s`, true);
 }
 

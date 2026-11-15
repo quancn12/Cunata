@@ -42,178 +42,249 @@ export async function importDocx(
   signal: AbortSignal,
   options?: DocxImportOptions,
 ): Promise<Result<ImportJob>> {
-  // 1. Check cancellation before starting
+  const timeoutMs = options?.timeoutMs;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  let timedOut = false;
+  const internalController = new AbortController();
+
+  const onParentAbort = () => {
+    internalController.abort();
+  };
+
   if (signal.aborted) {
-    return {
-      ok: false,
-      error: {
-        code: "IMPORT_CANCELLED",
-        path: "file",
-        message: "Tiến trình nhập DOCX đã bị hủy",
-        recoverable: true,
-      },
-    };
+    internalController.abort();
+  } else {
+    signal.addEventListener("abort", onParentAbort, { once: true });
   }
 
-  // 2. Read file bytes
-  let bytes: Uint8Array;
+  if (timeoutMs && timeoutMs > 0) {
+    timeoutId = setTimeout(() => {
+      timedOut = true;
+      internalController.abort();
+    }, timeoutMs);
+  }
+
+  const checkCancelled = (path = "file"): Result<never> | null => {
+    if (timedOut) {
+      return {
+        ok: false,
+        error: {
+          code: "IMPORT_CANCELLED",
+          path: "timeout",
+          message: `Thời gian phân tích tài liệu DOCX vượt quá giới hạn cho phép (${timeoutMs}ms)`,
+          recoverable: true,
+        },
+      };
+    }
+    if (signal.aborted || internalController.signal.aborted) {
+      return {
+        ok: false,
+        error: {
+          code: "IMPORT_CANCELLED",
+          path,
+          message: "Tiến trình nhập DOCX đã bị hủy",
+          recoverable: true,
+        },
+      };
+    }
+    return null;
+  };
+
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    bytes = new Uint8Array(arrayBuffer);
-  } catch (err) {
-    return {
-      ok: false,
-      error: {
-        code: "ZIP_INVALID",
-        path: "file",
-        message: `Không thể đọc dữ liệu từ tệp đầu vào: ${String(err)}`,
-        recoverable: false,
-      },
-    };
-  }
+    const earlyCancel = checkCancelled();
+    if (earlyCancel) return earlyCancel;
 
-  // Check cancellation after reading file
-  if (signal.aborted) {
-    return {
-      ok: false,
-      error: {
-        code: "IMPORT_CANCELLED",
-        path: "file",
-        message: "Tiến trình nhập DOCX đã bị hủy",
-        recoverable: true,
-      },
-    };
-  }
-
-  // 3. Decompress ZIP archive with strict limits
-  const limits = options?.limits ?? PROPOSED_ZIP_LIMITS;
-  const zipResult = await readZip(bytes, limits, signal);
-  if (!zipResult.ok) {
-    return zipResult;
-  }
-
-  // Check cancellation after unzipping
-  if (signal.aborted) {
-    return {
-      ok: false,
-      error: {
-        code: "IMPORT_CANCELLED",
-        path: "file",
-        message: "Tiến trình nhập DOCX đã bị hủy",
-        recoverable: true,
-      },
-    };
-  }
-
-  const entries = zipResult.value;
-  const entryMap = new Map<string, ZipEntry>();
-  for (const entry of entries) {
-    entryMap.set(entry.name, entry);
-  }
-
-  // 4. Verify valid DOCX package structure (must contain word/document.xml)
-  const docEntry = entryMap.get("word/document.xml");
-  if (!docEntry) {
-    return {
-      ok: false,
-      error: {
-        code: "DOCX_UNSUPPORTED",
-        path: "word/document.xml",
-        message: "Tệp không chứa 'word/document.xml' (không phải tài liệu Microsoft Word .docx hợp lệ)",
-        recoverable: false,
-      },
-    };
-  }
-
-  // 5. Prepare XML parser and ID generator
-  const xmlParser = getXmlParser(options?.xmlParser);
-  const idGen = options?.id ?? defaultIdGenerator;
-  const sourceId = file.name || "document.docx";
-
-  // 6. Parse relationships (word/_rels/document.xml.rels)
-  let relationships: RelationshipMap = new Map();
-  const relsEntry = entryMap.get("word/_rels/document.xml.rels");
-  if (relsEntry) {
-    const relsXml = decodeUtf8(relsEntry.bytes);
-    const relsResult = parseRelationships(relsXml, xmlParser);
-    if (!relsResult.ok) {
-      return relsResult;
-    }
-    relationships = relsResult.value;
-  }
-
-  // 7. Parse numbering definitions (word/numbering.xml)
-  let numberingResolver: NumberingResolver | null = null;
-  const numberingEntry = entryMap.get("word/numbering.xml");
-  if (numberingEntry) {
-    const numberingXml = decodeUtf8(numberingEntry.bytes);
-    const numResult = parseNumbering(numberingXml, xmlParser);
-    if (!numResult.ok) {
-      return numResult;
-    }
-    numberingResolver = numResult.value;
-  }
-
-  // 8. Validate styles if present (word/styles.xml)
-  const stylesEntry = entryMap.get("word/styles.xml");
-  if (stylesEntry) {
-    const stylesXml = decodeUtf8(stylesEntry.bytes);
-    const stylesSec = checkXmlSecurity(stylesXml, "word/styles.xml");
-    if (!stylesSec.ok) {
-      return stylesSec;
-    }
+    // 2. Read file bytes
+    let bytes: Uint8Array;
     try {
-      const stylesDoc = xmlParser.parseFromString(stylesXml, "application/xml");
-      const stylesErr = checkParserError(stylesDoc, "word/styles.xml");
-      if (!stylesErr.ok) {
-        return stylesErr;
-      }
+      const arrayBuffer = await file.arrayBuffer();
+      bytes = new Uint8Array(arrayBuffer);
     } catch (err) {
       return {
         ok: false,
         error: {
-          code: "XML_INVALID",
-          path: "word/styles.xml",
-          message: `Lỗi phân tích XML styles: ${String(err)}`,
+          code: "ZIP_INVALID",
+          path: "file",
+          message: `Không thể đọc dữ liệu từ tệp đầu vào: ${String(err)}`,
           recoverable: false,
         },
       };
     }
+
+    const postReadCancel = checkCancelled();
+    if (postReadCancel) return postReadCancel;
+
+    // 3. Decompress ZIP archive with strict limits
+    const limits = options?.limits ?? PROPOSED_ZIP_LIMITS;
+    const zipResult = await readZip(bytes, limits, internalController.signal);
+    if (!zipResult.ok) {
+      return zipResult;
+    }
+
+    const postZipCancel = checkCancelled();
+    if (postZipCancel) return postZipCancel;
+
+    const entries = zipResult.value;
+    const entryMap = new Map<string, ZipEntry>();
+    for (const entry of entries) {
+      entryMap.set(entry.name, entry);
+    }
+
+    // 4. Verify valid DOCX package structure (must contain word/document.xml)
+    const docEntry = entryMap.get("word/document.xml");
+    if (!docEntry) {
+      return {
+        ok: false,
+        error: {
+          code: "DOCX_UNSUPPORTED",
+          path: "word/document.xml",
+          message: "Tệp không chứa 'word/document.xml' (không phải tài liệu Microsoft Word .docx hợp lệ)",
+          recoverable: false,
+        },
+      };
+    }
+
+    // 5. Prepare XML parser and ID generator
+    const xmlParser = getXmlParser(options?.xmlParser);
+    const idGen = options?.id ?? defaultIdGenerator;
+    const sourceId = file.name || "document.docx";
+
+    // 6. Check top-level relationships (_rels/.rels) if present
+    const rootRelsEntry = entryMap.get("_rels/.rels");
+    if (rootRelsEntry) {
+      const rootRelsXml = decodeUtf8(rootRelsEntry.bytes);
+      const rootRelsResult = parseRelationships(rootRelsXml, xmlParser, "_rels/.rels");
+      if (!rootRelsResult.ok) {
+        return rootRelsResult;
+      }
+    }
+
+    // 7. Parse relationships (word/_rels/document.xml.rels)
+    let relationships: RelationshipMap = new Map();
+    const relsEntry = entryMap.get("word/_rels/document.xml.rels");
+    if (relsEntry) {
+      const relsXml = decodeUtf8(relsEntry.bytes);
+      const relsResult = parseRelationships(relsXml, xmlParser, "word/_rels/document.xml.rels");
+      if (!relsResult.ok) {
+        return relsResult;
+      }
+      relationships = relsResult.value;
+    }
+
+    // 8. Parse numbering definitions (word/numbering.xml)
+    let numberingResolver: NumberingResolver | null = null;
+    const numberingEntry = entryMap.get("word/numbering.xml");
+    if (numberingEntry) {
+      const numberingXml = decodeUtf8(numberingEntry.bytes);
+      const numResult = parseNumbering(numberingXml, xmlParser);
+      if (!numResult.ok) {
+        return numResult;
+      }
+      numberingResolver = numResult.value;
+    }
+
+    // 9. Validate styles if present (word/styles.xml)
+    const stylesEntry = entryMap.get("word/styles.xml");
+    if (stylesEntry) {
+      const stylesXml = decodeUtf8(stylesEntry.bytes);
+      const stylesSec = checkXmlSecurity(stylesXml, "word/styles.xml");
+      if (!stylesSec.ok) {
+        return stylesSec;
+      }
+      try {
+        const stylesDoc = xmlParser.parseFromString(stylesXml, "application/xml");
+        const stylesErr = checkParserError(stylesDoc, "word/styles.xml");
+        if (!stylesErr.ok) {
+          return stylesErr;
+        }
+      } catch (err) {
+        return {
+          ok: false,
+          error: {
+            code: "XML_INVALID",
+            path: "word/styles.xml",
+            message: `Lỗi phân tích XML styles: ${String(err)}`,
+            recoverable: false,
+          },
+        };
+      }
+    }
+
+    const preParseCancel = checkCancelled();
+    if (preParseCancel) return preParseCancel;
+
+    // 10. Parse main document XML (word/document.xml)
+    const docXml = decodeUtf8(docEntry.bytes);
+    const parsedDocResult = parseDocumentXml(
+      docXml,
+      xmlParser,
+      relationships,
+      numberingResolver,
+      entryMap,
+      idGen,
+    );
+    if (!parsedDocResult.ok) {
+      return parsedDocResult;
+    }
+
+    const parsedDoc = parsedDocResult.value;
+
+    // 11. Check for macro entries (VBA project binary or macro content types)
+    // Macros are strictly inert: never executed, no network fetch.
+    let hasMacro = false;
+    for (const name of entryMap.keys()) {
+      if (/(?:^|\/)vbaProject\.bin$/i.test(name) || /(?:^|\/)vbaData\.xml$/i.test(name)) {
+        hasMacro = true;
+        break;
+      }
+    }
+    const contentTypesEntry = entryMap.get("[Content_Types].xml");
+    if (contentTypesEntry) {
+      const ctXml = decodeUtf8(contentTypesEntry.bytes);
+      if (/macroEnabled/i.test(ctXml)) {
+        hasMacro = true;
+      }
+    }
+
+    const finalFlags = [...parsedDoc.flags];
+    const finalBlocks = [...parsedDoc.blocks];
+
+    if (hasMacro) {
+      if (!finalFlags.includes("DOCX_MACRO_IGNORED")) {
+        finalFlags.push("DOCX_MACRO_IGNORED");
+      }
+      finalBlocks.unshift({
+        type: "text",
+        text: "[Cảnh báo bảo mật] Tệp DOCX chứa macro VBA. Macro đã bị vô hiệu hóa hoàn toàn, không thực thi.",
+      });
+    }
+
+    const postParseCancel = checkCancelled();
+    if (postParseCancel) return postParseCancel;
+
+    // 12. Heuristic semantic segmentation
+    const drafts = segmentDocument(parsedDoc, sourceId);
+
+    // 13. Assemble ImportJob in 'preview' state
+    const job: DocxImportJob = {
+      jobId: `job-${idGen()}`,
+      sourceId,
+      format: "docx",
+      state: "preview",
+      blocks: finalBlocks,
+      drafts,
+      flags: finalFlags,
+      assets: parsedDoc.assets,
+    };
+
+    return {
+      ok: true,
+      value: job,
+    };
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    signal.removeEventListener("abort", onParentAbort);
   }
-
-  // 9. Parse main document XML (word/document.xml)
-  const docXml = decodeUtf8(docEntry.bytes);
-  const parsedDocResult = parseDocumentXml(
-    docXml,
-    xmlParser,
-    relationships,
-    numberingResolver,
-    entryMap,
-    idGen,
-  );
-  if (!parsedDocResult.ok) {
-    return parsedDocResult;
-  }
-
-  const parsedDoc = parsedDocResult.value;
-
-  // 10. Heuristic semantic segmentation
-  const drafts = segmentDocument(parsedDoc, sourceId);
-
-  // 11. Assemble ImportJob in 'preview' state
-  const job: DocxImportJob = {
-    jobId: `job-${idGen()}`,
-    sourceId,
-    format: "docx",
-    state: "preview",
-    blocks: parsedDoc.blocks,
-    drafts,
-    flags: parsedDoc.flags,
-    assets: parsedDoc.assets,
-  };
-
-  return {
-    ok: true,
-    value: job,
-  };
 }

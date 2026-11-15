@@ -93,6 +93,8 @@ function createLegacyVMContext() {
       createElement: () => createMockElement(),
       querySelectorAll: () => [],
       querySelector: () => null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
     },
     window: {
       addEventListener: () => {},
