@@ -42,6 +42,16 @@
    "url": "public/exams/ly12/de13.json"
   },
   {
+   "id": "ly12-hang-tuan-de-14",
+   "title": "Vật lí 12 — Đề số 14 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de14.json"
+  },
+  {
    "id": "ly12-hang-tuan-de-15",
    "title": "Vật lí 12 — Đề số 15 hàng tuần",
    "subject": "Vật lí",

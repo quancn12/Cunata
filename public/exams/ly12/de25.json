@@ -449,7 +449,7 @@
         }
       ],
       "correctOptionId": "ly12-de25-i-13-c",
-      "explanation": "$V_2 = \\frac{m}{D_2} = \\frac{12}{1,2} = 10$ lít.\nĐẳng áp $\\frac{V_1}{T_1} = \\frac{V_2}{T_2} \\Rightarrow \\frac{4}{7 + 273} = \\frac{10}{T_2} \\Rightarrow T_2 = 700$ K = 427°C. Chọn C."
+      "explanation": "$V_2 = \\frac{m}{D_2} = \\frac{12}{1,2} = 10$ lít.\nĐẳng áp $\\frac{V_1}{T_1} = \\frac{V_2}{T_2} \\Rightarrow 4/(7 + 273) = \\frac{10}{T_2} \\Rightarrow T_2 = 700$ K = 427°C. Chọn C."
     },
     {
       "kind": "I",
@@ -479,7 +479,7 @@
         }
       ],
       "correctOptionId": "ly12-de25-i-14-a",
-      "explanation": "$\\frac{p}{DT} = \\frac{R}{M} \\Rightarrow \\frac{99720}{D · (27 + 273)} = \\frac{8,31}{2 · 10^-3} \\Rightarrow D = 0,08$ kg / m$^3$. Chọn A."
+      "explanation": "$\\frac{p}{DT} = \\frac{R}{M} \\Rightarrow 99720/(D · (27 + 273)) = 8,31/(2 · 10^-3) \\Rightarrow D = 0,08$ kg / m$^3$. Chọn A."
     },
     {
       "kind": "I",
@@ -530,7 +530,7 @@
         {
           "optionId": "ly12-de25-i-16-c",
           "label": "C",
-          "text": "01°C"
+          "text": "1°C"
         },
         {
           "optionId": "ly12-de25-i-16-d",
@@ -664,14 +664,14 @@
           "label": "c",
           "text": "Công suất lực kéo của ô tô là 51,84 kW.",
           "answer": false,
-          "explanation": "Sai. $F = 0,08P = 0,08 · 1,2 · 10^4 = 960$ N.\n$P = Fv = 960 · \\frac{54}{3,6} = 14400$ W = 14,4 kW $≠ 51,84$ kW."
+          "explanation": "Sai. $F = 0,08P = 0,08 · 1,2 · 10^4 = 960$ N.\n$P = Fv = 960 · (54/3,6) = 14400$ W = 14,4 kW $≠ 51,84$ kW."
         },
         {
           "statementId": "ly12-de25-ii-02-d",
           "label": "d",
           "text": "Hiệu suất của động cơ ô tô xấp xỉ 32,2%.",
           "answer": true,
-          "explanation": "Đúng. $A = Fs = 960 · 54 · 10^3 = 0,5184 · 10^8$ J.\n$H = \\frac{A}{Q} = \\frac{0,5184 · 10^8}{1,61 · 10^8} ≈ 0,322 = 32,2%$."
+          "explanation": "Đúng. $A = Fs = 960 · 54 · 10^3 = 0,5184 · 10^8$ J.\n$H = \\frac{A}{Q} = (0,5184 · 10^8)/(1,61 · 10^8) ≈ 0,322 = 32,2%$."
         }
       ]
     },
@@ -679,14 +679,14 @@
       "kind": "II",
       "questionVersionId": "ly12-de25-ii-03",
       "title": "Câu 21 (Phần II - Đúng / Sai)",
-      "content": "Bình chứa nước đá có nhiệt đột $t = 0$°C. Người ta đổ nước có khối lượng $m_1 = 0,4$ kg ở nhiệt độ $t_1 = 60$°C vào đó. Nhiệt độ $t_{cb}$ được thiết lập trong bình nếu thể tích cuối cùng của hỗn hợp chứa trong đó là $V = 1$l . Khối lượng riêng của nước và nước đá $ρ_1 = 1000$ kg / m$^3$ và $ρ_2 = 900$ kg / m$^3$, nhiệt dung riêng của nước là $c = 4200$ J / kg.°C, nhiệt nóng chảy riêng của nước đá $λ = 335$ kJ / kg. Bỏ qua nhiệt dung của bình và thất thoát nhiệt.",
+      "content": "Bình chứa nước đá có nhiệt đột $t = 0$°C. Người ta đổ nước có khối lượng $m_1 = 0,4$ kg ở nhiệt độ $t_1 = 60$°C vào đó. Nhiệt độ $t_cb$ được thiết lập trong bình nếu thể tích cuối cùng của hỗn hợp chứa trong đó là $V = 1$l . Khối lượng riêng của nước và nước đá $ρ_1 = 1000$ kg / m$^3$ và $ρ_2 = 900$ kg / m$^3$, nhiệt dung riêng của nước là $c = 4200$ J / kg.°C, nhiệt nóng chảy riêng của nước đá $λ = 335$ kJ / kg. Bỏ qua nhiệt dung của bình và thất thoát nhiệt.",
       "statements": [
         {
           "statementId": "ly12-de25-ii-03-a",
           "label": "a",
           "text": "Khối lượng nước đá ban đầu là 0,57 kg",
           "answer": true,
-          "explanation": "Đúng. Gọi khối lượng nước đá tan thành nước là $m_3$.\n$m_3 λ = m_1 c t_1 \\Rightarrow m_3 · 335 · 10^3 = 0,4 · 4200 · 60 \\Rightarrow m_3 = \\frac{504}{1675}$ kg $→ V_3 ≈ 0,3$ lít.\n$V = \\frac{m_1 + m_3}{D_1} + \\frac{m_2 - m_3}{D_2} \\Rightarrow 10^-3 = \\frac{0,4 + (504/1675)}{1000} + \\frac{m_2 - (504/1675)}{900} \\Rightarrow m_2 ≈ 0,57$ kg."
+          "explanation": "Đúng. Gọi khối lượng nước đá tan thành nước là $m_3$.\n$m_3 λ = m_1 c t_1 \\Rightarrow m_3 · 335 · 10^3 = 0,4 · 4200 · 60 \\Rightarrow m_3 = \\frac{504}{1675}$ kg $→ V_3 ≈ 0,3$ lít.\n$V = (m_1 + m_3)/D_1 + (m_2 - m_3)/D_2 \\Rightarrow 10^-3 = (0,4 + (504/1675))/1000 + (m_2 - (504/1675))/900 \\Rightarrow m_2 ≈ 0,57$ kg."
         },
         {
           "statementId": "ly12-de25-ii-03-b",
@@ -723,7 +723,7 @@
           "label": "a",
           "text": "Ở trạng thái 1 , piston cách đáy bình một đoạn 20 cm .",
           "answer": true,
-          "explanation": "Đúng. $l_1 = \\frac{V_1}{S} = \\frac{2000}{100} = 20$ cm.\nCân bằng lực cho xilanh được áp suất khí trong xilanh ở trạng thái 2 bằng áp suất khí quyển $p_2 = 10^5$ Pa.\nTrạng thái 1: $p_1 = 10^5$ Pa, $V_1 = 2$ lít, $T_1 = 27 + 273 = 300$ K.\nTrạng thái 2: $p_2 = 10^5$ Pa, $V_2$, $T_2 = 87 + 273 = 360$ K.\nTrạng thái 3: $p_3$, $V_3 = 2$ lít, $T_3 = 360$ K.\n$\\frac{pV}{T} =$ const $\\Rightarrow \\frac{10^5 · 2}{300} = \\frac{10^5 · V_2}{360} = \\frac{p_3 · 2}{360} \\Rightarrow V_2 = 2,4$ lít; $p_3 = 1,2 · 10^5$ Pa."
+          "explanation": "Đúng. $l_1 = \\frac{V_1}{S} = \\frac{2000}{100} = 20$ cm.\nCân bằng lực cho xilanh được áp suất khí trong xilanh ở trạng thái 2 bằng áp suất khí quyển $p_2 = 10^5$ Pa.\nTrạng thái 1: $p_1 = 10^5$ Pa, $V_1 = 2$ lít, $T_1 = 27 + 273 = 300$ K.\nTrạng thái 2: $p_2 = 10^5$ Pa, $V_2$, $T_2 = 87 + 273 = 360$ K.\nTrạng thái 3: $p_3$, $V_3 = 2$ lít, $T_3 = 360$ K.\n$\\frac{pV}{T} =$ const $\\Rightarrow (10^5 · 2)/300 = (10^5 · V_2)/360 = (p_3 · 2)/360 \\Rightarrow V_2 = 2,4$ lít; $p_3 = 1,2 · 10^5$ Pa."
         },
         {
           "statementId": "ly12-de25-ii-04-b",
@@ -737,7 +737,7 @@
           "label": "c",
           "text": "Từ trạng thái 1 đến trạng thái 2 , bình đã di chuyển được một đoạn 5 cm .",
           "answer": false,
-          "explanation": "Sai. $l_2 - l_1 = \\frac{V_2}{S} - l_1 = \\frac{2400}{100} - 20 = 4$ cm."
+          "explanation": "Sai. $l_2 - l_1 = (V_2/S) - l_1 = (2400/100) - 20 = 4$ cm."
         },
         {
           "statementId": "ly12-de25-ii-04-d",
@@ -780,7 +780,7 @@
       "title": "Câu 26 (Phần III - Trả lời ngắn)",
       "content": "Nung nóng một lượng không khí trong điều kiện đẳng áp, người ta thấy nhiệt độ của nó tăng thêm 3 K , còn thể tích tăng thêm 1% thể tích ban đầu. Nhiệt độ ban đầu của lượng không khí bằng bao nhiêu độ C (làm tròn kết quả đến chữ số hàng đơn vị)?",
       "answerKey": "27",
-      "explanation": "$\\frac{V}{T} =$ const $\\Rightarrow \\frac{V}{T} = \\frac{1,01V}{T + 3} \\Rightarrow T = 300$ K = 27°C.\nTrả lời ngắn: 27."
+      "explanation": "$\\frac{V}{T} =$ const $\\Rightarrow \\frac{V}{T} = (1,01V)/(T + 3) \\Rightarrow T = 300$ K = 27°C.\nTrả lời ngắn: 27."
     },
     {
       "kind": "III",
@@ -788,7 +788,7 @@
       "title": "Câu 27 (Phần III - Trả lời ngắn)",
       "content": "Trong thí nghiệm đo nhiệt độ, một sinh viên dùng nhiệt kế Kelvin và nhiệt kế Fahrenheit để đo nhiệt độ của cùng một mẫu xác định, kết quả thu được số chỉ trên hai nhiệt kế là như nhau của cùng một nhiệt độ. Nhiệt độ trên thang Celsius tương ứng của mẫu là bao nhiêu độ C (làm tròn kết quả đến chữ số hàng đơn vị)?",
       "answerKey": "301",
-      "explanation": "$\\frac{t(°C) - 0}{100 - 0} = \\frac{T - 273}{373 - 273} = \\frac{T - 32}{212 - 32} \\Rightarrow t(°C) ≈ 301$.\nTrả lời ngắn: 301."
+      "explanation": "$(t(°C) - 0)/(100 - 0) = (T - 273)/(373 - 273) = (T - 32)/(212 - 32) \\Rightarrow t(°C) ≈ 301$.\nTrả lời ngắn: 301."
     },
     {
       "kind": "III",

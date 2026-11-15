@@ -761,22 +761,42 @@ export async function bootstrap(
           const letter = ['A', 'B', 'C', 'D'][optIdx] || opt.label || 'A';
           optCard.innerHTML = `<div class="option-letter">${escapeHtml(letter)}</div><div class="option-text">${renderMathText(opt.text)}</div>`;
 
+          const updateOptionUI = (chosenOptId: string, shouldFocus = false) => {
+            const qCard = root.querySelector(`[id="qcard-${q.questionVersionId}"]`);
+            if (qCard) {
+              const allOptCards = qCard.querySelectorAll('.option-card');
+              allOptCards.forEach((c: any) => {
+                const optId = c.getAttribute('data-option-id');
+                const isMatch = optId === chosenOptId;
+                if (isMatch) {
+                  c.classList.add('selected');
+                  setAttr(c, 'aria-checked', 'true');
+                  setAttr(c, 'tabindex', '0');
+                } else {
+                  c.classList.remove('selected');
+                  setAttr(c, 'aria-checked', 'false');
+                  setAttr(c, 'tabindex', '-1');
+                }
+              });
+            }
+            updatePalette();
+            if (shouldFocus) {
+              const targetCard = root.querySelector(`[data-qid="${q.questionVersionId}"][data-option-id="${chosenOptId}"]`) as HTMLElement;
+              if (targetCard && typeof targetCard.focus === 'function') {
+                targetCard.focus();
+              }
+            }
+          };
+
           const selectThis = async (shouldFocus = false) => {
             if (isSubmitted) return;
             responses[q.questionVersionId] = opt.optionId;
+            updateOptionUI(opt.optionId, shouldFocus);
             await saveStateToStorage({
               kind: 'I',
               questionVersionId: q.questionVersionId,
               selectedOptionId: opt.optionId,
             } as any);
-            renderExamPane();
-            updatePalette();
-            if (shouldFocus) {
-              const targetCard = root.querySelector(`[data-qid="${q.questionVersionId}"][data-option-id="${opt.optionId}"]`) as HTMLElement;
-              if (targetCard && typeof targetCard.focus === 'function') {
-                targetCard.focus();
-              }
-            }
           };
 
           optCard.addEventListener('click', () => selectThis(false));
@@ -788,30 +808,22 @@ export async function bootstrap(
               if (typeof e.preventDefault === 'function') e.preventDefault();
               const nextOpt = opts[(optIdx + 1) % opts.length];
               responses[q.questionVersionId] = nextOpt.optionId;
+              updateOptionUI(nextOpt.optionId, true);
               saveStateToStorage({
                 kind: 'I',
                 questionVersionId: q.questionVersionId,
                 selectedOptionId: nextOpt.optionId,
-              } as any).then(() => {
-                renderExamPane();
-                updatePalette();
-                const nextCard = root.querySelector(`[data-qid="${q.questionVersionId}"][data-option-id="${nextOpt.optionId}"]`) as HTMLElement;
-                if (nextCard && typeof nextCard.focus === 'function') nextCard.focus();
-              });
+              } as any);
             } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
               if (typeof e.preventDefault === 'function') e.preventDefault();
               const prevOpt = opts[(optIdx - 1 + opts.length) % opts.length];
               responses[q.questionVersionId] = prevOpt.optionId;
+              updateOptionUI(prevOpt.optionId, true);
               saveStateToStorage({
                 kind: 'I',
                 questionVersionId: q.questionVersionId,
                 selectedOptionId: prevOpt.optionId,
-              } as any).then(() => {
-                renderExamPane();
-                updatePalette();
-                const prevCard = root.querySelector(`[data-qid="${q.questionVersionId}"][data-option-id="${prevOpt.optionId}"]`) as HTMLElement;
-                if (prevCard && typeof prevCard.focus === 'function') prevCard.focus();
-              });
+              } as any);
             }
           });
 
@@ -834,14 +846,21 @@ export async function bootstrap(
 
           row.innerHTML = `<div class="statement-label">${escapeHtml(st.label || '')})</div><div class="statement-text">${renderMathText(st.text || '')}</div><div class="tf-toggle-group"><button type="button" class="tf-btn ${isTrueSelected ? 'selected-true selected' : ''}" data-val="true" aria-pressed="${isTrueSelected ? 'true' : 'false'}">Đúng</button><button type="button" class="tf-btn ${isFalseSelected ? 'selected-false selected' : ''}" data-val="false" aria-pressed="${isFalseSelected ? 'true' : 'false'}">Sai</button></div>`;
 
-          const btnT = row.querySelector('.tf-btn[data-val="true"]');
-          const btnF = row.querySelector('.tf-btn[data-val="false"]');
+          const btnT = row.querySelector('.tf-btn[data-val="true"]') as HTMLElement | null;
+          const btnF = row.querySelector('.tf-btn[data-val="false"]') as HTMLElement | null;
 
           if (btnT) {
             btnT.addEventListener('click', async () => {
               if (isSubmitted) return;
               if (!responses[q.questionVersionId]) responses[q.questionVersionId] = {};
               responses[q.questionVersionId][st.statementId] = true;
+              btnT.classList.add('selected-true', 'selected');
+              setAttr(btnT, 'aria-pressed', 'true');
+              if (btnF) {
+                btnF.classList.remove('selected-false', 'selected');
+                setAttr(btnF, 'aria-pressed', 'false');
+              }
+              updatePalette();
               const ansList = stmts.map((s: any) => ({
                 statementId: s.statementId,
                 value: responses[q.questionVersionId][s.statementId] ?? null,
@@ -851,8 +870,6 @@ export async function bootstrap(
                 questionVersionId: q.questionVersionId,
                 answers: ansList,
               } as any);
-              renderExamPane();
-              updatePalette();
             });
           }
           if (btnF) {
@@ -860,6 +877,13 @@ export async function bootstrap(
               if (isSubmitted) return;
               if (!responses[q.questionVersionId]) responses[q.questionVersionId] = {};
               responses[q.questionVersionId][st.statementId] = false;
+              btnF.classList.add('selected-false', 'selected');
+              setAttr(btnF, 'aria-pressed', 'true');
+              if (btnT) {
+                btnT.classList.remove('selected-true', 'selected');
+                setAttr(btnT, 'aria-pressed', 'false');
+              }
+              updatePalette();
               const ansList = stmts.map((s: any) => ({
                 statementId: s.statementId,
                 value: responses[q.questionVersionId][s.statementId] ?? null,
@@ -869,8 +893,6 @@ export async function bootstrap(
                 questionVersionId: q.questionVersionId,
                 answers: ansList,
               } as any);
-              renderExamPane();
-              updatePalette();
             });
           }
           table.appendChild(row);

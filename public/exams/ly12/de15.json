@@ -81,7 +81,7 @@
         }
       ],
       "correctOptionId": "ly12-de15-i-01-c",
-      "explanation": "$N = nN_A = (/)N_A$. Chọn C."
+      "explanation": "$N = nN_A = \\frac{m}{M}N_A$. Chọn C."
     },
     {
       "kind": "I",
@@ -141,7 +141,7 @@
         }
       ],
       "correctOptionId": "ly12-de15-i-03-c",
-      "explanation": "Khí giãn nở thì thể tích $V$ tăng $⇒ μ = (/)$ giảm. Chọn C."
+      "explanation": "Khí giãn nở thì thể tích $V$ tăng $⇒ μ = \\frac{N}{V}$ giảm. Chọn C."
     },
     {
       "kind": "I",
@@ -381,7 +381,7 @@
         }
       ],
       "correctOptionId": "ly12-de15-i-11-b",
-      "explanation": "Đẳng tích: $(/) = (/) = (/) ⇒ T = 400$ K. Chọn B."
+      "explanation": "Đẳng tích: $p/T =$ const $⇒ \\frac{p}{T} = \\frac{21p/20}{T+20} ⇒ T = 400$ K. Chọn B."
     },
     {
       "kind": "I",
@@ -471,7 +471,7 @@
         }
       ],
       "correctOptionId": "ly12-de15-i-14-c",
-      "explanation": "$m_{kl} c_{kl} (t_{kl} - t) = m_n c_n (t - t_n) ⇒ 0,15 · 500 · (t - 80) = 0,2 · 4200 · (80 - 20) ⇒ t = 752$°C. Chọn C."
+      "explanation": "$m_kl c_kl (t_kl - t) = m_n c_n (t - t_n) ⇒ 0,15 · 500 · (t - 80) = 0,2 · 4200 · (80 - 20) ⇒ t = 752$°C. Chọn C."
     },
     {
       "kind": "I",
@@ -502,7 +502,7 @@
         }
       ],
       "correctOptionId": "ly12-de15-i-15-c",
-      "explanation": "Đẳng tích $⇒ (/) = (/) ⇒ T = (/) · T_0 ⇒ T_0$ bằng nhau nên $(/)$ càng nhỏ thì $T$ càng nhỏ.\nLốp trước bên trái có: $(/) ≈ 1,066$.\nLốp trước bên phải có: $(/) ≈ 1,082$.\nLốp sau bên trái có: $(/) ≈ 1,063$.\nLốp sau bên phải có: $(/) ≈ 1,065$.\nVậy lốp sau bên trái có $(/)$ nhỏ nhất. Chọn C."
+      "explanation": "Đẳng tích $⇒ \\frac{p_0}{T_0} = \\frac{p}{T} ⇒ T = \\frac{p}{p_0} · T_0 ⇒ T_0$ bằng nhau nên $\\frac{p}{p_0}$ càng nhỏ thì $T$ càng nhỏ.\nLốp trước bên trái có: $\\frac{260}{244} ≈ 1,066$.\nLốp trước bên phải có: $\\frac{264}{244} ≈ 1,082$.\nLốp sau bên trái có: $\\frac{268}{252} ≈ 1,063$.\nLốp sau bên phải có: $\\frac{264}{248} ≈ 1,065$.\nVậy lốp sau bên trái có $\\frac{p}{p_0}$ nhỏ nhất. Chọn C."
     },
     {
       "kind": "I",
@@ -594,7 +594,7 @@
         }
       ],
       "correctOptionId": "ly12-de15-i-18-a",
-      "explanation": "Theo định luật Boyle có: $p_1 V = p_1'(V + 3V) ⇒ p_1' = (/)$; $p_2 · 3V = p_2'(V + 3V) ⇒ p_2' = (/)$.\nTheo định luật Dalton có: $p' = p_1' + p_2' = (/)$. Chọn A."
+      "explanation": "Theo định luật Boyle có: $p_1 V = p_1'(V + 3V) ⇒ p_1' = \\frac{p_1}{4}$; $p_2 · 3V = p_2'(V + 3V) ⇒ p_2' = \\frac{3p_2}{4}$.\nTheo định luật Dalton có: $p' = p_1' + p_2' = \\frac{p_1 + 3p_2}{4}$. Chọn A."
     },
     {
       "kind": "II",
@@ -612,7 +612,7 @@
         {
           "statementId": "ly12-de15-ii-01-b",
           "label": "b",
-          "text": "Nhiệt độ của một vật càng cao thì động năng trung bình của các phân từ trong vật càng lớn.",
+          "text": "Nhiệt độ của một vật càng cao thì động năng trung bình của các phân tử trong vật càng lớn.",
           "answer": true,
           "explanation": "Đúng."
         },
@@ -644,7 +644,14 @@
           "label": "a",
           "text": "khối lượng riêng không đổi.",
           "answer": false,
-          "explanation": "$p, V$ thay đổi $⇒ D = (/)$ thay đổi $⇒$ a) Sai; c) Sai; d) Sai."
+          "explanation": "$p, V$ thay đổi $⇒ D = \\frac{m}{V}$ thay đổi $⇒$ a) Sai; c) Sai; d) Sai."
+        },
+        {
+          "statementId": "ly12-de15-ii-02-b",
+          "label": "b",
+          "text": "nhiệt độ không đổi.",
+          "answer": true,
+          "explanation": "Đúng. Nhiệt độ không đổi thì $pV$ là hằng số $⇒ p = C · \\frac{1}{V}$ là đường thẳng kéo dài đi qua gốc tọa độ $⇒$ b) Đúng."
         },
         {
           "statementId": "ly12-de15-ii-02-c",
@@ -659,13 +666,6 @@
           "text": "thể tích không đổi.",
           "answer": false,
           "explanation": "Sai. Thể tích thay đổi."
-        },
-        {
-          "statementId": "ly12-de15-ii-02-b",
-          "label": "b",
-          "text": "nhiệt độ không đổi.",
-          "answer": true,
-          "explanation": "Đúng. Nhiệt độ không đổi thì $pV$ là hằng số $⇒ p = C · (/)$ là đường thẳng kéo dài đi qua gốc tọa độ $⇒$ b) Đúng."
         }
       ]
     },
@@ -695,7 +695,7 @@
           "label": "c",
           "text": "Thể tích của khí sau khi thuỷ ngân chảy vào bình là 100 cm³",
           "answer": true,
-          "explanation": "Đúng. Quá trình đẳng áp: $(/) = (/) ⇒ (/) = (/) ⇒ V_2 = 100$ cm³."
+          "explanation": "Đúng. Quá trình đẳng áp: $T_1 = 147 + 273 = 420$ K, $T_2 = 27 + 273 = 300$ K; $\\frac{V}{T} = const ⇒ \\frac{140}{420} = \\frac{V_2}{300} ⇒ V_2 = 100$ cm³."
         },
         {
           "statementId": "ly12-de15-ii-03-d",
@@ -725,14 +725,14 @@
           "label": "b",
           "text": "Khi ghế để trống, áp suất của khí trong xilanh là 1,2.10⁵ Pa .",
           "answer": true,
-          "explanation": "Đúng. $p_b = p_0 + (/) = 10^5 + (/) = 1,2 · 10^5$ Pa."
+          "explanation": "Đúng. $p_b = p_0 + \\frac{m_gx g}{S} = 10^5 + \\frac{6 · 10}{30 · 10^-4} = 1,2 · 10^5$ Pa."
         },
         {
           "statementId": "ly12-de15-ii-04-c",
           "label": "c",
           "text": "Khi học sinh ngồi trên ghế, áp suất của khí trong xilanh là 2.10⁵ Pa .",
           "answer": true,
-          "explanation": "Đúng. $p_c = p_0 + (/) = 10^5 + (/) = 2 · 10^5$ Pa."
+          "explanation": "Đúng. $p_c = p_0 + \\frac{(m_gx + m_hs)g}{S} = 10^5 + \\frac{(6 + 24) · 10}{30 · 10^-4} = 2 · 10^5$ Pa."
         },
         {
           "statementId": "ly12-de15-ii-04-d",
@@ -757,7 +757,7 @@
       "title": "Câu 24 (Phần III - Trả lời ngắn)",
       "content": "Một bình kín có dung tích không đổi chứa khí. Khi nhiệt độ của khí trong bình là 27°C thì áp suất khí trong bình là 2 atm . Phải nung nóng khí trong bình đến nhiệt độ bằng bao nhiêu độ C để áp suất khí là 2,2 atm (làm tròn kết quả đến chữ số hàng đơn vị)?",
       "answerKey": "57",
-      "explanation": "Đẳng tích: $(/) = (/) ⇒ (/) = (/) ⇒ T_2 = 330$ K $⇒ t_2 = 330 - 273 = 57$°C. Trả lời ngắn: 57."
+      "explanation": "Đẳng tích: $\\frac{p}{T} = const ⇒ \\frac{2}{27 + 273} = \\frac{2,2}{T_2} ⇒ T_2 = 330$ K $⇒ t_2 = 330 - 273 = 57$°C. Trả lời ngắn: 57."
     },
     {
       "kind": "III",
@@ -765,7 +765,7 @@
       "title": "Câu 25 (Phần III - Trả lời ngắn)",
       "content": "Tỉ số khối lượng của hai vật A và B là 3/4 . Sau khi chúng hấp thụ một nhiệt lượng như nhau, tỉ số nhiệt độ tăng thêm của hai vật A và B là 2 . Tỉ số nhiệt dung riêng của A và B bằng bao nhiêu (làm tròn kết quả đến chữ số hàng phần mười)?",
       "answerKey": "0,7",
-      "explanation": "$Q = mcΔt ⇒ (/) = (/) ⇒ 1 = (/) · (/) · 2 ⇒ (/) = (/) ≈ 0,7$. Trả lời ngắn: 0,7."
+      "explanation": "$Q = mcΔt ⇒ \\frac{Q_A}{Q_B} = \\frac{m_A}{m_B} · \\frac{c_A}{c_B} · \\frac{Δt_A}{Δt_B} ⇒ 1 = \\frac{3}{4} · \\frac{c_A}{c_B} · 2 ⇒ \\frac{c_A}{c_B} = \\frac{2}{3} ≈ 0,7$. Trả lời ngắn: 0,7."
     },
     {
       "kind": "III",
@@ -773,7 +773,7 @@
       "title": "Câu 26 (Phần III - Trả lời ngắn)",
       "content": "Trong quá trình đẳng tích, khi nhiệt độ khối khí tăng thêm 20°C thì áp suất tăng thêm 1/40 lần lượng áp suất ban đầu. Nhiệt độ ban đầu của khối khí bằng bao nhiêu K?",
       "answerKey": "800",
-      "explanation": "Đẳng tích: $(/) = (/) ⇒ T = 800$ K. Trả lời ngắn: 800."
+      "explanation": "Đẳng tích: $\\frac{p}{T} = const ⇒ \\frac{p}{T} = \\frac{1,025p}{T + 20} ⇒ T = 800$ K. Trả lời ngắn: 800."
     },
     {
       "kind": "III",
