@@ -6,6 +6,7 @@
   <title>Cunata — Nền Tảng Luyện Thi & Khảo Sát Năng Lực GDPT 2018</title>
   <link rel="stylesheet" href="../../styles/style.css">
   <style>
+    /* Bổ sung kiểu hiển thị công thức và định dạng hình học offline */
     .math-expr {
       font-family: "Cambria Math", "Latin Modern Math", KaTeX_Main, "Times New Roman", serif;
       font-style: italic;
@@ -99,7 +100,7 @@
       </div>
 
       <div class="palette-grid" id="paletteGrid">
-        <!-- Rendered dynamically -->
+        <!-- Các nút câu hỏi 1..8 sẽ được render động -->
       </div>
 
       <div class="palette-legend">
@@ -137,7 +138,7 @@
 
     <!-- Khu Vực Hiển Thị Đề Thi (Exam Pane) -->
     <main class="exam-pane" id="examPane">
-      <!-- Rendered dynamically -->
+      <!-- Nội dung các câu hỏi sẽ được render động theo 3 phần -->
     </main>
   </div>
 
@@ -230,7 +231,7 @@
         Chi Tiết Bài Làm & Lời Giải Từng Câu
       </h2>
       <div id="reviewQuestionsList">
-        <!-- Rendered dynamically -->
+        <!-- Render danh sách câu hỏi kèm đáp án của thí sinh, đáp án chuẩn và lời giải -->
       </div>
     </div>
   </div>
@@ -259,6 +260,8 @@
         </div>
         <button type="button" class="btn-close" id="btnCloseBuilder" aria-label="Đóng">&times;</button>
       </div>
+
+      <!-- Settings Grid -->
       <div class="builder-section">
         <h3 class="builder-section-title">1. Thông Tin & Cài Đặt Đề Thi</h3>
         <div class="builder-form-grid">
@@ -307,10 +310,14 @@
           </div>
         </div>
       </div>
+
+      <!-- Max Score Summary -->
       <div class="builder-section">
         <h3 class="builder-section-title">2. Cấu Trúc Điểm Số Dự Tính (Công Thức Tùy Chỉnh GDPT 2018)</h3>
         <div class="builder-score-summary" id="builderScoreSummary"></div>
       </div>
+
+      <!-- Questions List -->
       <div class="builder-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
           <h3 class="builder-section-title" style="margin-bottom: 0;">3. Danh Sách Câu Hỏi (<span id="builderQuestionCount">0</span> câu)</h3>
@@ -321,13 +328,20 @@
             <button type="button" class="btn-secondary" id="btnLoadSampleToBuilder">Nạp đề mẫu</button>
             <button type="button" class="btn-secondary" id="btnImportExamJson">📥 Nạp đề từ file</button>
             <input type="file" id="builderFileInput" accept=".json,application/json" style="display: none;" />
+            <button type="button" class="btn-secondary" id="btnImportDocx">📄 Nhập từ DOCX</button>
+            <input type="file" id="docxFileInput" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display: none;" />
           </div>
         </div>
-        <div id="builderQuestionsList" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+        <div id="builderQuestionsContainer" class="builder-questions-list"></div>
       </div>
-      <div class="builder-footer-actions">
-        <button type="button" class="btn-secondary" id="btnExportExamJson">📤 Xuất file đề (JSON)</button>
-        <button type="button" class="btn-submit" id="btnApplyExamToApp">⚡ Áp dụng & Làm bài ngay</button>
+
+      <div id="builderValidationErrors" class="builder-errors" style="display: none;"></div>
+
+      <!-- Builder Actions -->
+      <div class="modal-actions" style="margin-top: 1.5rem;">
+        <button type="button" class="btn-secondary" id="btnCancelBuilder">Đóng</button>
+        <button type="button" class="btn-secondary" id="btnExportExamJson">💾 Tải file JSON</button>
+        <button type="button" class="btn-submit" id="btnPublishToRunner">🚀 Nạp vào phòng thi ngay</button>
       </div>
     </div>
   </div>
@@ -337,82 +351,70 @@
     <div class="modal-content builder-modal-content">
       <div class="builder-header">
         <div>
-          <h2 class="builder-title" id="bankModalTitle">Ngân Hàng Câu Hỏi GDPT 2018 (Question Bank)</h2>
-          <div class="builder-subtitle">Lưu trữ và tái sử dụng câu hỏi theo chuẩn phân loại 5 cấp độ GDPT 2018</div>
+          <h2 class="builder-title" id="bankModalTitle">Ngân Hàng Câu Hỏi Tái Sử Dụng (Question Bank)</h2>
+          <div class="builder-subtitle">Lưu trữ câu hỏi theo môn, khối lớp và mức độ · Tái sử dụng cho nhiều đề thi</div>
         </div>
         <button type="button" class="btn-close" id="btnCloseBank" aria-label="Đóng">&times;</button>
       </div>
-      <div class="builder-section">
-        <h3 class="builder-section-title">Bộ Lọc Phân Loại</h3>
-        <div class="builder-form-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
-          <div class="form-group">
-            <label for="bankFilterSubject">Môn học:</label>
-            <select id="bankFilterSubject" class="form-input">
-              <option value="">-- Tất cả môn --</option>
-              <option value="Toán học">Toán học</option>
-              <option value="Vật lí">Vật lí</option>
-              <option value="Hóa học">Hóa học</option>
-              <option value="Sinh học">Sinh học</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="bankFilterGrade">Khối lớp:</label>
-            <select id="bankFilterGrade" class="form-input">
-              <option value="">-- Tất cả khối --</option>
-              <option value="12">Lớp 12</option>
-              <option value="11">Lớp 11</option>
-              <option value="10">Lớp 10</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="bankFilterTopic">Chủ đề / Chương:</label>
-            <select id="bankFilterTopic" class="form-input">
-              <option value="">-- Tất cả chủ đề --</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="bankFilterLesson">Bài học:</label>
-            <select id="bankFilterLesson" class="form-input">
-              <option value="">-- Tất cả bài học --</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="bankFilterDifficulty">Mức độ nhận thức:</label>
-            <select id="bankFilterDifficulty" class="form-input">
-              <option value="">-- Tất cả mức độ --</option>
-              <option value="Nhận biết">Nhận biết</option>
-              <option value="Thông hiểu">Thông hiểu</option>
-              <option value="Vận dụng">Vận dụng</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="bankFilterKind">Dạng câu hỏi:</label>
-            <select id="bankFilterKind" class="form-input">
-              <option value="">-- Tất cả dạng --</option>
-              <option value="I">Phần I (4 lựa chọn)</option>
-              <option value="II">Phần II (Đúng/Sai)</option>
-              <option value="III">Phần III (Trả lời ngắn)</option>
-            </select>
-          </div>
-          <div class="form-group" style="grid-column: 1 / -1;">
-            <label for="bankSearchText">Tìm kiếm nội dung:</label>
-            <input type="text" id="bankSearchText" class="form-input" placeholder="Nhập từ khóa tìm kiếm trong câu hỏi..." />
-          </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+          <button type="button" class="btn-secondary bank-filter-btn active" data-filter="all">Tất cả (<span id="bankCountAll">0</span>)</button>
+          <button type="button" class="btn-secondary bank-filter-btn" data-filter="I">Phần I (<span id="bankCountI">0</span>)</button>
+          <button type="button" class="btn-secondary bank-filter-btn" data-filter="II">Phần II (<span id="bankCountII">0</span>)</button>
+          <button type="button" class="btn-secondary bank-filter-btn" data-filter="III">Phần III (<span id="bankCountIII">0</span>)</button>
+          <input type="text" id="bankSearchInput" class="form-input" placeholder="🔍 Tìm kiếm câu hỏi..." style="padding: 0.35rem 0.5rem; font-size: 0.8125rem; width: 170px;" />
+          <select id="bankDifficultyFilter" class="form-input" style="padding: 0.35rem 0.5rem; font-size: 0.8125rem; width: auto;">
+            <option value="all">Mọi mức độ</option>
+            <option value="nhan_biet">Nhận biết</option>
+            <option value="thong_hieu">Thông hiểu</option>
+            <option value="van_dung">Vận dụng</option>
+          </select>
+          <select id="bankGradeFilter" class="form-input" style="padding: 0.35rem 0.5rem; font-size: 0.8125rem; width: auto;">
+            <option value="all">Mọi khối lớp</option>
+            <option value="12">Lớp 12</option>
+            <option value="11">Lớp 11</option>
+            <option value="10">Lớp 10</option>
+          </select>
+          <select id="bankSubjectFilter" class="form-input" style="padding: 0.35rem 0.5rem; font-size: 0.8125rem; width: auto;">
+            <option value="all">Mọi môn</option>
+            <option value="Toán học">Toán học</option>
+            <option value="Vật lí">Vật lí</option>
+            <option value="Hóa học">Hóa học</option>
+            <option value="Sinh học">Sinh học</option>
+            <option value="Lịch sử">Lịch sử</option>
+            <option value="Địa lí">Địa lí</option>
+            <option value="Tin học">Tin học</option>
+            <option value="Công nghệ">Công nghệ</option>
+          </select>
+          <select id="bankTopicFilter" class="form-input" style="padding: 0.35rem 0.5rem; font-size: 0.8125rem; width: auto;">
+            <option value="all">Mọi chủ đề / chương</option>
+          </select>
+          <select id="bankLessonFilter" class="form-input" style="padding: 0.35rem 0.5rem; font-size: 0.8125rem; width: auto;">
+            <option value="all">Mọi bài học</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+          <button type="button" class="btn-secondary" id="btnSeedBankSample">Khôi phục câu mẫu</button>
+          <button type="button" class="btn-secondary" id="btnImportBankJson">📥 Nạp từ JSON</button>
+          <input type="file" id="bankFileInput" accept=".json,application/json" style="display: none;" />
+          <button type="button" class="btn-secondary" id="btnExportBankJson">Xuất ngân hàng (JSON)</button>
+          <button type="button" class="btn-secondary" id="btnClearBank" style="color: var(--danger);">🗑 Xóa toàn bộ</button>
         </div>
       </div>
-      <div class="builder-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-          <h3 class="builder-section-title" style="margin-bottom: 0;">Danh Sách Câu Hỏi (<span id="bankMatchCount">0</span> câu)</h3>
-        </div>
-        <div id="bankEntriesList" style="display: flex; flex-direction: column; gap: 1rem;"></div>
-      </div>
-      <div class="builder-footer-actions">
-        <button type="button" class="btn-secondary" id="btnExportBankJson">📤 Sao lưu ngân hàng (JSON)</button>
-        <button type="button" class="btn-secondary" id="btnImportBankJson">📥 Nhập câu hỏi từ file</button>
-        <input type="file" id="bankFileInput" accept=".json,application/json" style="display: none;" />
+
+      <div id="bankQuestionsContainer" class="builder-questions-list" style="max-height: 480px; overflow-y: auto;"></div>
+
+      <div class="modal-actions" style="margin-top: 1.5rem;">
+        <button type="button" class="btn-secondary" id="btnCancelBank">Đóng</button>
       </div>
     </div>
   </div>
+
+  <!-- ================= Modal Xem Trước & Hiệu Đính Nhập (Import Preview) ================= -->
+  <div class="modal-overlay" id="previewModal" style="display: none; z-index: 1100;" role="dialog" aria-modal="true" aria-label="Xem trước đề nhập"></div>
+
+  <!-- ================= Ứng Dụng Client Script (ES Module) ================= -->
 
   <!-- Entrypoint for modular application -->
   <script type="module" src="./main.js"></script>

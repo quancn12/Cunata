@@ -667,17 +667,17 @@
       } else if (typeof val === 'number') {
         return formatScore(val);
       }
-      if (den === 1n) return num.toString();
-      let d = den < 0n ? -den : den;
-      while (d % 2n === 0n) d /= 2n;
-      while (d % 5n === 0n) d /= 5n;
-      if (d === 1n) {
-        const n = Number(num) / Number(den);
-        const fixed = n.toFixed(2).replace(/\.?0+$/, '');
-        return fixed.replace('.', ',');
-      }
-      const approx = (Number(num) / Number(den)).toFixed(2).replace('.', ',');
-      return num.toString() + '/' + den.toString() + ' (\u2248 ' + approx + ')';
+      if (den === 1n || num % den === 0n) return (num / den).toString();
+      const isNeg = (num < 0n) !== (den < 0n);
+      const absNum = num < 0n ? -num : num;
+      const absDen = den < 0n ? -den : den;
+      const scaled = absNum * 100n;
+      let q = scaled / absDen;
+      const rem = scaled % absDen;
+      if (rem * 2n >= absDen) q += 1n;
+      const intPart = q / 100n;
+      const decPart = (q % 100n).toString().padStart(2, '0');
+      return (isNeg ? '-' : '') + intPart.toString() + ',' + decPart;
     }
 
     const SHORT_ANSWER_MAX_LENGTH = 4;
@@ -1732,7 +1732,7 @@
     }
     function formatScore(num) {
       if (typeof num !== 'number') return '0';
-      const fixed = num % 1 === 0 ? num.toFixed(0) : num.toFixed(2).replace(/\.?0+$/, '');
+      const fixed = num % 1 === 0 ? num.toFixed(0) : num.toFixed(2);
       return fixed.replace('.', ',');
     }
 
@@ -3681,7 +3681,7 @@
       if (!listContainer) return;
       listContainer.innerHTML = '';
 
-      const answersReleased = (currentExam && (currentExam.releasePolicy === 'after_deadline' || (currentExam.settings && currentExam.settings.releasePolicy === 'after_deadline'))) ? (studentState.deadline && Date.now() >= studentState.deadline) : true;
+      const answersReleased = true; // Quyết định D08 (16/11/2026): sau khi nộp, luôn hiện lời giải chi tiết mọi câu
 
       // Render Attempt History table if history exists
       const historySection = document.getElementById('attemptHistorySection');
@@ -3788,7 +3788,7 @@
 
     function generateOfflineReportHtml(res) {
       if (!res) return '';
-      const answersReleased = (currentExam && (currentExam.releasePolicy === 'after_deadline' || (currentExam.settings && currentExam.settings.releasePolicy === 'after_deadline'))) ? (studentState.deadline && Date.now() >= studentState.deadline) : true;
+      const answersReleased = true; // Quyết định D08 (16/11/2026): sau khi nộp, luôn hiện lời giải chi tiết mọi câu
       const itemsHtml = (res.questionResults || []).map((qr) => {
         let badgeText = 'Chưa làm';
         let badgeColor = '#6b7280';

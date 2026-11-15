@@ -342,3 +342,14 @@ Nguồn đầy đủ: `docs/decisions/BANG-QUYET-DINH.md`. Kiểm định tự �
 - **D03 = B (chốt đợt 2).** Bài đang làm lưu bằng IndexedDB trên máy học sinh; mở lại cùng máy/cùng trình duyệt phải vào đúng bài đang làm dở, đồng hồ tính theo hạn nộp.
 - **D04 = Google Sheet + Apps Script (chốt đợt 2, chi phí 0).** Chưa bật gửi mạng cho tới khi Trưởng phòng triển khai endpoint; giữ xuất file và nút tải kết quả.
 - **D06 (chốt đợt 2).** DOCX là đường nhập chính; PDF chỉ xem và nhập tay, không thêm thư viện.
+
+## 15. Danh sách đề và chọn đề (Trưởng phòng chốt 16/11/2026)
+
+Trưởng phòng chốt: bộ đề Vật lí 12 hàng tuần đưa lên web công khai; học sinh chọn đề trong danh sách. Kiểm định: `test/claude-check/web.test.mjs` (hai ca "chọn đề").
+
+- **Dữ liệu:** `public/exams/index.json` = `{ "version": 1, "exams": [ { id, title, subject, grade, durationMinutes, questionCount, group, url } ] }`, do `ops/exams/manifest.py` sinh (KHÔNG sửa tay, KHÔNG gắn cứng danh sách trong mã). `url` là đường dẫn tương đối so với trang (ví dụ `public/exams/ly12/de10.json`). Bản build phải chép nguyên thư mục `public/` vào `dist/public/`.
+- **Giao diện (cả `index.html` gốc lẫn `dist/`):** nút `#btnOpenExamList` ("Chọn đề") luôn thấy ở màn làm bài và màn báo cáo. Bấm mở hộp thoại `#examListModal` (`role="dialog"`, `aria-modal="true"`, Esc đóng, tiêu điểm vào trong hộp thoại). Trong đó các đề gom theo `group`; mỗi đề là một `button.exam-list-item` có `data-exam-url="<url>"`, hiện tiêu đề, số câu, thời gian.
+- **Hành vi:** bấm một đề → tải JSON theo `url` (tương đối, chạy được dưới `/Cunata/`) → nạp vào phòng thi đúng như khi nạp file qua `#examFileInput` (cùng kiểm tra hợp lệ, cùng cách xử lý bài đang làm dở: hỏi xác nhận trước khi bỏ bài dở) → đóng hộp thoại. Đề đã có bài làm dở trên máy thì mở lại đúng bài dở đó.
+- **Liên kết thẳng:** `?exam=<examId>` trên địa chỉ trang → khởi động xong nạp luôn đề có `id` đó.
+- **Lỗi:** không tải được danh sách hoặc đề (mất mạng lần đầu, file hỏng) → báo rõ trong hộp thoại, không treo, không làm mất bài đang làm.
+- **Offline (dist):** đề đã mở một lần phải mở lại được khi mất mạng.

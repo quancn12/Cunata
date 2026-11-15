@@ -37,3 +37,4 @@ node --test --test-name-pattern="^dist" test/claude-check/web.test.mjs   # chỉ
 | Nộp bài | `#btnSubmit` → hộp thoại `#submitModal` → `#btnConfirmSubmit` / `#btnCancelSubmit` |
 | Điểm | `#scorePartI`, `#scorePartII`, `#scorePartIII`, `#scoreTotal` dạng `điểm / tối đa`; `#reportSubtitle` có tên thí sinh |
 | Báo cáo | `#btnDownloadReportHtml`, `#btnRestart`, `#reviewQuestionsList` |
+| Chọn đề | `#btnOpenExamList` → hộp thoại `#examListModal` chứa `button.exam-list-item[data-exam-url]`; dữ liệu từ `public/exams/index.json`; liên kết thẳng `?exam=<examId>` (WEB-contract mục 15) |

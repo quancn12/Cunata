@@ -5,6 +5,7 @@
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { launchBrowser, sleep, startServer } from './harness.mjs';
 import {
@@ -328,6 +329,43 @@ for (const target of TARGETS) {
       await pickOption(page, qI(1), 'a');
       await submit(page);
       assert.ok(await over() <= 1, `màn báo cáo tràn ngang ${await over()}px ở bề rộng 360px`);
+    });
+
+    // WEB-contract mục 15 (Trưởng phòng chốt 16/11/2026: đề đưa lên web công khai, học sinh chọn đề trong danh sách).
+    const manifestFile = join(target.dir, 'public', 'exams', 'index.json');
+    const readManifest = () => {
+      assert.ok(existsSync(manifestFile), `thiếu ${target.name === 'dist' ? 'dist/' : ''}public/exams/index.json (danh sách đề; bản dist phải chép nguyên thư mục public/)`);
+      const m = JSON.parse(readFileSync(manifestFile, 'utf8'));
+      assert.ok(Array.isArray(m.exams) && m.exams.length >= 3, 'danh sách đề phải có ít nhất 3 đề');
+      return m.exams.map((e) => ({ ...e, exam: JSON.parse(readFileSync(join(target.dir, e.url), 'utf8')) }));
+    };
+    const titleIs = (page, e) => page.waitFor((t, n) => (document.getElementById('examTitle')?.textContent ?? '').trim() === t && document.querySelectorAll('#examPane .question-card').length === n,
+      `đề "${e.exam.title}" được nạp vào phòng thi (đúng tiêu đề, đủ ${e.exam.questions.length} câu)`, 10000, e.exam.title, e.exam.questions.length);
+
+    run('[app][student] chọn đề: nút "Chọn đề" mở danh sách đủ các đề trong public/exams/index.json, bấm một đề thì vào làm đề đó', async (ctx) => {
+      const exams = readManifest();
+      const page = await openApp(ctx, server, target);
+      await page.click('#btnOpenExamList');
+      await page.waitFor(() => { const m = document.getElementById('examListModal'); return !!m && getComputedStyle(m).display !== 'none' && m.querySelectorAll('.exam-list-item[data-exam-url]').length > 0; },
+        'bấm #btnOpenExamList mở hộp thoại #examListModal có các mục .exam-list-item[data-exam-url]', 8000);
+      const items = await page.eval(() => [...document.querySelectorAll('#examListModal .exam-list-item[data-exam-url]')].map((b) => ({ url: b.getAttribute('data-exam-url'), text: b.textContent.replace(/\s+/g, ' ').trim() })));
+      assert.deepEqual(items.map((i) => i.url).sort(), exams.map((e) => e.url).sort(), 'danh sách trên màn hình phải đúng bằng danh sách trong index.json');
+      for (const e of exams) assert.ok(items.find((i) => i.url === e.url).text.includes(e.title), `mục của đề phải hiện tiêu đề "${e.title}"`);
+      const pick = exams[exams.length - 1];
+      await page.click(`#examListModal .exam-list-item[data-exam-url="${pick.url}"]`);
+      await titleIs(page, pick);
+      assert.equal(await isVisible(page, 'examListModal'), false, 'chọn đề xong hộp thoại danh sách phải đóng');
+      const broken = await page.eval(() => [...document.querySelectorAll('#examPane img')].filter((i) => !(i.complete && i.naturalWidth > 0)).map((i) => i.getAttribute('src')));
+      assert.deepEqual(broken, [], 'hình trong đề vừa chọn phải hiện được');
+      assert.deepEqual(pageProblems(page), [], 'không lỗi JS hay request hỏng khi chọn đề');
+    });
+
+    run('[app][student] chọn đề: mở thẳng bằng đường dẫn ?exam=<examId>', async (ctx) => {
+      const exams = readManifest();
+      const pick = exams[0];
+      const page = await ctx.newPage();
+      await page.goto(server.url + target.path + '?exam=' + encodeURIComponent(pick.id));
+      await titleIs(page, pick);
     });
 
     if (target.name === 'dist') {

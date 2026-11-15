@@ -1,0 +1,35 @@
+{
+ "version": 1,
+ "exams": [
+  {
+   "id": "exam-thpt-hoa-repeating-demo",
+   "title": "Đề Tùy Chỉnh Minh Họa Môn Hóa Học — GDPT 2018 (3 Câu Trả Lời Ngắn Phần III)",
+   "subject": "Hóa học",
+   "grade": 12,
+   "durationMinutes": 15,
+   "questionCount": 3,
+   "group": "Đề minh họa",
+   "url": "public/exams/hoa-repeating.json"
+  },
+  {
+   "id": "exam-thpt-ly-part-i-demo",
+   "title": "Đề Tùy Chỉnh Minh Họa Môn Vật Lí — GDPT 2018 (20 Câu Trắc Nghiệm Phần I)",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 30,
+   "questionCount": 20,
+   "group": "Đề minh họa",
+   "url": "public/exams/ly-part-I.json"
+  },
+  {
+   "id": "exam-thpt-toan-full-demo",
+   "title": "Đề Tùy Chỉnh Minh Họa Môn Toán — GDPT 2018 (Đầy Đủ Phần I, II, III)",
+   "subject": "Toán học",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 8,
+   "group": "Đề minh họa",
+   "url": "public/exams/toan-full.json"
+  }
+ ]
+}
