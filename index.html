@@ -3983,15 +3983,10 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
     function downloadResultJson() {
-      console.log('[DEBUG downloadResultJson]', {
-        hasState: !!studentState,
-        hasScore: !!(studentState && studentState.scoreResult),
-        submitted: studentState && studentState.submitted
-      });
       if (!studentState || !studentState.scoreResult) return;
       const res = studentState.scoreResult;
       const durationSeconds = studentState.startedAt ? Math.max(0, Math.round((Date.now() - studentState.startedAt) / 1000)) : 0;
@@ -4010,8 +4005,11 @@
         scoreDTO: res,
         responses: studentState.responses || {}
       };
-      payload.results = [payload];
-      const jsonContent = JSON.stringify(payload, null, 2);
+      const container = {
+        ...payload,
+        results: [{ ...payload }]
+      };
+      const jsonContent = JSON.stringify(container, null, 2);
       const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -4020,7 +4018,7 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
     const btnDownloadResultJson = document.getElementById('btnDownloadResultJson');

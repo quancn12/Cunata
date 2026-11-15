@@ -124,9 +124,16 @@ export function formatRationalScore(val: string): string {
   }
   if (!r) return val;
   if (r.den === 1n) return r.num.toString();
-  const n = Number(r.num) / Number(r.den);
-  const fixed = n.toFixed(2).replace('.', ',');
-  return `${r.num}/${r.den} (~${fixed})`;
+  let d = r.den < 0n ? -r.den : r.den;
+  while (d % 2n === 0n) d /= 2n;
+  while (d % 5n === 0n) d /= 5n;
+  if (d === 1n) {
+    const n = Number(r.num) / Number(r.den);
+    const fixed = n.toFixed(2).replace(/\.?0+$/, '');
+    return fixed.replace('.', ',');
+  }
+  const approx = (Number(r.num) / Number(r.den)).toFixed(2).replace('.', ',');
+  return `${r.num}/${r.den} (~${approx})`;
 }
 
 // ---------------------------------------------------------------------------

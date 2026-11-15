@@ -172,6 +172,28 @@ export function parseDocumentXml(
         idGenerator,
       );
       documentBlocks.push(tblBlock);
+
+      // Also create a synthetic ParsedParagraph for the table so segmentation preserves table in question drafts
+      let tableText = "";
+      if (tblBlock.type === "table") {
+        for (const row of tblBlock.rows) {
+          for (const cell of row) {
+            for (const blk of cell.blocks) {
+              if (blk.type === "text" && blk.text) {
+                tableText += (tableText ? "\n" : "") + blk.text;
+              }
+            }
+          }
+        }
+      }
+      parsedParagraphs.push({
+        index: paragraphCounter++,
+        text: tableText,
+        rawText: tableText,
+        runs: [],
+        blocks: [tblBlock],
+        flags: [],
+      });
     }
   }
 
@@ -424,7 +446,7 @@ function extractDrawingImage(
   let altText = "Hình ảnh DOCX";
   if (docPrElements.length > 0) {
     const docPr = docPrElements[0]!;
-    altText = getAttr(docPr, "descr") ?? getAttr(docPr, "title") ?? altText;
+    altText = getAttr(docPr, "descr") ?? getAttr(docPr, "title") ?? getAttr(docPr, "name") ?? altText;
   }
 
   return createAssetFromZip(

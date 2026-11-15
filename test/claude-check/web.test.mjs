@@ -180,19 +180,53 @@ for (const target of TARGETS) {
       assert.match(seen.text, /0[.,]25/, 'file báo cáo phải có điểm 0,25');
     });
 
-    run('[report][student] chính sách after_deadline: nộp sớm không được lộ đáp án và lời giải (cả trang lẫn file tải về)', async (ctx) => {
+    // QUYẾT ĐỊNH D08 của Trưởng phòng (16/11/2026): sau khi nộp, học sinh có lời giải chi tiết của MỌI câu; có mục tải báo cáo.
+    // (Thay cho ca "after_deadline không lộ đáp án" trước đây: không còn chế độ giấu lời giải sau khi nộp.)
+    for (const policy of ['immediate', 'after_deadline']) {
+      run(`[report][student] D08: sau khi nộp, báo cáo hiện lời giải chi tiết của mọi câu, file tải về cũng có (đề ghi releasePolicy=${policy})`, async (ctx) => {
+        const page = await openApp(ctx, server, target);
+        const exam = makeExam({ id: 'claude-check-d08-' + policy, title: 'Đề kiểm định lời giải sau khi nộp (' + policy + ')', settings: { releasePolicy: policy } });
+        await loadExam(page, exam);
+        await pickOption(page, qI(1), 'b');            // 1 câu sai, các câu còn lại bỏ trống: vẫn phải có lời giải cho tất cả
+        await waitSaved(page);
+        await submit(page);
+        const count = (s) => s.split(SECRET).length - 1;
+        const text = await page.eval(() => document.getElementById('reportWrapper')?.innerText ?? '');
+        assert.ok(count(text) >= exam.questions.length, `Quyết định D08: báo cáo phải hiện lời giải của cả ${exam.questions.length} câu (kể cả câu sai, câu bỏ trống); mới thấy ${count(text)} lời giải`);
+        await page.click('#btnDownloadReportHtml');
+        const dl = await ctx.waitDownload();
+        assert.ok(count(dl.text) >= exam.questions.length, `Quyết định D08: file báo cáo tải về phải có lời giải của cả ${exam.questions.length} câu; mới thấy ${count(dl.text)}`);
+      });
+    }
+
+    // QUYẾT ĐỊNH D02 của Trưởng phòng (16/11/2026): điểm không nguyên LUÔN hiện đúng 2 chữ số thập phân (dấu phẩy); điểm nguyên hiện số nguyên.
+    run('[report][student] D02: điểm không nguyên luôn hiện 2 chữ số thập phân (0,50; 4,75), điểm nguyên không có phần thập phân', async (ctx) => {
       const page = await openApp(ctx, server, target);
-      await loadExam(page, makeExam({ id: 'claude-check-policy', title: 'Đề kiểm định chính sách công bố', settings: { releasePolicy: 'after_deadline' } }));
-      await pickOption(page, qI(1), 'b');
+      await loadExam(page, makeExam());
+      await pickOption(page, qI(1), 'a'); await pickOption(page, qI(2), 'c');                                        // 0,50
+      for (const [i, v] of [[0, true], [1, false], [2, true], [3, true]]) await setStatement(page, qII(1), i, v);   // 0,50
+      await setStatement(page, qII(2), 0, false); await setStatement(page, qII(2), 2, true);                         // 0,25
+      await typeShort(page, qIII(1), '0,5');                                                                        // 3,50
       await waitSaved(page);
       await submit(page);
-      const html = await page.eval(() => document.documentElement.outerHTML);
-      assert.ok(!html.includes(SECRET), 'lời giải bị lộ trong trang báo cáo dù chính sách là after_deadline và chưa hết giờ');
-      const text = await page.eval(() => document.getElementById('reportWrapper')?.innerText ?? '');
-      assert.ok(!/Đáp án chuẩn\s*:\s*[A-D]\b/.test(text), 'đáp án chuẩn bị lộ trên báo cáo dù chưa hết giờ');
-      await page.click('#btnDownloadReportHtml');
-      const dl = await ctx.waitDownload();
-      assert.ok(!dl.text.includes(SECRET), 'file báo cáo tải về làm lộ lời giải trước hạn');
+      const raw = (await readReport(page)).raw;
+      const z = (s) => s.replace(/\s+/g, '');
+      assert.equal(z(raw.I), '0,50/1', `Quyết định D02: Phần I phải hiện "0,50 / 1", thực tế "${raw.I}"`);
+      assert.equal(z(raw.II), '0,75/2', `Quyết định D02: Phần II phải hiện "0,75 / 2", thực tế "${raw.II}"`);
+      assert.equal(z(raw.III), '3,50/7', `Quyết định D02: Phần III phải hiện "3,50 / 7", thực tế "${raw.III}"`);
+      assert.equal(z(raw.total), '4,75/10', `Quyết định D02: Tổng phải hiện "4,75 / 10", thực tế "${raw.total}"`);
+    });
+
+    run('[report][student] D02: điểm vô hạn tuần hoàn làm tròn nửa lên tới 2 chữ số (14/3 → 4,67), tính toán vẫn chính xác', async (ctx) => {
+      const page = await openApp(ctx, server, target);
+      await loadExam(page, makeExam({ id: 'claude-check-d02-rep', title: 'Đề kiểm định làm tròn 4-2-3', part3: ['1', '2', '3'] }));   // mỗi câu III = 7/3
+      await typeShort(page, qIII(1), '1'); await typeShort(page, qIII(2), '2');
+      await waitSaved(page);
+      await submit(page);
+      const raw = (await readReport(page)).raw;
+      const z = (s) => s.replace(/\s+/g, '');
+      assert.equal(z(raw.III), '4,67/7', `Quyết định D02: 14/3 phải hiện "4,67 / 7" (làm tròn nửa lên), thực tế "${raw.III}"`);
+      assert.equal(z(raw.total), '4,67/10', `Quyết định D02: Tổng phải hiện "4,67 / 10", thực tế "${raw.total}"`);
     });
 
     run('[student] hai tab cùng bài: nộp ở tab A thì tab B không tạo kết quả khác', async (ctx) => {

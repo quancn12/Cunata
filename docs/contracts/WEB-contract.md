@@ -327,3 +327,18 @@ Không thấy bằng chứng phê duyệt thay thế các quyết định mở L
 Manifest gồm 5 wave: 10 / 10 / 8 / 8 / 6 task (42 tổng). W1 APIs/ports/ZIP/sửa regression; W2 views/DOCX/PDF/build; W3 ghép module và offline; W4 hardening/browser/security/performance; W5 sửa cuối/tích hợp/docs/review ổn định. Không phải mọi mục cần owner quyết đều có thể hoàn tất trong 5 wave nếu chưa nhận quyết định; task phụ thuộc phải bàn giao NEED_DECISION/NOT_IMPLEMENTED đúng nghĩa, không demo giả.
 
 WEB-REVIEW kiểm diff source + working tree và dependency/permission changes, không chỉ HEAD (worker không commit); ghi SHA/hash và test evidence, findings severity/file:line/repro/fix/regression, coverage gaps, verdict. Final release không được APPROVED nếu còn blocker/critical hoặc suite đỏ; policy chưa chốt ghi NEEDS_OWNER_DECISION. Owner acceptance theo M2–M6 độc lập với kế hoạch READY_FOR_REVIEW. Evidence baseline ở §1 chỉ xác minh code có sẵn, không test một implementation tương lai.
+
+## 14. Quyết định Trưởng phòng đã chốt (16/11/2026) — ưu tiên hơn mục 12
+
+Nguồn đầy đủ: `docs/decisions/BANG-QUYET-DINH.md`. Kiểm định tự động: `test/claude-check/web.test.mjs` (các ca D02, D08).
+
+- **D01 = A.** Phần III: chữ số 0–9, dấu phẩy, dấu trừ, tối đa 4 ký tự (`sa-charset-v1`). Ký tự khác không được nhận im lặng.
+- **D02.** Mọi điểm hiển thị (từng phần, tổng, từng câu, trên trang và trong file báo cáo): số không nguyên luôn đúng 2 chữ số thập phân với dấu phẩy (`0,50`, `4,75`, `10,50`); số nguyên hiện số nguyên (`10`). Làm tròn nửa lên từ giá trị phân số chính xác (14/3 → `4,67`). Không đổi cách tính điểm.
+- **D05 = A.** Chỉ `custom-v1`; chưa có nhãn "chuẩn THPT".
+- **D07 = A.** Tối đa 1000 câu/đề; trộn trong từng phần, giữ thứ tự I → II → III.
+- **D08.** Sau khi nộp, báo cáo hiện lời giải chi tiết của MỌI câu (kể cả câu sai và câu bỏ trống), trên trang và trong file tải về. `releasePolicy: after_deadline` xử lý như `immediate`; bỏ tùy chọn này khỏi màn soạn đề. Luôn có mục tải kết quả về máy khi kết quả chưa được máy chủ xác nhận.
+- **ND-01 = A.** Màn soạn đề đang có câu sửa dở (chưa lưu hoặc không hợp lệ): chặn "Nạp vào phòng thi" và xuất JSON, báo rõ phải lưu hoặc hủy.
+- **Chưa chốt:** D03, D04, D06 — giữ hành vi hiện tại, không bật tính năng mới thuộc ba mục này.
+- **D03 = B (chốt đợt 2).** Bài đang làm lưu bằng IndexedDB trên máy học sinh; mở lại cùng máy/cùng trình duyệt phải vào đúng bài đang làm dở, đồng hồ tính theo hạn nộp.
+- **D04 = Google Sheet + Apps Script (chốt đợt 2, chi phí 0).** Chưa bật gửi mạng cho tới khi Trưởng phòng triển khai endpoint; giữ xuất file và nút tải kết quả.
+- **D06 (chốt đợt 2).** DOCX là đường nhập chính; PDF chỉ xem và nhập tay, không thêm thư viện.

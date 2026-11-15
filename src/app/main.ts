@@ -1001,7 +1001,99 @@ export async function bootstrap(
         a.href = url;
         a.download = `Cunata-Report-${attemptId}.html`;
         a.click();
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      };
+    }
+
+    // Download Result JSON Handler
+    const btnDownloadJson = root.querySelector('#btnDownloadResultJson');
+    if (btnDownloadJson) {
+      (btnDownloadJson as HTMLElement).onclick = () => {
+        if (!scoredResult) return;
+        const durationSeconds = startedAt ? Math.max(0, Math.round((now() - startedAt) / 1000)) : 0;
+        const payload = {
+          schemaVersion: 'web-result-v1',
+          attemptId: attemptId || 'attempt-1',
+          examId: currentExam.examId || 'exam-1',
+          examVersionId: currentExam.examVersionId || 'v1.0.0',
+          candidateName: candidateName || 'Thí sinh tự do',
+          startedAt: startedAt || now(),
+          submittedAt: now(),
+          durationSeconds,
+          ruleSetId: currentExam.ruleSetId || 'custom-v1',
+          inputPolicyId: currentExam.inputPolicyId || 'sa-charset-v1',
+          engineVersion: '1.0.0',
+          scoreDTO: scoredResult,
+          responses: responses || {},
+        };
+        const container = {
+          ...payload,
+          results: [{ ...payload }],
+        };
+        const jsonContent = JSON.stringify(container, (_k, v) => (typeof v === 'bigint' ? v.toString() : v), 2);
+        const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = (root.ownerDocument || document).createElement('a');
+        a.href = url;
+        a.download = 'Cunata-KetQua-' + encodeURIComponent(candidateName || 'ThiSinh') + '.json';
+        (root.ownerDocument || document).body.appendChild(a);
+        a.click();
+        (root.ownerDocument || document).body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      };
+    }
+
+    // Download Result CSV Handler
+    const btnDownloadCsv = root.querySelector('#btnDownloadResultCsv');
+    if (btnDownloadCsv) {
+      (btnDownloadCsv as HTMLElement).onclick = () => {
+        if (!scoredResult) return;
+        const escapeCsvValue = (val: unknown) => {
+          if (val === null || val === undefined) return '""';
+          let str = String(val);
+          if (/^['\s\x00-\x1f\x7f-\x9f\uFEFF\u200B-\u200D\u3000]*[=+\-@|＝＋－＠｜]/u.test(str) || /^[\x00-\x1f\x7f-\x9f]/u.test(str)) {
+            str = "'" + str;
+          }
+          return '"' + str.replace(/"/g, '""') + '"';
+        };
+
+        const headers = [
+          'attempt_id', 'exam_id', 'exam_version_id', 'candidate_display',
+          'started_at', 'submitted_at', 'duration_seconds',
+          'score_p1', 'max_p1', 'score_p2', 'max_p2', 'score_p3', 'max_p3',
+          'total_score', 'max_total', 'policy_version', 'raw_answers_json'
+        ];
+        const durationSeconds = startedAt ? Math.max(0, Math.round((now() - startedAt) / 1000)) : 0;
+        const rawAnswers = JSON.stringify(responses || {});
+        const row = [
+          escapeCsvValue(attemptId || 'attempt-1'),
+          escapeCsvValue(currentExam.examId || 'exam-1'),
+          escapeCsvValue(currentExam.examVersionId || 'v1.0.0'),
+          escapeCsvValue(candidateName || 'Thí sinh tự do'),
+          escapeCsvValue(startedAt ? new Date(startedAt).toISOString() : ''),
+          escapeCsvValue(new Date(now()).toISOString()),
+          escapeCsvValue(String(durationSeconds)),
+          escapeCsvValue(scoredResult.scoreIFraction || '0'),
+          escapeCsvValue(scoredResult.maxIFraction || '0'),
+          escapeCsvValue(scoredResult.scoreIIFraction || '0'),
+          escapeCsvValue(scoredResult.maxIIFraction || '0'),
+          escapeCsvValue(scoredResult.scoreIIIFraction || '0'),
+          escapeCsvValue(scoredResult.maxIIIFraction || '0'),
+          escapeCsvValue(scoredResult.totalFraction || '0'),
+          escapeCsvValue(scoredResult.maxTotalFraction || '0'),
+          escapeCsvValue(currentExam.ruleSetId || 'custom-v1'),
+          escapeCsvValue(rawAnswers)
+        ];
+        const csvContent = headers.join(',') + '\r\n' + row.join(',') + '\r\n';
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = (root.ownerDocument || document).createElement('a');
+        a.href = url;
+        a.download = 'Cunata-KetQua-' + encodeURIComponent(candidateName || 'ThiSinh') + '.csv';
+        (root.ownerDocument || document).body.appendChild(a);
+        a.click();
+        (root.ownerDocument || document).body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
       };
     }
 

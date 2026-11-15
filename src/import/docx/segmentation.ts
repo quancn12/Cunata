@@ -121,7 +121,12 @@ export function segmentDocument(
   for (let i = 0; i < paragraphs.length; i++) {
     const p = paragraphs[i]!;
     const text = p.text;
-    if (!text) continue;
+    if (!text) {
+      if (p.blocks.length > 0 && currentQ) {
+        currentQ.promptParagraphs.push(p);
+      }
+      continue;
+    }
 
     // 1. Check for Answer Key Section Header (must be a standalone heading, e.g. "BẢNG ĐÁP ÁN" or "ĐÁP ÁN:")
     if (/^\s*(?:BẢNG\s*ĐÁP\s*ÁN|ĐÁP\s*ÁN\s*CHI\s*TIẾT|HƯỚNG\s*DẪN\s*CHẤM|PHẦN\s*ĐÁP\s*ÁN|\bĐÁP\s*ÁN)\s*[:–-]?\s*$/i.test(text)) {
@@ -248,6 +253,13 @@ export function segmentDocument(
         }
         continue;
       }
+
+      // Check for inline answer key right after options: "Đáp án: A", "Đáp án đúng là A", "Chọn: A", etc.
+      const ansMatch = /^(?:Đáp\s*án(?:\s*đúng(?:\s*là)?)?|Chọn|ĐA)[\s.:–-]\s*([A-D])\b/i.exec(text);
+      if (ansMatch) {
+        currentQ.correctOptionLetter = ansMatch[1]!.toUpperCase();
+        continue;
+      }
     } else if (currentQ.section === "II") {
       // Check for inline statements in this paragraph first: a) ... b) ...
       const inlineStmts = extractInlineStatements(text);
@@ -286,6 +298,22 @@ export function segmentDocument(
           text: stmtText,
           answer,
         });
+        continue;
+      }
+
+      // Check for inline answer key: "Đáp án: a-Đ, b-S, c-Đ, d-S"
+      const ansMatchII = /^(?:Đáp\s*án(?:\s*đúng)?|ĐA)[\s.:–-]\s*(.*)/i.exec(text);
+      if (ansMatchII) {
+        const stmtRegex = /([a-d])[\s.:–-]+(Đ|Đúng|S|Sai)/gi;
+        let sm: RegExpExecArray | null;
+        while ((sm = stmtRegex.exec(ansMatchII[1]!)) !== null) {
+          const sLabel = sm[1]!.toLowerCase();
+          const sVal = /^(?:Đ|Đúng)$/i.test(sm[2]!);
+          const st = currentQ.statements.find((s) => s.label === sLabel);
+          if (st) {
+            (st as any).answer = sVal;
+          }
+        }
         continue;
       }
     } else if (currentQ.section === "III") {
