@@ -51,11 +51,37 @@ test('[glue] dist/: mọi import trong file .js trỏ tới file .js có thật;
 test('[glue] dist/: có đủ đề mẫu Toán, Lý, Hóa và là JSON hợp lệ có câu hỏi', () => {
   const dir = join(DIST, 'public', 'exams');
   assert.ok(existsSync(dir), 'thiếu dist/public/exams');
-  const files = readdirSync(dir).filter((f) => f.endsWith('.json'));
+  const files = readdirSync(dir).filter((f) => f.endsWith('.json') && f !== 'index.json');   // index.json la danh sach de, khong phai de
   assert.ok(files.length >= 3, `cần ít nhất 3 đề mẫu, hiện có ${files.length}`);
   for (const f of files) {
     const exam = JSON.parse(readFileSync(join(dir, f), 'utf8'));
     assert.ok(Array.isArray(exam.questions) && exam.questions.length > 0, `${f}: không có câu hỏi`);
     assert.ok(typeof exam.title === 'string' && exam.title.length > 0, `${f}: thiếu tiêu đề`);
+  }
+});
+
+// Codex CK08-F01: ban build tung chen cau hoi gia vao index.json. Ban build phai chep NGUYEN thu muc public/.
+test('[glue] dist/public giống hệt public/: bản build chép nguyên, không thêm bớt hay sửa dữ liệu', () => {
+  const src = join(PROJECT_ROOT, 'public');
+  const problems = [];
+  for (const f of walk(src)) {
+    const d = join(DIST, 'public', relative(src, f));
+    if (!existsSync(d)) problems.push(`thiếu trong dist: public/${relative(src, f).split(sep).join('/')}`);
+    else if (!readFileSync(f).equals(readFileSync(d))) problems.push(`nội dung khác bản gốc: public/${relative(src, f).split(sep).join('/')}`);
+  }
+  assert.deepEqual(problems.slice(0, 20), []);
+});
+
+test('[glue] public/exams/index.json là danh sách đề đúng lược đồ; mỗi mục trỏ tới đề thật, questionCount khớp', () => {
+  const m = JSON.parse(readFileSync(join(PROJECT_ROOT, 'public', 'exams', 'index.json'), 'utf8'));
+  assert.deepEqual(Object.keys(m).sort(), ['exams', 'version'], 'index.json chỉ gồm {version, exams} — không phải một đề thi, không có trường questions/title');
+  assert.ok(Array.isArray(m.exams) && m.exams.length >= 3);
+  for (const e of m.exams) {
+    const file = join(PROJECT_ROOT, e.url);
+    assert.ok(existsSync(file), `mục "${e.id}" trỏ tới file không tồn tại: ${e.url}`);
+    const exam = JSON.parse(readFileSync(file, 'utf8'));
+    assert.equal(exam.examId, e.id, `${e.url}: examId phải khớp id trong danh sách`);
+    assert.equal(exam.questions.length, e.questionCount, `${e.url}: questionCount trong danh sách phải bằng số câu thật`);
+    for (const q of exam.questions.filter((x) => x.kind === 'I')) assert.equal(q.options.length, 4, `${e.url} ${q.questionVersionId}: câu Phần I phải có 4 phương án`);
   }
 });

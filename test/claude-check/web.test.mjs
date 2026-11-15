@@ -360,6 +360,73 @@ for (const target of TARGETS) {
       assert.deepEqual(pageProblems(page), [], 'không lỗi JS hay request hỏng khi chọn đề');
     });
 
+    // Quyết định D03 + WEB-contract mục 15: đề đã có bài làm dở trên máy thì chọn lại phải mở đúng bài dở (Codex CK08-F05).
+    run('[student][storage] chọn đề A → sang đề B → quay lại A: mở lại đúng bài dở của A, giữ đáp án và hạn nộp', async (ctx) => {
+      const exams = readManifest();
+      const [A, B] = [exams[exams.length - 1], exams[exams.length - 2]];
+      const page = await openApp(ctx, server, target);
+      const choose = async (e) => {
+        await page.click('#btnOpenExamList');
+        await page.waitFor((u) => !!document.querySelector(`#examListModal .exam-list-item[data-exam-url="${u}"]`), 'danh sách đề hiện mục của đề cần chọn', 8000, e.url);
+        await page.click(`#examListModal .exam-list-item[data-exam-url="${e.url}"]`);
+        await titleIs(page, e);
+      };
+      const answerFirst = async (e) => {
+        const q = e.exam.questions[0];
+        if (q.kind === 'I') await page.click(`[data-qid="${q.questionVersionId}"][data-option-id="${q.options[0].optionId}"]`);
+        else if (q.kind === 'II') await setStatement(page, q.questionVersionId, 0, true);
+        else await typeShort(page, q.questionVersionId, '7');
+      };
+      const answered = (e) => page.eval((q) => {
+        const card = document.querySelector(`[id="qcard-${q.questionVersionId}"]`);
+        if (!card) return null;
+        if (q.kind === 'I') return card.querySelectorAll('[aria-checked="true"]').length === 1;
+        if (q.kind === 'II') { const b = card.querySelector('.statement-row .tf-btn[data-val="true"]'); return !!b && (/selected/.test(b.className) || b.getAttribute('aria-pressed') === 'true'); }
+        return card.querySelector('.short-answer-input')?.value === '7';
+      }, e.exam.questions[0]);
+      await choose(A);
+      await answerFirst(A);
+      await waitSaved(page);
+      assert.equal(await answered(A), true, 'đáp án vừa chọn ở đề A phải hiện là đã chọn');
+      const tA = await timerSeconds(page);
+      await sleep(2200);
+      await choose(B);
+      await answerFirst(B);
+      await waitSaved(page);
+      await choose(A);
+      assert.equal(await answered(A), true, 'quay lại đề A phải mở đúng bài đang làm dở: đáp án đã chọn vẫn còn (quyết định D03, WEB-contract mục 15)');
+      const tA2 = await timerSeconds(page);
+      assert.ok(tA2 <= tA - 2, `quay lại đề A không được đặt lại đồng hồ: trước khi rời ${tA}s, khi quay lại ${tA2}s`);
+      await choose(B);
+      assert.equal(await answered(B), true, 'bài dở của đề B cũng phải còn nguyên khi quay lại');
+    });
+
+    // shuffleQuestions/shuffleOptions phải có hiệu lực ở cả hai bản và ổn định trong một lượt làm bài (Codex CK08-F04).
+    run('[student] đề bật trộn câu và trộn phương án: thứ tự khác đề gốc, giữ nguyên sau khi tải lại, chấm vẫn đúng', async (ctx) => {
+      const page = await openApp(ctx, server, target);
+      const exam = makeExam({ id: 'claude-check-shuffle', title: 'Đề kiểm định trộn câu', part1: 'abcdabcdabcd'.split(''), part2: [[true, false, true, false]], part3: ['5'],
+        settings: { shuffleQuestions: true, shuffleOptions: true } });
+      await loadExam(page, exam);
+      const order = () => page.eval(() => ({
+        cards: [...document.querySelectorAll('#examPane .question-card')].map((c) => c.id.replace(/^qcard-/, '')),
+        options: [...document.querySelectorAll('#examPane [role=radio][data-option-id]')].map((o) => o.getAttribute('data-option-id')),
+      }));
+      const src = { cards: exam.questions.map((q) => q.questionVersionId), options: exam.questions.flatMap((q) => (q.options ?? []).map((o) => o.optionId)) };
+      const o1 = await order();
+      assert.deepEqual([...o1.cards].sort(), [...src.cards].sort(), 'trộn không được làm mất hay nhân đôi câu hỏi');
+      assert.notDeepEqual(o1.cards, src.cards, 'đề bật shuffleQuestions: thứ tự 12 câu Phần I phải khác thứ tự gốc');
+      assert.notDeepEqual(o1.options, src.options, 'đề bật shuffleOptions: thứ tự phương án phải khác thứ tự gốc');
+      const kinds = o1.cards.map((id) => exam.questions.find((q) => q.questionVersionId === id).kind);
+      assert.deepEqual(kinds, [...kinds].sort((a, b) => a.length - b.length), 'trộn chỉ trong từng phần: thứ tự Phần I → II → III phải giữ (quyết định D07)');
+      for (let i = 1; i <= 12; i++) await pickOption(page, qI(i), 'abcdabcdabcd'[i - 1]);
+      await waitSaved(page);
+      await page.reload(); await waitBoot(page);
+      assert.deepEqual(await order(), o1, 'tải lại trang trong cùng lượt làm bài: thứ tự câu và phương án phải giữ nguyên');
+      await submit(page);
+      const r = await readReport(page);
+      assert.ok(near(r.I, [3, 3]), `chọn đúng cả 12 câu Phần I theo optionId phải ra 3 / 3 dù đã trộn, thực tế "${r.raw.I}"`);
+    });
+
     run('[app][student] chọn đề: mở thẳng bằng đường dẫn ?exam=<examId>', async (ctx) => {
       const exams = readManifest();
       const pick = exams[0];
