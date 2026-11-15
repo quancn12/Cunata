@@ -892,9 +892,8 @@ export async function bootstrap(
         };
         if (inputEl) {
           updateAria(inputEl.value);
-          inputEl.addEventListener('input', async (e: any) => {
+          const handleInputCommit = async (val: string) => {
             if (isSubmitted) return;
-            const val = e.target.value;
             updateAria(val);
             responses[q.questionVersionId] = val;
             await saveStateToStorage({
@@ -903,10 +902,15 @@ export async function bootstrap(
               raw: val,
             } as any);
             updatePalette();
+          };
+          inputEl.addEventListener('input', (e: any) => {
+            handleInputCommit(e.target.value);
           });
           inputEl.addEventListener('change', (e: any) => {
-            if (isSubmitted) return;
-            updateAria(e.target.value);
+            handleInputCommit(e.target.value);
+          });
+          inputEl.addEventListener('blur', (e: any) => {
+            handleInputCommit(e.target.value);
           });
         }
 
@@ -975,6 +979,18 @@ export async function bootstrap(
 
     if (candidateInput && typeof candidateInput.value === 'string' && candidateInput.value.trim()) {
       candidateName = candidateInput.value.trim();
+    }
+
+    // Flush all active short-answer inputs from DOM to ensure responses are up-to-date
+    if (root) {
+      root.querySelectorAll('.short-answer-container').forEach((container: any) => {
+        const card = container.closest('.question-card');
+        const qid = card?.id?.replace('qcard-', '');
+        const inp = container.querySelector('.short-answer-input') as HTMLInputElement | null;
+        if (qid && inp && typeof inp.value === 'string') {
+          responses[qid] = inp.value;
+        }
+      });
     }
 
     // Check concurrent final in localStorage
@@ -1127,8 +1143,11 @@ export async function bootstrap(
           const listRes = await storage.listAttempts(examId, version);
           if (listRes.ok && listRes.value.length > 0) {
             const sorted = [...listRes.value].sort((a, b) => b.startedAt - a.startedAt);
-            foundAttemptId = sorted[0].attemptId;
-            resumedRecord = sorted[0];
+            const first = sorted[0];
+            if (first) {
+              foundAttemptId = first.attemptId;
+              resumedRecord = first;
+            }
           }
         } catch (_) {}
       }
@@ -1158,6 +1177,9 @@ export async function bootstrap(
     if (resumedRecord && resumedRecord.examId === examId && resumedRecord.examVersionId === version) {
       attemptId = resumedRecord.attemptId;
       if (resumedRecord.candidateName) candidateName = resumedRecord.candidateName;
+      if (candidateInput) {
+        candidateInput.value = candidateName;
+      }
       if (resumedRecord.startedAt) startedAt = resumedRecord.startedAt;
       if (resumedRecord.deadline) deadline = resumedRecord.deadline;
       if (resumedRecord.examSnapshot && Array.isArray(resumedRecord.examSnapshot.questions) && resumedRecord.examSnapshot.questions.length > 0) {
@@ -1500,38 +1522,21 @@ export async function bootstrap(
     // Restart Exam Handler
     const btnRestart = root.querySelector('#btnRestart');
     if (btnRestart) {
-      (btnRestart as HTMLElement).onclick = () => {
-        const maxAtt = currentExam.settings?.maxAttempts;
-        if (typeof maxAtt === 'number' && maxAtt <= 1) {
+      const maxAtt = currentExam.settings?.maxAttempts;
+      if (typeof maxAtt === 'number' && maxAtt <= 1) {
+        (btnRestart as HTMLButtonElement).disabled = true;
+        (btnRestart as HTMLElement).style.display = 'none';
+      } else {
+        (btnRestart as HTMLButtonElement).disabled = false;
+        (btnRestart as HTMLElement).style.display = '';
+      }
+      (btnRestart as HTMLElement).onclick = async () => {
+        const maxAttCurrent = currentExam.settings?.maxAttempts;
+        if (typeof maxAttCurrent === 'number' && maxAttCurrent <= 1) {
           if (typeof alert === 'function') alert('Đề thi này chỉ cho phép làm bài tối đa 1 lượt.');
           return;
         }
-        const pointerKey = 'cunata:active_attempt:' + encodeURIComponent(currentExam.examId) + ':' + encodeURIComponent(currentExam.examVersionId);
-        const oldKey = getStorageKey(currentExam, { attemptId });
-        try {
-          localStorage.removeItem(oldKey);
-          localStorage.removeItem(pointerKey);
-        } catch (_) {}
-
-        attemptId = 'attempt-' + now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
-        responses = Object.create(null);
-        isSubmitted = false;
-        scoredResult = null;
-        startedAt = now();
-        deadline = startedAt + durationMin * 60 * 1000;
-
-        saveStateToStorage();
-
-        if (examWrapper) examWrapper.style.display = '';
-        if (reportWrapper) reportWrapper.style.display = 'none';
-        if (btnSubmit) btnSubmit.style.display = '';
-        if (candidateInput) candidateInput.disabled = false;
-        if (syncText) syncText.textContent = 'Chưa lưu';
-
-        router.navigate('exam');
-        renderExamPane();
-        updatePalette();
-        startTimer();
+        await loadOrResumeExam(currentExam, true);
       };
     }
   };
@@ -1583,6 +1588,19 @@ export async function bootstrap(
       showReport();
       return;
     }
+
+    // Flush active inputs before prompting submit
+    if (root) {
+      root.querySelectorAll('.short-answer-container').forEach((container: any) => {
+        const card = container.closest('.question-card');
+        const qid = card?.id?.replace('qcard-', '');
+        const inp = container.querySelector('.short-answer-input') as HTMLInputElement | null;
+        if (qid && inp && typeof inp.value === 'string') {
+          responses[qid] = inp.value;
+        }
+      });
+    }
+
     // Check if finalized concurrently
     if (typeof localStorage !== 'undefined') {
       const finalKey = getFinalStorageKey(currentExam, { attemptId });
@@ -1592,9 +1610,9 @@ export async function bootstrap(
           const parsed = JSON.parse(rawFinal);
           if (parsed && parsed.submitted === true) {
             isSubmitted = true;
-            scoredResult = parsed.scoreResult;
             if (parsed.responses) responses = parsed.responses;
             if (parsed.candidateName) candidateName = parsed.candidateName;
+            scoredResult = scoreLegacyAttempt(currentExam, responses);
             if (timerIntervalId) clearInterval(timerIntervalId);
             showReport();
             return;
@@ -1612,7 +1630,7 @@ export async function bootstrap(
 
   const onConfirmSubmitClick = async () => {
     if (submitModal) submitModal.style.display = 'none';
-    submitExam('manual');
+    await submitExam('manual');
   };
 
   const onCancelSubmitClick = () => {
@@ -1646,32 +1664,8 @@ export async function bootstrap(
     }
   };
 
-  const switchExam = (parsed: WebExam) => {
-    currentExam = parsed;
-    if (typeof localStorage !== 'undefined') {
-      try {
-        localStorage.setItem('cunata:active_exam_snapshot', JSON.stringify(currentExam));
-      } catch (_) {}
-    }
-    attemptId = 'attempt-' + now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
-    responses = Object.create(null);
-    isSubmitted = false;
-    scoredResult = null;
-    startedAt = now();
-    const dMin = currentExam.settings?.durationMinutes ?? 50;
-    deadline = startedAt + dMin * 60 * 1000;
-
-    if (examTitle) examTitle.textContent = currentExam.title || 'Đề thi';
-    if (examWrapper) examWrapper.style.display = '';
-    if (reportWrapper) reportWrapper.style.display = 'none';
-    if (btnSubmit) btnSubmit.style.display = '';
-    if (candidateInput) candidateInput.disabled = false;
-    if (syncText) syncText.textContent = 'Chưa lưu';
-
-    router.navigate('exam');
-    renderExamPane();
-    updatePalette();
-    startTimer();
+  const switchExam = async (parsed: WebExam) => {
+    await loadOrResumeExam(parsed, false);
   };
 
   // Exam File Upload Listener (#examFileInput)
@@ -1696,7 +1690,7 @@ export async function bootstrap(
   // Connect Exam List Modal (§15) and Teacher Authoring Modal
   initExamList(root, {
     onSelectExam: switchExam,
-    hasUnsavedProgress: () => !isSubmitted && Object.keys(responses).length > 0,
+    hasUnsavedProgress: () => false,
   });
 
   initAuthoring(root, {
@@ -1708,6 +1702,9 @@ export async function bootstrap(
   // Candidate Name Input Listener
   const onCandidateNameInput = (e: any) => {
     candidateName = e.target.value;
+    if (controller) {
+      controller.rename(candidateName).catch(() => {});
+    }
     saveStateToStorage();
   };
 
@@ -1723,9 +1720,9 @@ export async function bootstrap(
           const parsed = JSON.parse(raw);
           if (parsed && parsed.submitted === true) {
             isSubmitted = true;
-            scoredResult = parsed.scoreResult;
             if (parsed.responses) responses = parsed.responses;
             if (parsed.candidateName) candidateName = parsed.candidateName;
+            scoredResult = scoreLegacyAttempt(currentExam, responses);
             if (timerIntervalId) clearInterval(timerIntervalId);
             showReport();
           }
@@ -1758,14 +1755,8 @@ export async function bootstrap(
     winTarget.addEventListener('storage', onStorageEvent);
   }
 
-  // Initial render and timer startup
-  renderExamPane();
-  updatePalette();
-  startTimer();
-
-  if (isSubmitted && scoredResult) {
-    showReport();
-  }
+  // Initial load or resume
+  await loadOrResumeExam(currentExam, false);
 
   // Register Native Service Worker in real browser HTTP environment
   if (
@@ -1779,6 +1770,11 @@ export async function bootstrap(
 
   // Return clean disposal function
   return () => {
+    if (controller) {
+      try {
+        controller.dispose();
+      } catch (_) {}
+    }
     if (timerIntervalId) clearInterval(timerIntervalId);
     unsubscribeRouter();
     router.dispose();

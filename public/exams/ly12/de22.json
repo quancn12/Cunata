@@ -386,12 +386,12 @@
         {
           "optionId": "ly12-de22-i-12-a",
           "label": "A",
-          "text": "$\\frac{C_1 C_2}{C_1 - C_2}(t_1 - t_2)$."
+          "text": "$(C_1·C_2)/(C_1 - C_2)·(t_1 - t_2)$."
         },
         {
           "optionId": "ly12-de22-i-12-b",
           "label": "B",
-          "text": "$\\frac{C_1 C_2}{C_1 + C_2}(t_1 - t_2)$."
+          "text": "$(C_1·C_2)/(C_1 + C_2)·(t_1 - t_2)$."
         },
         {
           "optionId": "ly12-de22-i-12-c",
@@ -405,13 +405,13 @@
         }
       ],
       "correctOptionId": "ly12-de22-i-12-b",
-      "explanation": "$Q = C_2(t - t_2) = C_2(\\frac{C_1 t_1 + C_2 t_2}{C_1 + C_2} - t_2) = \\frac{C_1 C_2}{C_1 + C_2}(t_1 - t_2)$. Đáp án B."
+      "explanation": "$Q = C_2(t - t_2) = C_2·((C_1·t_1 + C_2·t_2)/(C_1 + C_2) - t_2) = (C_1·C_2)/(C_1 + C_2)·(t_1 - t_2)$. Đáp án B."
     },
     {
       "kind": "I",
       "questionVersionId": "ly12-de22-i-13",
       "title": "Câu 13 (Phần I)",
-      "content": "Hình vẽ là đồ thị biểu diễn sự thay đổi áp suất p theo nhiệt độ t (tính theo °C) của một khối khí lí tưởng khi chuyển từ trạng thái A sang trạng thái B . Gọi thể tích khí ở trạng thái A và ở trạng thái B lần lượt là $V_A$ và $V_B$.\n. Liên hệ đúng là\n\n![Hình vẽ đồ thị p theo t](public/exams/ly12/de22/p02-1.png)",
+      "content": "Hình vẽ là đồ thị biểu diễn sự thay đổi áp suất p theo nhiệt độ t (tính theo °C) của một khối khí lí tưởng khi chuyển từ trạng thái A sang trạng thái B . Gọi thể tích khí ở trạng thái A và ở trạng thái B lần lượt là $V_A$ và $V_B$. Liên hệ đúng là\n\n![Hình vẽ đồ thị p theo t](public/exams/ly12/de22/p02-1.png)",
       "image": "public/exams/ly12/de22/p02-1.png",
       "options": [
         {
@@ -436,7 +436,7 @@
         }
       ],
       "correctOptionId": "ly12-de22-i-13-b",
-      "explanation": "Ta có $\\frac{pV}{T} = const ⇒ V = \\frac{const}{a} · \\frac{t + 273}{t} = \\frac{const}{a}(1 + \\frac{273}{t})$. Vì $t_A > t_B$ nên $V_A < V_B$. Đáp án B."
+      "explanation": "Đồ thị đi qua gốc tọa độ nên $p = at$.\nTa có $\\frac{pV}{T} = (at·V)/(t + 273) = const ⇒ V = \\frac{const}{a} · (t + 273)/t = \\frac{const}{a}(1 + \\frac{273}{t})$. Vì $t_A > t_B$ nên $V_A < V_B$. Đáp án B."
     },
     {
       "kind": "I",
@@ -556,7 +556,7 @@
         }
       ],
       "correctOptionId": "ly12-de22-i-17-b",
-      "explanation": "$\\frac{V}{T} = const ⇒ \\frac{V}{T} = \\frac{1,01V}{T + 3} ⇒ T = 300$ K $≈ 27$ °C. Đáp án B."
+      "explanation": "$\\frac{V}{T} = const ⇒ \\frac{V}{T} = (1,01V)/(T + 3) ⇒ T = 300$ K $≈ 27$ °C. Đáp án B."
     },
     {
       "kind": "I",
@@ -586,7 +586,7 @@
         }
       ],
       "correctOptionId": "ly12-de22-i-18-b",
-      "explanation": "$\\frac{p}{DT} = const ⇒ \\frac{760}{1,26·293} = \\frac{630}{D·290} ⇒ D ≈ 1,06$ kg/m³. Đáp án B."
+      "explanation": "$\\frac{p}{DT} = const ⇒ 760/(1,26·293) = 630/(D·290) ⇒ D ≈ 1,06$ kg/m³. Đáp án B."
     },
     {
       "kind": "II",
@@ -710,7 +710,7 @@
           "label": "a",
           "text": "Ở trạng thái 1 , khí trong xi lanh có áp suất $1,2·10^5$ Pa .",
           "answer": true,
-          "explanation": "Áp suất trạng thái 1: $p_1 = p_0 + \\frac{mg}{S} = 10^5 + \\frac{20·10}{100·10^-4} = 1,2·10^5$ Pa; $T_1 = 27 + 273 = 300$ K; $V_1 = S·20$. Mệnh đề a Đúng."
+          "explanation": "Áp suất trạng thái 1: $p_1 = p_0 + \\frac{mg}{S} = 10^5 + (20·10)/(100·10^-4) = 1,2·10^5$ Pa; $T_1 = 27 + 273 = 300$ K; $V_1 = S·20$. Mệnh đề a Đúng."
         },
         {
           "statementId": "ly12-de22-ii-04-b",
@@ -741,7 +741,7 @@
       "title": "Câu 23 (Phần III - Trả lời ngắn)",
       "content": "Một viên đạn bằng đồng bay với tốc độ 500 m / s tới xuyên qua một tấm gỗ. Khi vừa ra khỏi tấm gỗ, tốc độ của viên đạn là 300 m / s . Cho rằng toàn bộ cơ năng bị mất đi của viên đạn trong quá trình va chạm đều chuyển hóa thành nhiệt làm nóng nó. Nhiệt dung riêng của đồng là 385 J / (kg . K). Nhiệt độ viên đạn tăng thêm bao nhiêu °C khi nó bay ra khỏi tấm gỗ (làm tròn kết quả đến chữ số hàng đơn vị)?",
       "answerKey": "208",
-      "explanation": "$Q = W_1 - W_2 ⇒ mcΔt = \\frac{1}{2}mv_1^2 - \\frac{1}{2}mv_2^2 ⇒ Δt = \\frac{v_1^2 - v_2^2}{2c} = \\frac{500^2 - 300^2}{2·385} ≈ 208$ °C."
+      "explanation": "$Q = W_1 - W_2 ⇒ mcΔt = \\frac{1}{2}mv_1^2 - \\frac{1}{2}mv_2^2 ⇒ Δt = \\frac{v_1^2 - v_2^2}{2c} = (500^2 - 300^2)/(2·385) ≈ 208$ °C."
     },
     {
       "kind": "III",
@@ -774,7 +774,7 @@
       "title": "Câu 27 (Phần III - Trả lời ngắn)",
       "content": "Một bình chứa một chất khí nén ở nhiệt độ 27 °C và áp suất 40 at. Khi một nửa khối lượng khí thoát ra khỏi bình và nhiệt độ khí giảm xuống tới 12 °C, áp suất khí trong bình lúc này bằng bao nhiêu at (làm tròn kết quả đến chữ số hàng đơn vị)?",
       "answerKey": "19",
-      "explanation": "Ta có $pV = nRT ⇒ \\frac{p_2}{p_1} = \\frac{n_2}{n_1} · \\frac{T_2}{T_1} ⇒ \\frac{p_2}{40} = \\frac{1}{2} · \\frac{12 + 273}{27 + 273} ⇒ p_2 = 19$ at."
+      "explanation": "Ta có $pV = nRT ⇒ \\frac{p_2}{p_1} = \\frac{n_2}{n_1} · \\frac{T_2}{T_1} ⇒ \\frac{p_2}{40} = \\frac{1}{2} · (12 + 273)/(27 + 273) ⇒ p_2 = 19$ at."
     },
     {
       "kind": "III",
@@ -782,7 +782,7 @@
       "title": "Câu 28 (Phần III - Trả lời ngắn)",
       "content": "Một nhiệt lượng kế ban đầu chưa đựng gì. Lần 1: đổ vào nhiệt lượng kế đó một ca nước nóng thì khi cân bằng nhiệt thấy nhiệt độ của nhiệt lượng kế tăng thêm 10 °C . Lần 2 : đổ thêm hai ca nước nóng nữa thì khi cân bằng nhiệt thấy nhiệt độ của nhiệt lượng kế tăng thêm 5 °C . Lần 3: đổ thêm vào nhiệt lượng kế cùng một lúc bốn ca nước nóng nói trên thì khi cân bằng nhiệt, nhiệt độ của nhiệt lượng kế tăng thêm bao nhiêu độ C nữa?",
       "answerKey": "2,5",
-      "explanation": "Gọi nhiệt dung của nhiệt lượng kế là $C$, khối lượng mỗi ca nước nóng là $m$, nhiệt dung riêng của nước là $c$, nhiệt độ ban đầu của nhiệt lượng kế là $t_1$, nhiệt độ ca nước nóng là $t_n$.\nSau lần 1: $C·10 = mc(t_n - t_1)$ (1)\nSau lần 2: $C·15 = 3mc(t_n - t_1 - 5)$ (2)\nSau lần 3: đổ thêm 4 ca (tổng 7 ca), nhiệt độ tăng thêm $Δt$: $C(15 + Δt) = 7mc(t_n - t_1 - 5 - Δt)$ (3)\nTừ (1), (2), (3) ta có:\n$\\frac{C}{mc} = \\frac{t_n - t_1}{10} = \\frac{3(t_n - t_1 - 5)}{15} = \\frac{7(t_n - t_1 - 5 - Δt)}{15 + Δt}$\nSuy ra $t_n - t_1 = 10$ °C $⇒ Δt = 2,5$ °C."
+      "explanation": "Gọi nhiệt dung của nhiệt lượng kế là $C$, khối lượng mỗi ca nước nóng là $m$, nhiệt dung riêng của nước là $c$, nhiệt độ ca nước nóng là $t_n$.\nSau lần 1 thì nhiệt độ nhiệt lượng kế là $t_1$ nên $C·10 = mc(t_n - t_1)$ (1)\nSau lần 2 thì nhiệt độ nhiệt lượng kế là $t_1 + 5$ nên $C·15 = 3mc(t_n - t_1 - 5)$ (2)\nSau lần 3 thì nhiệt độ nhiệt lượng kế là $t_1 + 5 + Δt$ nên $C(15 + Δt) = 7mc(t_n - t_1 - 5 - Δt)$ (3)\nTừ (1), (2) và (3) suy ra:\n$\\frac{C}{mc} = (t_n - t_1)/10 = \\frac{3(t_n - t_1 - 5)}{15} = (7(t_n - t_1 - 5 - Δt))/(15 + Δt)$\n$⇒ t_n - t_1 = 10$ °C $⇒ Δt = 2,5$ °C."
     }
   ]
 }

@@ -212,4 +212,127 @@ describe('WEB-FINAL-STUDENT-STORAGE: Student Regressions', () => {
     assert.notEqual((r2 as any)?.raw, '1,5');
     assert.notEqual((r2 as any)?.raw, '1.5');
   });
+
+  it('scores 8-8-2 exam correctly: BASE >= 10 gives 0,25 per Part III question, total 10,5 / 10,5 without normalizing to 10', async () => {
+    const adapter = new MemoryTransactionAdapter();
+    const storage = createStoragePort(adapter);
+    const now = () => 1000;
+    const id = () => 'att-882-scoring';
+
+    const p2Statements = [true, false, true, false];
+    const exam882: WebExam = {
+      schemaVersion: 'web-exam-v1',
+      examId: 'exam-8-8-2',
+      examVersionId: 'v1.0',
+      ruleSetId: 'custom-v1',
+      inputPolicyId: 'sa-charset-v1',
+      title: 'Đề kiểm tra 8-8-2',
+      subject: 'Vật lí',
+      grade: 12,
+      settings: {
+        durationMinutes: 50,
+        maxAttempts: null,
+        releasePolicy: 'immediate',
+        shuffleQuestions: false,
+        shuffleOptions: false,
+      },
+      questions: [
+        ...Array.from({ length: 8 }, (_, i) => ({
+          kind: 'I' as const,
+          questionVersionId: `qI-${i + 1}`,
+          title: `Câu I.${i + 1}`,
+          options: [
+            { optionId: `qI-${i + 1}-opt-a`, text: 'A' },
+            { optionId: `qI-${i + 1}-opt-b`, text: 'B' },
+            { optionId: `qI-${i + 1}-opt-c`, text: 'C' },
+            { optionId: `qI-${i + 1}-opt-d`, text: 'D' },
+          ],
+          correctOptionId: `qI-${i + 1}-opt-a`,
+        })),
+        ...Array.from({ length: 8 }, (_, i) => ({
+          kind: 'II' as const,
+          questionVersionId: `qII-${i + 1}`,
+          title: `Câu II.${i + 1}`,
+          statements: p2Statements.map((val, idx) => ({
+            statementId: `qII-${i + 1}-s${idx + 1}`,
+            text: `Ý ${idx + 1}`,
+            answer: val,
+          })),
+        })),
+        {
+          kind: 'III' as const,
+          questionVersionId: 'qIII-1',
+          title: 'Câu III.1',
+          answerKey: '1',
+        },
+        {
+          kind: 'III' as const,
+          questionVersionId: 'qIII-2',
+          title: 'Câu III.2',
+          answerKey: '2',
+        },
+      ],
+      assets: [],
+    };
+
+    const startRes = await startAttempt(exam882, 'Thí sinh 882', { storage, now, id });
+    assert.equal(startRes.ok, true);
+    if (!startRes.ok) return;
+    const controller = startRes.value;
+
+    // Answer all 8 Part I correctly
+    for (let i = 0; i < 8; i++) {
+      await controller.answer({
+        kind: 'I',
+        questionVersionId: `qI-${i + 1}`,
+        selectedOptionId: `qI-${i + 1}-opt-a`,
+      });
+    }
+
+    // Answer all 8 Part II correctly (all 4 statements correct per question -> 1 pt each)
+    for (let i = 0; i < 8; i++) {
+      await controller.answer({
+        kind: 'II',
+        questionVersionId: `qII-${i + 1}`,
+        answers: p2Statements.map((val, idx) => ({
+          statementId: `qII-${i + 1}-s${idx + 1}`,
+          value: val,
+        })),
+      });
+    }
+
+    // Answer both Part III questions correctly
+    await controller.answer({
+      kind: 'III',
+      questionVersionId: 'qIII-1',
+      raw: '1',
+    });
+    await controller.answer({
+      kind: 'III',
+      questionVersionId: 'qIII-2',
+      raw: '2',
+    });
+
+    const submitRes = await controller.submit('manual');
+    assert.equal(submitRes.ok, true);
+    if (!submitRes.ok) return;
+
+    const finalSnap = controller.getSnapshot();
+    assert.equal(finalSnap.phase, 'final');
+    assert.ok(finalSnap.scoreDTO !== null);
+
+    const dto = finalSnap.scoreDTO as any;
+    // Section I: 8 * 0.25 = 2 / 2
+    assert.equal(dto.sections.I.score, '2');
+    assert.equal(dto.sections.I.max, '2');
+    // Section II: 8 * 1 = 8 / 8
+    assert.equal(dto.sections.II.score, '8');
+    assert.equal(dto.sections.II.max, '8');
+    // Section III: BASE = 10, POINT_III = 0.25 -> 2 * 0.25 = 0.5 / 0.5
+    assert.equal(dto.sections.III.score, '1/2');
+    assert.equal(dto.sections.III.max, '1/2');
+    // Total: 2 + 8 + 0.5 = 10.5 / 10.5
+    assert.equal(dto.total, '21/2');
+    assert.equal(dto.maxTotal, '21/2');
+  });
 });

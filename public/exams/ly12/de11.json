@@ -74,6 +74,24 @@
       "mime": "image/png",
       "data": "public/exams/ly12/de11/p03-5.png",
       "alt": "Hình vẽ Câu 28"
+    },
+    {
+      "assetId": "ly12-de11-p06-1",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p06-1.png",
+      "alt": "Hình lời giải Câu 14"
+    },
+    {
+      "assetId": "ly12-de11-p06-4",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p06-4.png",
+      "alt": "Hình lời giải Câu 17"
+    },
+    {
+      "assetId": "ly12-de11-p09-2",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p09-2.png",
+      "alt": "Hình lời giải Câu 28"
     }
   ],
   "questions": [
@@ -274,7 +292,7 @@
         { "optionId": "ly12-de11-i-14-d", "label": "D", "text": "126 cmHg ." }
       ],
       "correctOptionId": "ly12-de11-i-14-d",
-      "explanation": "Áp suất điểm màu xanh bằng điểm màu đỏ: $p = p_0 + h = 76 + 50 = 126$ cmHg. Chọn D."
+      "explanation": "![Hình minh họa](public/exams/ly12/de11/p06-1.png)\n\nÁp suất điểm màu xanh bằng điểm màu đỏ: $p = p_0 + h = 76 + 50 = 126$ cmHg. Chọn D."
     },
     {
       "kind": "I",
@@ -303,7 +321,7 @@
         { "optionId": "ly12-de11-i-16-d", "label": "D", "text": "90%." }
       ],
       "correctOptionId": "ly12-de11-i-16-a",
-      "explanation": "$Q = mcΔt = 2 · 4200 · (100 - 25) = 0,63 · 10^6$ J\n$A = UIt = 220 · 8 · 10 · 60 = 1,056 · 10^6$ J\n$H = \\frac{Q}{A} = \\frac{0,63}{1,056} ≈ 0,6 = 60\\%$. Chọn A."
+      "explanation": "$Q = mcΔt = 2 · 4200 · (100 - 25) = 0,63 · 10^6$ J\n$A = UIt = 220 · 8 · 10 · 60 = 1,056 · 10^6$ J\n$H = \\frac{Q}{A} = \\frac{0,63}{1,056} ≈ 0,6 = 60%$. Chọn A."
     },
     {
       "kind": "I",
@@ -318,7 +336,7 @@
         { "optionId": "ly12-de11-i-17-d", "label": "D", "text": "7,2 cm³ và $1,1 · 10^5$ Pa ." }
       ],
       "correctOptionId": "ly12-de11-i-17-d",
-      "explanation": "$V = Sl = 0,4 · (20 - 2) = 7,2$ cm³\n$p = p_0 + Dgh = 10^5 + 1000 · 10 · 1 = 1,1 · 10^5$ Pa. Chọn D."
+      "explanation": "![Hình minh họa](public/exams/ly12/de11/p06-4.png)\n\n$V = Sl = 0,4 · (20 - 2) = 7,2$ cm³\n$p = p_0 + Dgh = 10^5 + 1000 · 10 · 1 = 1,1 · 10^5$ Pa. Chọn D."
     },
     {
       "kind": "I",
@@ -332,7 +350,7 @@
         { "optionId": "ly12-de11-i-18-d", "label": "D", "text": "2°C." }
       ],
       "correctOptionId": "ly12-de11-i-18-c",
-      "explanation": "Nhiệt lượng nước tỏa ra khi giảm nhiệt độ xuống 0°C là: $Q_1 = m_1 c_1 Δt_1 = 0,5 · 4200 · 20 = 42000$ J\nNhiệt lượng nước đá thu vào để tăng nhiệt độ lên 0°C là: $Q_2 = m_2 c_2 Δt_2 = 0,5 · 2100 · 15 = 15750$ J\nNhiệt nóng chảy hoàn toàn nước đá là: $Q_{nc} = m_2 λ = 0,5 · 3,4 · 10^5 = 170000$ J\nVì $Q_2 < Q_1 < Q_2 + Q_{nc}$ nên đá không tan hết ⇒ nhiệt độ cân bằng là 0°C. Chọn C."
+      "explanation": "Nhiệt lượng nước tỏa ra khi giảm nhiệt độ xuống 0°C là: $Q_1 = m_1 c_1 Δt_1 = 0,5 · 4200 · 20 = 42000$ J\nNhiệt lượng nước đá thu vào để tăng nhiệt độ lên 0°C là: $Q_2 = m_2 c_2 Δt_2 = 0,5 · 2100 · 15 = 15750$ J\nNhiệt nóng chảy hoàn toàn nước đá là: $Q_nc = m_2 λ = 0,5 · 3,4 · 10^5 = 170000$ J\nVì $Q_2 < Q_1 < Q_2 + Q_nc$ nên đá không tan hết ⇒ nhiệt độ cân bằng là 0°C. Chọn C."
     },
     {
       "kind": "II",
@@ -417,7 +435,7 @@
           "label": "a",
           "text": "Động cơ có hiệu suất là 30%.",
           "answer": true,
-          "explanation": "Đúng. $H = \\frac{A}{Q_1} = \\frac{8571}{28571} ≈ 0,3 = 30\\%$."
+          "explanation": "Đúng. $H = \\frac{A}{Q_1} = \\frac{8571}{28571} ≈ 0,3 = 30%$."
         },
         {
           "statementId": "ly12-de11-ii-03-b",
@@ -520,7 +538,7 @@
       "title": "Câu 27 (Phần III - Trả lời ngắn)",
       "content": "Bỏ 100 g nước đá ở -2°C vào 300 g nước ở 20°C. Cho biết nhiệt nóng chảy riêng của nước đá là $3,4 · 10^5$ J / kg , nhiệt dung riêng của nước là 4200 J / kgK và nhiệt dung riêng của đá là 2100 J / kgK . Khối lượng nước đá còn lại bằng bao nhiêu gam (làm tròn đến 1 chữ số sau dấu phẩy thập phân)?",
       "answerKey": "27,1",
-      "explanation": "Nhiệt lượng nước tỏa ra để giảm nhiệt độ xuống 0°C là: $Q = m_n c_n Δt_n = 0,3 · 4200 · 20 = 25200$ J\n$Q = m_d c_d Δt_d + m_{tan} λ \\Rightarrow 25200 = 0,1 · 2100 · 2 + m_{tan} · 3,4 · 10^5 \\Rightarrow m_{tan} ≈ 0,0723$ kg $= 72,3$ g\nKhối lượng đá còn lại là: $100 - 72,3 ≈ 27,1$ g.\nTrả lời ngắn: 27,1."
+      "explanation": "Nhiệt lượng nước tỏa ra để giảm nhiệt độ xuống 0°C là: $Q = m_n c_n Δt_n = 0,3 · 4200 · 20 = 25200$ J\n$Q = m_d c_d Δt_d + m_tan λ \\Rightarrow 25200 = 0,1 · 2100 · 2 + m_tan · 3,4 · 10^5 \\Rightarrow m_tan ≈ 0,0723$ kg $= 72,3$ g\nKhối lượng đá còn lại là: $100 - 72,3 ≈ 27,1$ g.\nTrả lời ngắn: 27,1."
     },
     {
       "kind": "III",
@@ -529,7 +547,7 @@
       "content": "A và B là hai xilanh hình trụ đặt cố định trên mặt phẳng nằm ngang, trong mỗi xilanh có chứa một lượng khí lí tưởng nhất định. Pit-tông đặt trong hai xilanh được nối với nhau bằng một thanh cứng, tiết diện các xilanh lần lượt là $S_1 = 50$ cm² và $S_2 = 20$ cm². Cho biết áp suất khí trong A là 100 cmHg , áp suất khí quyển là 76 cmHg . Áp suất khí trong B là bao nhiêu cmHg ?\n\n![Hình minh họa](public/exams/ly12/de11/p03-5.png)",
       "image": "public/exams/ly12/de11/p03-5.png",
       "answerKey": "136",
-      "explanation": "Điều kiện cân bằng pittong: $p_A S_1 + p_0 · S_2 = p_0 · S_1 + p_B · S_2 \\Rightarrow 100 · 50 + 76 · 20 = 76 · 50 + p_B · 20 \\Rightarrow p_B = 136$ cmHg.\nTrả lời ngắn: 136."
+      "explanation": "![Hình minh họa](public/exams/ly12/de11/p09-2.png)\n\nĐiều kiện cân bằng pittong: $p_A S_1 + p_0 · S_2 = p_0 · S_1 + p_B · S_2 \\Rightarrow 100 · 50 + 76 · 20 = 76 · 50 + p_B · 20 \\Rightarrow p_B = 136$ cmHg.\nTrả lời ngắn: 136."
     }
   ]
 }

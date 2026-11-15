@@ -329,7 +329,7 @@
         }
       ],
       "correctOptionId": "ly12-de25-i-09-d",
-      "explanation": "Đẳng tích $\\frac{p}{T} =$ const $\\Rightarrow \\frac{10}{7 + 273} = \\frac{10 + 2}{T} \\Rightarrow T = 336$ K = 63°C. Chọn D."
+      "explanation": "Đẳng tích $\\frac{p}{T} =$ const $\\Rightarrow 10/(7 + 273) = (10 + 2)/T \\Rightarrow T = 336$ K = 63°C. Chọn D."
     },
     {
       "kind": "I",
@@ -359,7 +359,7 @@
         }
       ],
       "correctOptionId": "ly12-de25-i-10-b",
-      "explanation": "$t = \\frac{m_d c_d t_d + m_n c_n t_n}{m_d c_d + m_n c_n} = \\frac{0,6 · 380 · 85 + 0,35 · 4200 · 20}{0,6 · 380 + 0,35 · 4200} ≈ 28,7$°C. Chọn B."
+      "explanation": "$t = (m_d·c_d·t_d + m_n·c_n·t_n)/(m_d·c_d + m_n·c_n) = (0,6 · 380 · 85 + 0,35 · 4200 · 20)/(0,6 · 380 + 0,35 · 4200) ≈ 28,7$°C. Chọn B."
     },
     {
       "kind": "I",
@@ -389,7 +389,7 @@
         }
       ],
       "correctOptionId": "ly12-de25-i-11-a",
-      "explanation": "$m_{nh} c_{nh} Δt_{nh} = m_n c_n Δt_n \\Rightarrow 0,2 · 880 · (150 - 50) = m_n · 4200 · (50 - 25) \\Rightarrow m_n ≈ 0,17$ kg. Chọn A."
+      "explanation": "$m_nh c_nh Δt_nh = m_n c_n Δt_n \\Rightarrow 0,2 · 880 · (150 - 50) = m_n · 4200 · (50 - 25) \\Rightarrow m_n ≈ 0,17$ kg. Chọn A."
     },
     {
       "kind": "I",

@@ -7,6 +7,7 @@ import {
   type AttemptRecord,
   type WebExam,
   type WebQuestion,
+  type ReportQuestion,
   type ReportModel,
   type ReleasedReportQuestion,
 } from "../../../src/report/index.ts";
@@ -409,6 +410,119 @@ describe("WEB-W1-REPORT: Report Projection & Answer Release Policy", () => {
 
       const html = renderReportHtml(res.value);
       assert.match(html, /10\/3 \/ 10/);
+    });
+
+    it("Golden 8-8-2 (BASE=10 >= 10): 8 Part I (2/2), 8 Part II (8/8), 2 Part III (1/2 / 1/2) -> 21/2 / 21/2 (10,5 / 10,5)", () => {
+      // N1 = 8 Part I -> MAX_I = 2
+      // N2 = 8 Part II -> MAX_II = 8
+      // BASE = 2 + 8 = 10 >= 10 -> POINT_III = 0.25 = 1/4
+      // N3 = 2 Part III -> MAX_III = 2 * 0.25 = 0.5 = 1/2
+      // MAX_TOTAL = 2 + 8 + 0.5 = 10.5 = 21/2
+      // All correct -> Score I = 2, Score II = 8, Score III = 1/2, Total = 21/2
+      const questions: WebQuestion[] = [];
+      const responses: any[] = [];
+
+      for (let i = 1; i <= 8; i++) {
+        const qId = `ck-i-${String(i).padStart(2, "0")}`;
+        questions.push({
+          kind: "I",
+          questionVersionId: qId,
+          title: `Câu I.${i}`,
+          options: [
+            { optionId: `${qId}-a`, text: "A" },
+            { optionId: `${qId}-b`, text: "B" },
+            { optionId: `${qId}-c`, text: "C" },
+            { optionId: `${qId}-d`, text: "D" },
+          ],
+          correctOptionId: `${qId}-a`,
+        });
+        responses.push({ kind: "I", questionVersionId: qId, selectedOptionId: `${qId}-a` });
+      }
+
+      for (let i = 1; i <= 8; i++) {
+        const qId = `ck-ii-${String(i).padStart(2, "0")}`;
+        questions.push({
+          kind: "II",
+          questionVersionId: qId,
+          title: `Câu II.${i}`,
+          statements: [
+            { statementId: `${qId}-a`, text: "A", answer: true },
+            { statementId: `${qId}-b`, text: "B", answer: true },
+            { statementId: `${qId}-c`, text: "C", answer: false },
+            { statementId: `${qId}-d`, text: "D", answer: true },
+          ],
+        });
+        responses.push({
+          kind: "II",
+          questionVersionId: qId,
+          answers: [
+            { statementId: `${qId}-a`, value: true },
+            { statementId: `${qId}-b`, value: true },
+            { statementId: `${qId}-c`, value: false },
+            { statementId: `${qId}-d`, value: true },
+          ],
+        });
+      }
+
+      for (let i = 1; i <= 2; i++) {
+        const qId = `ck-iii-${String(i).padStart(2, "0")}`;
+        questions.push({
+          kind: "III",
+          questionVersionId: qId,
+          title: `Câu III.${i}`,
+          answerKey: String(i),
+        });
+        responses.push({
+          kind: "III",
+          questionVersionId: qId,
+          raw: String(i),
+        });
+      }
+
+      const exam = createMockExam(questions, {
+        examId: "claude-check-882",
+        examVersionId: "v1.0.0",
+      });
+
+      const finalRecord: AttemptRecord = {
+        schemaVersion: "web-attempt-v1",
+        revision: 1,
+        examId: exam.examId,
+        examVersionId: exam.examVersionId,
+        attemptId: "att-882",
+        candidateName: "Thí sinh kiểm định 882",
+        examSnapshot: exam,
+        presentationOrder: { seed: "1", questionOrder: questions.map((q) => q.questionVersionId) },
+        responses: { attemptId: "att-882", examVersionId: exam.examVersionId, responses },
+        startedAt: 1700000000000,
+        deadline: 1700003000000,
+        phase: "final",
+        submittedAt: 1700002000000,
+        scoreDTO: null,
+      };
+
+      const res = buildReport(finalRecord, 1700002000000);
+      assert.strictEqual(res.ok, true);
+      if (!res.ok) return;
+
+      const dto = res.value.scoreDTO as any;
+      assert.strictEqual(dto.total, "21/2");
+      assert.strictEqual(dto.maxTotal, "21/2");
+      assert.strictEqual(dto.sections.I.score, "2");
+      assert.strictEqual(dto.sections.I.max, "2");
+      assert.strictEqual(dto.sections.II.score, "8");
+      assert.strictEqual(dto.sections.II.max, "8");
+      assert.strictEqual(dto.sections.III.score, "1/2");
+      assert.strictEqual(dto.sections.III.max, "1/2");
+
+      for (let i = 1; i <= 2; i++) {
+        const qId = `ck-iii-${String(i).padStart(2, "0")}`;
+        const qList = res.value.questions as readonly ReportQuestion[];
+        const qRes: ReportQuestion = qList.find((item: ReportQuestion) => item.questionVersionId === qId)!;
+        assert.strictEqual(qRes.points, "1/4");
+        assert.strictEqual(qRes.maxPoints, "1/4");
+        assert.strictEqual(qRes.status, "full");
+      }
     });
   });
 

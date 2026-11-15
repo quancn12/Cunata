@@ -456,7 +456,7 @@
       "content": "Sử dụng các thông tin sau cho Câu 27 và Câu 28: Đồ thị biểu diễn sự thay đổi nhiệt độ của một miếng chì theo nhiệt lượng cung cấp được mô tả như hình. Biết nhiệt nóng chảy riêng của chì là $0,25 · 10^5$ J / kg.\n\n![Hình minh họa](public/exams/ly12/de16/p04-1.png)\n\nKhối lượng miếng chì bằng bao nhiêu kg ?",
       "image": "public/exams/ly12/de16/p04-1.png",
       "answerKey": "0,8",
-      "explanation": "$Q_{nc} = mλ \\Rightarrow (42 - 22) · 10^3 = m · 0,25 · 10^5 \\Rightarrow m = 0,8$ kg.\nTrả lời ngắn: 0,8."
+      "explanation": "$Q_nc = mλ ⇒ (42 - 22) · 10^3 = m · 0,25 · 10^5 ⇒ m = 0,8$ kg.\nTrả lời ngắn: 0,8."
     },
     {
       "kind": "III",

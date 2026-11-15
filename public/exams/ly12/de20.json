@@ -237,7 +237,7 @@
         }
       ],
       "correctOptionId": "ly12-de20-i-07-a",
-      "explanation": "Ta có $\\frac{p}{D·T} = \\frac{R}{M} ⇒ \\frac{99720}{D·(27 + 273)} = \\frac{8,31}{2·10^-3} ⇒ D = 0,08$ kg/m³. Đáp án A."
+      "explanation": "Ta có $\\frac{p}{D·T} = \\frac{R}{M} ⇒ 99720/(D·(27 + 273)) = 8,31/(2·10^-3) ⇒ D = 0,08$ kg/m³. Đáp án A."
     },
     {
       "kind": "I",
@@ -267,7 +267,7 @@
         }
       ],
       "correctOptionId": "ly12-de20-i-08-c",
-      "explanation": "Ta có $\\frac{x - 273}{373 - 273} = \\frac{x - 32}{212 - 32} ⇒ x = 574,25$. Đáp án C."
+      "explanation": "Ta có $(x - 273)/(373 - 273) = (x - 32)/(212 - 32) ⇒ x = 574,25$. Đáp án C."
     },
     {
       "kind": "I",
@@ -297,7 +297,7 @@
         }
       ],
       "correctOptionId": "ly12-de20-i-09-a",
-      "explanation": "Ta có $\\frac{pV}{T} = const ⇒ \\frac{2·10}{27 + 273} = \\frac{p·40}{327 + 273} ⇒ p = 1$ atm. Đáp án A."
+      "explanation": "Ta có $\\frac{pV}{T} = const ⇒ (2·10)/(27 + 273) = (p·40)/(327 + 273) ⇒ p = 1$ atm. Đáp án A."
     },
     {
       "kind": "I",
@@ -327,7 +327,7 @@
         }
       ],
       "correctOptionId": "ly12-de20-i-10-c",
-      "explanation": "Ta có $\\frac{p_1}{T_1} = \\frac{p_2}{T_2} ⇒ \\frac{p_2}{p_1} = \\frac{T_2}{T_1} = \\frac{357 + 273}{27 + 273} = 2,1$. Đáp án C."
+      "explanation": "Ta có $\\frac{p_1}{T_1} = \\frac{p_2}{T_2} ⇒ \\frac{p_2}{p_1} = \\frac{T_2}{T_1} = (357 + 273)/(27 + 273) = 2,1$. Đáp án C."
     },
     {
       "kind": "I",
@@ -357,7 +357,7 @@
         }
       ],
       "correctOptionId": "ly12-de20-i-11-a",
-      "explanation": "Ta có $n = \\frac{m}{M} = \\frac{7}{28} = 0,25$ mol.\n$\\frac{pV}{T} = nR ⇒ \\frac{p·5}{5 + 273} = 0,25·0,082 ⇒ p ≈ 1,14$ atm. Đáp án A."
+      "explanation": "Ta có $n = \\frac{m}{M} = \\frac{7}{28} = 0,25$ mol.\n$\\frac{pV}{T} = nR ⇒ (p·5)/(5 + 273) = 0,25·0,082 ⇒ p ≈ 1,14$ atm. Đáp án A."
     },
     {
       "kind": "I",
@@ -387,7 +387,7 @@
         }
       ],
       "correctOptionId": "ly12-de20-i-12-c",
-      "explanation": "Ta có $\\frac{pV}{T} = const ⇒ \\frac{0,8·5}{50 + 273} = \\frac{8}{T} ⇒ T = 646$ K $= 373$ °C. Đáp án C."
+      "explanation": "Ta có $\\frac{pV}{T} = const ⇒ (0,8·5)/(50 + 273) = \\frac{8}{T} ⇒ T = 646$ K $= 373$ °C. Đáp án C."
     },
     {
       "kind": "I",
@@ -417,7 +417,7 @@
         }
       ],
       "correctOptionId": "ly12-de20-i-13-c",
-      "explanation": "Đẳng tích $\\frac{p}{T} = const ⇒ \\frac{2}{20 + 273} = \\frac{p}{42 + 273} ⇒ p ≈ 2,15$ atm. Đáp án C."
+      "explanation": "Đẳng tích $\\frac{p}{T} = const ⇒ 2/(20 + 273) = p/(42 + 273) ⇒ p ≈ 2,15$ atm. Đáp án C."
     },
     {
       "kind": "I",
@@ -447,7 +447,7 @@
         }
       ],
       "correctOptionId": "ly12-de20-i-14-b",
-      "explanation": "Đẳng tích $\\frac{p}{T} = const ⇒ \\frac{2}{27 + 273} = \\frac{2,5}{T_2} ⇒ T_2 = 375$ K $≈ 102$ °C.\n$ΔT = T_2 - T_1 = 102 - 27 = 75$ °C. Đáp án B."
+      "explanation": "Đẳng tích $\\frac{p}{T} = const ⇒ 2/(27 + 273) = \\frac{2,5}{T_2} ⇒ T_2 = 375$ K $≈ 102$ °C.\n$ΔT = T_2 - T_1 = 102 - 27 = 75$ °C. Đáp án B."
     },
     {
       "kind": "I",
@@ -477,7 +477,7 @@
         }
       ],
       "correctOptionId": "ly12-de20-i-15-a",
-      "explanation": "Ta có $\\frac{pV}{T} = nR = \\frac{m}{M}R ⇒ m = \\frac{pVM}{RT}$.\n$Δm = \\frac{pVM}{R}(\\frac{1}{T_1} - \\frac{1}{T_2}) = \\frac{5·10^6 · 10·10^-3 · 2·10^-3}{8,31}(\\frac{1}{7 + 273} - \\frac{1}{17 + 273}) ≈ 1,5$ g. Đáp án A."
+      "explanation": "Ta có $\\frac{pV}{T} = nR = \\frac{m}{M}R ⇒ m = pVM/(RT)$.\n$Δm = \\frac{pVM}{R}(\\frac{1}{T_1} - \\frac{1}{T_2}) = \\frac{5·10^6 · 10·10^-3 · 2·10^-3}{8,31}(1/(7 + 273) - 1/(17 + 273)) ≈ 1,5·10^-3$ kg $= 1,5$ g. Đáp án A."
     },
     {
       "kind": "I",
@@ -537,7 +537,7 @@
         }
       ],
       "correctOptionId": "ly12-de20-i-17-b",
-      "explanation": "Ban đầu: $\\frac{pV}{T} = (n_A + n_B)R$.\nKhi dừng khuếch tán, khí A phân bố đều 2 ngăn: $\\frac{p'V}{T} = (\\frac{n_A}{2} + n_B)R$.\nDo đó: $\\frac{p'}{p} = \\frac{n_A/2 + n_B}{n_A + n_B} = \\frac{2}{3} ⇒ n_A = 2n_B$.\nÁp suất riêng phần ban đầu: $\\frac{p_A}{p} = \\frac{n_A}{n_A + n_B} = \\frac{2}{2 + 1} = \\frac{2}{3} ⇒ p_A = \\frac{2}{3}p$; $\\frac{p_B}{p} = \\frac{n_B}{n_A + n_B} = \\frac{1}{2 + 1} = \\frac{1}{3} ⇒ p_B = \\frac{1}{3}p$.\nTỉ số khối lượng: $\\frac{m_A}{m_B} = \\frac{n_A M_A}{n_B M_B} = \\frac{2·2}{40} = 0,1$. Đáp án B."
+      "explanation": "Ban đầu: $\\frac{pV}{T} = (n_A + n_B)R$.\nKhi dừng khuếch tán, khí A phân bố đều 2 ngăn: $\\frac{p'V}{T} = (n_A/2 + n_B)R$.\nDo đó: $\\frac{p'}{p} = (n_A/2 + n_B)/(n_A + n_B) = \\frac{2}{3} ⇒ n_A = 2n_B$.\nÁp suất riêng phần ban đầu: $\\frac{p_A}{p} = n_A/(n_A + n_B) = 2/(2 + 1) = \\frac{2}{3} ⇒ p_A = \\frac{2}{3}p$; $\\frac{p_B}{p} = n_B/(n_A + n_B) = 1/(2 + 1) = \\frac{1}{3} ⇒ p_B = \\frac{1}{3}p$.\nTỉ số khối lượng: $\\frac{m_A}{m_B} = (n_A M_A)/(n_B M_B) = (2·2)/40 = 0,1$. Đáp án B."
     },
     {
       "kind": "I",
@@ -697,7 +697,7 @@
           "label": "b",
           "text": "Lúc sau, cột khí B có chiều dài là 12,5cm .",
           "answer": true,
-          "explanation": "Chiều cao của cột thủy ngân ở mỗi bên bằng nhau là $\\frac{20 + 5}{2} = 12,5$ cm.\nThủy ngân nhánh trái hạ xuống $7,5$ cm và thủy ngân nhánh phải dâng lên $7,5$ cm.\nLúc sau, cột khí B có chiều dài là $l'_B = 20 - 7,5 = 12,5$ cm. Mệnh đề b Đúng."
+          "explanation": "Chiều cao của cột thủy ngân ở mỗi bên bằng nhau là $(20 + 5)/2 = 12,5$ cm.\nThủy ngân nhánh trái hạ xuống $7,5$ cm và thủy ngân nhánh phải dâng lên $7,5$ cm.\nLúc sau, cột khí B có chiều dài là $l'_B = 20 - 7,5 = 12,5$ cm. Mệnh đề b Đúng."
         },
         {
           "statementId": "ly12-de20-ii-04-c",
@@ -753,7 +753,7 @@
       "title": "Câu 27 (Phần III - Trả lời ngắn)",
       "content": "Có hai bình cách nhiệt cùng đựng một chất lỏng nào đó. Một học sinh lần lượt múc từng ca chất lỏng ở bình I trút vào bình II và ghi lại nhiệt độ bình II khi có cân bằng nhiệt sau mỗi lần trút, được kết quả là: 10 °C ; 15 °C ; 18 °C . Coi lượng nước và nhiệt độ mỗi ca chất lỏng múc từ bình I trút vào bình II là như nhau. Bỏ qua sự trao đổi nhiệt với môi trường xung quanh. Nhiệt độ của chất lỏng ở bình I bằng bao nhiêu độ C ?",
       "answerKey": "30",
-      "explanation": "Gọi $m$ là khối lượng mỗi ca chất lỏng, $m_2$ là khối lượng chất lỏng ban đầu ở bình II, $t_0$ là nhiệt độ chất lỏng ở bình I.\nPhương trình cân bằng nhiệt lần 1: $mc(t_0 - 15) = m_2·c·(15 - 10) ⇒ mc(t_0 - 15) = 5m_2·c$.\nPhương trình cân bằng nhiệt lần 2: $mc(t_0 - 18) = (m_2 + m)·c·(18 - 15) ⇒ mc(t_0 - 21) = 3m_2·c$.\nLập tỉ số: $\\frac{t_0 - 15}{t_0 - 21} = \\frac{5}{3} ⇒ 3(t_0 - 15) = 5(t_0 - 21) ⇒ t_0 = 30$ °C."
+      "explanation": "Gọi $m$ là khối lượng mỗi ca chất lỏng, $m_2$ là khối lượng chất lỏng ở bình II sau lần trút thứ nhất, $t_0$ là nhiệt độ chất lỏng ở bình I.\nPhương trình cân bằng nhiệt lần trút thứ hai: $mc(t_0 - 15) = m_2·c·(15 - 10) ⇒ mc(t_0 - 15) = 5m_2·c$.\nPhương trình cân bằng nhiệt lần trút thứ ba: $mc(t_0 - 18) = (m_2 + m)·c·(18 - 15) ⇒ mc(t_0 - 21) = 3m_2·c$.\nLập tỉ số: $(t_0 - 15)/(t_0 - 21) = \\frac{5}{3} ⇒ 3(t_0 - 15) = 5(t_0 - 21) ⇒ t_0 = 30$ °C."
     },
     {
       "kind": "III",
@@ -761,7 +761,7 @@
       "title": "Câu 28 (Phần III - Trả lời ngắn)",
       "content": "Một xilanh kín, nằm ngang chia làm hai phần, mỗi phần dài $l_0$ và ngăn cách nhau bởi một piston cách nhiệt có bề dày không đáng kể. Mỗi phần chứa một lượng khí giống nhau ở nhiệt độ 300 K . Giữ nguyên nhiệt độ khí ở một phần và cần nung nóng khí phần còn lại lên thêm bao nhiêu K thì piston di chuyển chậm một đoạn $l_0 / 3$ ?",
       "answerKey": "300",
-      "explanation": "Áp dụng phương trình trạng thái khí lý tưởng cho hai phần khí:\nPhần giữ nguyên nhiệt độ: $\\frac{p l_0}{T} = \\frac{p'(l_0 - l_0/3)}{T}$.\nPhần bị nung nóng: $\\frac{p l_0}{T} = \\frac{p'(l_0 + l_0/3)}{T + ΔT}$.\nSuy ra: $\\frac{1 - 1/3}{300} = \\frac{1 + 1/3}{300 + ΔT} ⇒ \\frac{2/3}{300} = \\frac{4/3}{300 + ΔT} ⇒ ΔT = 300$ K."
+      "explanation": "Áp dụng phương trình trạng thái khí lý tưởng cho hai phần khí:\nPhần giữ nguyên nhiệt độ: $\\frac{p l_0}{T} = \\frac{p'(l_0 - l_0/3)}{T}$.\nPhần bị nung nóng: $\\frac{p l_0}{T} = p'(l_0 + l_0/3)/(T + ΔT)$.\nSuy ra: $(1 - 1/3)/300 = (1 + 1/3)/(300 + ΔT) ⇒ ΔT = 300$ K."
     }
   ]
 }

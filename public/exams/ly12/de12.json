@@ -419,28 +419,28 @@
           "label": "a",
           "text": "Trong hình H 1 , áp suất của cột khí A là 76 cmHg .",
           "answer": true,
-          "explanation": "Đúng. Trong Hình H1: $p_{A1} = p_0 = 76$ cmHg."
+          "explanation": "Đúng. Trong Hình H1: $p_A1 = p_0 = 76$ cmHg."
         },
         {
           "statementId": "ly12-de12-ii-04-b",
           "label": "b",
           "text": "Trong hình H 1 , áp suất của cột khí B là 141 cmHg .",
           "answer": false,
-          "explanation": "Sai. $p_{B1} = p_{A1} + h = 76 + 25 = 101$ cmHg."
+          "explanation": "Sai. $p_B1 = p_A1 + h = 76 + 25 = 101$ cmHg."
         },
         {
           "statementId": "ly12-de12-ii-04-c",
           "label": "c",
           "text": "Trong hình H2, áp suất của cột khí B là 139 cmHg .",
           "answer": false,
-          "explanation": "Sai. Trong Hình H2: cột khí B đẳng nhiệt $\\Rightarrow p_{B1} V_{B1} = p_{B2} V_{B2} \\Rightarrow 101 · 25 = p_{B2} · 21,7 \\Rightarrow p_{B2} ≈ 116,359$ cmHg."
+          "explanation": "Sai. Trong Hình H2: cột khí B đẳng nhiệt $\\Rightarrow p_B1 V_B1 = p_B2 V_B2 \\Rightarrow 101 · 25 = p_B2 · 21,7 \\Rightarrow p_B2 ≈ 116,359$ cmHg."
         },
         {
           "statementId": "ly12-de12-ii-04-d",
           "label": "d",
           "text": "Piston đã được ấn xuống khoảng 10 cm .",
           "answer": true,
-          "explanation": "Đúng. $p_{A2} = p_{B2} - h = 116,36 - 25 = 91,36$ cmHg. Cột khí A đẳng nhiệt: $p_{A1} V_{A1} = p_{A2} V_{A2} \\Rightarrow 76 · 40 = 91,359 · l_{A2} \\Rightarrow l_{A2} ≈ 33,3$ cm. Piston đã được ấn xuống khoảng $40 + 25 - 33,3 - 21,7 = 10$ cm."
+          "explanation": "Đúng. $p_A2 = p_B2 - h = 116,36 - 25 = 91,36$ cmHg. Cột khí A đẳng nhiệt: $p_A1 V_A1 = p_A2 V_A2 \\Rightarrow 76 · 40 = 91,359 · l_A2 \\Rightarrow l_A2 ≈ 33,3$ cm. Piston đã được ấn xuống khoảng $40 + 25 - 33,3 - 21,7 = 10$ cm."
         }
       ]
     },
@@ -476,7 +476,7 @@
       "content": "Ấm điện khi hoạt động bình thường có điện trở $R = 80$ Ω và cường độ dòng điện qua ấm $I = 3$ A . Dùng ấm này để đun sôi 2 kg nước có nhiệt độ ban đầu là 20°C trong thời gian 20 phút. Biết nhiệt dung riêng của nước $c = 4200$ J / kg . K . Hiệu suất của ấm là bao nhiêu % (làm tròn đến 1 chữ số sau dấu phẩy thập phân)?\n\n![Hình minh họa](public/exams/ly12/de12/p03-2.png)",
       "image": "public/exams/ly12/de12/p03-2.png",
       "answerKey": "77,8",
-      "explanation": "$P = I^2 R = 3^2 · 80 = 720$ W\n$A = Pt = 720 · 20 · 60 = 864000$ J\n$Q = mcΔt = 2 · 4200 · (100 - 20) = 672000$ J\n$H = \\frac{Q}{A} = \\frac{672000}{864000} ≈ 0,78 = 77,8\\%$.\nTrả lời ngắn: 77,8."
+      "explanation": "$P = I^2 R = 3^2 · 80 = 720$ W\n$A = Pt = 720 · 20 · 60 = 864000$ J\n$Q = mcΔt = 2 · 4200 · (100 - 20) = 672000$ J\n$H = \\frac{Q}{A} = \\frac{672000}{864000} ≈ 0,78 = 77,8%$.\nTrả lời ngắn: 77,8."
     },
     {
       "kind": "III",

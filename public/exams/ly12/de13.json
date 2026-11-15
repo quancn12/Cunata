@@ -569,28 +569,28 @@
           "label": "a",
           "text": "Bắt đầu thí nghiệm từ khi chất đó đang ở trạng thái rắn và kết thúc khi chất đó đã ở trạng thái lỏng.",
           "answer": true,
-          "explanation": "Đúng. Phương án này cho phép đo nhiệt lượng từ trạng thái rắn chuyển qua nóng chảy rồi sang lỏng, khi biết nhiệt dung riêng hai trạng thái ta tính được nhiệt nóng chảy riêng."
+          "explanation": "Đúng."
         },
         {
           "statementId": "ly12-de13-ii-01-b",
           "label": "b",
           "text": "Thực hiện thí nghiệm từ khi chất đó bắt đầu đạt đến nhiệt độ nóng chảy nhưng chưa nóng chảy và kết thúc khi nóng chảy hoàn toàn và vẫn đang ở nhiệt độ nóng chảy.",
           "answer": true,
-          "explanation": "Đúng. Toàn bộ nhiệt lượng cung cấp trong giai đoạn này dùng cho quá trình nóng chảy ở nhiệt độ nóng chảy xác định."
+          "explanation": "Đúng."
         },
         {
           "statementId": "ly12-de13-ii-01-c",
           "label": "c",
           "text": "Bắt đầu thí nghiệm từ khi chất đó đang ở trạng thái rắn và kết thúc khi thấy có sự nóng chảy của chất đó.",
           "answer": false,
-          "explanation": "Sai. Vì chưa xảy ra quá trình nóng chảy hoàn toàn thì chưa thể đo được nhiệt nóng chảy riêng."
+          "explanation": "Sai. Vì chưa xảy ra quá trình nóng chảy thì chưa thể đo được nhiệt nóng chảy riêng."
         },
         {
           "statementId": "ly12-de13-ii-01-d",
           "label": "d",
           "text": "Thực hiện thí nghiệm từ khi chất bắt đầu đạt đến nhiệt độ nóng chảy nhưng chưa nóng chảy và kết thúc đo khi chất đó đã hoàn toàn ở trạng thái lỏng.",
           "answer": true,
-          "explanation": "Đúng. Giai đoạn này chất nhận nhiệt lượng để nóng chảy hoàn toàn và tăng nhiệt độ ở thể lỏng, biết nhiệt dung riêng thể lỏng sẽ xác định được nhiệt nóng chảy riêng."
+          "explanation": "Đúng."
         }
       ]
     },
@@ -647,7 +647,7 @@
         {
           "statementId": "ly12-de13-ii-03-b",
           "label": "b",
-          "text": "Nhiệt độ ban đầu của nước đá là $t_{02} = 0$ °C .",
+          "text": "Nhiệt độ ban đầu của nước đá là $t_02 = 0$ °C .",
           "answer": false,
           "explanation": "Sai. Ban đầu khi đổ nước vào thì khối lượng nước đá tăng (từ 10 g lên 11 g), tức là nước đã bị đông đặc thành đá, do đó nhiệt độ ban đầu của nước đá phải nhỏ hơn 0 °C."
         },
@@ -661,9 +661,9 @@
         {
           "statementId": "ly12-de13-ii-03-d",
           "label": "d",
-          "text": "Nhiệt độ ban đầu của nước đổ vào cốc là $t_{01} = 68,6$ °C .",
+          "text": "Nhiệt độ ban đầu của nước đổ vào cốc là $t_01 = 68,6$ °C .",
           "answer": false,
-          "explanation": "Sai. Lúc $t = 1$ phút khối lượng nước đá đạt cực đại là $m_{nd} = 11$ g. Đến thời điểm $t = 11$ phút toàn bộ 11 g nước đá tan hết, lượng nước đổ vào cốc từ $t = 1$ phút đến $t = 11$ phút là $m_n = (11 - 1) · 1 = 10$ g. Phương trình cân bằng nhiệt: $m_n c_n t_{01} = m_{nd} λ ⇒ 10 · 4,2 · t_{01} = 11 · 320 ⇒ t_{01} ≈ 83,81$ °C."
+          "explanation": "Sai. Lúc $t = 1$ phút khối lượng nước đá đạt cực đại là $m_nd = 11$ g. Đến thời điểm $t = 11$ phút toàn bộ 11 g nước đá tan hết, lượng nước đổ vào cốc từ $t = 1$ phút đến $t = 11$ phút là $m_n = (11 - 1) · 1 = 10$ g. Phương trình cân bằng nhiệt: $m_n c_n t_01 = m_nd λ ⇒ 10 · 4,2 · t_01 = 11 · 320 ⇒ t_01 ≈ 83,81$ °C."
         }
       ]
     },

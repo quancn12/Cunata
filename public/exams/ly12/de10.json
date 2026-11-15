@@ -80,12 +80,12 @@
       "kind": "I",
       "questionVersionId": "ly12-de10-i-03",
       "title": "Câu 3 (Phần I)",
-      "content": "Phát biếu nào là không đúng khi nói về nội năng?",
+      "content": "Phát biểu nào là không đúng khi nói về nội năng?",
       "options": [
         {
           "optionId": "ly12-de10-i-03-a",
           "label": "A",
-          "text": "Nội năng là 1 dạng của năng lượng nên có thể chuyến hóa thành các dạng năng lượng khác"
+          "text": "Nội năng là 1 dạng của năng lượng nên có thể chuyển hóa thành các dạng năng lượng khác"
         },
         {
           "optionId": "ly12-de10-i-03-b",
@@ -649,7 +649,7 @@
           "label": "b",
           "text": "Hệ số ma sát giữa vật và mặt phẳng nghiêng xấp xỉ là 0,37 .",
           "answer": true,
-          "explanation": "Đúng. Theo định luật II Newton: $mg\\sin 30° - F_ms = ma ⇒ 3 · 10 · \\sin 30° - F_ms = 3 · \\frac{16}{9} ⇒ F_ms = \\frac{29}{3}$ N\n$F_ms = μmg\\cos 30° ⇒ \\frac{29}{3} = μ · 3 · 10 · \\cos 30° ⇒ μ ≈ 0,37$."
+          "explanation": "Đúng. Theo định luật II Newton: $mg sin 30° - F_ms = ma ⇒ 3 · 10 · sin 30° - F_ms = 3 · \\frac{16}{9} ⇒ F_ms = \\frac{29}{3}$ N\n$F_ms = μmg cos 30° ⇒ \\frac{29}{3} = μ · 3 · 10 · cos 30° ⇒ μ ≈ 0,37$."
         },
         {
           "statementId": "ly12-de10-ii-03-c",
@@ -700,7 +700,7 @@
           "label": "d",
           "text": "Độ cao của khối nước ở hình trụ B khi cân bằng nhiệt là 1,54 m.",
           "answer": false,
-          "explanation": "Sai. Độ cao của khối nước ở hình trụ B khi cân bằng nhiệt phải nhỏ hơn $H = 1,2$ m (thực tế là $x + h_B = 0,49 + 0,63 = 1,12$ m)."
+          "explanation": "Sai. Độ cao của khối nước ở hình trụ B khi cân bằng nhiệt phải nhỏ hơn $H = 1,2$ m.\n\n![Hình minh họa lời giải](public/exams/ly12/de10/p09-2.png)\n\n$V_n = V_B + m_Atan / D_B ⇒ 2Sx + S(x + 0,63) = 1,2S + 0,9S / 1 ⇒ x = 0,49$ m\nĐộ cao của khối nước ở hình trụ B khi cân bằng nhiệt là $x + h_B = 0,49 + 0,63 = 1,12$ m."
         }
       ]
     },

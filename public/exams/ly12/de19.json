@@ -710,7 +710,7 @@
           "label": "c",
           "text": "Chiều dài của cột không khí trong ngăn A ở trạng thái ban đầu là 8 cm.",
           "answer": true,
-          "explanation": "Ta có $p_0 · l_A = p(l_A + 4)$ và $p_0 · l_B = p(l_B + 10 - 4) ⇒ \\frac{l_A}{l_B} = \\frac{l_A + 4}{l_B + 6}$. Vì $l_A + l_B = 20$ cm nên $l_A = 8$ cm $⇒$ Đúng."
+          "explanation": "Ta có $p_0 · l_A = p(l_A + 4)$ và $p_0 · l_B = p(l_B + 10 - 4) ⇒ \\frac{l_A}{l_B} = (l_A + 4)/(l_B + 6)$. Vì $l_A + l_B = 20$ cm nên $l_A = 8$ cm $⇒$ Đúng."
         },
         {
           "statementId": "ly12-de19-ii-04-d",
@@ -760,13 +760,13 @@
       "title": "Câu 27 (Phần III - Trả lời ngắn)",
       "content": "Sử dụng thông tin sau cho Câu 27 và Câu 28: Người ta thả 1 kg nước đá ở nhiệt độ $-30$ °C vào một bình chứa 2 kg nước ở nhiệt độ 50 °C. Cho nhiệt dung riêng của nước đá, nước lần lượt là $c_1 = 2100$ J/(kg·K), $c_2 = 4200$ J/(kg·K). Nhiệt nóng chảy riêng của nước đá là $λ = 340000$ J/kg. Bỏ qua sự trao đổi nhiệt với bình và môi trường.\n\nNhiệt độ của hỗn hợp khi cân bằng nhiệt bằng bao nhiêu độ C (làm tròn kết quả đến chữ số hàng phần trăm)?",
       "answerKey": "1,35",
-      "explanation": "Nhiệt lượng nước đá thu vào để tăng lên 0 °C: $Q_1 = m_1 c_1 Δt_1 = 1 · 2100 · 30 = 63000$ J. Nhiệt lượng nóng chảy hoàn toàn nước đá: $Q_{nc} = λ m_1 = 340000$ J. Nhiệt lượng nước tỏa ra khi hạ về 0 °C: $Q_2 = m_2 c_2 Δt_2 = 2 · 4200 · 50 = 420000$ J. Vì $Q_2 > Q_1 + Q_{nc}$ nên nước đá tan hết và nhiệt độ cân bằng $t > 0$ °C. Phương trình cân bằng nhiệt: $Q_1 + Q_{nc} + m_1 c_2 t = m_2 c_2 (50 - t) ⇒ 63000 + 340000 + 1 · 4200 · t = 2 · 4200 · (50 - t) ⇒ t = \\frac{85}{63} ≈ 1,35$ °C. Trả lời ngắn: 1,35."
+      "explanation": "Nhiệt lượng nước đá thu vào để tăng lên 0 °C: $Q_1 = m_1 c_1 Δt_1 = 1 · 2100 · 30 = 63000$ J. Nhiệt lượng nóng chảy hoàn toàn nước đá: $Q_nc = λ m_1 = 340000$ J. Nhiệt lượng nước tỏa ra khi hạ về 0 °C: $Q_2 = m_2 c_2 Δt_2 = 2 · 4200 · 50 = 420000$ J. Vì $Q_2 > Q_1 + Q_nc$ nên nước đá tan hết và nhiệt độ cân bằng $t > 0$ °C. Phương trình cân bằng nhiệt: $Q_1 + Q_nc + m_1 c_2 t = m_2 c_2 (50 - t) ⇒ 63000 + 340000 + 1 · 4200 · t = 2 · 4200 · (50 - t) ⇒ t = \\frac{85}{63} ≈ 1,35$ °C. Trả lời ngắn: 1,35."
     },
     {
       "kind": "III",
       "questionVersionId": "ly12-de19-iii-06",
       "title": "Câu 28 (Phần III - Trả lời ngắn)",
-      "content": "Tiếp nối thông tin câu trước: Sau đó người ta thả vào bình một cục nước đá khác gồm: một mẩu chì ở giữa có khối lượng 10 g và 200 g nước đá bao quanh mẩu chì ở 0 °C. Khối lượng riêng của nước đá, nước và chì lần lượt là $D_1 = 900$ kg/m³, $D_2 = 1000$ kg/m³, $D_3 = 11500$ kg/m³. Cần rót vào bình bao nhiêu gam nước ở 10 °C để cục nước đá bắt đầu chìm (làm tròn kết quả đến chữ số hàng đơn vị)?",
+      "content": "Sử dụng thông tin sau cho Câu 27 và Câu 28: Người ta thả 1 kg nước đá ở nhiệt độ $-30$ °C vào một bình chứa 2 kg nước ở nhiệt độ 50 °C. Cho nhiệt dung riêng của nước đá, nước lần lượt là $c_1 = 2100$ J/(kg·K), $c_2 = 4200$ J/(kg·K). Nhiệt nóng chảy riêng của nước đá là $λ = 340000$ J/kg. Bỏ qua sự trao đổi nhiệt với bình và môi trường.\n\nSau đó người ta thả vào bình một cục nước đá khác gồm: một mẩu chì ở giữa có khối lượng 10 g và 200 g nước đá bao quanh mẩu chì ở 0 °C. Khối lượng riêng của nước đá, nước và chì lần lượt là $D_1 = 900$ kg/m³, $D_2 = 1000$ kg/m³, $D_3 = 11500$ kg/m³. Cần rót vào bình bao nhiêu gam nước ở 10 °C để cục nước đá bắt đầu chìm (làm tròn kết quả đến chữ số hàng đơn vị)?",
       "answerKey": "549",
       "explanation": "Gọi $m$ là khối lượng nước đá còn lại khi cục đá bắt đầu chìm: $P = F_A ⇒ (m_3 + m)g = D_2 g(\\frac{m_3}{D_3} + \\frac{m}{D_1}) ⇒ 0,01 + m = 1000(\\frac{0,01}{11500} + \\frac{m}{900}) ⇒ m = \\frac{189}{2300}$ kg. Khối lượng nước đá cần tan: $m_x = 0,2 - \\frac{189}{2300} = \\frac{271}{2300}$ kg. Phương trình cân bằng nhiệt với $t = \\frac{85}{63}$ °C: $(m_1 + m_2) c_2 t + m_4 c_2 t_4 = m_x λ ⇒ 3 · 4200 · \\frac{85}{63} + m_4 · 4200 · 10 = \\frac{271}{2300} · 340000 ⇒ m_4 ≈ 0,549$ kg $= 549$ g. Trả lời ngắn: 549."
     }

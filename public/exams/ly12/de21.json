@@ -44,6 +44,12 @@
       "mime": "image/png",
       "data": "public/exams/ly12/de21/p03-2.png",
       "alt": "Hình vẽ xi lanh và hai piston Câu 22"
+    },
+    {
+      "assetId": "de21-p06-2",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de21/p06-2.png",
+      "alt": "Hình vẽ lời giải ống chữ U Câu 17"
     }
   ],
   "questions": [
@@ -315,7 +321,7 @@
         }
       ],
       "correctOptionId": "ly12-de21-i-09-a",
-      "explanation": "Ta có $\\frac{pV}{T} = const$ mà để nhiệt độ trở lại ban đầu thì $pV = const \\Rightarrow (p\\uparrow, V\\downarrow)$ hoặc $(p\\downarrow, V\\uparrow)$. Chọn A."
+      "explanation": "Ta có $\\frac{pV}{T} = const$ mà để nhiệt độ trở lại ban đầu thì $pV = const \\Rightarrow (p↑, V↓)$ hoặc $(p↓, V↑)$. Chọn A."
     },
     {
       "kind": "I",
@@ -345,7 +351,7 @@
         }
       ],
       "correctOptionId": "ly12-de21-i-10-a",
-      "explanation": "Đẳng tích: $\\frac{p}{T} = const \\Rightarrow \\frac{2,7}{-3 + 273} = \\frac{p}{-3 + 27 + 273} \\Rightarrow p ≈ 3$ atm. Chọn A."
+      "explanation": "Đẳng tích: $\\frac{p}{T} = const \\Rightarrow 2,7/(-3 + 273) = p/(-3 + 27 + 273) \\Rightarrow p ≈ 3$ atm. Chọn A."
     },
     {
       "kind": "I",
@@ -405,7 +411,7 @@
         }
       ],
       "correctOptionId": "ly12-de21-i-12-b",
-      "explanation": "$pV = nRT = \\frac{m}{M}RT \\Rightarrow \\frac{p_2}{p_1} = \\frac{m_2}{m_1}·\\frac{T_2}{T_1} \\Rightarrow \\frac{p_2}{4·10^5} = \\frac{1}{2}·\\frac{12 + 273}{27 + 273} \\Rightarrow p_2 = 1,9·10^5$ Pa. Chọn B."
+      "explanation": "$pV = nRT = \\frac{m}{M}RT \\Rightarrow \\frac{p_2}{p_1} = \\frac{m_2}{m_1}·\\frac{T_2}{T_1} \\Rightarrow \\frac{p_2}{4·10^5} = \\frac{1}{2}·(12 + 273)/(27 + 273) \\Rightarrow p_2 = 1,9·10^5$ Pa. Chọn B."
     },
     {
       "kind": "I",
@@ -556,7 +562,7 @@
         }
       ],
       "correctOptionId": "ly12-de21-i-17-b",
-      "explanation": "Áp suất tại điểm màu xanh = áp suất tại điểm màu đỏ:\n$p_0 + \\frac{P}{S} = p + Dgh \\Rightarrow 10^5 + \\frac{35}{10·10^-4} = p + 1,36·10^4·10·0,1 \\Rightarrow p = 1,214·10^5$ Pa. Chọn B."
+      "explanation": "![Hình vẽ lời giải ống chữ U](public/exams/ly12/de21/p06-2.png)\n\nÁp suất tại điểm màu xanh = áp suất tại điểm màu đỏ (hai điểm cùng độ cao ở đáy piston nhánh A và trong thủy ngân nhánh B):\n$p_0 + \\frac{P}{S} = p + Dgh \\Rightarrow 10^5 + \\frac{35}{10·10^-4} = p + 1,36·10^4·10·0,1 \\Rightarrow p = 1,214·10^5$ Pa. Chọn B."
     },
     {
       "kind": "I",
@@ -607,14 +613,14 @@
           "label": "b",
           "text": "Khi biến đổi đẳng nhiệt, khối lượng riêng của khí tỉ lệ thuận với áp suất của nó.",
           "answer": true,
-          "explanation": "Đúng. $D = \\frac{m}{V} \\sim p$."
+          "explanation": "Đúng. $D = \\frac{m}{V} ∼ p$."
         },
         {
           "statementId": "ly12-de21-ii-01-c",
           "label": "c",
           "text": "Khi biến đổi đẳng áp, thể tích của khí tỉ lệ thuận với nhiệt độ (thang nhiệt động) của nó.",
           "answer": true,
-          "explanation": "Đúng. Đẳng áp thì $\\frac{V}{T} = const$ hay $V \\sim T$."
+          "explanation": "Đúng. Đẳng áp thì $\\frac{V}{T} = const$ hay $V ∼ T$."
         },
         {
           "statementId": "ly12-de21-ii-01-d",
@@ -651,7 +657,7 @@
           "label": "c",
           "text": "Hiệu suất của động cơ nhiệt là 20%.",
           "answer": true,
-          "explanation": "Đúng. $H = \\frac{A}{Q_1} = \\frac{4}{20} = 0,2 = 20\\%$."
+          "explanation": "Đúng. $H = \\frac{A}{Q_1} = \\frac{4}{20} = 0,2 = 20%$."
         },
         {
           "statementId": "ly12-de21-ii-02-d",
@@ -725,7 +731,7 @@
           "label": "c",
           "text": "Giá trị $T_3 = 270$ K .",
           "answer": true,
-          "explanation": "Đẳng áp $\\frac{V_2}{T_2} = \\frac{V_3}{T_3} \\Rightarrow \\frac{2L·30 + L·15}{450} = \\frac{3L·15}{T_3} \\Rightarrow T_3 = 270$ K $\\Rightarrow$ c) Đúng."
+          "explanation": "Đẳng áp $\\frac{V_2}{T_2} = \\frac{V_3}{T_3} \\Rightarrow (2L·30 + L·15)/450 = \\frac{3L·15}{T_3} \\Rightarrow T_3 = 270$ K $\\Rightarrow$ c) Đúng."
         },
         {
           "statementId": "ly12-de21-ii-04-d",
@@ -742,7 +748,7 @@
       "title": "Câu 23 (Phần III - Trả lời ngắn)",
       "content": "Nhiệt độ không tuyệt đối biểu thị theo thang Fahrenheit là $t$ °F ? Giá trị của $t/10$ bằng bao nhiêu (làm tròn kết quả đến chữ số hàng đơn vị)?",
       "answerKey": "-46",
-      "explanation": "$t(°F) = 32 + 1,8t(°C) = 32 + 1,8·(-273) = -459,4(°F) \\Rightarrow \\frac{t}{10} = -45,94$. Trả lời ngắn: -46."
+      "explanation": "$t(°F) = 32 + 1,8t(°C) = 32 + 1,8·(-273) = -459,4(°F) \\Rightarrow \\frac{t}{10} = -45,94$. Trả lời ngắn: -46.\n\nChú ý: Để tránh gây tranh cãi nên đề sẽ luôn thiết kế cách quy tròn để cho tính theo 273 hay 273,15 đều ra cùng đáp án nên các bạn cứ tính theo 273 là được."
     },
     {
       "kind": "III",
@@ -750,7 +756,7 @@
       "title": "Câu 24 (Phần III - Trả lời ngắn)",
       "content": "Sử dụng các thông tin sau cho Câu 2 và Câu 3: Chất khí trong xi-lanh của động cơ nhiệt có áp suất 2 atm và nhiệt độ 127 °C.\n\nKhi thể tích không đổi, để nhiệt độ giảm đi 100 °C thì áp suất khí trong xi-lanh là bao nhiêu atm (làm tròn kết quả đến chữ số hàng phần mười)?",
       "answerKey": "1,5",
-      "explanation": "$\\frac{p}{T} = const \\Rightarrow \\frac{2}{127 + 273} = \\frac{p}{127 - 100 + 273} \\Rightarrow p = 1,5$ atm. Trả lời ngắn: 1,5."
+      "explanation": "$\\frac{p}{T} = const \\Rightarrow 2/(127 + 273) = p/(127 - 100 + 273) \\Rightarrow p = 1,5$ atm. Trả lời ngắn: 1,5."
     },
     {
       "kind": "III",
@@ -758,7 +764,7 @@
       "title": "Câu 25 (Phần III - Trả lời ngắn)",
       "content": "Sử dụng các thông tin sau cho Câu 2 và Câu 3: Chất khí trong xi-lanh của động cơ nhiệt có áp suất 2 atm và nhiệt độ 127 °C.\n\nBây giờ người ta nén khí để thể tích giảm 2 lần, áp suất tăng lên đến 3 atm thí lúc đó nhiệt độ là bao nhiêu độ C (làm tròn kết quả đến chữ số hàng đơn vị)?",
       "answerKey": "27",
-      "explanation": "$\\frac{pV}{T} = const \\Rightarrow \\frac{2·2}{127 + 273} = \\frac{3}{T} \\Rightarrow T = 300$ K $≈ 27$ °C. Trả lời ngắn: 27."
+      "explanation": "$\\frac{pV}{T} = const \\Rightarrow (2·2)/(127 + 273) = \\frac{3}{T} \\Rightarrow T = 300$ K $≈ 27$ °C. Trả lời ngắn: 27."
     },
     {
       "kind": "III",
@@ -766,7 +772,7 @@
       "title": "Câu 26 (Phần III - Trả lời ngắn)",
       "content": "Sử dụng các thông tin sau cho Câu 4 và Câu 5: Một bình lặn bằng nhôm chứa 11 lít không khí ở nhiệt độ 21 °C và áp suất $10^5$ Pa .\n\nCó bao nhiêu mol không khí trong bình (làm tròn kết quả đến 2 chữ số sau dấu phẩy thập phân)",
       "answerKey": "0,45",
-      "explanation": "$\\frac{pV}{T} = nR \\Rightarrow \\frac{10^5·11·10^-3}{21 + 273} = n·8,31 \\Rightarrow n ≈ 0,45$ mol. Trả lời ngắn: 0,45."
+      "explanation": "$\\frac{pV}{T} = nR \\Rightarrow (10^5·11·10^-3)/(21 + 273) = n·8,31 \\Rightarrow n ≈ 0,45$ mol. Trả lời ngắn: 0,45."
     },
     {
       "kind": "III",
@@ -782,7 +788,7 @@
       "title": "Câu 28 (Phần III - Trả lời ngắn)",
       "content": "Nếu đổ 500 g nước ở 60 °C vào một bình kim loại ở 20 °C thì nhiệt độ của hệ ở trạng thái cân bằng nhiệt là 50 °C. Nếu đổ 100 g nước ở 60 °C cũng vào bình kim loại nói trên ở 20 °C thì nhiệt độ của hệ ở trạng thái cân bằng nhiệt là bao nhiêu °C ? (Coi chỉ có bình và nước trao đổi nhiệt).",
       "answerKey": "35",
-      "explanation": "Phương trình cân bằng nhiệt:\nLần 1: $500·c_n·(60 - 50) = m_b c_b·(50 - 20)$\nLần 2: $100·c_n·(60 - t) = m_b c_b·(t - 20)$\nLập tỉ số: $\\frac{500·(60 - 50)}{100·(60 - t)} = \\frac{50 - 20}{t - 20} \\Rightarrow t = 35$ °C. Trả lời ngắn: 35."
+      "explanation": "Phương trình cân bằng nhiệt:\nLần 1: $500·c_n·(60 - 50) = m_b c_b·(50 - 20)$\nLần 2: $100·c_n·(60 - t) = m_b c_b·(t - 20)$\nLập tỉ số: $(500·(60 - 50))/(100·(60 - t)) = (50 - 20)/(t - 20) \\Rightarrow t = 35$ °C. Trả lời ngắn: 35."
     }
   ]
 }

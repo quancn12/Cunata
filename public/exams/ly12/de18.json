@@ -434,7 +434,7 @@
         }
       ],
       "correctOptionId": "ly12-de18-i-14-b",
-      "explanation": "$\\frac{X - (-10)}{90 - (-10)} = \\frac{40 - 0}{100 - 0} ⇒ X = 30$. Chọn B."
+      "explanation": "$((X - (-10))/(90 - (-10))) = ((40 - 0)/(100 - 0)) ⇒ X = 30$. Chọn B."
     },
     {
       "kind": "I",
@@ -494,7 +494,7 @@
         }
       ],
       "correctOptionId": "ly12-de18-i-16-b",
-      "explanation": "$m_1 c_1 (t - t_1) = m_2 c_2 (t_2 - t) ⇒ t - t_1 = 2 · 0,5 · (t_2 - t) ⇒ t = \\frac{t_2 + t_1}{2}$. Chọn B."
+      "explanation": "$m_1 c_1 (t - t_1) = m_2 c_2 (t_2 - t) ⇒ t - t_1 = 2 · 0,5 · (t_2 - t) ⇒ t = (t_2 + t_1)/2$. Chọn B."
     },
     {
       "kind": "I",
@@ -524,7 +524,7 @@
         }
       ],
       "correctOptionId": "ly12-de18-i-17-d",
-      "explanation": "Nhiệt nóng chảy hoàn toàn $Q_nc = m_đ λ = 30 · 334 = 10020$ J.\nNhiệt lượng nước có thể tỏa ra nếu hạ xuống 0°C là $Q_n = m_n c Δt = 200 · 4,2 · (100 - 20) = 67200$ J. Vì $Q_n > Q_nc$ nên đá tan hết hoàn toàn.\n$Q_nc + m_đ c t = m_n c (t_n - t) ⇒ 10020 + 30 · 4,2 · t = 200 · 4,2 · (20 - t) ⇒ t ≈ 7$°C. Chọn D."
+      "explanation": "Nhiệt nóng chảy hoàn toàn $Q_nc = m_d λ = 30 · 334 = 10020$ J ($m_d$ là khối lượng nước đá).\nNhiệt lượng nước có thể tỏa ra nếu hạ xuống 0°C là $Q_n = m_n c Δt = 200 · 4,2 · (100 - 20) = 67200$ J. Vì $Q_n > Q_nc$ nên đá tan hết hoàn toàn.\n$Q_nc + m_d c t = m_n c (t_n - t) ⇒ 10020 + 30 · 4,2 · t = 200 · 4,2 · (20 - t) ⇒ t ≈ 7$°C. Chọn D."
     },
     {
       "kind": "I",
@@ -617,7 +617,7 @@
           "label": "c",
           "text": "Điện năng cung cấp cho ấm xấp xỉ bằng 2,083kJ",
           "answer": false,
-          "explanation": "Sai. Điện năng cung cấp cho ấm là $A = \\frac{Q}{H} = \\frac{1562040}{0,75} = 2082720$ J $\\≈ 2083$ kJ (không phải $2,083$ kJ)."
+          "explanation": "Sai. Điện năng cung cấp cho ấm là $A = \\frac{Q}{H} = \\frac{1562040}{0,75} = 2082720$ J $≈ 2083$ kJ (không phải $2,083$ kJ)."
         },
         {
           "statementId": "ly12-de18-ii-02-d",
@@ -639,7 +639,7 @@
           "label": "a",
           "text": "Quá trình (4) - (1) là đẳng áp.",
           "answer": true,
-          "explanation": "Đúng. Đường kéo dài của đoạn (4) - (1) đi qua gốc tọa độ O trong hệ tọa độ V - T nên (4) - (1) là quá trình đẳng áp.\n(1) - (2) là quá trình đẳng tích: $\\frac{p_1}{T_1} = \\frac{p_2}{T_2} ⇒ \\frac{p_1}{p_2} = \\frac{T_1}{T_2}$ (1).\n(3) - (4) là quá trình đẳng áp: $\\frac{p_3}{T_3} = \\frac{p_4}{T_4}$, mà $p_3 = p_2$, $p_4 = p_1$, $T_4 = T_2$ nên $\\frac{p_2}{T_3} = \\frac{p_1}{T_2} ⇒ \\frac{p_1}{p_2} = \\frac{T_2}{T_3}$ (2).\nTừ (1) và (2) suy ra $\\frac{T_1}{T_2} = \\frac{T_2}{T_3} ⇒ T_3 = \\frac{T_2^2}{T_1}$."
+          "explanation": "Đúng. Đường kéo dài của đoạn (4) - (1) đi qua gốc tọa độ O trong hệ tọa độ V - T nên (4) - (1) là quá trình đẳng áp.\n(1) - (2) là quá trình đẳng tích: $\\frac{p_1}{T_1} = \\frac{p_2}{T_2} ⇒ \\frac{p_1}{p_2} = \\frac{T_1}{T_2}$ (1).\n(3) - (4) là quá trình đẳng tích: $\\frac{p_3}{T_3} = \\frac{p_4}{T_4}$, mà $p_3 = p_2$, $p_4 = p_1$, $T_4 = T_2$ nên $\\frac{p_2}{T_3} = \\frac{p_1}{T_2} ⇒ \\frac{p_1}{p_2} = \\frac{T_2}{T_3}$ (2).\nTừ (1) và (2) suy ra $\\frac{T_1}{T_2} = \\frac{T_2}{T_3} ⇒ T_3 = \\frac{T_2^2}{T_1}$."
         },
         {
           "statementId": "ly12-de18-ii-03-b",
@@ -716,7 +716,7 @@
       "title": "Câu 24 (Phần III - Trả lời ngắn)",
       "content": "Một lượng khí xác định có quá trình biến đổi trạng thái cho bởi đồ thị như hình vẽ. Biết nhiệt độ ở trạng thái (1) là 50°C . Nhiệt độ ở trạng thái (2) bằng bao nhiêu độ C (làm tròn kết quả đến chữ số hàng đơn vị)?",
       "answerKey": "696",
-      "explanation": "Quá trình đẳng áp: $\\frac{V_1}{T_1} = \\frac{V_2}{T_2} ⇒ \\frac{2}{50 + 273} = \\frac{6}{T_2} ⇒ T_2 = 969$ K $= 696$°C.\nTrả lời ngắn: 696."
+      "explanation": "Quá trình đẳng áp: $\\frac{V_1}{T_1} = \\frac{V_2}{T_2} ⇒ 2/(50 + 273) = \\frac{6}{T_2} ⇒ T_2 = 969$ K $= 696$°C.\nTrả lời ngắn: 696."
     },
     {
       "kind": "III",
@@ -733,7 +733,7 @@
       "title": "Câu 26 (Phần III - Trả lời ngắn)",
       "content": "Trong thí nghiệm đo nhiệt dung riêng của nước, công suất điện trên oát kế là 950 W , khối lượng nước được sử dụng là 1 kg . Đồ thị thực nghiệm biểu diễn sự thay đổi nhiệt độ phụ thuộc vào thời gian của nước trong nhiệt lượng kế như hình bên. Nếu hao phí nhiệt lượng là 1,5% thì nhiệt dung riêng của nước bằng bao nhiêu J/kgK (làm tròn kết quả đến chữ số hàng đơn vị)?\n\n![Đồ thị thực nghiệm](public/exams/ly12/de18/p03-2.png)",
       "answerKey": "4192",
-      "explanation": "Từ đồ thị, trong khoảng thời gian từ $τ_1 = 32$ s đến $τ_2 = 144$ s ($t = 144 - 32 = 112$ s), nhiệt độ nước tăng từ 35°C lên 60°C ($Δt = 60 - 35 = 25$°C).\nĐiện năng cung cấp: $A = P · t = 950 · (144 - 32) = 106400$ J.\nNhiệt lượng nước nhận được có ích: $Q = H · A = (1 - \\frac{1,5}{100}) · 106400 = 104804$ J.\nNhiệt dung riêng của nước: $c = \\frac{Q}{m Δt} = \\frac{104804}{1 · (60 - 35)} ≈ 4192$ J/kgK.\nTrả lời ngắn: 4192.",
+      "explanation": "Từ đồ thị, trong khoảng thời gian từ $τ_1 = 32$ s đến $τ_2 = 144$ s ($t = 144 - 32 = 112$ s), nhiệt độ nước tăng từ 35°C lên 60°C ($Δt = 60 - 35 = 25$°C).\nĐiện năng cung cấp: $A = P · t = 950 · (144 - 32) = 106400$ J.\nNhiệt lượng nước nhận được có ích: $Q = H · A = (1 - \\frac{1,5}{100}) · 106400 = 104804$ J.\nNhiệt dung riêng của nước: $c = Q/(m Δt) = 104804/(1 · (60 - 35)) ≈ 4192$ J/kgK.\nTrả lời ngắn: 4192.",
       "image": "public/exams/ly12/de18/p03-2.png"
     },
     {
