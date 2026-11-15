@@ -90,9 +90,12 @@ export async function assertScores(page, expected) {
     for (const [i, key] of ['score', 'max'].entries()) {
       const component = parts[i].replace(/\s*\([^)]*\)\s*/g, '').trim();
       const actual = scalar(component), wanted = scalar(e[key]);
-      // Compare exact rational values, including finite decimals; ignore labelled approximations only.
-      assert.equal(actual[0] * wanted[1], wanted[0] * actual[1],
-        `${k}.${key}: oracle=${e[key]}, UI=${JSON.stringify(raw[k])}`);
+      // Quyết định D02 của Trưởng phòng (16/11/2026): điểm hiển thị là số thập phân làm tròn nửa lên tới 2 chữ số
+      // (số nguyên hiện số nguyên), không còn hiện phân số chính xác. Phó phòng (Claude) sửa phép so ở đây cho khớp
+      // quyết định: giá trị trên giao diện phải bằng đúng điểm oracle làm tròn nửa lên tới phần trăm.
+      const rounded = (wanted[0] * 200n + wanted[1]) / (2n * wanted[1]);   // phần trăm, làm tròn nửa lên (điểm không âm)
+      assert.equal(actual[0] * 100n, rounded * actual[1],
+        `${k}.${key}: oracle=${e[key]} (làm tròn 2 chữ số = ${rounded}/100), UI=${JSON.stringify(raw[k])}`);
     }
   }
 }
