@@ -165,9 +165,12 @@ describe('E2E & UI Flow Verification — Cunata Web Demo (index.html)', () => {
             querySelectorAll() { return []; },
             setAttribute() {},
             getAttribute() { return null; },
-            addEventListener() {}
+            addEventListener() {},
+            removeEventListener() {}
           };
-        }
+        },
+        addEventListener() {},
+        removeEventListener() {}
       },
       window: { addEventListener() {}, scrollTo() {}, location: { reload() {} } },
       localStorage: {
@@ -2141,11 +2144,10 @@ describe('E2E & UI Flow Verification — Cunata Web Demo (index.html)', () => {
     p.run('studentState.startedAt = Date.now(); studentState.deadline = Date.now() + 1000000; studentState.responses = { "q-rel-1": "o2", "q-rel-3": "4,5" };');
     p.run('submitExam()');
 
-    // Offline report generated BEFORE deadline must NOT contain explanations or correct answers
+    // Under Decision D08 (16/11/2026), after submission, explanations and correct answers are revealed for all questions
     const reportPreDeadline = p.run('generateOfflineReportHtml(studentState.scoreResult)') as string;
-    assert.ok(!reportPreDeadline.includes('Bí mật: Lời giải q-rel-1'), 'Pre-deadline offline report must not leak explanation');
-    assert.ok(!reportPreDeadline.includes('Bí mật: Lời giải q-rel-3'), 'Pre-deadline offline report must not leak Part III explanation');
-    assert.ok(reportPreDeadline.includes('Chưa công bố'), 'Pre-deadline offline report must state answer keys are Chưa công bố');
+    assert.ok(reportPreDeadline.includes('Bí mật: Lời giải q-rel-1'), 'Under D08, post-submission report reveals explanation even before deadline');
+    assert.ok(reportPreDeadline.includes('Bí mật: Lời giải q-rel-3'), 'Under D08, post-submission report reveals Part III explanation even before deadline');
 
     // Case B: Deadline has passed (deadline is 10 seconds in the past)
     p.run('studentState.deadline = Date.now() - 10000;');

@@ -79,8 +79,9 @@ describe('WEB-W3-GLUE — Legacy Bridge Rational Arithmetic', () => {
     assert.equal(r.den, 2n);
 
     assert.equal(formatRationalScore('10'), '10');
-    assert.equal(formatRationalScore('7/2'), '3,5');
-    assert.equal(formatRationalScore('10/3'), '10/3 (~3,33)');
+    // Quyết định D02 (16/11/2026): điểm không nguyên luôn hiện đúng 2 chữ số thập phân (dấu phẩy), làm tròn nửa lên
+    assert.equal(formatRationalScore('7/2'), '3,50');
+    assert.equal(formatRationalScore('10/3'), '3,33');
   });
 });
 

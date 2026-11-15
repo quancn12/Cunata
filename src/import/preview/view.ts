@@ -927,6 +927,11 @@ export function mount(
         const blocksArea = doc.createElement("div");
         blocksArea.className = "draft-blocks-area";
         blocksArea.appendChild(renderBlocks(q.blocks, { document: doc, assets: (currentJob as any).assets }));
+        const previewImgs = blocksArea.querySelectorAll("img");
+        previewImgs.forEach((img) => {
+          img.loading = "eager";
+          img.decoding = "sync";
+        });
         contentArea.appendChild(blocksArea);
       }
 
@@ -935,6 +940,8 @@ export function mount(
         const img = doc.createElement("img");
         img.src = q.image;
         img.alt = "Hình ảnh minh họa câu hỏi";
+        img.loading = "eager";
+        img.decoding = "sync";
         img.style.maxWidth = "100%";
         img.style.maxHeight = "250px";
         img.style.borderRadius = "4px";

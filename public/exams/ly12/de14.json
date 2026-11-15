@@ -1,0 +1,774 @@
+{
+  "schemaVersion": "web-exam-v1",
+  "examId": "ly12-hang-tuan-de-14",
+  "examVersionId": "v1.0.0",
+  "title": "Vật lí 12 — Đề số 14 hàng tuần",
+  "subject": "Vật lí",
+  "grade": 12,
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  },
+  "assets": [
+    {
+      "assetId": "ly12-de14-p02-1",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de14/p02-1.png",
+      "alt": "Hình vẽ"
+    },
+    {
+      "assetId": "ly12-de14-p02-2",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de14/p02-2.png",
+      "alt": "Đồ thị"
+    },
+    {
+      "assetId": "ly12-de14-p03-1",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de14/p03-1.png",
+      "alt": "Hình vẽ"
+    }
+  ],
+  "questions": [
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-01",
+      "title": "Câu 1 (Phần I)",
+      "content": "Chất khí gây áp suất lên thành bình chứa là do",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-01-a",
+          "label": "A",
+          "text": "nhiệt độ."
+        },
+        {
+          "optionId": "ly12-de14-i-01-b",
+          "label": "B",
+          "text": "va chạm."
+        },
+        {
+          "optionId": "ly12-de14-i-01-c",
+          "label": "C",
+          "text": "khối lượng hạt."
+        },
+        {
+          "optionId": "ly12-de14-i-01-d",
+          "label": "D",
+          "text": "thể tích."
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-01-b",
+      "explanation": "Đáp án B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-02",
+      "title": "Câu 2 (Phần I)",
+      "content": "Biểu thức nào sau đây là của định luật Boyle?",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-02-a",
+          "label": "A",
+          "text": "$p_1 V_2 = p_2 V_1$"
+        },
+        {
+          "optionId": "ly12-de14-i-02-b",
+          "label": "B",
+          "text": "$\\frac{V_1}{p_1} = \\frac{V_2}{p_2}$"
+        },
+        {
+          "optionId": "ly12-de14-i-02-c",
+          "label": "C",
+          "text": "$\\frac{p_1}{V_1} = \\frac{V_2}{p_2}$"
+        },
+        {
+          "optionId": "ly12-de14-i-02-d",
+          "label": "D",
+          "text": "$p_1 V_1 = p_2 V_2$"
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-02-d",
+      "explanation": "Đáp án D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-03",
+      "title": "Câu 3 (Phần I)",
+      "content": "Quá trình chuyển từ thể rắn sang thể lỏng của các chất gọi là",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-03-a",
+          "label": "A",
+          "text": "sự nóng chảy"
+        },
+        {
+          "optionId": "ly12-de14-i-03-b",
+          "label": "B",
+          "text": "sự kết tinh"
+        },
+        {
+          "optionId": "ly12-de14-i-03-c",
+          "label": "C",
+          "text": "sự bay hơi"
+        },
+        {
+          "optionId": "ly12-de14-i-03-d",
+          "label": "D",
+          "text": "sự ngưng tụ"
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-03-a",
+      "explanation": "Đáp án A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-04",
+      "title": "Câu 4 (Phần I)",
+      "content": "Ở cùng một điều kiện về nhiệt độ, áp suất, số mol. Bất kì chất khí lí tưởng nào cũng có thể tích",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-04-a",
+          "label": "A",
+          "text": "bằng nhau"
+        },
+        {
+          "optionId": "ly12-de14-i-04-b",
+          "label": "B",
+          "text": "22 lít"
+        },
+        {
+          "optionId": "ly12-de14-i-04-c",
+          "label": "C",
+          "text": "22,4 lít"
+        },
+        {
+          "optionId": "ly12-de14-i-04-d",
+          "label": "D",
+          "text": "24 lít"
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-04-a",
+      "explanation": "Đáp án A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-05",
+      "title": "Câu 5 (Phần I)",
+      "content": "Trong quá trình nóng chảy, nhiệt độ của chất rắn luôn",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-05-a",
+          "label": "A",
+          "text": "Không đổi."
+        },
+        {
+          "optionId": "ly12-de14-i-05-b",
+          "label": "B",
+          "text": "Tăng."
+        },
+        {
+          "optionId": "ly12-de14-i-05-c",
+          "label": "C",
+          "text": "Tăng rồi giảm."
+        },
+        {
+          "optionId": "ly12-de14-i-05-d",
+          "label": "D",
+          "text": "Không đủ dữ liệu để kết luận."
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-05-d",
+      "explanation": "Chưa biết chất rắn kết tinh hay chất rắn vô định hình nên không đủ dữ liệu để kết luận. Chọn D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-06",
+      "title": "Câu 6 (Phần I)",
+      "content": "Nhận xét nào sau đây về các phân tử khí lí tưởng là không đúng?",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-06-a",
+          "label": "A",
+          "text": "Có thể tích riêng không đáng kể."
+        },
+        {
+          "optionId": "ly12-de14-i-06-b",
+          "label": "B",
+          "text": "Có lực tương tác không đáng kể."
+        },
+        {
+          "optionId": "ly12-de14-i-06-c",
+          "label": "C",
+          "text": "Có khối lượng không đáng kể."
+        },
+        {
+          "optionId": "ly12-de14-i-06-d",
+          "label": "D",
+          "text": "Có khối lượng đáng kể."
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-06-c",
+      "explanation": "Đáp án C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-07",
+      "title": "Câu 7 (Phần I)",
+      "content": "Nhiệt độ của vật giảm là do các nguyên tử, phân tử cấu tạo nên vật",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-07-a",
+          "label": "A",
+          "text": "ngừng chuyển động."
+        },
+        {
+          "optionId": "ly12-de14-i-07-b",
+          "label": "B",
+          "text": "nhận thêm động năng."
+        },
+        {
+          "optionId": "ly12-de14-i-07-c",
+          "label": "C",
+          "text": "chuyển động chậm đi."
+        },
+        {
+          "optionId": "ly12-de14-i-07-d",
+          "label": "D",
+          "text": "va chạm vào nhau."
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-07-c",
+      "explanation": "Đáp án C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-08",
+      "title": "Câu 8 (Phần I)",
+      "content": "Hệ thức $ΔU = A + Q$ với $A > 0, Q < 0$ diễn tả cho quá trình nào của chất khí?",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-08-a",
+          "label": "A",
+          "text": "Nhận công và nội năng giảm"
+        },
+        {
+          "optionId": "ly12-de14-i-08-b",
+          "label": "B",
+          "text": "Nhận nhiệt và sinh công."
+        },
+        {
+          "optionId": "ly12-de14-i-08-c",
+          "label": "C",
+          "text": "Tỏa nhiệt và nội năng giảm"
+        },
+        {
+          "optionId": "ly12-de14-i-08-d",
+          "label": "D",
+          "text": "Nhận công và tỏa nhiệt."
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-08-d",
+      "explanation": "Đáp án D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-09",
+      "title": "Câu 9 (Phần I)",
+      "content": "Trong nhiệt động lực học, cách nào sau đây làm thay đổi nội năng của vật theo hình thức truyền nhiệt:",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-09-a",
+          "label": "A",
+          "text": "cọ xát."
+        },
+        {
+          "optionId": "ly12-de14-i-09-b",
+          "label": "B",
+          "text": "Nén khí"
+        },
+        {
+          "optionId": "ly12-de14-i-09-c",
+          "label": "C",
+          "text": "phơi nắng."
+        },
+        {
+          "optionId": "ly12-de14-i-09-d",
+          "label": "D",
+          "text": "Đẩy piston xuống."
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-09-c",
+      "explanation": "Đáp án C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-10",
+      "title": "Câu 10 (Phần I)",
+      "content": "Gọi $t$ là nhiệt độ lúc sau, $t_0$ là nhiệt độ lúc đầu của vật. Công thức nào là công thức tính nhiệt lượng mà vật thu vào?",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-10-a",
+          "label": "A",
+          "text": "$Q = m(t - t_0)$."
+        },
+        {
+          "optionId": "ly12-de14-i-10-b",
+          "label": "B",
+          "text": "$Q = mc(t_0 - t)$."
+        },
+        {
+          "optionId": "ly12-de14-i-10-c",
+          "label": "C",
+          "text": "$Q = mc$."
+        },
+        {
+          "optionId": "ly12-de14-i-10-d",
+          "label": "D",
+          "text": "$Q = mc(t - t_0)$."
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-10-d",
+      "explanation": "Đáp án D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-11",
+      "title": "Câu 11 (Phần I)",
+      "content": "Quá trình nào sau đây là đẳng quá trình?",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-11-a",
+          "label": "A",
+          "text": "Đun nóng khí trong một bình đậy kín."
+        },
+        {
+          "optionId": "ly12-de14-i-11-b",
+          "label": "B",
+          "text": "Không khí trong quả bóng bay bị phơi nắng, nóng lên, nở ra làm căng bóng."
+        },
+        {
+          "optionId": "ly12-de14-i-11-c",
+          "label": "C",
+          "text": "Đun nóng khí trong cylinder, khí nở ra đẩy piston chuyển động."
+        },
+        {
+          "optionId": "ly12-de14-i-11-d",
+          "label": "D",
+          "text": "Cả ba quá trình trên đều không phải là đẳng quá trình."
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-11-a",
+      "explanation": "Đáp án A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-12",
+      "title": "Câu 12 (Phần I)",
+      "content": "Phát biểu nào dưới đây không đúng với nội dung của thuyết động học phân tử chất khí?",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-12-a",
+          "label": "A",
+          "text": "Chất khí bao gồm các phân tử có kích thước rất nhỏ."
+        },
+        {
+          "optionId": "ly12-de14-i-12-b",
+          "label": "B",
+          "text": "Khi chuyển động, mỗi phân tử khí va chạm với các phân tử khác và với thành bình."
+        },
+        {
+          "optionId": "ly12-de14-i-12-c",
+          "label": "C",
+          "text": "Nhiệt độ của chất khí càng cao thì vận tốc chuyển động hỗn loạn của các phân tử khí càng nhỏ."
+        },
+        {
+          "optionId": "ly12-de14-i-12-d",
+          "label": "D",
+          "text": "Các phân tử khí luôn chuyển động hỗn loạn không ngừng."
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-12-c",
+      "explanation": "Đáp án C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-13",
+      "title": "Câu 13 (Phần I)",
+      "content": "Người ta truyền cho khí trong xilanh một nhiệt lượng 200 J . Khí nở ra và thực hiện công 120 J đẩy pit-tông lên. Độ biến thiên nội năng của khí là",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-13-a",
+          "label": "A",
+          "text": "80 J ."
+        },
+        {
+          "optionId": "ly12-de14-i-13-b",
+          "label": "B",
+          "text": "-320 J ."
+        },
+        {
+          "optionId": "ly12-de14-i-13-c",
+          "label": "C",
+          "text": "-80 J."
+        },
+        {
+          "optionId": "ly12-de14-i-13-d",
+          "label": "D",
+          "text": "320 J ."
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-13-a",
+      "explanation": "$ΔU = Q + A = 200 - 120 = 80$ J. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-14",
+      "title": "Câu 14 (Phần I)",
+      "content": "Một khối khí lí tưởng thực hiện quá trình đẳng nhiệt tăng từ áp suất 2,5 atm lên 8 atm . Biết thể tích ban đầu của khối khí là 2,4 lít. Thể tích của khối khí lúc sau bằng",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-14-a",
+          "label": "A",
+          "text": "0,75 lít"
+        },
+        {
+          "optionId": "ly12-de14-i-14-b",
+          "label": "B",
+          "text": "6 lít"
+        },
+        {
+          "optionId": "ly12-de14-i-14-c",
+          "label": "C",
+          "text": "7,68 lít"
+        },
+        {
+          "optionId": "ly12-de14-i-14-d",
+          "label": "D",
+          "text": "6,8 lít"
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-14-a",
+      "explanation": "$pV =$ const $⇒ 2,5 · 2,4 = 8V ⇒ V = 0,75$ l. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-15",
+      "title": "Câu 15 (Phần I)",
+      "content": "Có ba chiếc thìa nhôm, bạc và đồng có khối lượng như nhau, ở cùng nhiệt độ, được nhúng vào nước đang sôi. Gọi $Q_1, Q_2, Q_3$ theo thứ tự là nhiệt lượng mà ba vật này hấp thụ. Cho biết nhiệt dung riêng của bạc nhỏ hơn của đồng, nhiệt dung riêng của nhôm lớn hơn của đồng. Kết luận nào dưới đây là đúng?",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-15-a",
+          "label": "A",
+          "text": "$Q_1 > Q_2 > Q_3$."
+        },
+        {
+          "optionId": "ly12-de14-i-15-b",
+          "label": "B",
+          "text": "$Q_1 < Q_2 < Q_3$."
+        },
+        {
+          "optionId": "ly12-de14-i-15-c",
+          "label": "C",
+          "text": "$Q_1 > Q_3 > Q_2$."
+        },
+        {
+          "optionId": "ly12-de14-i-15-d",
+          "label": "D",
+          "text": "$Q_1 < Q_3 < Q_2$."
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-15-c",
+      "explanation": "Ta có $Q = mcΔt$. Vì $c_1 > c_3 > c_2$ nên $Q_1 > Q_3 > Q_2$. Chọn C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-16",
+      "title": "Câu 16 (Phần I)",
+      "content": "Một lượng khí xác định biến đổi đẳng nhiệt từ trạng thái (1) sang trạng thái (2) như hình vẽ. Áp suất của chất khí ở trạng thái (2) bằng\n\n![Hình vẽ](public/exams/ly12/de14/p02-1.png)",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-16-a",
+          "label": "A",
+          "text": "3 atm."
+        },
+        {
+          "optionId": "ly12-de14-i-16-b",
+          "label": "B",
+          "text": "2 atm ."
+        },
+        {
+          "optionId": "ly12-de14-i-16-c",
+          "label": "C",
+          "text": "1 atm ."
+        },
+        {
+          "optionId": "ly12-de14-i-16-d",
+          "label": "D",
+          "text": "0,5 atm ."
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-16-c",
+      "explanation": "$p_1 V_1 = p_2 V_2 ⇒ 4 · 1 = p_2 · 4 ⇒ p_2 = 1$ atm. Chọn C.",
+      "image": "public/exams/ly12/de14/p02-1.png"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-17",
+      "title": "Câu 17 (Phần I)",
+      "content": "Dùng bếp điện có công suất $P = 700$ W và hiệu suất $H = 80\\%$ để đun 1,7 lít nước cho đến khi sôi ở 100°C. Biết nhiệt dung riêng của nước là $c = 4200$ J / kgK . Sau thời gian 16 phút thì nước sôi, nhiệt độ ban đầu $t_1$ của nước là",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-17-a",
+          "label": "A",
+          "text": "25°C."
+        },
+        {
+          "optionId": "ly12-de14-i-17-b",
+          "label": "B",
+          "text": "20°C."
+        },
+        {
+          "optionId": "ly12-de14-i-17-c",
+          "label": "C",
+          "text": "35°C."
+        },
+        {
+          "optionId": "ly12-de14-i-17-d",
+          "label": "D",
+          "text": "15°C."
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-17-a",
+      "explanation": "$A = Pt = 700 · 16 · 60 = 672000$ J.\n$Q = HA = 0,8 · 672000 = 537600$ J.\n$Q = mcΔt ⇒ 537600 = 1,7 · 4200 · (100 - t_1) ⇒ t_1 ≈ 25$°C. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de14-i-18",
+      "title": "Câu 18 (Phần I)",
+      "content": "Một bình nhiệt lượng kế bằng nhôm khối lượng 150 g chứa 200 g nước ở nhiệt độ 20°C. Thả một cục nước đá ở nhiệt độ 0°C vào trong thì thấy nước đá chỉ tan một phần. Coi nhiệt độ truyền ra ngoài môi trường xung quanh là không đáng kể. Tính khối lượng nước đá đã tan vào trong nước. Biết nhiệt nóng chảy riêng của nước đá là $3,34 · 10^5$ J / kg; nhiệt dung riêng của nhôm 880 J / kgK; nhiệt dung riêng của nước là 4200 J / kgK",
+      "options": [
+        {
+          "optionId": "ly12-de14-i-18-a",
+          "label": "A",
+          "text": "52 g"
+        },
+        {
+          "optionId": "ly12-de14-i-18-b",
+          "label": "B",
+          "text": "54 g"
+        },
+        {
+          "optionId": "ly12-de14-i-18-c",
+          "label": "C",
+          "text": "56 g"
+        },
+        {
+          "optionId": "ly12-de14-i-18-d",
+          "label": "D",
+          "text": "58 g"
+        }
+      ],
+      "correctOptionId": "ly12-de14-i-18-d",
+      "explanation": "$Q = (m_nh c_nh + m_n c_n)Δt = (0,15 · 880 + 0,2 · 4200) · 20 = 19440$ J.\n$m_d = \\frac{Q}{λ} = \\frac{19440}{3,34 · 10^5} ≈ 0,058$ kg = 58 g. Chọn D."
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de14-ii-01",
+      "title": "Câu 19 (Phần II - Đúng / Sai)",
+      "content": "Cho các phát biểu.",
+      "statements": [
+        {
+          "statementId": "ly12-de14-ii-01-a",
+          "label": "a",
+          "text": "Khối lượng của nguyên tử Cacbon là 12 gam.",
+          "answer": false,
+          "explanation": "Sai. Ta có $m = \\frac{M}{N_A} = \\frac{12}{6,02 · 10^23}$ g $≠ 12$ g."
+        },
+        {
+          "statementId": "ly12-de14-ii-01-b",
+          "label": "b",
+          "text": "Khối lượng của 1 mol khí Hiđrô là 2 gam.",
+          "answer": true,
+          "explanation": "Đúng. Ta có $m = nM = 1 · 2 = 2$ g."
+        },
+        {
+          "statementId": "ly12-de14-ii-01-c",
+          "label": "c",
+          "text": "Một mol chất gồm $N_A ≈ 6,02 · 10^23$ phân tử.",
+          "answer": true,
+          "explanation": "Đúng."
+        },
+        {
+          "statementId": "ly12-de14-ii-01-d",
+          "label": "d",
+          "text": "Khối lượng của 1 mol $N_2$ là 28 gam.",
+          "answer": true,
+          "explanation": "Đúng. Ta có $m = nM = 1 · 28 = 28$ g."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de14-ii-02",
+      "title": "Câu 20 (Phần II - Đúng / Sai)",
+      "content": "Hình vẽ bên là đồ thị biểu diễn các quá trình đẳng nhiệt của cùng một khối lượng khí ở các nhiệt độ $T_1$ và $T_2$ khác nhau.\n\n![Đồ thị](public/exams/ly12/de14/p02-2.png)",
+      "statements": [
+        {
+          "statementId": "ly12-de14-ii-02-b",
+          "label": "b",
+          "text": "Áp suất của chất khí ở trạng thái (1) lớn hơn áp suất của chất khí ở trạng thái (2).",
+          "answer": true,
+          "explanation": "Đúng. Cùng nhiệt độ thì khi $V$ tăng thì $p$ giảm $⇒ p_1 > p_2$."
+        },
+        {
+          "statementId": "ly12-de14-ii-02-a",
+          "label": "a",
+          "text": "Áp suất của chất khí ở trạng thái (4) lớn hơn áp suất của chất khí ở trạng thái (1).",
+          "answer": false,
+          "explanation": "Sai. Cùng thể tích thì khi nhiệt độ lớn hơn sẽ làm các phân tử chuyển động nhanh hơn, va chạm mạnh vào thành bình nên áp suất sẽ lớn hơn $⇒ p_1 > p_4$ và $p_2 > p_3$."
+        },
+        {
+          "statementId": "ly12-de14-ii-02-c",
+          "label": "c",
+          "text": "Áp suất của chất khí ở trạng thái (2) lớn hơn áp suất của chất khí ở trạng thái (3).",
+          "answer": true,
+          "explanation": "Đúng. Vì cùng thể tích mà $T_2 > T_1$ nên $p_2 > p_3$."
+        },
+        {
+          "statementId": "ly12-de14-ii-02-d",
+          "label": "d",
+          "text": "Áp suất của chất khí ở trạng thái (1) lớn hơn áp suất của chất khí ở trạng thái (3).",
+          "answer": true,
+          "explanation": "Đúng. Từ $p_1 > p_2$ và $p_2 > p_3 ⇒ p_1 > p_3$."
+        }
+      ],
+      "image": "public/exams/ly12/de14/p02-2.png"
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de14-ii-03",
+      "title": "Câu 21 (Phần II - Đúng / Sai)",
+      "content": "Để đun sôi 2 kg nước ở nhiệt độ 20°C đựng trong ấm bằng nhôm có khối lượng 200 g , người ta dùng bếp dầu. Biết nhiệt dung riêng của nước và nhôm lần lượt là 4200 J / kgK; 880 J / kgK , năng suất toả nhiệt của dầu là $q = 44 · 10^6$ J / kg , nhiệt hoá hơi riêng của nước là $L = 2,3 · 10^6$ J / kg .",
+      "statements": [
+        {
+          "statementId": "ly12-de14-ii-03-a",
+          "label": "a",
+          "text": "Cho hiệu suất của bếp là 30%. Nhiệt lượng dầu cần cung cấp để nước sôi là 686080 J .",
+          "answer": false,
+          "explanation": "Sai. Nhiệt lượng có ích để đun sôi nước là $Q = (m_n c_n + m_Al c_Al)Δt = (2 · 4200 + 0,2 · 880) · (100 - 20) = 686080$ J.\nNhiệt lượng dầu cần cung cấp là $Q_d = \\frac{Q}{H} = \\frac{686080}{0,3}$ J."
+        },
+        {
+          "statementId": "ly12-de14-ii-03-b",
+          "label": "b",
+          "text": "Cho hiệu suất của bếp là 30%. Khối lượng dầu cần dùng để đun sôi lượng nước trên xấp xỉ 15,59 g.",
+          "answer": false,
+          "explanation": "Sai. Khối lượng dầu cần dùng là $m_d = \\frac{Q_d}{q} = \\frac{686080 / 0,3}{44 · 10^6} ≈ 0,052$ kg = 52 g."
+        },
+        {
+          "statementId": "ly12-de14-ii-03-c",
+          "label": "c",
+          "text": "Nhiệt lượng cần cung cấp để nước ở 100°C hoá hơi hoàn toàn là 4600 kJ .",
+          "answer": true,
+          "explanation": "Đúng. $Q_hh = m_n L = 2 · 2,3 · 10^6 = 4,6 · 10^6$ J = 4600 kJ."
+        },
+        {
+          "statementId": "ly12-de14-ii-03-d",
+          "label": "d",
+          "text": "Nếu bỏ qua sự mất mát nhiệt, bếp dầu cung cấp nhiệt lượng đều đặn thì mất thời gian 15 phút để nước trong ấm sôi. Tiếp tục đun thêm 1 giờ 41 phút nữa thì toàn bộ lượng nước sẽ hoá hơi hoàn toàn.",
+          "answer": true,
+          "explanation": "Đúng. Ta có $\\frac{Q_hh}{Q} = \\frac{t_hh}{t} ⇒ \\frac{4,6 · 10^6}{686080} = \\frac{t_hh}{15} ⇒ t_hh ≈ 100,6$ phút $≈$ 1 giờ 41 phút."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de14-ii-04",
+      "title": "Câu 22 (Phần II - Đúng / Sai)",
+      "content": "Một cylinder thẳng đứng cố định, hai đầu để hở, thành mỏng. Diện tích mặt cắt ngang của phần cylinder dày gấp 4 lần của phần cylinder mỏng, phần cylinder mỏng đủ dài. Không khí được bịt kín giữa hai piston nhẹ A và B trong cylinder dày. Dùng ngoại lực F giữ piston B sao cho mặt thủy ngân ngang bằng với đầu trên của cylinder dày. Khi đó, độ cao của cột thủy ngân phía trên piston A là $H = 10$ cm và chiều dài cột khí là $L = \\frac{300}{17}$ cm . Bỏ qua ma sát giữa hai piston và thành cylinder.\nBây giờ, tăng lực F để cho piston B di chuyển từ từ lên trên cho đến khi một nửa lượng thủy ngân được đẩy vào cylinder mỏng. Coi nhiệt độ của cột khí không đổi và áp suất khí quyển là 75 cmHg .\n\n![Hình vẽ](public/exams/ly12/de14/p03-1.png)",
+      "statements": [
+        {
+          "statementId": "ly12-de14-ii-04-a",
+          "label": "a",
+          "text": "Áp suất của không khí trong cylinder ở trạng thái ban đầu là 85 cmHg .",
+          "answer": true,
+          "explanation": "Đúng. Áp suất khí ban đầu: $p_a = p_0 + H = 75 + 10 = 85$ cmHg."
+        },
+        {
+          "statementId": "ly12-de14-ii-04-b",
+          "label": "b",
+          "text": "Áp suất của không khí trong cylinder khi một nửa thủy ngân được đẩy vào cylinder mỏng là 100 cmHg .",
+          "answer": true,
+          "explanation": "Đúng. Khi một nửa thủy ngân vào cylinder mỏng: $\\frac{1}{2} V_Hg = S · \\frac{H}{2} = s · h ⇒ h = \\frac{S}{s} · \\frac{H}{2} = 4 · \\frac{10}{2} = 20$ cm.\nÁp suất khí khi đó: $p_b = p_0 + h + \\frac{H}{2} = 75 + 20 + \\frac{10}{2} = 100$ cmHg."
+        },
+        {
+          "statementId": "ly12-de14-ii-04-c",
+          "label": "c",
+          "text": "Chiều cao của cột không khí trong cylinder khi một nửa thủy ngân được đẩy vào cylinder mỏng là 15 cm .",
+          "answer": true,
+          "explanation": "Đúng. Quá trình đẳng nhiệt $pV =$ const $⇒ p_a · L_a · S = p_b · L_b · S ⇒ 85 · \\frac{300}{17} = 100 · L_b ⇒ L_b = 15$ cm."
+        },
+        {
+          "statementId": "ly12-de14-ii-04-d",
+          "label": "d",
+          "text": "Quãng đường mà piston B di chuyển lên trên là khoảng 8 cm .",
+          "answer": true,
+          "explanation": "Đúng. Quãng đường piston B di chuyển: $\\frac{300}{17} - 15 + 5 ≈ 8$ cm."
+        }
+      ],
+      "image": "public/exams/ly12/de14/p03-1.png"
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de14-iii-01",
+      "title": "Câu 23 (Phần III - Trả lời ngắn)",
+      "content": "Một quả bóng có dung tích 2,5 lít. Người ta bơm không khí ở áp suất khí quyển $100$ kN / m$^2$ vào bóng. Mỗi lần bơm được $125$ cm$^3$ không khí. Coi quả bóng trước khi bơm không có không khí và trong thời gian bơm nhiệt độ của không khí không đổi. Hỏi áp suất của không khí trong quả bóng sau 40 lần bơm bằng bao nhiêu kN / m$^2$ ?",
+      "answerKey": "200",
+      "explanation": "Đẳng nhiệt $pV =$ const $⇒ 100 · 40 · 0,125 = p · 2,5 ⇒ p = 200$ kN / m$^2$."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de14-iii-02",
+      "title": "Câu 24 (Phần III - Trả lời ngắn)",
+      "content": "Để tính lượng Calo cần cung cấp cho một nam giới trưởng thành trong một ngày có thể sử dụng công thức Mifflin - St Jeor:\nLượng Calo = [6,25 × chiều cao (cm)] + [10 × khối lượng (kg)] - [5 × tuổi (năm)] + 5\nLượng Calo cần cung cấp cho một bạn học sinh nam 18 tuổi, chiều cao 1,8 m , cân nặng 70 kg có thể di chuyển vật 10 kg lên tới độ cao bằng bao nhiêu m ? Cho biết 1 Cal = 4,2 J . Lấy $g = 10$ m / s$^2$. Kết quả làm tròn đến một chữ số sau dấu phẩy thập phân.",
+      "answerKey": "73,1",
+      "explanation": "$Q = 6,25 · 180 + 10 · 70 - 5 · 18 + 5 = 1740$ cal = $7308$ J.\n$Q = m_v gh ⇒ 7308 = 10 · 10 · h ⇒ h ≈ 73,1$ m."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de14-iii-03",
+      "title": "Câu 25 (Phần III - Trả lời ngắn)",
+      "content": "Một bong bóng không khí ở dưới đáy một hồ nước có độ sâu 5 m . Khi bong bóng nổi lên mặt hồ, người ta đo được thể tích của nó là $1$ mm$^3$. Giả sử rằng nhiệt độ ở dưới đáy hồ và trên mặt hồ là bằng nhau. Biết áp suất khí quyển $p_0 = 1,013 · 10^5$ N / m$^2$ và trọng lượng riêng của nước là $10000$ N / m$^3$. Thể tích của bong bóng khi ở dưới đáy hồ bằng bao nhiêu mm$^3$ (làm tròn đến 2 chữ số sau dấu phẩy thập phân)?",
+      "answerKey": "0,67",
+      "explanation": "Đẳng nhiệt $⇒ p_0 V_0 = (p_0 + dh)V ⇒ 1,013 · 10^5 · 1 = (1,013 · 10^5 + 10000 · 5) · V ⇒ V ≈ 0,67$ mm$^3$."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de14-iii-04",
+      "title": "Câu 26 (Phần III - Trả lời ngắn)",
+      "content": "Dẫn một lượng hơi nước có khối lượng $m_1 = 0,4$ kg ở nhiệt độ $t_1 = 100$°C từ lò hơi vào một bình chứa nước đá có khối lượng $m_2 = 0,8$ kg ở nhiệt độ $t_0 = 0$°C. Biết nhiệt dung riêng của nước $c = 4200$ J / kgK , nhiệt hoá hơi riêng của nước $L = 2,3 · 10^6$ J / kg và nhiệt nóng chảy riêng của nước đá $λ = 3,4 · 10^5$ J / kg (Bỏ qua sự hấp thụ nhiệt của bình). Khối lượng nước ở trong bình khi có cân bằng nhiệt là bao nhiêu kg (làm tròn đến 2 chữ số sau dấu phẩy thập phân)?",
+      "answerKey": "1,06",
+      "explanation": "$Q_nc = m_2 λ = 0,8 · 3,4 · 10^5 = 272000$ J.\n$Q_2 = m_2 c Δt = 0,8 · 4200 · 100 = 336000$ J.\nKhối lượng hơi nước ngưng tụ thành nước là:\n$m_h = \\frac{Q_nc + Q_2}{L} = \\frac{272000 + 336000}{2,3 · 10^6} ≈ 0,26$ kg $< 0,4$ kg.\nKhối lượng nước khi có cân bằng nhiệt là $m = m_2 + m_h = 0,8 + 0,26 = 1,06$ kg."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de14-iii-05",
+      "title": "Câu 27 (Phần III - Trả lời ngắn)",
+      "content": "Người ta muốn làm nóng 2 kg nước ở 20°C lên 60°C bằng cách cho hơi nước ở 100°C đi qua. Trong quá trình này, khối lượng nước tăng thêm một lượng là bao nhiêu gam (làm tròn đến hàng đơn vị)? Cho nhiệt dung riêng của nước là 4180 J / kgK , nhiệt hóa hơi riêng của nước là $L = 2,26 · 10^6$ J / kg .",
+      "answerKey": "138",
+      "explanation": "$Q = m_n c Δt = 2 · 4180 · (60 - 20) = 334400$ J.\n$Q = m_h L + m_h c Δt_h ⇒ 334400 = m_h · 2,26 · 10^6 + m_h · 4180 · (100 - 60) ⇒ m_h ≈ 0,138$ kg = 138 g."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de14-iii-06",
+      "title": "Câu 28 (Phần III - Trả lời ngắn)",
+      "content": "Nếu áp suất của một lượng khí lí tưởng tăng thêm 1,5 atm thì thể tích giảm 2 lít. Nếu áp suất tăng thêm 3 atm thì thể tích giảm 3 lít. Biết nhiệt độ khí không đổi. Thể tích ban đầu của khí bằng bao nhiêu lít?",
+      "answerKey": "6",
+      "explanation": "Đẳng nhiệt $pV =$ const:\n$pV = (p + 1,5)(V - 2) ⇒ -2p + 1,5V = 3$.\n$pV = (p + 3)(V - 3) ⇒ -3p + 3V = 9$.\nTừ hệ trên suy ra: $p = 3$ atm, $V = 6$ lít."
+    }
+  ]
+}

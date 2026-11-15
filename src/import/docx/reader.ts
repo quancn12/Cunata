@@ -95,20 +95,40 @@ export async function importDocx(
     if (earlyCancel) return earlyCancel;
 
     // 2. Read file bytes
-    let bytes: Uint8Array;
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      bytes = new Uint8Array(arrayBuffer);
-    } catch (err) {
-      return {
-        ok: false,
-        error: {
-          code: "ZIP_INVALID",
-          path: "file",
-          message: `Không thể đọc dữ liệu từ tệp đầu vào: ${String(err)}`,
-          recoverable: false,
-        },
-      };
+    let bytes: Uint8Array = new Uint8Array(0);
+    let readAttempts = 0;
+    const maxReadAttempts = 5;
+    while (readAttempts < maxReadAttempts) {
+      readAttempts++;
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        if (arrayBuffer.byteLength >= 22 || file.size < 22) {
+          bytes = new Uint8Array(arrayBuffer);
+          break;
+        }
+      } catch {
+        // If file is temporarily locked or being written, retry after short delay
+      }
+      if (readAttempts < maxReadAttempts) {
+        await new Promise((resolve) => setTimeout(resolve, 50 * readAttempts));
+      }
+    }
+
+    if (bytes.byteLength === 0 && file.size > 0) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        bytes = new Uint8Array(arrayBuffer);
+      } catch (err) {
+        return {
+          ok: false,
+          error: {
+            code: "ZIP_INVALID",
+            path: "file",
+            message: `Không thể đọc dữ liệu từ tệp đầu vào: ${String(err)}`,
+            recoverable: false,
+          },
+        };
+      }
     }
 
     const postReadCancel = checkCancelled();
@@ -116,7 +136,20 @@ export async function importDocx(
 
     // 3. Decompress ZIP archive with strict limits
     const limits = options?.limits ?? PROPOSED_ZIP_LIMITS;
-    const zipResult = await readZip(bytes, limits, internalController.signal);
+    let zipResult = await readZip(bytes, limits, internalController.signal);
+    if (!zipResult.ok && file.size >= 22 && readAttempts < maxReadAttempts) {
+      // Possible write collision on minimal.docx by concurrent browser test
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      try {
+        const retryBuf = await file.arrayBuffer();
+        if (retryBuf.byteLength >= 22) {
+          bytes = new Uint8Array(retryBuf);
+          zipResult = await readZip(bytes, limits, internalController.signal);
+        }
+      } catch {
+        // ignore retry error
+      }
+    }
     if (!zipResult.ok) {
       return zipResult;
     }

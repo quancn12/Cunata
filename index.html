@@ -76,6 +76,7 @@
       </div>
 
       <div class="header-actions">
+        <button type="button" class="btn-secondary" id="btnOpenExamList" title="Chọn đề thi trong danh sách" style="margin-right: 0.5rem; font-size: 0.8125rem; padding: 0.4rem 0.6rem;">📋 Chọn đề</button>
         <div class="sync-status-badge" id="syncStatus">
           <span class="sync-dot"></span> <span id="syncText">Chưa lưu</span>
         </div>
@@ -236,7 +237,23 @@
     </div>
   </div>
 
-  <!-- ================= Modal Xác Nhận Nộp Bài ================= -->
+    <!-- ================= Modal Chọn Đề Thi Công Khai ================= -->
+  <div class="modal-overlay" id="examListModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="examListModalTitle">
+    <div class="modal-content" style="max-width: 640px; width: 90%;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 id="examListModalTitle" style="font-size: 1.125rem; font-weight: 700; margin: 0;">Danh Sách Đề Thi Công Khai</h2>
+        <button type="button" class="btn-close" id="btnCloseExamList" aria-label="Đóng" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+      <div id="examListContainer" class="exam-list-container">
+        <div style="text-align: center; color: var(--gray-500); padding: 1rem;">Đang tải danh sách đề thi...</div>
+      </div>
+      <div class="modal-actions" style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" id="btnCancelExamList">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+<!-- ================= Modal Xác Nhận Nộp Bài ================= -->
   <div class="modal-overlay" id="submitModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-content">
       <h3 class="modal-title" id="modalTitle">Xác nhận nộp bài thi</h3>
@@ -5646,6 +5663,129 @@
 
     // Khởi động ứng dụng khi trang sẵn sàng
     window.addEventListener('DOMContentLoaded', initExam);
+  
+    // Public Exam List Modal & Direct Query (?exam=<examId>) - WEB-contract §15
+    const btnOpenExamList = document.getElementById('btnOpenExamList');
+    const examListModal = document.getElementById('examListModal');
+    const btnCloseExamList = document.getElementById('btnCloseExamList');
+    const btnCancelExamList = document.getElementById('btnCancelExamList');
+    const examListContainer = document.getElementById('examListContainer');
+    let lastExamListFocus = null;
+
+    function openExamListModal() {
+      lastExamListFocus = document.activeElement;
+      if (examListModal) examListModal.style.display = 'flex';
+      if (examListContainer) {
+        examListContainer.innerHTML = '<div style="text-align: center; color: var(--gray-500); padding: 1rem;">Đang tải danh sách đề thi...</div>';
+      }
+      fetch('public/exams/index.json')
+        .then(function(r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status + ': Không thể tải danh sách đề');
+          return r.json();
+        })
+        .then(function(manifest) {
+          if (!manifest.exams || !Array.isArray(manifest.exams) || manifest.exams.length === 0) {
+            if (examListContainer) examListContainer.innerHTML = '<div style="text-align: center; color: var(--gray-500); padding: 1rem;">Không có đề thi nào trong danh sách.</div>';
+            return;
+          }
+          var groups = new Map();
+          for (var i = 0; i < manifest.exams.length; i++) {
+            var e = manifest.exams[i];
+            var g = e.group || 'Đề thi';
+            if (!groups.has(g)) groups.set(g, []);
+            groups.get(g).push(e);
+          }
+          var html = '';
+          groups.forEach(function(exams, groupTitle) {
+            html += '<div class="exam-group" style="margin-bottom: 1rem;">';
+            html += '<div class="exam-group-title" style="font-size: 0.875rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.5rem; text-transform: uppercase;">' + escapeHtml(groupTitle) + '</div>';
+            html += '<div class="exam-group-items" style="display: flex; flex-direction: column; gap: 0.5rem;">';
+            for (var j = 0; j < exams.length; j++) {
+              var ex = exams[j];
+              html += '<button type="button" class="exam-list-item btn-secondary" data-exam-url="' + escapeHtml(ex.url) + '" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 0.75rem 1rem; width: 100%; border-radius: 6px; cursor: pointer;">';
+              html += '<strong style="font-size: 0.9375rem; color: var(--gray-900);">' + escapeHtml(ex.title) + '</strong>';
+              html += '<span style="font-size: 0.8125rem; color: var(--gray-600); margin-top: 0.25rem;">(' + ex.questionCount + ' câu · ' + ex.durationMinutes + ' phút · ' + escapeHtml(ex.subject) + ')</span>';
+              html += '</button>';
+            }
+            html += '</div></div>';
+          });
+          if (examListContainer) {
+            examListContainer.innerHTML = html;
+            var items = examListContainer.querySelectorAll('.exam-list-item[data-exam-url]');
+            items.forEach(function(btn) {
+              btn.addEventListener('click', function() {
+                var url = btn.getAttribute('data-exam-url');
+                if (url) {
+                  fetch(url)
+                    .then(function(r) {
+                      if (!r.ok) throw new Error('HTTP ' + r.status + ': Không thể tải đề');
+                      return r.json();
+                    })
+                    .then(function(examData) {
+                      loadExamVersion(examData);
+                      closeExamListModal();
+                    })
+                    .catch(function(err) {
+                      alert('Lỗi nạp đề thi: ' + (err && err.message ? err.message : String(err)));
+                    });
+                }
+              });
+            });
+            var first = examListContainer.querySelector('.exam-list-item');
+            if (first && typeof first.focus === 'function') first.focus();
+          }
+        })
+        .catch(function(err) {
+          if (examListContainer) {
+            examListContainer.innerHTML = '<div style="color: var(--danger); padding: 1rem; text-align: center;">Lỗi tải danh sách đề: ' + escapeHtml(err && err.message ? err.message : String(err)) + '</div>';
+          }
+        });
+    }
+
+    function closeExamListModal() {
+      if (examListModal) examListModal.style.display = 'none';
+      if (lastExamListFocus && typeof lastExamListFocus.focus === 'function') {
+        lastExamListFocus.focus();
+      }
+    }
+
+    if (btnOpenExamList && typeof btnOpenExamList.addEventListener === 'function') btnOpenExamList.addEventListener('click', openExamListModal);
+    if (btnCloseExamList && typeof btnCloseExamList.addEventListener === 'function') btnCloseExamList.addEventListener('click', closeExamListModal);
+    if (btnCancelExamList && typeof btnCancelExamList.addEventListener === 'function') btnCancelExamList.addEventListener('click', closeExamListModal);
+    if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+      document.addEventListener('keydown', function(e) {
+        if (examListModal && examListModal.style.display === 'flex' && e.key === 'Escape') {
+          e.preventDefault();
+          closeExamListModal();
+        }
+      });
+    }
+
+    // Startup direct query: ?exam=<examId>
+    if (typeof window !== 'undefined' && window.location && window.location.search) {
+      var params = new URLSearchParams(window.location.search);
+      var queryExamId = params.get('exam');
+      if (queryExamId) {
+        fetch('public/exams/index.json')
+          .then(function(r) { return r.json(); })
+          .then(function(manifest) {
+            if (manifest && Array.isArray(manifest.exams)) {
+              var match = manifest.exams.find(function(e) { return e.id === queryExamId; });
+              if (match && match.url) {
+                return fetch(match.url)
+                  .then(function(r) { return r.json(); })
+                  .then(function(examData) {
+                    loadExamVersion(examData);
+                  });
+              }
+            }
+          })
+          .catch(function(err) {
+            console.warn('[ExamList] Lỗi tải ?exam:', err);
+          });
+      }
+    }
+
   </script>
 </body>
 </html>

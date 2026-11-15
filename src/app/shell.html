@@ -76,6 +76,7 @@
       </div>
 
       <div class="header-actions">
+        <button type="button" class="btn-secondary" id="btnOpenExamList" title="Chọn đề thi trong danh sách" style="margin-right: 0.5rem; font-size: 0.8125rem; padding: 0.4rem 0.6rem;">📋 Chọn đề</button>
         <div class="sync-status-badge" id="syncStatus">
           <span class="sync-dot"></span> <span id="syncText">Chưa lưu</span>
         </div>
@@ -236,7 +237,23 @@
     </div>
   </div>
 
-  <!-- ================= Modal Xác Nhận Nộp Bài ================= -->
+    <!-- ================= Modal Chọn Đề Thi Công Khai ================= -->
+  <div class="modal-overlay" id="examListModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="examListModalTitle">
+    <div class="modal-content" style="max-width: 640px; width: 90%;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 id="examListModalTitle" style="font-size: 1.125rem; font-weight: 700; margin: 0;">Danh Sách Đề Thi Công Khai</h2>
+        <button type="button" class="btn-close" id="btnCloseExamList" aria-label="Đóng" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+      <div id="examListContainer" class="exam-list-container">
+        <div style="text-align: center; color: var(--gray-500); padding: 1rem;">Đang tải danh sách đề thi...</div>
+      </div>
+      <div class="modal-actions" style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+        <button type="button" class="btn-secondary" id="btnCancelExamList">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+<!-- ================= Modal Xác Nhận Nộp Bài ================= -->
   <div class="modal-overlay" id="submitModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal-content">
       <h3 class="modal-title" id="modalTitle">Xác nhận nộp bài thi</h3>

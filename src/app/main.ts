@@ -29,21 +29,11 @@ import {
   scoreLegacyAttempt,
   type LegacyScoredResult,
 } from './legacy.ts';
+import { initExamList } from './exam-list.ts';
+import { initAuthoring } from './authoring.ts';
 
 function formatDisplayScore(val: string): string {
-  const r = parseFractionString(val);
-  if (!r) return val;
-  if (r.den === 1n) return r.num.toString();
-  let d = r.den < 0n ? -r.den : r.den;
-  while (d % 2n === 0n) d /= 2n;
-  while (d % 5n === 0n) d /= 5n;
-  if (d === 1n) {
-    const n = Number(r.num) / Number(r.den);
-    const fixed = n.toFixed(2).replace(/\.?0+$/, '');
-    return fixed.replace('.', ',');
-  }
-  const approx = (Number(r.num) / Number(r.den)).toFixed(2).replace('.', ',');
-  return `${r.num}/${r.den} (≈ ${approx})`;
+  return formatRationalScore(val);
 }
 
 export interface BootstrapOptions {
@@ -928,8 +918,8 @@ export async function bootstrap(
     const reviewList = root.querySelector('#reviewQuestionsList') as HTMLElement | null;
     if (reviewList) {
       reviewList.innerHTML = '';
-      const releasePolicy = currentExam.settings?.releasePolicy || 'immediate';
-      const isAnswersReleased = releasePolicy === 'immediate' || now() >= deadline;
+      // Quyết định D08 (16/11/2026): sau khi nộp, luôn hiện lời giải chi tiết mọi câu
+      const isAnswersReleased = true;
 
       scoredResult.questionResults.forEach((qr) => {
         const item = (root.ownerDocument || document).createElement('div');
@@ -969,8 +959,8 @@ export async function bootstrap(
     const btnDownloadHtml = root.querySelector('#btnDownloadReportHtml');
     if (btnDownloadHtml) {
       (btnDownloadHtml as HTMLElement).onclick = () => {
-        const releasePolicy = currentExam.settings?.releasePolicy || 'immediate';
-        const isAnswersReleased = releasePolicy === 'immediate' || now() >= deadline;
+        // Quyết định D08 (16/11/2026): sau khi nộp, luôn hiện lời giải chi tiết mọi câu
+        const isAnswersReleased = true;
         const safeName = escapeHtml(candidateName);
         const reportHtmlDoc = `<!doctype html>
 <html lang="vi">
@@ -1246,6 +1236,34 @@ export async function bootstrap(
     }
   };
 
+  const switchExam = (parsed: WebExam) => {
+    currentExam = parsed;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('cunata:active_exam_snapshot', JSON.stringify(currentExam));
+      } catch (_) {}
+    }
+    attemptId = 'attempt-' + now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+    responses = Object.create(null);
+    isSubmitted = false;
+    scoredResult = null;
+    startedAt = now();
+    const dMin = currentExam.settings?.durationMinutes ?? 50;
+    deadline = startedAt + dMin * 60 * 1000;
+
+    if (examTitle) examTitle.textContent = currentExam.title || 'Đề thi';
+    if (examWrapper) examWrapper.style.display = '';
+    if (reportWrapper) reportWrapper.style.display = 'none';
+    if (btnSubmit) btnSubmit.style.display = '';
+    if (candidateInput) candidateInput.disabled = false;
+    if (syncText) syncText.textContent = 'Chưa lưu';
+
+    router.navigate('exam');
+    renderExamPane();
+    updatePalette();
+    startTimer();
+  };
+
   // Exam File Upload Listener (#examFileInput)
   const onFileInputChange = (e: any) => {
     const file = e.target?.files?.[0];
@@ -1258,36 +1276,24 @@ export async function bootstrap(
         const parsed = JSON.parse(text);
         const v = validateExamVersion(parsed);
         if (v.ok) {
-          currentExam = parsed as WebExam;
-          if (typeof localStorage !== 'undefined') {
-            try {
-              localStorage.setItem('cunata:active_exam_snapshot', JSON.stringify(currentExam));
-            } catch (_) {}
-          }
-          attemptId = 'attempt-' + now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
-          responses = Object.create(null);
-          isSubmitted = false;
-          scoredResult = null;
-          startedAt = now();
-          const dMin = currentExam.settings?.durationMinutes ?? 50;
-          deadline = startedAt + dMin * 60 * 1000;
-
-          if (examTitle) examTitle.textContent = currentExam.title || 'Đề thi';
-          if (examWrapper) examWrapper.style.display = '';
-          if (reportWrapper) reportWrapper.style.display = 'none';
-          if (btnSubmit) btnSubmit.style.display = '';
-          if (candidateInput) candidateInput.disabled = false;
-          if (syncText) syncText.textContent = 'Chưa lưu';
-
-          router.navigate('exam');
-          renderExamPane();
-          updatePalette();
-          startTimer();
+          switchExam(parsed as WebExam);
         }
       } catch (_) {}
     };
     reader.readAsText(file);
   };
+
+  // Connect Exam List Modal (§15) and Teacher Authoring Modal
+  initExamList(root, {
+    onSelectExam: switchExam,
+    hasUnsavedProgress: () => !isSubmitted && Object.keys(responses).length > 0,
+  });
+
+  initAuthoring(root, {
+    getExam: () => currentExam,
+    onPublish: switchExam,
+    idGen,
+  });
 
   // Candidate Name Input Listener
   const onCandidateNameInput = (e: any) => {

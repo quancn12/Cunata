@@ -123,17 +123,17 @@ export function formatRationalScore(val: string): string {
     return val;
   }
   if (!r) return val;
-  if (r.den === 1n) return r.num.toString();
-  let d = r.den < 0n ? -r.den : r.den;
-  while (d % 2n === 0n) d /= 2n;
-  while (d % 5n === 0n) d /= 5n;
-  if (d === 1n) {
-    const n = Number(r.num) / Number(r.den);
-    const fixed = n.toFixed(2).replace(/\.?0+$/, '');
-    return fixed.replace('.', ',');
-  }
-  const approx = (Number(r.num) / Number(r.den)).toFixed(2).replace('.', ',');
-  return `${r.num}/${r.den} (~${approx})`;
+  if (r.den === 1n || r.num % r.den === 0n) return (r.num / r.den).toString();
+  const isNeg = (r.num < 0n) !== (r.den < 0n);
+  const absNum = r.num < 0n ? -r.num : r.num;
+  const absDen = r.den < 0n ? -r.den : r.den;
+  const scaled = absNum * 100n;
+  let q = scaled / absDen;
+  const rem = scaled % absDen;
+  if (rem * 2n >= absDen) q += 1n;
+  const intPart = q / 100n;
+  const decPart = (q % 100n).toString().padStart(2, '0');
+  return (isNeg ? '-' : '') + intPart.toString() + ',' + decPart;
 }
 
 // ---------------------------------------------------------------------------

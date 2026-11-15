@@ -2,6 +2,66 @@
  "version": 1,
  "exams": [
   {
+   "id": "ly12-hang-tuan-de-11",
+   "title": "Vật lí 12 — Đề số 11 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de11.json"
+  },
+  {
+   "id": "ly12-hang-tuan-de-12",
+   "title": "Vật lí 12 — Đề số 12 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de12.json"
+  },
+  {
+   "id": "ly12-hang-tuan-de-14",
+   "title": "Vật lí 12 — Đề số 14 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de14.json"
+  },
+  {
+   "id": "ly12-hang-tuan-de-17",
+   "title": "Vật lí 12 — Đề số 17 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de17.json"
+  },
+  {
+   "id": "ly12-hang-tuan-de-19",
+   "title": "Vật lí 12 — Đề số 19 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de19.json"
+  },
+  {
+   "id": "ly12-hang-tuan-de-20",
+   "title": "Vật lí 12 — Đề số 20 hàng tuần",
+   "subject": "Vật lí",
+   "grade": 12,
+   "durationMinutes": 50,
+   "questionCount": 28,
+   "group": "Vật lí 12 — Đề hàng tuần",
+   "url": "public/exams/ly12/de20.json"
+  },
+  {
    "id": "exam-thpt-hoa-repeating-demo",
    "title": "Đề Tùy Chỉnh Minh Họa Môn Hóa Học — GDPT 2018 (3 Câu Trả Lời Ngắn Phần III)",
    "subject": "Hóa học",

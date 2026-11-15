@@ -98,6 +98,12 @@ function createMockElement(tag = 'div', id?: string, className?: string) {
     click() {
       el.dispatchEvent({ type: 'click' });
     },
+    setAttribute(name: string, val: string) {
+      el[name] = val;
+    },
+    getAttribute(name: string) {
+      return el[name] ?? null;
+    },
     focus() {},
     blur() {},
   };
@@ -128,6 +134,8 @@ function createMockDocument() {
     querySelectorAll(sel: string) {
       return root.querySelectorAll(sel);
     },
+    addEventListener(event: string, handler: any) {},
+    removeEventListener(event: string, handler: any) {},
   };
 
   root.ownerDocument = doc;

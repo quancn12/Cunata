@@ -115,9 +115,9 @@ describe('WEB-W4-GLUE — Compatibility, Regressions & Policy Isolation', () => 
     assert.equal(ratEquals(rational(2n, 4n), rational(1n, 2n)), true);
     assert.equal(ratCompare(rational(1n, 3n), rational(1n, 2n)) < 0, true);
 
-    // Canonical formatting
+    // Canonical formatting theo Quyết định D02 (16/11/2026): số không nguyên luôn đúng 2 chữ số thập phân
     assert.equal(formatRationalScore('10'), '10');
-    assert.ok(formatRationalScore('7/3').includes('7/3'));
+    assert.equal(formatRationalScore('7/3'), '2,33');
     assert.equal(isValidCanonicalFraction('7/3'), true);
     assert.equal(isValidCanonicalFraction('invalid-fraction'), false);
   });

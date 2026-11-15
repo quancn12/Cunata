@@ -58,7 +58,9 @@ describe('WEB-W1-GLUE — LC28-F01 Restore & LC27 Flush Verification', () => {
           appendChild() {},
           classList: { add() {}, remove() {}, contains() { return false; } }
         }),
-        querySelectorAll: () => []
+        querySelectorAll: () => [],
+        addEventListener() {},
+        removeEventListener() {}
       },
       window: {
         addEventListener() {},
