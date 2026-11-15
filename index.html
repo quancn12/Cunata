@@ -3987,6 +3987,11 @@
     }
 
     function downloadResultJson() {
+      console.log('[DEBUG downloadResultJson]', {
+        hasState: !!studentState,
+        hasScore: !!(studentState && studentState.scoreResult),
+        submitted: studentState && studentState.submitted
+      });
       if (!studentState || !studentState.scoreResult) return;
       const res = studentState.scoreResult;
       const durationSeconds = studentState.startedAt ? Math.max(0, Math.round((Date.now() - studentState.startedAt) / 1000)) : 0;

@@ -508,3 +508,35 @@ describe('M4 Export AC: Offline Export with Zero Credentials', () => {
     assert.ok(!csvText.includes('private_key'));
   });
 });
+
+describe('M4 Export: Codex Verification — JSON Raw & CSV Formula Protection for Dangerous Nicknames', () => {
+  for (const prefix of ['=', '+', '-', '@'] as const) {
+    it(`preserves raw JSON and enforces CSV formula protection for nickname prefix ${prefix}`, async () => {
+      const name = `${prefix}SUM(1,1)`;
+      const final = createSampleFinal(`codex-collect-${prefix.charCodeAt(0)}`, {
+        candidateName: name,
+        responses: {
+          attemptId: `codex-collect-${prefix.charCodeAt(0)}`,
+          examVersionId: 'v1.0.0',
+          responses: [{ kind: 'III', questionVersionId: 'q-03', raw: '-0,5' }],
+        },
+      });
+
+      // JSON export verification
+      const jsonBlob = exportResults([final], 'json');
+      const jsonText = await jsonBlob.text();
+      const rawJson = JSON.parse(jsonText);
+      assert.ok(JSON.stringify(rawJson).includes(name), 'JSON preserves original nickname');
+      assert.ok(JSON.stringify(rawJson).includes('"-0,5"'), 'JSON preserves raw negative short answer');
+
+      // CSV export verification
+      const csvBlob = exportResults([final], 'csv');
+      const csvText = await csvBlob.text();
+      const rows = parseCsvRfc4180(csvText);
+      const cells = rows.flat();
+      assert.ok(cells.includes(`'${name}`), 'CSV uses apostrophe prefix for dangerous nickname');
+      assert.ok(!cells.some(c => /^[\s\u0000-\u001f]*[=+@-]/u.test(c)), 'no executable spreadsheet cell prefix');
+    });
+  }
+});
+

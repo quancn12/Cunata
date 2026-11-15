@@ -451,7 +451,47 @@ export function getXmlParser(injected?: XmlParserPort): XmlParserPort {
  */
 export function getAttr(elem: XmlElement | Element, name: string): string | null {
   if ("getAttribute" in elem && typeof elem.getAttribute === "function") {
-    return elem.getAttribute(name);
+    const direct = elem.getAttribute(name);
+    if (direct !== null) return direct;
+
+    const colonIdx = name.indexOf(":");
+    const local = colonIdx >= 0 ? name.slice(colonIdx + 1) : name;
+
+    if ("getAttributeNS" in elem && typeof (elem as any).getAttributeNS === "function") {
+      const namespaces = [
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+        "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
+        "http://schemas.openxmlformats.org/drawingml/2006/main",
+      ];
+      for (const ns of namespaces) {
+        try {
+          const val = (elem as any).getAttributeNS(ns, local);
+          if (val !== null && val !== undefined) return val;
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    if ("attributes" in elem && elem.attributes) {
+      if (elem.attributes instanceof Map) {
+        for (const [k, v] of elem.attributes) {
+          const kColon = k.indexOf(":");
+          const kLocal = kColon >= 0 ? k.slice(kColon + 1) : k;
+          if (kLocal === local || k === name) return v;
+        }
+      } else {
+        const attrs = elem.attributes as any;
+        if (typeof attrs.length === "number") {
+          for (let i = 0; i < attrs.length; i++) {
+            const a = attrs[i];
+            if (a && (a.localName === local || a.name === name || a.name?.endsWith(":" + local))) {
+              return a.value;
+            }
+          }
+        }
+      }
+    }
   }
   return null;
 }
@@ -461,6 +501,9 @@ export function getAttr(elem: XmlElement | Element, name: string): string | null
  */
 export function getChildren(elem: XmlElement | Element, localOrTagName?: string): (XmlElement | Element)[] {
   const children: (XmlElement | Element)[] = [];
+  const colonIdx = localOrTagName ? localOrTagName.indexOf(":") : -1;
+  const targetLocal = localOrTagName ? (colonIdx >= 0 ? localOrTagName.slice(colonIdx + 1) : localOrTagName) : "";
+
   if ("children" in elem && elem.children) {
     const list = elem.children;
     const len = list.length;
@@ -471,7 +514,13 @@ export function getChildren(elem: XmlElement | Element, localOrTagName?: string)
           children.push(child);
         } else {
           const lName = child.localName || child.tagName;
-          if (lName === localOrTagName || child.tagName === localOrTagName) {
+          const tName = child.tagName;
+          if (
+            lName === targetLocal ||
+            lName === localOrTagName ||
+            tName === localOrTagName ||
+            (targetLocal && (tName === targetLocal || tName.endsWith(":" + targetLocal)))
+          ) {
             children.push(child);
           }
         }
@@ -486,7 +535,13 @@ export function getChildren(elem: XmlElement | Element, localOrTagName?: string)
           children.push(cElem);
         } else {
           const lName = cElem.localName || cElem.tagName;
-          if (lName === localOrTagName || cElem.tagName === localOrTagName) {
+          const tName = cElem.tagName;
+          if (
+            lName === targetLocal ||
+            lName === localOrTagName ||
+            tName === localOrTagName ||
+            (targetLocal && (tName === targetLocal || tName.endsWith(":" + targetLocal)))
+          ) {
             children.push(cElem);
           }
         }
@@ -503,6 +558,25 @@ export function findElementsByTagName(
   root: XmlElement | Element | XmlDocument | Document,
   name: string,
 ): (XmlElement | Element)[] {
+  const colonIdx = name.indexOf(":");
+  const localName = colonIdx >= 0 ? name.slice(colonIdx + 1) : name;
+
+  if ("getElementsByTagNameNS" in root && typeof (root as any).getElementsByTagNameNS === "function") {
+    try {
+      const nsList = (root as any).getElementsByTagNameNS("*", localName);
+      if (nsList && nsList.length > 0) {
+        const results: (XmlElement | Element)[] = [];
+        for (let i = 0; i < nsList.length; i++) {
+          const item = nsList[i];
+          if (item) results.push(item as XmlElement | Element);
+        }
+        return results;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   if ("getElementsByTagName" in root && typeof root.getElementsByTagName === "function") {
     const list = root.getElementsByTagName(name);
     const results: (XmlElement | Element)[] = [];
@@ -511,6 +585,20 @@ export function findElementsByTagName(
       const item = list[i];
       if (item) {
         results.push(item as XmlElement | Element);
+      }
+    }
+    if (results.length > 0) return results;
+
+    if (colonIdx === -1) {
+      for (const prefix of ["w:", "a:", "wp:", "pic:", "v:", "r:"]) {
+        const pList = root.getElementsByTagName(prefix + name);
+        if (pList && pList.length > 0) {
+          for (let i = 0; i < pList.length; i++) {
+            const item = pList[i];
+            if (item) results.push(item as XmlElement | Element);
+          }
+          return results;
+        }
       }
     }
     return results;
