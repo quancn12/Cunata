@@ -824,12 +824,28 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       // Candidate answers a question in Release A
       await client.type('#candidateName', 'Thí sinh kiểm định F01');
       await client.evaluate(`(() => {
-        const opt = document.querySelector('.question-card [role="radio"]') as HTMLElement | null;
+        const opt = document.querySelector('.question-card [role="radio"]');
         if (opt) opt.click();
       })()`);
 
-      // Wait for local save
-      await new Promise((r) => setTimeout(r, 500));
+      // Wait for local save and assert draft in IndexedDB
+      await new Promise((r) => setTimeout(r, 600));
+      const draftRecordA = await client.evaluate<any>(`new Promise((resolve, reject) => {
+        const req = indexedDB.open('cunata-web');
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction('attempts', 'readonly');
+          const store = tx.objectStore('attempts');
+          const getAllReq = store.getAll();
+          getAllReq.onsuccess = () => resolve(getAllReq.result[0] || null);
+          getAllReq.onerror = () => reject(getAllReq.error);
+        };
+      })`);
+      assert.ok(draftRecordA, 'Draft record must exist in IndexedDB before upgrade');
+      assert.equal(draftRecordA.candidateName, 'Thí sinh kiểm định F01');
+      assert.equal(draftRecordA.phase, 'draft');
+      assert.ok(Object.keys(draftRecordA.responses || {}).length > 0, 'Draft response must not be blank');
 
       // Step 2: Switch server to Release B and update worker
       serverRelease = 'B';
@@ -875,36 +891,335 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       const currentCacheStillA = await client.evaluate<boolean>(`caches.has('cunata-cache-v-release-a')`);
       assert.ok(currentCacheStillA, 'Old cache cunata-cache-v-release-a must be retained while exam is in progress');
 
+      // Assert draft record is intact while Release B is waiting
+      const draftRecordWhileWaiting = await client.evaluate<any>(`new Promise((resolve, reject) => {
+        const req = indexedDB.open('cunata-web');
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction('attempts', 'readonly');
+          const store = tx.objectStore('attempts');
+          const getAllReq = store.getAll();
+          getAllReq.onsuccess = () => resolve(getAllReq.result[0] || null);
+          getAllReq.onerror = () => reject(getAllReq.error);
+        };
+      })`);
+      assert.deepEqual(draftRecordWhileWaiting.responses, draftRecordA.responses, 'Draft responses must remain intact while Release B is waiting');
+      assert.equal(draftRecordWhileWaiting.candidateName, 'Thí sinh kiểm định F01');
+
       // Step 3: Complete exam
       await client.click('#btnSubmit');
       await client.waitForSelector('#btnConfirmSubmit');
       await client.click('#btnConfirmSubmit');
       await client.waitForSelector('#reportWrapper');
 
-      // Step 4: Reopen page - Release B activates cleanly
-      await client.navigate(`${origin}/Cunata/`);
-      await client.waitForSelector('#reportWrapper, .question-card', 10000);
+      // Assert final record in IDB preserves responses
+      const finalRecord = await client.evaluate<any>(`new Promise((resolve, reject) => {
+        const req = indexedDB.open('cunata-web');
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction('attempts', 'readonly');
+          const store = tx.objectStore('attempts');
+          const getAllReq = store.getAll();
+          getAllReq.onsuccess = () => resolve(getAllReq.result[0] || null);
+          getAllReq.onerror = () => reject(getAllReq.error);
+        };
+      })`);
+      assert.equal(finalRecord.phase, 'final');
+      assert.deepEqual(finalRecord.responses, draftRecordA.responses, 'Final record must preserve responses from draft');
 
-      // Verify that browser fetch now returns Release B (no RELEASE_A_MARKER)
-      const textB = await client.evaluate<string>(`fetch('./app/main.js').then(r => r.text())`);
-      assert.ok(!textB.includes('RELEASE_A_MARKER'), 'Browser fetch after upgrade must return Release B module');
-
-      // Step 5: Verify offline capability with Release B
+      // Step 4: Stop server IMMEDIATELY before reloading into Release B (test true offline cold boot)
       await new Promise<void>((resolve) => {
         (server as any).closeAllConnections?.();
         server.close(() => resolve());
       });
 
-      // Reload while server is down (full offline)
+      // Step 5: Reload while server is down (full cold offline)
       await client.navigate(`${origin}/Cunata/`);
       const offlineLoaded = await client.waitForSelector('#reportWrapper, .question-card', 10000);
-      assert.ok(offlineLoaded, 'Release B must cleanly boot offline after server is stopped');
+      assert.ok(offlineLoaded, 'Release B must cleanly boot cold offline without online reload first');
+
+      // Verify that browser offline fetch returns Release B module from cache
+      const textB = await client.evaluate<string>(`fetch('./app/main.js').then(r => r.text())`);
+      assert.ok(!textB.includes('RELEASE_A_MARKER'), 'Browser offline fetch must return Release B module from cache');
     } finally {
       if (client) await client.close();
       await new Promise<void>((resolve) => {
         (server as any).closeAllConnections?.();
         server.close(() => resolve());
       });
+    }
+  });
+
+  it('CK16-F01: Multi-tab exam isolation: Submitting tab A does not activate new Service Worker on in-progress tab B', { timeout: 60000 }, async (t) => {
+    const caps = detectCapabilities();
+    if (!caps.preferredBrowserPath || !caps.tools.cdp) {
+      t.skip('Headless browser unavailable');
+      return;
+    }
+
+    const distDir = path.resolve('dist');
+    if (!fs.existsSync(distDir)) {
+      t.skip('dist directory does not exist');
+      return;
+    }
+
+    let serverRelease: 'A' | 'B' = 'A';
+    const mainJsHead = fs.readFileSync(path.join(distDir, 'app/main.js'), 'utf8');
+    const swHead = fs.readFileSync(path.join(distDir, 'service-worker.js'), 'utf8');
+
+    const mainJsA = '/* RELEASE_A_MARKER */\n' + mainJsHead;
+    const swA = swHead
+      .replace(/cunata-cache-v-[a-f0-9]+/g, 'cunata-cache-v-release-a')
+      .replace(/v-[a-f0-9]+/g, 'v-release-a');
+
+    const server = http.createServer((req: any, res: any) => {
+      try {
+        const reqUrl = new URL(req.url || '/', 'http://127.0.0.1');
+        let pathname = decodeURIComponent(reqUrl.pathname);
+
+        if (pathname.startsWith('/Cunata/')) {
+          pathname = pathname.slice('/Cunata'.length);
+        }
+        if (pathname === '/' || pathname === '') {
+          pathname = '/index.html';
+        }
+
+        const safeRel = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
+        const fullPath = path.join(distDir, safeRel);
+
+        if (safeRel.endsWith('service-worker.js')) {
+          res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' });
+          res.end(serverRelease === 'A' ? swA : swHead);
+          return;
+        }
+
+        if (safeRel.endsWith('app/main.js') || safeRel.endsWith('app\\main.js')) {
+          res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' });
+          res.end(serverRelease === 'A' ? mainJsA : mainJsHead);
+          return;
+        }
+
+        if (fs.existsSync(fullPath)) {
+          const ext = path.extname(fullPath).toLowerCase();
+          const mime = ext === '.html' ? 'text/html; charset=utf-8'
+            : ext === '.js' ? 'text/javascript; charset=utf-8'
+            : ext === '.css' ? 'text/css; charset=utf-8'
+            : ext === '.json' ? 'application/json; charset=utf-8'
+            : ext === '.svg' ? 'image/svg+xml'
+            : 'application/octet-stream';
+          res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'no-cache' });
+          res.end(fs.readFileSync(fullPath));
+          return;
+        }
+
+        res.writeHead(404);
+        res.end('Not found');
+      } catch (err) {
+        res.writeHead(500);
+        res.end(String(err));
+      }
+    });
+
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+    const port = (server.address() as any).port;
+    const origin = `http://127.0.0.1:${port}`;
+
+    let clientA: CdpClient | null = null;
+    let clientB: CdpClient | null = null;
+    try {
+      clientA = await CdpClient.launch({ width: 1280, height: 800 });
+
+      // Tab A: Opens sample exam under Release A
+      await clientA.navigate(`${origin}/Cunata/`);
+      await clientA.waitForSelector('.question-card', 10000);
+
+      // Wait for service worker to activate
+      await clientA.evaluate(`new Promise(resolve => {
+        if (navigator.serviceWorker.controller) return resolve(true);
+        navigator.serviceWorker.addEventListener('controllerchange', () => resolve(true), { once: true });
+        setTimeout(() => resolve(false), 5000);
+      })`);
+
+      // Reload Tab A to ensure Release A worker controls it
+      await clientA.navigate(`${origin}/Cunata/`);
+      await clientA.waitForSelector('.question-card', 10000);
+
+      // Tab A: Fill name and answer
+      await clientA.type('#candidateName', 'Thí sinh Tab A');
+      await clientA.evaluate(`(() => {
+        const opt = document.querySelector('.question-card [role="radio"]');
+        if (opt) opt.click();
+      })()`);
+      await new Promise((r) => setTimeout(r, 500));
+
+      // Tab B: Open second tab in the SAME browser instance with a different exam
+      clientB = await clientA.createTab();
+      await clientB.navigate(`${origin}/Cunata/?exam=ly12-hang-tuan-de-10`);
+      await clientB.waitForSelector('.question-card', 10000);
+
+      // Tab B: Fill name and answer
+      await clientB.type('#candidateName', 'Thí sinh Tab B');
+      await clientB.evaluate(`(() => {
+        const opt = document.querySelector('.question-card [role="radio"]');
+        if (opt) opt.click();
+      })()`);
+      await new Promise((r) => setTimeout(r, 600));
+
+      // Track controller changes on Tab B
+      await clientB.evaluate(`(() => {
+        window.__controllerChanges = 0;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          window.__controllerChanges++;
+        });
+      })()`);
+
+      // Verify IDB has two drafts (one for each exam)
+      const allDrafts = await clientB.evaluate<any[]>(`new Promise((resolve, reject) => {
+        const req = indexedDB.open('cunata-web');
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction('attempts', 'readonly');
+          const store = tx.objectStore('attempts');
+          const getAllReq = store.getAll();
+          getAllReq.onsuccess = () => resolve(getAllReq.result || []);
+          getAllReq.onerror = () => reject(getAllReq.error);
+        };
+      })`);
+      assert.equal(allDrafts.length, 2, 'IndexedDB must contain two separate attempt records for Tab A and Tab B');
+      const draftBInitial = allDrafts.find((d: any) => d.candidateName === 'Thí sinh Tab B');
+      assert.ok(draftBInitial, 'Draft B must exist in IndexedDB');
+      assert.equal(draftBInitial.phase, 'draft');
+
+      // Switch server to Release B and trigger Service Worker update
+      serverRelease = 'B';
+      const waitingReached = await clientA.evaluate<boolean>(`new Promise(resolve => {
+        navigator.serviceWorker.getRegistration().then(reg => {
+          if (!reg) return resolve(false);
+          if (reg.waiting) return resolve(true);
+
+          const checkWorker = (w) => {
+            if (!w) return;
+            if (w.state === 'installed') return resolve(true);
+            w.addEventListener('statechange', () => {
+              if (w.state === 'installed' || reg.waiting) resolve(true);
+            });
+          };
+
+          if (reg.installing) checkWorker(reg.installing);
+          reg.addEventListener('updatefound', () => checkWorker(reg.installing));
+          reg.update().catch(() => {});
+
+          const interval = setInterval(() => {
+            if (reg.waiting || (reg.installing && reg.installing.state === 'installed')) {
+              clearInterval(interval);
+              resolve(true);
+            }
+          }, 100);
+
+          setTimeout(() => {
+            clearInterval(interval);
+            resolve(!!reg.waiting);
+          }, 8000);
+        });
+      })`);
+      assert.ok(waitingReached, 'Release B worker must be installed into waiting state');
+
+      // Now SUBMIT Tab A ONLY! Tab B is STILL in progress!
+      await clientA.click('#btnSubmit');
+      await clientA.waitForSelector('#btnConfirmSubmit');
+      await clientA.click('#btnConfirmSubmit');
+      await clientA.waitForSelector('#reportWrapper');
+
+      // Wait a moment for any message exchanges to settle
+      await new Promise((r) => setTimeout(r, 600));
+
+      // Assert Tab B status:
+      // 1. Controller must NOT change on Tab B!
+      const controllerChangesOnB = await clientB.evaluate<number>(`window.__controllerChanges`);
+      assert.equal(controllerChangesOnB, 0, 'Tab B must NOT experience controllerchange when Tab A submits');
+
+      // 2. Release A cache must NOT be deleted while Tab B is active!
+      const cacheAExists = await clientB.evaluate<boolean>(`caches.has('cunata-cache-v-release-a')`);
+      assert.ok(cacheAExists, 'Old cache cunata-cache-v-release-a must be retained while Tab B is in progress');
+
+      // 3. Tab B draft in IndexedDB must remain untouched
+      const draftBAfterSubmitA = await clientB.evaluate<any>(`new Promise((resolve, reject) => {
+        const req = indexedDB.open('cunata-web');
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction('attempts', 'readonly');
+          const store = tx.objectStore('attempts');
+          const getAllReq = store.getAll();
+          getAllReq.onsuccess = () => resolve(getAllReq.result.find((d) => d.candidateName === 'Thí sinh Tab B') || null);
+          getAllReq.onerror = () => reject(getAllReq.error);
+        };
+      })`);
+      assert.ok(draftBAfterSubmitA, 'Draft B must still exist in IndexedDB');
+      assert.equal(draftBAfterSubmitA.phase, 'draft');
+      assert.deepEqual(draftBAfterSubmitA.responses, draftBInitial.responses, 'Draft B responses must remain identical');
+      assert.equal(draftBAfterSubmitA.deadline, draftBInitial.deadline, 'Draft B deadline must remain identical');
+
+      // Now SUBMIT Tab B as well
+      await clientB.click('#btnSubmit');
+      await clientB.waitForSelector('#btnConfirmSubmit');
+      await clientB.click('#btnConfirmSubmit');
+      await clientB.waitForSelector('#reportWrapper');
+
+      // Now that BOTH tabs are submitted, Release B worker can activate safely
+      await new Promise((r) => setTimeout(r, 800));
+      const waitingAfterBoth = await clientA.evaluate<boolean>(`new Promise(resolve => {
+        navigator.serviceWorker.getRegistration().then(reg => {
+          resolve(!!(reg && reg.waiting));
+        });
+      })`);
+      assert.equal(waitingAfterBoth, false, 'Waiting worker should activate once all tabs finish their exams');
+    } finally {
+      if (clientB) await clientB.close();
+      if (clientA) await clientA.close();
+      await new Promise<void>((resolve) => {
+        (server as any).closeAllConnections?.();
+        server.close(() => resolve());
+      });
+    }
+  });
+
+  it('CK16-F03: CdpClient.evaluate throws on browser JavaScript SyntaxError and exceptionDetails', async (t) => {
+    const caps = detectCapabilities();
+    if (!caps.preferredBrowserPath || !caps.tools.cdp) {
+      t.skip('Headless browser unavailable');
+      return;
+    }
+
+    let client: CdpClient | null = null;
+    try {
+      client = await CdpClient.launch({ width: 800, height: 600 });
+
+      // Test 1: SyntaxError with 'as' TypeScript identifier must throw Error
+      let threwSyntax = false;
+      try {
+        await client.evaluate(`(() => { const x = 1 as any; return x; })()`);
+      } catch (err: any) {
+        threwSyntax = true;
+        assert.ok(
+          err.message.includes('SyntaxError') || err.message.includes('Unexpected identifier'),
+          `Error message must mention SyntaxError or unexpected identifier: ${err.message}`
+        );
+      }
+      assert.ok(threwSyntax, 'client.evaluate must throw when evaluated code contains SyntaxError');
+
+      // Test 2: Valid expression returning undefined must resolve to undefined without error
+      const undefinedVal = await client.evaluate<any>(`(() => { const a = 1; })()`);
+      assert.equal(undefinedVal, undefined);
+
+      // Test 3: Valid expression returning value
+      const sum = await client.evaluate<number>(`2 + 3`);
+      assert.equal(sum, 5);
+    } finally {
+      if (client) await client.close();
     }
   });
 });

@@ -282,43 +282,42 @@ export function prepareShellAndAssets(rootDir: string, stagingDir: string): void
   const cacheVersion = 'v-' + buildDigest;
   const cacheName = 'cunata-cache-' + cacheVersion;
   const swDestPath = path.join(stagingDir, 'service-worker.js');
+
+  // Collect all emitted files in stagingDir to construct complete runtime precache manifest
+  const allStagedFiles = collectFiles(stagingDir);
+  const precacheEntries: { url: string; critical: boolean }[] = [
+    { url: 'index.html', critical: true },
+    { url: './', critical: true },
+  ];
+  const seenUrls = new Set<string>(['index.html', './']);
+
+  for (const filePath of allStagedFiles) {
+    const rel = path.relative(stagingDir, filePath).replace(/\\/g, '/');
+    if (rel === 'service-worker.js') continue;
+    if (seenUrls.has(rel)) continue;
+    seenUrls.add(rel);
+
+    // All runtime code (JS, CSS, core JSON schemas & exams) is critical for cold offline start
+    if (rel.endsWith('.js') || rel.endsWith('.css') || rel.endsWith('.json') || rel === 'public/q01-bbt.svg') {
+      precacheEntries.push({ url: rel, critical: true });
+    } else {
+      precacheEntries.push({ url: rel, critical: false });
+    }
+  }
+
   const swContent = `// Cunata Web Native Service Worker
 // Build Digest: ${buildDigest}
 const BUILD_VERSION = '${cacheVersion}';
 const CACHE_NAME_PREFIX = 'cunata-cache-';
 const CACHE_NAME = '${cacheName}';
-const DEFAULT_PRECACHE_ENTRIES = [
-  { url: 'index.html', critical: true },
-  { url: './', critical: true },
-  { url: 'styles/style.css', critical: true },
-  { url: 'public/sample-exam.json', critical: true },
-  { url: 'public/q01-bbt.svg', critical: true },
-  { url: 'public/exams/index.json', critical: false },
-  { url: 'public/exams/toan-full.json', critical: false },
-  { url: 'public/exams/ly-part-I.json', critical: false },
-  { url: 'public/exams/hoa-repeating.json', critical: false },
-  { url: 'app/main.js', critical: false },
-  { url: 'app/routes.js', critical: false },
-  { url: 'ui/index.js', critical: false },
-  { url: 'student/index.js', critical: false },
-  { url: 'student/view.js', critical: false },
-  { url: 'storage/index.js', critical: false },
-  { url: 'report/index.js', critical: false },
-  { url: 'report/view.js', critical: false },
-  { url: 'teacher/index.js', critical: false },
-  { url: 'teacher/view.js', critical: false },
-  { url: 'bank/index.js', critical: false },
-  { url: 'bank/view.js', critical: false },
-  { url: 'collect/index.js', critical: false },
-  { url: 'schema/index.js', critical: false },
-  { url: 'domain/index.js', critical: false },
-  { url: 'offline/index.js', critical: false },
-];
+const DEFAULT_PRECACHE_ENTRIES = ${JSON.stringify(precacheEntries, null, 2)};
+
 function resolveScopeUrl(scopeBase, relativePath) {
   const cleanBase = scopeBase.endsWith('/') ? scopeBase : (scopeBase + '/');
   const cleanPath = relativePath.startsWith('./') ? relativePath.slice(2) : (relativePath.startsWith('/') ? relativePath.slice(1) : relativePath);
   return cleanBase + cleanPath;
 }
+
 function isCacheableRequest(requestUrl, method) {
   if (method && method.toUpperCase() !== 'GET') return false;
   const lower = requestUrl.toLowerCase();
@@ -326,7 +325,9 @@ function isCacheableRequest(requestUrl, method) {
   if (lower.includes('script.google.com') || lower.includes('macros.google.com') || lower.includes('appsscript')) return false;
   return true;
 }
+
 let isAttemptActive = false;
+const clientActiveMap = new Map();
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
@@ -340,23 +341,141 @@ self.addEventListener('install', (event) => {
           await cache.put(fullUrl, resp.clone());
           if (fullUrl !== item.url) await cache.put(item.url, resp);
         } else if (item.critical) {
-          throw new Error('Critical asset failed: ' + item.url);
+          throw new Error('Critical asset failed: ' + item.url + ' status: ' + (resp ? resp.status : 'null'));
         }
       } catch (err) {
-        if (item.critical) throw err;
+        if (item.critical) {
+          try { await caches.delete(CACHE_NAME); } catch (_) {}
+          throw err;
+        }
       }
     }
   })());
 });
 
+async function checkClientsCanActivate() {
+  if (!self.clients || !self.clients.matchAll) return !isAttemptActive;
+  const windowClients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+  if (!windowClients || windowClients.length === 0) return true;
+
+  const checks = windowClients.map((client) => {
+    return new Promise((resolve) => {
+      let resolved = false;
+      const timer = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          // Unknown or non-responsive client -> defer activation
+          resolve({ responsive: false, active: true });
+        }
+      }, 600);
+
+      const channel = new MessageChannel();
+      channel.port1.onmessage = (ev) => {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timer);
+          resolve({
+            responsive: true,
+            active: Boolean(ev.data && ev.data.active),
+            cacheName: ev.data?.cacheName,
+          });
+        }
+      };
+
+      try {
+        client.postMessage({ type: 'QUERY_ATTEMPT_ACTIVE' }, [channel.port2]);
+      } catch (_) {
+        if (!resolved) {
+          resolved = true;
+          clearTimeout(timer);
+          resolve({ responsive: false, active: true });
+        }
+      }
+    });
+  });
+
+  const statuses = await Promise.all(checks);
+  const cannotActivate = statuses.some((s) => !s.responsive || s.active);
+  return !cannotActivate;
+}
+
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
+    const currentCache = await caches.open(CACHE_NAME);
+
+    // Verify currentCache has essential shell and main.js before pruning old caches
+    const hasIndex = (await currentCache.match('index.html')) || (await currentCache.match('./'));
+    const hasMain = await currentCache.match('app/main.js');
+    if (!hasIndex || !hasMain) {
+      if (self.clients && self.clients.claim) {
+        await self.clients.claim();
+      }
+      return;
+    }
+
+    // Preserve any cached entries from old caches into the new cache
     const keys = await caches.keys();
-    for (const k of keys) {
-      if (k.startsWith(CACHE_NAME_PREFIX) && k !== CACHE_NAME) {
+    const oldKeys = keys.filter((k) => k.startsWith(CACHE_NAME_PREFIX) && k !== CACHE_NAME);
+
+    for (const oldKey of oldKeys) {
+      try {
+        const oldCache = await caches.open(oldKey);
+        const oldRequests = await oldCache.keys();
+        for (const req of oldRequests) {
+          const hasReq = await currentCache.match(req);
+          if (!hasReq) {
+            const resp = await oldCache.match(req);
+            if (resp) {
+              await currentCache.put(req, resp);
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Check which clients are currently open and which caches they might still be referencing
+    const windowClients = (self.clients && self.clients.matchAll)
+      ? await self.clients.matchAll({ includeUncontrolled: true, type: 'window' })
+      : [];
+
+    const activeCachesInUse = new Set([CACHE_NAME]);
+    if (windowClients.length > 0) {
+      const clientChecks = windowClients.map((client) => {
+        return new Promise((resolve) => {
+          let done = false;
+          const timer = setTimeout(() => {
+            if (!done) { done = true; resolve(null); }
+          }, 300);
+          const channel = new MessageChannel();
+          channel.port1.onmessage = (ev) => {
+            if (!done) {
+              done = true;
+              clearTimeout(timer);
+              resolve(ev.data?.cacheName || null);
+            }
+          };
+          try {
+            client.postMessage({ type: 'QUERY_CACHE_IN_USE' }, [channel.port2]);
+          } catch (_) {
+            if (!done) { done = true; clearTimeout(timer); resolve(null); }
+          }
+        });
+      });
+      const inUseList = await Promise.all(clientChecks);
+      for (const name of inUseList) {
+        if (name && typeof name === 'string' && name.startsWith(CACHE_NAME_PREFIX)) {
+          activeCachesInUse.add(name);
+        }
+      }
+    }
+
+    // Only delete old caches that are NOT in use by any open client
+    for (const k of oldKeys) {
+      if (!activeCachesInUse.has(k)) {
         await caches.delete(k);
       }
     }
+
     if (self.clients && self.clients.claim) {
       await self.clients.claim();
     }
@@ -368,17 +487,24 @@ self.addEventListener('message', (event) => {
   if (!data || typeof data !== 'object') return;
   if (data.type === 'SET_ATTEMPT_ACTIVE') {
     isAttemptActive = Boolean(data.active);
+    const clientId = (event.source && event.source.id) || data.clientId;
+    if (clientId) {
+      clientActiveMap.set(clientId, isAttemptActive);
+    }
     if (event.source && typeof event.source.postMessage === 'function') {
       event.source.postMessage({ type: 'ATTEMPT_STATUS_ACK', active: isAttemptActive });
     }
   } else if (data.type === 'SKIP_WAITING') {
-    if (isAttemptActive) {
-      if (event.source && typeof event.source.postMessage === 'function') {
-        event.source.postMessage({ type: 'UPDATE_DEFERRED_REPORT', active: true });
+    event.waitUntil((async () => {
+      const canActivate = await checkClientsCanActivate();
+      if (!canActivate) {
+        if (event.source && typeof event.source.postMessage === 'function') {
+          event.source.postMessage({ type: 'UPDATE_DEFERRED_REPORT', active: true });
+        }
+        return;
       }
-    } else {
       self.skipWaiting();
-    }
+    })());
   } else if (data.type === 'CHECK_OFFLINE_READY') {
     event.waitUntil((async () => {
       const cache = await caches.open(CACHE_NAME);
@@ -411,7 +537,7 @@ self.addEventListener('fetch', (event) => {
   if (!isCacheableRequest(req.url, req.method)) return;
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(req);
+    const cached = (await cache.match(req)) || (await cache.match(req.url));
     if (cached) return cached;
     try {
       const network = await fetch(req);
@@ -422,7 +548,11 @@ self.addEventListener('fetch', (event) => {
     } catch (_) {
       const isNav = req.mode === 'navigate' || req.url.endsWith('/') || req.url.endsWith('.html');
       if (isNav) {
-        const fallback = await cache.match('index.html') || await cache.match('./index.html') || await cache.match('./') || await cache.match('/');
+        const fallback =
+          (await cache.match('index.html')) ||
+          (await cache.match('./index.html')) ||
+          (await cache.match('./')) ||
+          (await cache.match('/'));
         if (fallback) return fallback;
       }
       return new Response('Offline', { status: 503, statusText: 'Offline' });

@@ -235,8 +235,51 @@ export async function executeMessage(
 ): Promise<void> {
   switch (message.type) {
     case 'SKIP_WAITING': {
-      // If an exam attempt is active, defer skipWaiting unless explicitly forced
-      if (isAttemptActive) {
+      let canActivate = !isAttemptActive;
+      if (canActivate && typeof self !== 'undefined' && 'clients' in self && (self as any).clients?.matchAll) {
+        try {
+          const windowClients = await (self as any).clients.matchAll({ includeUncontrolled: true, type: 'window' });
+          if (windowClients && windowClients.length > 0) {
+            const checks = windowClients.map((client: any) => {
+              return new Promise<{ responsive: boolean; active: boolean }>((resolve) => {
+                let resolved = false;
+                const timer = setTimeout(() => {
+                  if (!resolved) {
+                    resolved = true;
+                    resolve({ responsive: false, active: true });
+                  }
+                }, 600);
+                const channel = new MessageChannel();
+                channel.port1.onmessage = (ev: any) => {
+                  if (!resolved) {
+                    resolved = true;
+                    clearTimeout(timer);
+                    resolve({
+                      responsive: true,
+                      active: Boolean(ev.data && ev.data.active),
+                    });
+                  }
+                };
+                try {
+                  client.postMessage({ type: 'QUERY_ATTEMPT_ACTIVE' }, [channel.port2]);
+                } catch (_) {
+                  if (!resolved) {
+                    resolved = true;
+                    clearTimeout(timer);
+                    resolve({ responsive: false, active: true });
+                  }
+                }
+              });
+            });
+            const statuses = await Promise.all(checks);
+            if (statuses.some((s: any) => !s.responsive || s.active)) {
+              canActivate = false;
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!canActivate) {
         options?.postMessageFn?.({
           type: 'UPDATE_DEFERRED_REPORT',
           active: true,

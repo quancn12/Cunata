@@ -230,7 +230,15 @@ export class CdpClient {
   }
 
   public async evaluate<T>(expression: string): Promise<T> {
-    const res = await this.send<{ result: { type: string; value?: any; description?: string } }>(
+    const res = await this.send<{
+      result: { type: string; value?: any; description?: string };
+      exceptionDetails?: {
+        text: string;
+        lineNumber: number;
+        columnNumber: number;
+        exception?: { description?: string };
+      };
+    }>(
       'Runtime.evaluate',
       {
         expression,
@@ -238,7 +246,33 @@ export class CdpClient {
         awaitPromise: true,
       }
     );
+    if (res.exceptionDetails) {
+      const msg = res.exceptionDetails.exception?.description || res.exceptionDetails.text;
+      throw new Error(
+        `Runtime.evaluate failed: ${msg} (at line ${res.exceptionDetails.lineNumber}:${res.exceptionDetails.columnNumber})`
+      );
+    }
     return res.result.value as T;
+  }
+
+  public async createTab(url: string = 'about:blank'): Promise<CdpClient> {
+    const res = await this.send<{ targetId: string }>('Target.createTarget', { url });
+    const targetId = res.targetId;
+    const list = await this.httpGetJson<any[]>(`http://127.0.0.1:${this.port}/json/list`);
+    const page = list.find((item: any) => item.id === targetId && item.webSocketDebuggerUrl);
+    if (!page) {
+      throw new Error(`Target ${targetId} not found in json/list`);
+    }
+    const tabClient = new (this.constructor as typeof CdpClient)();
+    tabClient.port = this.port;
+    tabClient.proc = null;
+    tabClient.tempDir = null;
+    await tabClient.connectWebSocket(page.webSocketDebuggerUrl);
+    await tabClient.send('Page.enable');
+    await tabClient.send('DOM.enable');
+    await tabClient.send('Runtime.enable');
+    await tabClient.send('Network.enable');
+    return tabClient;
   }
 
   public async waitForSelector(selector: string, timeoutMs: number = 5000): Promise<boolean> {

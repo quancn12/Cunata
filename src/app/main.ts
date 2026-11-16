@@ -590,11 +590,25 @@ export async function bootstrap(
 
   const notifyWorkerAttemptState = (active: boolean) => {
     try {
-      if (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'SET_ATTEMPT_ACTIVE',
-          active,
-        });
+      if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'SET_ATTEMPT_ACTIVE',
+            active,
+          });
+        }
+        if (swRegistration?.waiting) {
+          swRegistration.waiting.postMessage({
+            type: 'SET_ATTEMPT_ACTIVE',
+            active,
+          });
+        }
+        if (swRegistration?.installing) {
+          swRegistration.installing.postMessage({
+            type: 'SET_ATTEMPT_ACTIVE',
+            active,
+          });
+        }
       }
     } catch (_) {}
   };
@@ -2382,6 +2396,25 @@ export async function bootstrap(
 
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       notifyWorkerAttemptState(!isSubmitted);
+    });
+
+    navigator.serviceWorker.addEventListener('message', (event: any) => {
+      const data = event.data;
+      if (!data || typeof data !== 'object') return;
+      if (data.type === 'QUERY_ATTEMPT_ACTIVE') {
+        const port = event.ports && event.ports[0];
+        const active = !isSubmitted;
+        if (port) {
+          port.postMessage({ active, isSubmitted });
+        } else if (event.source && typeof event.source.postMessage === 'function') {
+          event.source.postMessage({ type: 'ATTEMPT_STATUS_ACK', active, isSubmitted });
+        }
+      } else if (data.type === 'QUERY_CACHE_IN_USE') {
+        const port = event.ports && event.ports[0];
+        if (port) {
+          port.postMessage({ cacheName: null });
+        }
+      }
     });
   }
 
