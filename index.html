@@ -1867,6 +1867,9 @@
               studentState.scoreResult = finalParsed.scoreResult;
               if (finalParsed.responses && typeof finalParsed.responses === 'object') studentState.responses = finalParsed.responses;
               if (finalParsed.candidateName) studentState.candidateName = finalParsed.candidateName;
+              if (typeof finalParsed.submittedAt === 'number') studentState.submittedAt = finalParsed.submittedAt;
+              if (typeof finalParsed.submittedAtFull === 'string') studentState.submittedAtFull = finalParsed.submittedAtFull;
+              if (typeof finalParsed.startedAt === 'number') studentState.startedAt = finalParsed.startedAt;
               if (finalParsed.presentationOrder && typeof finalParsed.presentationOrder === 'object') {
                 const oIssues = validatePresentationOrder(currentExam, finalParsed.presentationOrder);
                 if (oIssues.length === 0) studentState.presentationOrder = finalParsed.presentationOrder;
@@ -2136,6 +2139,8 @@
           if (parsed.submitted === true && parsed.scoreResult) {
             studentState.submitted = true;
             studentState.scoreResult = parsed.scoreResult;
+            if (typeof parsed.submittedAt === 'number') studentState.submittedAt = parsed.submittedAt;
+            if (typeof parsed.submittedAtFull === 'string') studentState.submittedAtFull = parsed.submittedAtFull;
             if (typeof parsed.collectorUrl === 'string' && parsed.collectorUrl.trim()) {
               studentState.collectorUrl = parsed.collectorUrl.trim();
             }
@@ -2954,6 +2959,9 @@
             studentState.scoreResult = existing.scoreResult;
             if (existing.responses && typeof existing.responses === 'object') studentState.responses = existing.responses;
             if (existing.candidateName) studentState.candidateName = existing.candidateName;
+            if (typeof existing.submittedAt === 'number') studentState.submittedAt = existing.submittedAt;
+            if (typeof existing.submittedAtFull === 'string') studentState.submittedAtFull = existing.submittedAtFull;
+            if (typeof existing.startedAt === 'number') studentState.startedAt = existing.startedAt;
             if (existing.serverConfirmed === true && isValidServerReceipt(existing.serverReceipt, studentState.attemptId)) {
               studentState.serverConfirmed = true;
               studentState.serverReceipt = existing.serverReceipt;
@@ -2982,7 +2990,14 @@
       studentState.submitted = true;
       if (timerInterval) clearInterval(timerInterval);
       studentState.scoreResult = computedResult;
-      studentState.submittedAtFull = computedResult.submittedAtFull || new Date().toISOString();
+      const submitNow = Date.now();
+      if (typeof studentState.submittedAt !== 'number') {
+        studentState.submittedAt = submitNow;
+      }
+      studentState.submittedAtFull = computedResult.submittedAtFull || new Date(studentState.submittedAt).toISOString();
+      if (!studentState.startedAt) {
+        studentState.startedAt = submitNow;
+      }
       if (currentExam) {
         if (currentExam.examId) studentState.examId = currentExam.examId;
         if (currentExam.examVersionId) studentState.examVersionId = currentExam.examVersionId;
@@ -3001,6 +3016,9 @@
               studentState.scoreResult = finalParsed.scoreResult;
               if (finalParsed.responses && typeof finalParsed.responses === 'object') studentState.responses = finalParsed.responses;
               if (finalParsed.candidateName) studentState.candidateName = finalParsed.candidateName;
+              if (typeof finalParsed.submittedAt === 'number') studentState.submittedAt = finalParsed.submittedAt;
+              if (typeof finalParsed.submittedAtFull === 'string') studentState.submittedAtFull = finalParsed.submittedAtFull;
+              if (typeof finalParsed.startedAt === 'number') studentState.startedAt = finalParsed.startedAt;
               if (finalParsed.serverConfirmed === true && isValidServerReceipt(finalParsed.serverReceipt, studentState.attemptId)) {
                 studentState.serverConfirmed = true;
                 studentState.serverReceipt = finalParsed.serverReceipt;
@@ -3970,15 +3988,20 @@
         'score_p1', 'max_p1', 'score_p2', 'max_p2', 'score_p3', 'max_p3',
         'total_score', 'max_total', 'policy_version', 'raw_answers_json'
       ];
-      const durationSeconds = studentState.startedAt ? Math.max(0, Math.round((Date.now() - studentState.startedAt) / 1000)) : 0;
+      const subTime = typeof studentState.submittedAt === 'number'
+        ? studentState.submittedAt
+        : (studentState.submittedAtFull ? Date.parse(studentState.submittedAtFull) : (studentState.startedAt || Date.now()));
+      const subIso = studentState.submittedAtFull || (subTime ? new Date(subTime).toISOString() : '');
+      const startTime = typeof studentState.startedAt === 'number' ? studentState.startedAt : null;
+      const durationSeconds = (startTime && subTime) ? Math.max(0, Math.round((subTime - startTime) / 1000)) : 0;
       const rawAnswers = JSON.stringify(studentState.responses || {});
       const row = [
         escapeCsvValue(studentState.attemptId || 'attempt-1'),
         escapeCsvValue(studentState.examId || (currentExam && currentExam.examId) || 'exam-1'),
         escapeCsvValue(studentState.examVersionId || (currentExam && currentExam.examVersionId) || 'v1.0.0'),
         escapeCsvValue(studentState.candidateName || 'Thí sinh tự do'),
-        escapeCsvValue(studentState.startedAt ? new Date(studentState.startedAt).toISOString() : ''),
-        escapeCsvValue(new Date().toISOString()),
+        escapeCsvValue(startTime ? new Date(startTime).toISOString() : ''),
+        escapeCsvValue(subIso),
         escapeCsvValue(String(durationSeconds)),
         escapeCsvValue(res.scoreIFraction || '0'),
         escapeCsvValue(res.maxIFraction || '0'),
@@ -4006,15 +4029,19 @@
     function downloadResultJson() {
       if (!studentState || !studentState.scoreResult) return;
       const res = studentState.scoreResult;
-      const durationSeconds = studentState.startedAt ? Math.max(0, Math.round((Date.now() - studentState.startedAt) / 1000)) : 0;
+      const subTime = typeof studentState.submittedAt === 'number'
+        ? studentState.submittedAt
+        : (studentState.submittedAtFull ? Date.parse(studentState.submittedAtFull) : (studentState.startedAt || Date.now()));
+      const startTime = typeof studentState.startedAt === 'number' ? studentState.startedAt : null;
+      const durationSeconds = (startTime && subTime) ? Math.max(0, Math.round((subTime - startTime) / 1000)) : 0;
       const payload = {
         schemaVersion: 'web-result-v1',
         attemptId: studentState.attemptId || 'attempt-1',
         examId: studentState.examId || (currentExam && currentExam.examId) || 'exam-1',
         examVersionId: studentState.examVersionId || (currentExam && currentExam.examVersionId) || 'v1.0.0',
         candidateName: studentState.candidateName || 'Thí sinh tự do',
-        startedAt: studentState.startedAt || Date.now(),
-        submittedAt: Date.now(),
+        startedAt: startTime || Date.now(),
+        submittedAt: subTime,
         durationSeconds: durationSeconds,
         ruleSetId: (currentExam && currentExam.ruleSetId) || 'custom-v1',
         inputPolicyId: (currentExam && currentExam.inputPolicyId) || 'sa-charset-v1',

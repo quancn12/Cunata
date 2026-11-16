@@ -360,19 +360,36 @@ function ensureShellStructure(root: HTMLElement): void {
 
   const reportWrapper = createEl('div', 'reportWrapper', 'report-wrapper');
   reportWrapper.style.display = 'none';
+  const reportView = createEl('div', 'reportView', 'report-container');
   const reportSubtitle = createEl('div', 'reportSubtitle');
   const summaryGrid = createEl('div', undefined, 'summary-cards-grid');
   const scorePartI = createEl('div', 'scorePartI');
   const scorePartII = createEl('div', 'scorePartII');
   const scorePartIII = createEl('div', 'scorePartIII');
   const scoreTotal = createEl('div', 'scoreTotal');
-  const reportView = createEl('div', 'reportView', 'report-container');
   summaryGrid.appendChild(scorePartI);
   summaryGrid.appendChild(scorePartII);
   summaryGrid.appendChild(scorePartIII);
   summaryGrid.appendChild(scoreTotal);
-  reportWrapper.appendChild(reportSubtitle);
-  reportWrapper.appendChild(summaryGrid);
+
+  const actionsBar = createEl('div', undefined, 'report-actions-bar');
+  const btnPrintReport = createEl('button', 'btnPrintReport');
+  const btnDownloadReportHtml = createEl('button', 'btnDownloadReportHtml');
+  const btnDownloadResultJson = createEl('button', 'btnDownloadResultJson');
+  const btnDownloadResultCsv = createEl('button', 'btnDownloadResultCsv');
+  const btnRestart = createEl('button', 'btnRestart');
+  actionsBar.appendChild(btnPrintReport);
+  actionsBar.appendChild(btnDownloadReportHtml);
+  actionsBar.appendChild(btnDownloadResultJson);
+  actionsBar.appendChild(btnDownloadResultCsv);
+  actionsBar.appendChild(btnRestart);
+
+  const reviewQuestionsList = createEl('div', 'reviewQuestionsList');
+
+  reportView.appendChild(reportSubtitle);
+  reportView.appendChild(summaryGrid);
+  reportView.appendChild(actionsBar);
+  reportView.appendChild(reviewQuestionsList);
   reportWrapper.appendChild(reportView);
 
   const submitModal = createEl('div', 'submitModal', 'modal-overlay');
@@ -563,6 +580,8 @@ export async function bootstrap(
   let isSubmitted = false;
   let scoredResult: LegacyScoredResult | null = null;
   let startedAt = now();
+  let submittedAt: number | null = null;
+  let finalRecord: AttemptRecord | null = null;
   const durationMin = currentExam.settings?.durationMinutes ?? 50;
   let deadline = startedAt + durationMin * 60 * 1000;
   let timerIntervalId: any = null;
@@ -671,21 +690,13 @@ export async function bootstrap(
     const reviewQuestionsList = root.querySelector('#reviewQuestionsList') as HTMLElement | null;
     if (reviewQuestionsList) reviewQuestionsList.style.display = 'none';
 
+    const historySection = root.querySelector('#attemptHistorySection') as HTMLElement | null;
+    if (historySection) historySection.style.display = 'none';
+
     const reportSubtitle = root.querySelector('#reportSubtitle') as HTMLElement | null;
     if (reportSubtitle) {
       reportSubtitle.textContent = `Lỗi toàn vẹn dữ liệu: ${err.code}`;
       reportSubtitle.style.color = 'var(--danger, #ef4444)';
-    }
-
-    const reportView = root.querySelector('#reportView') as HTMLElement | null;
-    if (reportView) {
-      reportView.innerHTML = `
-        <div class="integrity-error-box" role="alert" style="background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: 6px; margin: 1rem 0;">
-          <h2>Lỗi toàn vẹn dữ liệu: ${escapeHtml(err.code)}</h2>
-          <p>${escapeHtml(err.message)}</p>
-          <p>Mã lỗi: <code>${escapeHtml(err.code)}</code></p>
-        </div>
-      `;
     }
 
     let errBanner = root.querySelector('#integrityErrorBanner') as HTMLElement | null;
@@ -708,6 +719,11 @@ export async function bootstrap(
       errMsg.style.cssText = 'margin: 0 0 1rem 0; font-size: 0.875rem;';
       errMsg.textContent = err.message;
       errBanner.appendChild(errMsg);
+
+      const errCode = (root.ownerDocument || document).createElement('p');
+      errCode.style.cssText = 'margin: 0 0 1rem 0; font-size: 0.875rem;';
+      errCode.innerHTML = `Mã lỗi: <code>${escapeHtml(err.code)}</code>`;
+      errBanner.appendChild(errCode);
 
       const btnGroup = (root.ownerDocument || document).createElement('div');
       btnGroup.style.cssText = 'display: flex; gap: 0.5rem; align-items: center;';
@@ -738,16 +754,13 @@ export async function bootstrap(
       btnGroup.appendChild(btnExport);
       errBanner.appendChild(btnGroup);
 
-      if (reportWrapper && typeof reportWrapper.prepend === 'function') {
-        reportWrapper.prepend(errBanner);
-      } else if (reportWrapper && typeof (reportWrapper as any).insertBefore === 'function' && reportWrapper.firstChild) {
-        (reportWrapper as any).insertBefore(errBanner, reportWrapper.firstChild);
-      } else if (reportWrapper) {
-        reportWrapper.appendChild(errBanner);
-      } else if (typeof root.prepend === 'function') {
-        root.prepend(errBanner);
-      } else {
-        root.appendChild(errBanner);
+      const targetContainer = root.querySelector('#reportView') || reportWrapper || root;
+      if (targetContainer && typeof (targetContainer as any).prepend === 'function') {
+        (targetContainer as any).prepend(errBanner);
+      } else if (targetContainer && typeof (targetContainer as any).insertBefore === 'function' && (targetContainer as any).firstChild) {
+        (targetContainer as any).insertBefore(errBanner, (targetContainer as any).firstChild);
+      } else if (targetContainer) {
+        targetContainer.appendChild(errBanner);
       }
     } else {
       const errMsg = errBanner.querySelector('#integrityErrorMessage');
@@ -758,6 +771,11 @@ export async function bootstrap(
   const adoptFinalRecord = (record: AttemptRecord, isDurable = true) => {
     isSubmitted = true;
     if (timerIntervalId) clearInterval(timerIntervalId);
+
+    if (record.submittedAt) {
+      submittedAt = record.submittedAt;
+    }
+    finalRecord = record;
 
     if (record.candidateName) candidateName = record.candidateName;
     if (candidateInput) {
@@ -1319,8 +1337,12 @@ export async function bootstrap(
     // Compute score via domain scoreLegacyAttempt (uses scoreAttempt single truth)
     scoredResult = scoreLegacyAttempt(currentExam, responses);
 
+    const domainExam = toDomainExam(currentExam);
+    const domResponses = toDomainResponses(currentExam, attemptId, responses);
     let submitOk = false;
-    let finalRecord: AttemptRecord | null = null;
+    finalRecord = null;
+    const submitTs = now();
+    submittedAt = submitTs;
 
     // 1. Submit through controller if available
     if (isStorageAvailable && controller) {
@@ -1328,6 +1350,9 @@ export async function bootstrap(
         const subRes = await controller.submit(reason);
         if (subRes.ok) {
           finalRecord = subRes.value;
+          if (finalRecord.submittedAt) {
+            submittedAt = finalRecord.submittedAt;
+          }
           submitOk = true;
         } else if (subRes.error.code === 'ATTEMPT_FINALIZED' && storage) {
           const loadRes = await storage.load({
@@ -1337,6 +1362,9 @@ export async function bootstrap(
           });
           if (loadRes.ok && loadRes.value && loadRes.value.phase === 'final') {
             finalRecord = loadRes.value;
+            if (finalRecord.submittedAt) {
+              submittedAt = finalRecord.submittedAt;
+            }
             submitOk = true;
           }
         }
@@ -1345,8 +1373,6 @@ export async function bootstrap(
       }
     } else if (isStorageAvailable && storage) {
       try {
-        const domainExam = toDomainExam(currentExam);
-        const domResponses = toDomainResponses(currentExam, attemptId, responses);
         const calculatedScoreResult = scoreAttempt(domainExam, domResponses);
         const scoreDTO = scoreResultToDTO(calculatedScoreResult);
 
@@ -1363,23 +1389,48 @@ export async function bootstrap(
           startedAt,
           deadline,
           phase: 'final',
-          submittedAt: now(),
+          submittedAt: submitTs,
           scoreDTO,
         };
         const fRes = await storage.finalize(finalRec, 1);
         if (fRes.ok) {
           finalRecord = fRes.value;
+          if (finalRecord.submittedAt) {
+            submittedAt = finalRecord.submittedAt;
+          }
           submitOk = true;
         } else if (fRes.error.code === 'STORAGE_CONFLICT') {
           const loadRes = await storage.load(finalRec);
           if (loadRes.ok && loadRes.value && loadRes.value.phase === 'final') {
             finalRecord = loadRes.value;
+            if (finalRecord.submittedAt) {
+              submittedAt = finalRecord.submittedAt;
+            }
             submitOk = true;
           }
         }
       } catch {
         submitOk = false;
       }
+    }
+
+    if (!finalRecord) {
+      finalRecord = {
+        schemaVersion: 'web-attempt-v1',
+        examId: currentExam.examId,
+        examVersionId: currentExam.examVersionId,
+        attemptId,
+        revision: 2,
+        candidateName,
+        examSnapshot: currentExam,
+        presentationOrder: presentationOrder || createPresentationOrder(domainExam, currentExam.settings, attemptId),
+        responses: domResponses,
+        startedAt,
+        deadline,
+        phase: 'final',
+        submittedAt: submittedAt || now(),
+        scoreDTO: scoreResultToDTO(scoreAttempt(domainExam, domResponses)),
+      };
     }
 
     if (finalRecord) {
@@ -1408,6 +1459,7 @@ export async function bootstrap(
           responses,
           presentationOrder,
           startedAt,
+          submittedAt,
           deadline,
           submitted: true,
           scoreResult: scoredResult,
@@ -1438,6 +1490,23 @@ export async function bootstrap(
     const version = currentExam.examVersionId;
 
     if (timerIntervalId) clearInterval(timerIntervalId);
+
+    // Clear any previous error banner and reset report styling
+    const existingBanner = root.querySelector('#integrityErrorBanner') as HTMLElement | null;
+    if (existingBanner) {
+      if (typeof existingBanner.remove === 'function') existingBanner.remove();
+      else if (existingBanner.parentNode) existingBanner.parentNode.removeChild(existingBanner);
+    }
+    const subTitleEl = root.querySelector('#reportSubtitle') as HTMLElement | null;
+    if (subTitleEl) subTitleEl.style.color = '';
+    const summaryGridEl = root.querySelector('.summary-cards-grid') as HTMLElement | null;
+    if (summaryGridEl) summaryGridEl.style.display = '';
+    const reportActionsBarEl = root.querySelector('.report-actions-bar') as HTMLElement | null;
+    if (reportActionsBarEl) reportActionsBarEl.style.display = '';
+    const reviewQuestionsListEl = root.querySelector('#reviewQuestionsList') as HTMLElement | null;
+    if (reviewQuestionsListEl) reviewQuestionsListEl.style.display = '';
+    const historySectionEl = root.querySelector('#attemptHistorySection') as HTMLElement | null;
+    if (historySectionEl) historySectionEl.style.display = 'none';
 
     if (typeof localStorage !== 'undefined') {
       try {
@@ -1517,6 +1586,10 @@ export async function bootstrap(
         candidateInput.value = candidateName;
       }
       if (resumedRecord.startedAt) startedAt = resumedRecord.startedAt;
+      if (typeof resumedRecord.submittedAt === 'number') submittedAt = resumedRecord.submittedAt;
+      if (isDurableRecord && resumedRecord.phase === 'final') {
+        finalRecord = resumedRecord;
+      }
       if (resumedRecord.deadline) deadline = resumedRecord.deadline;
       if (resumedRecord.examSnapshot && Array.isArray(resumedRecord.examSnapshot.questions) && resumedRecord.examSnapshot.questions.length > 0) {
         currentExam = resumedRecord.examSnapshot;
@@ -1618,6 +1691,9 @@ export async function bootstrap(
       isSubmitted = false;
       scoredResult = null;
       startedAt = now();
+      submittedAt = null;
+      finalRecord = null;
+      activeReportModel = null;
       const dMin = currentExam.settings?.durationMinutes ?? 50;
       deadline = startedAt + dMin * 60 * 1000;
 
@@ -1676,7 +1752,8 @@ export async function bootstrap(
   showReport = (record?: AttemptRecord, repModel?: ReportModel) => {
     const errBanner = root.querySelector('#integrityErrorBanner') as HTMLElement | null;
     if (errBanner) {
-      errBanner.remove();
+      if (typeof errBanner.remove === 'function') errBanner.remove();
+      else if (errBanner.parentNode) errBanner.parentNode.removeChild(errBanner);
     }
     const summaryGrid = root.querySelector('.summary-cards-grid') as HTMLElement | null;
     if (summaryGrid) summaryGrid.style.display = '';
@@ -1707,12 +1784,15 @@ export async function bootstrap(
         }
         activeReportModel = repRes.value;
       }
+      if (typeof record.submittedAt === 'number') submittedAt = record.submittedAt;
+      finalRecord = record;
       if (record.candidateName) candidateName = record.candidateName;
       if (record.examSnapshot) currentExam = record.examSnapshot;
       if (record.responses) responses = fromDomainResponses(record.responses);
     }
     if (repModel) {
       activeReportModel = repModel;
+      if (typeof repModel.submittedAt === 'number') submittedAt = repModel.submittedAt;
     }
 
     // Always recompute score deterministically from domain - NEVER trust stored score
@@ -1720,9 +1800,14 @@ export async function bootstrap(
 
     if (!scoredResult) return;
 
+    const subTime = typeof submittedAt === 'number'
+      ? submittedAt
+      : (activeReportModel ? activeReportModel.submittedAt : (finalRecord?.submittedAt ?? null));
+
     const reportSubtitle = root.querySelector('#reportSubtitle') as HTMLElement | null;
     if (reportSubtitle) {
-      reportSubtitle.textContent = `Thí sinh: ${candidateName} · Nộp bài lúc: ${new Date().toLocaleTimeString()}`;
+      reportSubtitle.style.color = '';
+      reportSubtitle.textContent = `Thí sinh: ${candidateName} · Nộp bài lúc: ${subTime ? new Date(subTime).toLocaleTimeString() : new Date().toLocaleTimeString()}`;
     }
 
     const scorePartI = root.querySelector('#scorePartI') as HTMLElement | null;
@@ -1749,7 +1834,7 @@ export async function bootstrap(
 
     // Render #reportView for shells where reportView was created empty (e.g. unit test shell)
     const reportView = root.querySelector('#reportView') as HTMLElement | null;
-    if (reportView && (!reportView.innerHTML || reportView.innerHTML.length < 50)) {
+    if (reportView && !root.querySelector('.summary-cards-grid')) {
       reportView.innerHTML = `
         <div class="report-summary-box">
           <h2>Kết Quả Bài Thi</h2>
@@ -1845,15 +1930,24 @@ export async function bootstrap(
     if (btnDownloadJson) {
       (btnDownloadJson as HTMLElement).onclick = () => {
         if (!scoredResult) return;
-        const durationSeconds = startedAt ? Math.max(0, Math.round((now() - startedAt) / 1000)) : 0;
+        const subTime = typeof submittedAt === 'number'
+          ? submittedAt
+          : (activeReportModel ? activeReportModel.submittedAt : (finalRecord?.submittedAt ?? null));
+        const startTime = typeof startedAt === 'number'
+          ? startedAt
+          : (activeReportModel ? activeReportModel.startedAt : (finalRecord?.startedAt ?? now()));
+        const durationSeconds = (subTime !== null && startTime !== null)
+          ? Math.max(0, Math.round((subTime - startTime) / 1000))
+          : 0;
+
         const payload = {
           schemaVersion: 'web-result-v1',
           attemptId: attemptId || 'attempt-1',
           examId: currentExam.examId || 'exam-1',
           examVersionId: currentExam.examVersionId || 'v1.0.0',
           candidateName: candidateName || 'Thí sinh tự do',
-          startedAt: startedAt || now(),
-          submittedAt: now(),
+          startedAt: startTime,
+          submittedAt: subTime,
           durationSeconds,
           ruleSetId: currentExam.ruleSetId || 'custom-v1',
           inputPolicyId: currentExam.inputPolicyId || 'sa-charset-v1',
@@ -1898,15 +1992,25 @@ export async function bootstrap(
           'score_p1', 'max_p1', 'score_p2', 'max_p2', 'score_p3', 'max_p3',
           'total_score', 'max_total', 'policy_version', 'raw_answers_json'
         ];
-        const durationSeconds = startedAt ? Math.max(0, Math.round((now() - startedAt) / 1000)) : 0;
+        const subTime = typeof submittedAt === 'number'
+          ? submittedAt
+          : (activeReportModel ? activeReportModel.submittedAt : (finalRecord?.submittedAt ?? null));
+        const startTime = typeof startedAt === 'number'
+          ? startedAt
+          : (activeReportModel ? activeReportModel.startedAt : (finalRecord?.startedAt ?? now()));
+        const durationSeconds = (subTime !== null && startTime !== null)
+          ? Math.max(0, Math.round((subTime - startTime) / 1000))
+          : 0;
+        const subIso = subTime !== null ? new Date(subTime).toISOString() : '';
+        const startIso = startTime !== null ? new Date(startTime).toISOString() : '';
         const rawAnswers = JSON.stringify(responses || {});
         const row = [
           escapeCsvValue(attemptId || 'attempt-1'),
           escapeCsvValue(currentExam.examId || 'exam-1'),
           escapeCsvValue(currentExam.examVersionId || 'v1.0.0'),
           escapeCsvValue(candidateName || 'Thí sinh tự do'),
-          escapeCsvValue(startedAt ? new Date(startedAt).toISOString() : ''),
-          escapeCsvValue(new Date(now()).toISOString()),
+          escapeCsvValue(startIso),
+          escapeCsvValue(subIso),
           escapeCsvValue(String(durationSeconds)),
           escapeCsvValue(scoredResult.scoreIFraction || '0'),
           escapeCsvValue(scoredResult.maxIFraction || '0'),

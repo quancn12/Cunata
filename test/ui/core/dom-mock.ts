@@ -110,6 +110,12 @@ export class MockNode {
     return child;
   }
 
+  remove(): void {
+    if (this.parentNode) {
+      this.parentNode.removeChild(this);
+    }
+  }
+
   replaceChild<T extends MockNode>(newChild: T, oldChild: MockNode): T {
     const idx = this.childNodes.indexOf(oldChild);
     if (idx !== -1) {
@@ -247,6 +253,14 @@ export class MockElement extends MockNode {
   }
 
   dispatchEvent(event: MockEvent): boolean {
+    const onProp = (this as any)[`on${event.type}`];
+    if (typeof onProp === 'function') {
+      try {
+        onProp.call(this, event);
+      } catch (err) {
+        console.error(err);
+      }
+    }
     const list = this.listeners.get(event.type) || [];
     for (const fn of list) {
       fn.call(this, event);

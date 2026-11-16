@@ -503,4 +503,209 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
 
     cleanup();
   });
+
+  it('CK14-F01: Integrity error on exam A does not destroy report shell DOM, allowing subsequent valid exam B to report and download', async () => {
+    const mockStorage = createMockLocalStorage();
+    (globalThis as any).localStorage = mockStorage;
+    const mockWin = createMockWindow();
+    (globalThis as any).window = mockWin;
+    (globalThis as any).FileReader = MockFileReader;
+
+    const adapter = new MemoryTransactionAdapter();
+    const storageRes = await openStorage({ adapter, approveD03: true });
+    assert.equal(storageRes.ok, true);
+    if (!storageRes.ok) throw new Error('Storage open failed');
+    const storage = storageRes.value;
+
+    const attemptIdA = 'att-ck14-f01-tampered';
+    const tamperedRecordA: AttemptRecord = {
+      schemaVersion: 'web-attempt-v1',
+      examId: SAMPLE_EXAM.examId,
+      examVersionId: SAMPLE_EXAM.examVersionId,
+      attemptId: attemptIdA,
+      revision: 2,
+      candidateName: 'Thí sinh A',
+      examSnapshot: SAMPLE_EXAM,
+      presentationOrder: {
+        questionOrder: ['q01', 'q02'],
+        optionOrder: [],
+        seed: 'original',
+      },
+      responses: {
+        attemptId: attemptIdA,
+        examVersionId: SAMPLE_EXAM.examVersionId,
+        responses: [
+          { kind: 'I', questionVersionId: 'q01', selectedOptionId: 'opt-1a' },
+          { kind: 'I', questionVersionId: 'q02', selectedOptionId: 'opt-2b' },
+        ],
+      },
+      startedAt: Date.now() - 60000,
+      deadline: Date.now() + 2940000,
+      phase: 'final',
+      submittedAt: Date.now() - 1000,
+      scoreDTO: null,
+    };
+    const domainExamA = toDomainExam(SAMPLE_EXAM);
+    const calculatedScoreA = scoreAttempt(domainExamA, tamperedRecordA.responses);
+    const validDTOA = scoreResultToDTO(calculatedScoreA);
+    const tamperedDTOA = {
+      ...(validDTOA as Record<string, unknown>),
+      total: '0', // Tampered!
+    };
+    const fullTamperedRecordA = { ...tamperedRecordA, scoreDTO: tamperedDTOA };
+
+    const draftRecordA: AttemptRecord = {
+      ...fullTamperedRecordA,
+      revision: 1,
+      phase: 'draft',
+      submittedAt: null,
+      scoreDTO: null,
+    };
+    await storage.create(draftRecordA);
+    await storage.finalize(fullTamperedRecordA, 1);
+
+    const doc = createMockDocument();
+    const root = doc.createElement('div') as unknown as HTMLElement;
+    doc.body.appendChild(root as unknown as MockElement);
+
+    const cleanup = await bootstrap(root, {
+      storageAdapter: adapter,
+      initialExam: SAMPLE_EXAM,
+    });
+
+    // Verify integrity error for exam A
+    const syncText = root.querySelector('#syncText');
+    assert.ok(syncText?.textContent?.includes('SCORE_MISMATCH'), 'syncText must show SCORE_MISMATCH error');
+    assert.ok(root.querySelector('#integrityErrorBanner'), 'Integrity banner must be present for Exam A');
+
+    // Switch to valid Exam B via #examFileInput
+    const examFileInput = root.querySelector('#examFileInput') as any;
+    assert.ok(examFileInput, '#examFileInput must exist');
+
+    const mockFileB = {
+      name: 'exam-b.json',
+      text: async () => JSON.stringify(NEW_EXAM),
+    };
+    examFileInput.files = [mockFileB];
+    examFileInput.dispatchEvent(new MockEvent('change', { target: examFileInput }));
+
+    // Wait for FileReader
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // After switching to Exam B, integrity error banner must be cleared
+    assert.equal(root.querySelector('#integrityErrorBanner'), null, 'Integrity banner must be cleared on exam switch');
+
+    // Answer Question 1 of Exam B correctly
+    const optB = root.querySelector('[data-qid="qnew-01"][data-option-id="opt-na"]');
+    assert.ok(optB, 'Option opt-na of Exam B must be in DOM');
+    (optB as any).dispatchEvent(new MockEvent('click'));
+
+    // Submit Exam B
+    const btnSubmit = root.querySelector('#btnSubmit');
+    assert.ok(btnSubmit);
+    (btnSubmit as any).dispatchEvent(new MockEvent('click'));
+
+    const btnConfirmSubmit = root.querySelector('#btnConfirmSubmit');
+    assert.ok(btnConfirmSubmit);
+    (btnConfirmSubmit as any).dispatchEvent(new MockEvent('click'));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Verify Report view of Exam B is fully functional
+    assert.equal(root.querySelector('#integrityErrorBanner'), null, 'Integrity banner must not remain on Exam B report');
+    const scoreTotal = root.querySelector('#scoreTotal');
+    assert.ok(scoreTotal, '#scoreTotal must still exist in DOM (not destroyed by Exam A)');
+    assert.ok(scoreTotal?.textContent?.includes('0,25 / 0,25'), 'Exam B score must be rendered');
+
+    const btnDownloadHtml = root.querySelector('#btnDownloadReportHtml');
+    assert.ok(btnDownloadHtml, '#btnDownloadReportHtml must still exist in DOM');
+
+    const btnDownloadJson = root.querySelector('#btnDownloadResultJson');
+    assert.ok(btnDownloadJson, '#btnDownloadResultJson must still exist in DOM');
+
+    assert.equal(syncText?.textContent, 'Đã nộp & lưu cục bộ');
+
+    cleanup();
+  });
+
+  it('CK14-F02: Exported result JSON and CSV record immutable submittedAt and durationSeconds regardless of download delay', async () => {
+    let mockTime = 1000000;
+    const nowFn = () => mockTime;
+
+    const mockStorage = createMockLocalStorage();
+    (globalThis as any).localStorage = mockStorage;
+    (globalThis as any).window = createMockWindow();
+
+    const adapter = new MemoryTransactionAdapter();
+    const doc = createMockDocument();
+    const root = doc.createElement('div') as unknown as HTMLElement;
+    doc.body.appendChild(root as unknown as MockElement);
+
+    const cleanup = await bootstrap(root, {
+      storageAdapter: adapter,
+      initialExam: SAMPLE_EXAM,
+      now: nowFn,
+    });
+
+    // Started at t=1000000
+    // Answer question 1
+    const opt = root.querySelector('[data-qid="q01"][data-option-id="opt-1a"]');
+    assert.ok(opt);
+    (opt as any).dispatchEvent(new MockEvent('click'));
+
+    // Advance time by 60 seconds (duration = 60s)
+    mockTime += 60000; // t = 1060000
+
+    // Submit exam at t = 1060000
+    const btnSubmit = root.querySelector('#btnSubmit');
+    (btnSubmit as any).dispatchEvent(new MockEvent('click'));
+    const btnConfirmSubmit = root.querySelector('#btnConfirmSubmit');
+    (btnConfirmSubmit as any).dispatchEvent(new MockEvent('click'));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Now advance time by another 10 seconds before downloading (t = 1070000)
+    mockTime += 10000;
+
+    let interceptedContent = '';
+    const origCreateObjectURL = URL.createObjectURL;
+    URL.createObjectURL = (blob: any) => {
+      if (typeof blob?.text === 'function') {
+        blob.text().then((t: string) => { interceptedContent = t; });
+      }
+      return 'blob:mock-download';
+    };
+
+    // Download JSON at t = 1070000
+    const btnDownloadJson = root.querySelector('#btnDownloadResultJson') as any;
+    assert.ok(btnDownloadJson);
+    btnDownloadJson.dispatchEvent(new MockEvent('click'));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const json1 = JSON.parse(interceptedContent);
+    assert.equal(json1.submittedAt, 1060000, 'JSON submittedAt must match submit timestamp (1060000), not download time');
+    assert.equal(json1.durationSeconds, 60, 'durationSeconds must be 60s, not 70s');
+
+    // Advance time by another 30 seconds (t = 1100000) and download JSON again
+    mockTime += 30000;
+    btnDownloadJson.dispatchEvent(new MockEvent('click'));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const json2 = JSON.parse(interceptedContent);
+    assert.equal(json2.submittedAt, 1060000, 'JSON submittedAt must remain immutable (1060000) across subsequent downloads');
+    assert.equal(json2.durationSeconds, 60, 'durationSeconds must remain immutable (60s)');
+
+    // Download CSV at t = 1100000
+    const btnDownloadCsv = root.querySelector('#btnDownloadResultCsv') as any;
+    assert.ok(btnDownloadCsv);
+    btnDownloadCsv.dispatchEvent(new MockEvent('click'));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const csvLines = interceptedContent.split('\r\n');
+    assert.ok(csvLines.length >= 2, 'CSV must have header and data row');
+    const dataRow = csvLines[1]!;
+    assert.ok(dataRow.includes(new Date(1060000).toISOString()), 'CSV submitted_at must match submit timestamp');
+    assert.ok(dataRow.includes('"60"'), 'CSV duration_seconds must be 60');
+
+    URL.createObjectURL = origCreateObjectURL;
+    cleanup();
+  });
 });
