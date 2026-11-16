@@ -6,7 +6,12 @@
   <title>Cunata — Nền Tảng Luyện Thi & Khảo Sát Năng Lực GDPT 2018</title>
   <link rel="stylesheet" href="styles/style.css">
   <link rel="modulepreload" href="./dist/import/docx/index.js">
+  <link rel="modulepreload" href="./dist/import/docx/reader.js">
+  <link rel="modulepreload" href="./dist/import/zip/index.js">
   <link rel="modulepreload" href="./dist/import/preview/view.js">
+  <link rel="modulepreload" href="./dist/import/preview/core.js">
+  <link rel="modulepreload" href="./dist/ui/index.js">
+  <link rel="modulepreload" href="./dist/domain/index.js">
   <style>
     /* Bổ sung kiểu hiển thị công thức và định dạng hình học offline */
     .math-expr {
@@ -5087,27 +5092,56 @@
     let builderModalLastFocus = null;
     let bankModalLastFocus = null;
 
-    let docxModPromise = null;
-    let prevModPromise = null;
+    let docxModulesPromise = null;
+
+    async function loadDocxModulesInternal() {
+      if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') {
+        throw new Error('Chức năng nhập DOCX yêu cầu chạy qua máy chủ HTTP/HTTPS');
+      }
+      let lastErr = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const [docxMod, prevMod] = await Promise.all([
+            import('./dist/import/docx/index.js'),
+            import('./dist/import/preview/view.js'),
+          ]);
+          if (docxMod && prevMod) {
+            return { docxMod, prevMod };
+          }
+        } catch (e) {
+          lastErr = e;
+          if (attempt < 3) {
+            await new Promise((r) => setTimeout(r, 100 * attempt));
+          }
+        }
+      }
+      throw lastErr || new Error('Không thể nạp module xử lý DOCX');
+    }
+
     function preloadDocxModules() {
       if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') return;
-      if (!docxModPromise) {
-        docxModPromise = import('./dist/import/docx/index.js').catch(() => {
-          docxModPromise = null;
-          return null;
-        });
-      }
-      if (!prevModPromise) {
-        prevModPromise = import('./dist/import/preview/view.js').catch(() => {
-          prevModPromise = null;
+      if (!docxModulesPromise) {
+        docxModulesPromise = loadDocxModulesInternal().catch(() => {
+          docxModulesPromise = null;
           return null;
         });
       }
     }
 
+    async function getDocxModules() {
+      if (docxModulesPromise) {
+        const loaded = await docxModulesPromise;
+        if (loaded && loaded.docxMod && loaded.prevMod) {
+          return loaded;
+        }
+      }
+      docxModulesPromise = loadDocxModulesInternal();
+      return await docxModulesPromise;
+    }
+
     try {
       if (typeof window !== 'undefined' && window.location && window.location.protocol !== 'file:') {
-        setTimeout(preloadDocxModules, 100);
+        preloadDocxModules();
       }
     } catch {}
 
@@ -5484,16 +5518,10 @@
         const file = e.target && e.target.files && e.target.files[0];
         if (!file) return;
         try {
-          preloadDocxModules();
-          const [docxMod, prevMod] = await Promise.all([
-            docxModPromise || import('./dist/import/docx/index.js'),
-            prevModPromise || import('./dist/import/preview/view.js'),
-          ]);
-          if (!docxMod || !prevMod) {
-            throw new Error('Không thể nạp module xử lý DOCX');
-          }
+          const { docxMod, prevMod } = await getDocxModules();
           const res = await docxMod.importDocx(file, new AbortController().signal);
           if (!res.ok) {
+            console.error('Lỗi phân tích DOCX:', res.error);
             if (typeof alert === 'function') alert('Lỗi phân tích DOCX: ' + (res.error?.message || 'Không rõ nguyên nhân'));
             return;
           }

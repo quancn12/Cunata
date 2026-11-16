@@ -523,8 +523,8 @@
           "text": "$t = 0$°C"
         }
       ],
-      "correctOptionId": "ly12-de10-i-17-a",
-      "explanation": "Nhiệt lượng để nước đá tăng nhiệt độ và nóng chảy hoàn toàn là:\n$Q_d = m_d c_d Δt_d + m_d λ = 1 · 2100 · 5 + 1 · 334000 = 344500$ J\nNhiệt lượng mà bình thép và nước tỏa ra khi giảm nhiệt độ xuống 0°C là:\n$Q = (m_n c_n + m_t c_t)Δt = (5 · 4180 + 0,5 · 500) · 30 = 634500$ J\nVì $Q > Q_d$ nên đá tan hoàn toàn ⇒ nhiệt độ cân bằng lớn hơn 0°C\n$Q_d + m_d c_n t_cb = (m_n c_n + m_t c_t)(t - t_cb) ⇒ 344500 + 1 · 4180 · t_cb = (5 · 4180 + 0,5 · 500) · (30 - t_cb) ⇒ t_cb ≈ 11,4$°C. Chọn A."
+      "correctOptionId": "ly12-de10-i-17-b",
+      "explanation": "Nhiệt lượng để nước đá tăng nhiệt độ và nóng chảy hoàn toàn là:\n$Q_d = m_d c_d Δt_d + m_d λ = 1 · 2100 · 5 + 1 · 334000 = 344500$ J\nNhiệt lượng mà bình thép và nước tỏa ra khi giảm nhiệt độ xuống 0°C là:\n$Q = (m_n c_n + m_t c_t)Δt = (5 · 4180 + 0,5 · 500) · 30 = 634500$ J\nVì $Q > Q_d$ nên đá tan hoàn toàn ⇒ nhiệt độ cân bằng lớn hơn 0°C\n$Q_d + m_d c_n t_cb = (m_n c_n + m_t c_t)(t - t_cb) ⇒ 344500 + 1 · 4180 · t_cb = (5 · 4180 + 0,5 · 500) · (30 - t_cb) ⇒ t_cb ≈ 11,4$°C. Chọn B. (Đã đính chính so với đề gốc.)"
     },
     {
       "kind": "I",

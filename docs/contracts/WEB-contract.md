@@ -353,3 +353,48 @@ Trưởng phòng chốt: bộ đề Vật lí 12 hàng tuần đưa lên web cô
 - **Liên kết thẳng:** `?exam=<examId>` trên địa chỉ trang → khởi động xong nạp luôn đề có `id` đó.
 - **Lỗi:** không tải được danh sách hoặc đề (mất mạng lần đầu, file hỏng) → báo rõ trong hộp thoại, không treo, không làm mất bài đang làm.
 - **Offline (dist):** đề đã mở một lần phải mở lại được khi mất mạng.
+
+## 16. Màn vào thi: nhập tên và chọn đề trước (Trưởng phòng chốt 16/11/2026)
+
+Trưởng phòng: "học sinh vào web phát là đang hiện 1 đề rồi, đáng lẽ phải cho điền tên và chọn đề trước". Kiểm định: các ca "màn vào thi" trong `test/claude-check/web.test.mjs`; DOM trong `test/claude-check/README.md`.
+
+- **Không còn tự nạp đề mẫu khi mở trang.** Mở trang mà máy KHÔNG có bài đang làm dở → hiện màn vào thi `#startScreen`; `#examWrapper` và `#reportWrapper` ẩn, không hiện câu hỏi nào.
+- **Màn vào thi gồm:** ô tên `input#startName` (bắt buộc; bỏ khoảng trắng đầu cuối; rỗng thì không tính), danh sách đề lấy từ `public/exams/index.json` gom theo `group`, mỗi đề là `button.exam-list-item[data-exam-url]` (đề đang chọn có `aria-pressed="true"`), nút `#btnStartExam` chỉ bấm được khi có tên VÀ đã chọn đề. Bấm → nạp đề, bắt đầu lượt làm với `#candidateName` = tên đã nhập, đóng màn vào thi.
+- **Tên nhớ cho lần sau:** tên đã dùng được điền sẵn vào `#startName` ở lần mở sau (lưu cục bộ).
+- **`?exam=<examId>`:** vẫn hiện màn vào thi, đề đó được chọn sẵn; nhập tên rồi bắt đầu. Nếu đúng đề đó đang có bài dở thì vào thẳng bài dở.
+- **Có bài đang làm dở (chưa nộp) → vào thẳng bài dở** như quyết định D03 (tải lại trang không bị đẩy ra màn vào thi). Nút "Chọn đề" `#btnOpenExamList` ở màn làm bài và màn báo cáo vẫn mở danh sách để đổi đề (mục 15).
+- **Mất mạng lần đầu / không tải được danh sách:** màn vào thi báo rõ lỗi và có nút thử lại; không treo.
+- Màn vào thi không tràn ngang ở bề rộng 360 px; dùng được bằng bàn phím (Tab tới ô tên, danh sách, nút bắt đầu; Enter để bắt đầu).
+
+## 17. Google Sheet + Apps Script: kho đề của giáo viên và thu kết quả (Trưởng phòng chốt 16/11/2026)
+
+Trưởng phòng chọn Google Sheet + Apps Script (chi phí 0) cho cả thu kết quả (D04) lẫn việc thầy cô sửa và xuất bản đề. Một Apps Script duy nhất: `apps-script/Code.js`.
+Kiểm định: `test/claude-check/appsscript.test.mjs` (chạy Code.js thật trên Google giả lập) và `test/claude-check/teacher.test.mjs` (trình duyệt thật + máy chủ giả lập đúng hành vi Apps Script).
+
+### 17.1 Cấu hình
+- `public/config.json` = `{ "appsScriptUrl": "" }`. Chuỗi rỗng = chưa triển khai: web chạy như hiện tại (đề tĩnh, kết quả chỉ lưu máy + tải file), nút giáo viên báo "chưa cấu hình", KHÔNG gửi request mạng nào tới Apps Script.
+- URL Apps Script không phải bí mật. Mật khẩu giáo viên KHÔNG bao giờ nằm trong mã web hay repo: Trưởng phòng đặt trong Script Properties `TEACHER_PASSWORD` của Apps Script.
+- Không có cơ chế ghi đè URL qua địa chỉ trang (`?api=` …) — chống lừa học sinh gửi bài sang máy chủ lạ.
+
+### 17.2 Giao tiếp (đúng cách Apps Script web app hoạt động)
+- Đọc: `GET <url>?action=listExams` và `GET <url>?action=getExam&id=<examId>`. Ghi: `POST <url>` với `Content-Type: text/plain;charset=utf-8`, thân là JSON (tránh CORS preflight). Client phải theo redirect 302 (Apps Script trả về qua `script.googleusercontent.com`).
+- Mọi phản hồi là JSON có `success: true|false`; lỗi có `error` (mã) và `message` (tiếng Việt). Mật khẩu chỉ đi trong thân POST, không bao giờ trong URL, không bao giờ được trả lại trong phản hồi.
+- Hành động POST (`action`):
+  - không có `action` hoặc `"submitResult"`: nộp kết quả — giữ nguyên hợp đồng hiện có của Code.js (idempotent theo `attempt_id`, chống formula injection, `PAYLOAD_CONFLICT`).
+  - `"teacherLogin"` `{password}` → `{success:true}` hoặc `UNAUTHORIZED`; chưa đặt `TEACHER_PASSWORD` → `TEACHER_PASSWORD_NOT_SET`.
+  - `"publishExam"` `{password, exam}` → kiểm tra mật khẩu, kiểm tra đề hợp lệ tối thiểu (lược đồ `web-exam-v1`: examId, title, questions; mỗi câu I có 4 phương án và `correctOptionId` thuộc phương án; mỗi câu II có 4 ý `answer` boolean; mỗi câu III có `answerKey` 1–4 ký tự `0-9,-`) → sai trả `INVALID_EXAM` kèm danh sách lỗi; đúng thì lưu (cùng `examId` thì thay bản cũ, tăng `revision`) → `{success:true, examId, revision}`.
+  - `"unpublishExam"` `{password, examId}` → gỡ khỏi danh sách.
+- `listExams` → `{success:true, exams:[{id,title,subject,grade,durationMinutes,questionCount,group,revision,updatedAt}]}` chỉ gồm đề đang xuất bản. `getExam` → `{success:true, exam}` (đúng nguyên văn đề đã xuất bản) hoặc `NOT_FOUND`.
+
+### 17.3 Lưu trong Google Sheet
+- Kết quả ghi vào trang tính tên **`KetQua`**; đề ghi vào trang tính **`DeThi`** (tự tạo nếu chưa có). Không dùng `getActiveSheet()` để chọn nơi ghi.
+- Một ô Google Sheets chứa tối đa 50 000 ký tự: JSON đề phải được chia khúc (≤ 40 000 ký tự/ô) và ghép lại nguyên vẹn; đề nặng (có hình nhúng) vẫn xuất bản và đọc lại đúng từng byte.
+- Ô nào có thể bị Sheets hiểu là công thức (bắt đầu bằng `= + - @`) phải được lưu sao cho đọc lại đúng nguyên văn.
+- Ghi có `LockService` như phần kết quả.
+
+### 17.4 Phía web
+- **Danh sách đề** (màn vào thi, mục 16, và hộp thoại chọn đề, mục 15) = đề tĩnh trong `public/exams/index.json` ∪ đề giáo viên xuất bản (`listExams`). Trùng `examId` thì bản giáo viên xuất bản thắng. Đề xuất bản giữ `group` của nó; không có thì vào nhóm "Đề giáo viên xuất bản". Không gọi được Apps Script → vẫn hiện đề tĩnh, kèm dòng báo "chưa tải được đề của giáo viên".
+- **Trang giáo viên:** nút `#btnTeacher` ("Giáo viên") ở màn vào thi; mở thẳng bằng `?teacher`. Đăng nhập trong `#teacherLogin` (ô `input#teacherPassword[type=password]`, nút `#btnTeacherLogin`; sai mật khẩu hiện lỗi trong `#teacherLoginError`). Mật khẩu chỉ giữ trong bộ nhớ phiên (sessionStorage), không lưu localStorage.
+- **Bảng giáo viên `#teacherPanel`:** liệt kê mọi đề (tĩnh + đã xuất bản) dạng `.teacher-exam-row[data-exam-id]`, mỗi dòng có nút `.btn-teacher-edit` (mở trình soạn đề với đề đó) và với đề đã xuất bản thêm `.btn-teacher-unpublish`; có nút `#btnTeacherNewExam` (soạn đề mới).
+- **Trình soạn đề** có nút `#btnPublishExam` ("Xuất bản lên web") khi đang ở chế độ giáo viên: gửi `publishExam`, báo thành công/lỗi rõ ràng (lỗi `INVALID_EXAM` hiện danh sách lỗi), không mất bản đang soạn khi lỗi. Áp dụng ND-01: đang sửa dở chưa lưu thì chặn xuất bản.
+- **Nộp kết quả:** sau khi nộp, gửi `submitResult` với payload hiện có (`buildWebResultPayload`) — trạng thái trung thực: `#syncText` hiện "Đang gửi…", rồi "Đã gửi" khi nhận `success:true`, hoặc "Chưa gửi được — sẽ thử lại" khi lỗi; tự thử lại theo outbox; nút tải kết quả luôn có (D08). Chưa cấu hình thì vẫn "Đã lưu cục bộ".

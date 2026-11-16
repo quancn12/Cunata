@@ -38,3 +38,4 @@ node --test --test-name-pattern="^dist" test/claude-check/web.test.mjs   # chỉ
 | Điểm | `#scorePartI`, `#scorePartII`, `#scorePartIII`, `#scoreTotal` dạng `điểm / tối đa`; `#reportSubtitle` có tên thí sinh |
 | Báo cáo | `#btnDownloadReportHtml`, `#btnRestart`, `#reviewQuestionsList` |
 | Chọn đề | `#btnOpenExamList` → hộp thoại `#examListModal` chứa `button.exam-list-item[data-exam-url]`; dữ liệu từ `public/exams/index.json`; liên kết thẳng `?exam=<examId>` (WEB-contract mục 15) |
+| Màn vào thi | `#startScreen` gồm `input#startName`, `button.exam-list-item[data-exam-url]` (đề chọn: `aria-pressed="true"`), `#btnStartExam` (khóa tới khi có tên + đề) — WEB-contract mục 16 |

@@ -51,20 +51,39 @@ export const qI = (n) => `ck-i-${String(n).padStart(2, '0')}`;
 export const qII = (n) => `ck-ii-${String(n).padStart(2, '0')}`;
 export const qIII = (n) => `ck-iii-${String(n).padStart(2, '0')}`;
 
-/** Chờ ứng dụng khởi động xong và hiện một đề (mặc định là đề mẫu). */
+const shown = (id) => { const e = document.getElementById(id); return !!e && getComputedStyle(e).display !== 'none' && e.getClientRects().length > 0; };
+export const START_NAME = 'Học sinh kiểm định';
+
+/** Chờ ứng dụng khởi động xong: hoặc màn vào thi (#startScreen), hoặc đang làm bài (có câu hỏi), hoặc báo cáo. */
 export async function waitBoot(page, timeout = 15000) {
-  await page.waitFor(() => {
-    const t = document.getElementById('examTitle')?.textContent ?? '';
-    const report = document.getElementById('reportWrapper');
-    const reportShown = !!report && getComputedStyle(report).display !== 'none';
-    return (document.querySelectorAll('#examPane .question-card').length > 0 || reportShown) && t.trim() !== '' && !/Đang tải/.test(t);
-  }, 'ứng dụng khởi động xong, hiện đề thi (tiêu đề khác "Đang tải đề thi...", có thẻ câu hỏi .question-card trong #examPane)', timeout);
+  await page.waitFor(`(() => { const shown = ${shown}; const t = document.getElementById('examTitle')?.textContent ?? '';
+    const exam = shown('examWrapper') && document.querySelectorAll('#examPane .question-card').length > 0 && t.trim() !== '' && !/Đang tải/.test(t);
+    const start = shown('startScreen') && document.querySelectorAll('#startScreen .exam-list-item[data-exam-url]').length > 0;
+    return exam || start || (shown('reportWrapper') && /\\d/.test(document.getElementById('scoreTotal')?.textContent ?? '')); })()`,
+  'ứng dụng khởi động xong: màn vào thi #startScreen có danh sách đề, hoặc đang làm bài, hoặc màn báo cáo (WEB-contract mục 16)', timeout);
+}
+
+export const onStartScreen = (page) => page.eval(`(() => { const shown = ${shown}; return shown('startScreen'); })()`);
+
+/** Đi qua màn vào thi: nhập tên, chọn đề (mặc định đề đầu danh sách), bấm bắt đầu. */
+export async function enterFromStart(page, { name = START_NAME, url } = {}) {
+  if (!(await onStartScreen(page))) return;
+  await page.eval(() => { const e = document.getElementById('startName'); e.focus(); e.select(); });
+  await page.send('Input.insertText', { text: name });
+  await page.eval(() => document.getElementById('startName').dispatchEvent(new Event('change', { bubbles: true })));
+  const sel = url ? `#startScreen .exam-list-item[data-exam-url="${url}"]` : '#startScreen .exam-list-item[data-exam-url]';
+  await page.click(sel);
+  await page.waitFor(() => { const b = document.getElementById('btnStartExam'); return !!b && !b.disabled; }, 'nhập tên + chọn đề thì nút #btnStartExam phải bấm được', 5000);
+  await page.click('#btnStartExam');
+  await page.waitFor(`(() => { const shown = ${shown}; return !shown('startScreen') && shown('examWrapper') && document.querySelectorAll('#examPane .question-card').length > 0; })()`,
+    'bấm #btnStartExam: màn vào thi đóng, vào màn làm bài có câu hỏi', 10000);
 }
 
 export async function openApp(ctx, server, target) {
   const page = await ctx.newPage();
   await page.goto(server.url + target.path);
   await waitBoot(page);
+  await enterFromStart(page);
   return page;
 }
 

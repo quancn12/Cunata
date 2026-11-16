@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 320" width="480" height="320">
+  <!-- Nền trắng -->
+  <rect width="480" height="320" fill="#ffffff"/>
+
+  <!-- Trục nhiệt độ t (°C) -->
+  <line x1="70" y1="270" x2="70" y2="28" stroke="#1e293b" stroke-width="2"/>
+  <path d="M 66 32 L 70 18 L 74 32 Z" fill="#1e293b"/>
+  <text x="70" y="14" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="bold" fill="#0f172a">t (°C)</text>
+
+  <!-- Trục thời gian τ (phút) -->
+  <line x1="70" y1="270" x2="445" y2="270" stroke="#1e293b" stroke-width="2"/>
+  <path d="M 440 266 L 454 270 L 440 274 Z" fill="#1e293b"/>
+  <text x="454" y="295" text-anchor="end" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="bold" fill="#0f172a">τ (phút)</text>
+
+  <!-- Gốc tọa độ O -->
+  <text x="60" y="288" text-anchor="end" font-family="system-ui, -apple-system, sans-serif" font-size="15" fill="#334155">O</text>
+
+  <!-- Đánh dấu nhiệt độ nóng chảy t_nc của chất rắn kết tinh B -->
+  <line x1="70" y1="150" x2="190" y2="150" stroke="#64748b" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <line x1="66" y1="150" x2="70" y2="150" stroke="#1e293b" stroke-width="2"/>
+  <text x="62" y="155" text-anchor="end" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="bold" fill="#0f172a">t_nc</text>
+
+  <!-- Đường B: chất rắn kết tinh (nhiệt độ tăng, nằm ngang tại t_nc, rồi tăng tiếp) -->
+  <path d="M 80 240 L 190 150 L 300 150 L 415 60" fill="none" stroke="#0f172a" stroke-width="2.5"/>
+  <circle cx="190" cy="150" r="3.5" fill="#0f172a"/>
+  <circle cx="300" cy="150" r="3.5" fill="#0f172a"/>
+  <text x="422" y="60" text-anchor="start" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#0f172a">B</text>
+
+  <!-- Đường A: chất rắn vô định hình (nhiệt độ tăng liên tục, cong mềm, không có đoạn nằm ngang) -->
+  <path d="M 80 240 C 160 210, 250 145, 395 75" fill="none" stroke="#475569" stroke-width="2.5"/>
+  <text x="402" y="80" text-anchor="start" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#475569">A</text>
+</svg>

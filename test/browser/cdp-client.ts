@@ -285,6 +285,33 @@ export class CdpClient {
     return false;
   }
 
+  public async waitForVisible(selector: string, timeoutMs: number = 5000): Promise<boolean> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const isVis = await this.evaluate<boolean>(`(() => {
+        const el = document.querySelector(${JSON.stringify(selector)});
+        if (!el) return false;
+        const style = window.getComputedStyle(el);
+        return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+      })()`);
+      if (isVis) return true;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return false;
+  }
+
+  public async waitForFunction(fnBody: string, timeoutMs: number = 5000): Promise<boolean> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      try {
+        const res = await this.evaluate<boolean>(`Boolean(${fnBody})`);
+        if (res) return true;
+      } catch {}
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return false;
+  }
+
   public async click(selector: string): Promise<void> {
     const found = await this.waitForSelector(selector);
     if (!found) throw new Error(`Cannot click: element not found: ${selector}`);

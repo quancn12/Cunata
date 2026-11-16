@@ -16,6 +16,12 @@
   },
   "assets": [
     {
+      "assetId": "ly12-de12-c21-do-thi",
+      "mime": "image/svg+xml",
+      "data": "public/exams/ly12/de12/c21-do-thi.svg",
+      "alt": "Đồ thị nhiệt độ theo thời gian của hai chất rắn A và B"
+    },
+    {
       "assetId": "ly12-de12-p02-1",
       "mime": "image/png",
       "data": "public/exams/ly12/de12/p02-1.png",
@@ -375,35 +381,36 @@
       "kind": "II",
       "questionVersionId": "ly12-de12-ii-03",
       "title": "Câu 21 (Phần II - Đúng / Sai)",
-      "content": "Hình bên là đồ thị biểu diễn sự thay đổi nhiệt độ theo thời gian trong quá trình chuyển từ thể rắn sang thể lỏng của chất rắn A và B .",
+      "image": "public/exams/ly12/de12/c21-do-thi.svg",
+      "content": "Hình bên là đồ thị biểu diễn sự thay đổi nhiệt độ theo thời gian trong quá trình chuyển từ thể rắn sang thể lỏng của chất rắn A và B .\n\n![Đồ thị nhiệt độ theo thời gian của hai chất rắn A và B](public/exams/ly12/de12/c21-do-thi.svg)",
       "statements": [
         {
           "statementId": "ly12-de12-ii-03-a",
           "label": "a",
           "text": "Chất rắn B có nhiệt độ nóng chảy xác định.",
           "answer": true,
-          "explanation": "Đúng."
+          "explanation": "Đúng. Dựa vào đồ thị, đường nung nóng của chất B có một đoạn nằm ngang tại nhiệt độ nóng chảy $t_nc$, chứng tỏ trong suốt quá trình nóng chảy nhiệt độ của B không đổi. Do đó, B là chất rắn kết tinh và có nhiệt độ nóng chảy xác định."
         },
         {
           "statementId": "ly12-de12-ii-03-b",
           "label": "b",
           "text": "Sự sắp xếp phân tử trong chất rắn A có trật tự gần.",
           "answer": true,
-          "explanation": "Đúng. Vì A là chất rắn vô định hình nên sự sắp xếp phân tử có trật tự gần."
+          "explanation": "Đúng. Dựa vào đồ thị, đường nung nóng của chất A tăng liên tục và không có đoạn nằm ngang, chứng tỏ A là chất rắn vô định hình (không có nhiệt độ nóng chảy xác định). Các phân tử trong chất rắn vô định hình chỉ có cấu trúc trật tự gần."
         },
         {
           "statementId": "ly12-de12-ii-03-c",
           "label": "c",
           "text": "Khi nung nóng liên tục, chất rắn A mềm đi và chuyển dần sang thể lỏng.",
           "answer": true,
-          "explanation": "Đúng. Vì A là chất rắn vô định hình nên khi nung nóng liên tục sẽ mềm đi và chuyển dần sang thể lỏng."
+          "explanation": "Đúng. Vì A là chất rắn vô định hình (đồ thị không có đoạn nằm ngang ứng với nhiệt độ nóng chảy xác định), nên khi nung nóng liên tục, chất rắn A sẽ mềm dần rồi chuyển sang thể lỏng."
         },
         {
           "statementId": "ly12-de12-ii-03-d",
           "label": "d",
           "text": "Chất rắn B không có cấu trúc tinh thể.",
           "answer": false,
-          "explanation": "Sai. Vì B là chất rắn kết tinh nên có cấu trúc tinh thể."
+          "explanation": "Sai. Vì trên đồ thị, đường nung nóng của chất B có đoạn nằm ngang ứng với nhiệt độ nóng chảy xác định $t_nc$, nên B là chất rắn kết tinh. Chất rắn kết tinh có cấu trúc tinh thể."
         }
       ]
     },

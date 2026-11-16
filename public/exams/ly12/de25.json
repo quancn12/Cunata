@@ -146,8 +146,8 @@
           "text": "Jun trên độ (J/độ)."
         }
       ],
-      "correctOptionId": "ly12-de25-i-03-a",
-      "explanation": "$λ = \\frac{Q}{m}$. Chọn A."
+      "correctOptionId": "ly12-de25-i-03-b",
+      "explanation": "$λ = \\frac{Q}{m}$. Chọn B. (Đã đính chính so với đề gốc.)"
     },
     {
       "kind": "I",
@@ -626,8 +626,8 @@
           "statementId": "ly12-de25-ii-01-c",
           "label": "c",
           "text": "Thể tích của lượng khí là 2 m$^3$",
-          "answer": true,
-          "explanation": "Đúng. $V = a^3 = 2^3 = 8$ m$^3$."
+          "answer": false,
+          "explanation": "Sai. $V = a^3 = 2^3 = 8$ m³ ≠ 2 m³. (Đã đính chính so với đề gốc.)"
         },
         {
           "statementId": "ly12-de25-ii-01-d",

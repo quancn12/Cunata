@@ -613,10 +613,17 @@ export async function bootstrap(
     } catch (_) {}
   };
 
-  const activateWaitingWorker = () => {
+  const activateWaitingWorker = async () => {
     try {
       if (swRegistration?.waiting) {
         swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        return;
+      }
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg?.waiting) {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
       }
     } catch (_) {}
   };

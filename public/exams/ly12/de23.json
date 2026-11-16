@@ -382,8 +382,8 @@
           "text": "350 °C"
         }
       ],
-      "correctOptionId": "ly12-de23-i-10-b",
-      "explanation": "$\\frac{V}{T} = const ⇒ 4/(7 + 273) = 5/T ⇒ T = 350$ K $≈ 77°C$. Đáp án B."
+      "correctOptionId": "ly12-de23-i-10-a",
+      "explanation": "$\\frac{V}{T} = const ⇒ 4/(7 + 273) = 5/T ⇒ T = 350$ K $≈ 77°C$. Chọn A. (Đã đính chính so với đề gốc.)"
     },
     {
       "kind": "I",

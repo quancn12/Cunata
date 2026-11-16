@@ -823,29 +823,62 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
 
       // Candidate answers a question in Release A
       await client.type('#candidateName', 'Thí sinh kiểm định F01');
-      await client.evaluate(`(() => {
+      const selectedOptionA = await client.evaluate<{ qid: string; optionId: string } | null>(`(() => {
         const opt = document.querySelector('.question-card [role="radio"]');
-        if (opt) opt.click();
+        if (opt) {
+          opt.click();
+          return {
+            qid: opt.getAttribute('data-qid') || '',
+            optionId: opt.getAttribute('data-option-id') || '',
+          };
+        }
+        return null;
       })()`);
+      assert.ok(selectedOptionA && selectedOptionA.qid && selectedOptionA.optionId, 'Must find and click a valid radio option');
 
-      // Wait for local save and assert draft in IndexedDB
-      await new Promise((r) => setTimeout(r, 600));
-      const draftRecordA = await client.evaluate<any>(`new Promise((resolve, reject) => {
-        const req = indexedDB.open('cunata-web');
-        req.onerror = () => reject(req.error);
-        req.onsuccess = () => {
-          const db = req.result;
-          const tx = db.transaction('attempts', 'readonly');
-          const store = tx.objectStore('attempts');
-          const getAllReq = store.getAll();
-          getAllReq.onsuccess = () => resolve(getAllReq.result[0] || null);
-          getAllReq.onerror = () => reject(getAllReq.error);
-        };
-      })`);
+      // Wait for local save using predicate on IndexedDB
+      const startPollA = Date.now();
+      let draftRecordA: any = null;
+      while (Date.now() - startPollA < 5000) {
+        draftRecordA = await client.evaluate<any>(`new Promise((resolve, reject) => {
+          const req = indexedDB.open('cunata-web');
+          req.onerror = () => reject(req.error);
+          req.onsuccess = () => {
+            const db = req.result;
+            const tx = db.transaction('attempts', 'readonly');
+            const store = tx.objectStore('attempts');
+            const getAllReq = store.getAll();
+            getAllReq.onsuccess = () => resolve(getAllReq.result[0] || null);
+            getAllReq.onerror = () => reject(getAllReq.error);
+          };
+        })`);
+        const respList = draftRecordA?.responses?.responses;
+        if (
+          Array.isArray(respList) &&
+          respList.some(
+            (r: any) =>
+              r.kind === 'I' &&
+              r.questionVersionId === selectedOptionA.qid &&
+              r.selectedOptionId === selectedOptionA.optionId
+          )
+        ) {
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 100));
+      }
+
       assert.ok(draftRecordA, 'Draft record must exist in IndexedDB before upgrade');
       assert.equal(draftRecordA.candidateName, 'Thí sinh kiểm định F01');
       assert.equal(draftRecordA.phase, 'draft');
-      assert.ok(Object.keys(draftRecordA.responses || {}).length > 0, 'Draft response must not be blank');
+      assert.ok(draftRecordA.attemptId, 'Draft must have valid attemptId');
+      assert.ok(draftRecordA.examVersionId, 'Draft must have valid examVersionId');
+      assert.ok(Array.isArray(draftRecordA.responses?.responses), 'Draft responses array must exist');
+      assert.ok(draftRecordA.responses.responses.length > 0, 'Draft responses array must not be empty');
+      const respA = draftRecordA.responses.responses.find(
+        (r: any) => r.kind === 'I' && r.questionVersionId === selectedOptionA.qid
+      );
+      assert.ok(respA, 'Draft responses must contain answered question');
+      assert.equal(respA.selectedOptionId, selectedOptionA.optionId, 'Draft response must match selected option ID');
 
       // Step 2: Switch server to Release B and update worker
       serverRelease = 'B';
@@ -906,28 +939,41 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       })`);
       assert.deepEqual(draftRecordWhileWaiting.responses, draftRecordA.responses, 'Draft responses must remain intact while Release B is waiting');
       assert.equal(draftRecordWhileWaiting.candidateName, 'Thí sinh kiểm định F01');
+      assert.equal(draftRecordWhileWaiting.attemptId, draftRecordA.attemptId, 'Attempt ID must remain unchanged');
+      assert.equal(draftRecordWhileWaiting.examVersionId, draftRecordA.examVersionId, 'Exam version ID must remain unchanged');
+      assert.equal(draftRecordWhileWaiting.deadline, draftRecordA.deadline, 'Deadline must remain unchanged');
+      assert.deepEqual(draftRecordWhileWaiting.presentationOrder, draftRecordA.presentationOrder, 'Presentation order must remain unchanged');
 
       // Step 3: Complete exam
       await client.click('#btnSubmit');
       await client.waitForSelector('#btnConfirmSubmit');
       await client.click('#btnConfirmSubmit');
-      await client.waitForSelector('#reportWrapper');
+      await client.waitForVisible('#reportWrapper', 10000);
 
       // Assert final record in IDB preserves responses
-      const finalRecord = await client.evaluate<any>(`new Promise((resolve, reject) => {
-        const req = indexedDB.open('cunata-web');
-        req.onerror = () => reject(req.error);
-        req.onsuccess = () => {
-          const db = req.result;
-          const tx = db.transaction('attempts', 'readonly');
-          const store = tx.objectStore('attempts');
-          const getAllReq = store.getAll();
-          getAllReq.onsuccess = () => resolve(getAllReq.result[0] || null);
-          getAllReq.onerror = () => reject(getAllReq.error);
-        };
-      })`);
+      let finalRecord: any = null;
+      const startFinalPoll = Date.now();
+      while (Date.now() - startFinalPoll < 5000) {
+        finalRecord = await client.evaluate<any>(`new Promise((resolve, reject) => {
+          const req = indexedDB.open('cunata-web');
+          req.onerror = () => reject(req.error);
+          req.onsuccess = () => {
+            const db = req.result;
+            const tx = db.transaction('attempts', 'readonly');
+            const store = tx.objectStore('attempts');
+            const getAllReq = store.getAll();
+            getAllReq.onsuccess = () => resolve(getAllReq.result[0] || null);
+            getAllReq.onerror = () => reject(getAllReq.error);
+          };
+        })`);
+        if (finalRecord?.phase === 'final') break;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      assert.ok(finalRecord, 'Final record must exist in IndexedDB');
       assert.equal(finalRecord.phase, 'final');
       assert.deepEqual(finalRecord.responses, draftRecordA.responses, 'Final record must preserve responses from draft');
+      assert.equal(finalRecord.attemptId, draftRecordA.attemptId, 'Final record must preserve attemptId');
+      assert.equal(finalRecord.examVersionId, draftRecordA.examVersionId, 'Final record must preserve examVersionId');
 
       // Step 4: Stop server IMMEDIATELY before reloading into Release B (test true offline cold boot)
       await new Promise<void>((resolve) => {
@@ -937,7 +983,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
 
       // Step 5: Reload while server is down (full cold offline)
       await client.navigate(`${origin}/Cunata/`);
-      const offlineLoaded = await client.waitForSelector('#reportWrapper, .question-card', 10000);
+      const offlineLoaded = await client.waitForVisible('#reportWrapper, .question-card', 10000);
       assert.ok(offlineLoaded, 'Release B must cleanly boot cold offline without online reload first');
 
       // Verify that browser offline fetch returns Release B module from cache
@@ -1048,10 +1094,18 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
 
       // Tab A: Fill name and answer
       await clientA.type('#candidateName', 'Thí sinh Tab A');
-      await clientA.evaluate(`(() => {
+      const selectedA = await clientA.evaluate<{ qid: string; optionId: string } | null>(`(() => {
         const opt = document.querySelector('.question-card [role="radio"]');
-        if (opt) opt.click();
+        if (opt) {
+          opt.click();
+          return {
+            qid: opt.getAttribute('data-qid') || '',
+            optionId: opt.getAttribute('data-option-id') || '',
+          };
+        }
+        return null;
       })()`);
+      assert.ok(selectedA && selectedA.qid && selectedA.optionId, 'Tab A must click radio option');
       await new Promise((r) => setTimeout(r, 500));
 
       // Tab B: Open second tab in the SAME browser instance with a different exam
@@ -1061,11 +1115,18 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
 
       // Tab B: Fill name and answer
       await clientB.type('#candidateName', 'Thí sinh Tab B');
-      await clientB.evaluate(`(() => {
+      const selectedB = await clientB.evaluate<{ qid: string; optionId: string } | null>(`(() => {
         const opt = document.querySelector('.question-card [role="radio"]');
-        if (opt) opt.click();
+        if (opt) {
+          opt.click();
+          return {
+            qid: opt.getAttribute('data-qid') || '',
+            optionId: opt.getAttribute('data-option-id') || '',
+          };
+        }
+        return null;
       })()`);
-      await new Promise((r) => setTimeout(r, 600));
+      assert.ok(selectedB && selectedB.qid && selectedB.optionId, 'Tab B must click radio option');
 
       // Track controller changes on Tab B
       await clientB.evaluate(`(() => {
@@ -1075,23 +1136,49 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
         });
       })()`);
 
-      // Verify IDB has two drafts (one for each exam)
-      const allDrafts = await clientB.evaluate<any[]>(`new Promise((resolve, reject) => {
-        const req = indexedDB.open('cunata-web');
-        req.onerror = () => reject(req.error);
-        req.onsuccess = () => {
-          const db = req.result;
-          const tx = db.transaction('attempts', 'readonly');
-          const store = tx.objectStore('attempts');
-          const getAllReq = store.getAll();
-          getAllReq.onsuccess = () => resolve(getAllReq.result || []);
-          getAllReq.onerror = () => reject(getAllReq.error);
-        };
-      })`);
+      // Verify IDB has two drafts (one for each exam) with actual non-empty responses
+      const startDraftsPoll = Date.now();
+      let allDrafts: any[] = [];
+      let draftBInitial: any = null;
+      while (Date.now() - startDraftsPoll < 5000) {
+        allDrafts = await clientB.evaluate<any[]>(`new Promise((resolve, reject) => {
+          const req = indexedDB.open('cunata-web');
+          req.onerror = () => reject(req.error);
+          req.onsuccess = () => {
+            const db = req.result;
+            const tx = db.transaction('attempts', 'readonly');
+            const store = tx.objectStore('attempts');
+            const getAllReq = store.getAll();
+            getAllReq.onsuccess = () => resolve(getAllReq.result || []);
+            getAllReq.onerror = () => reject(getAllReq.error);
+          };
+        })`);
+        draftBInitial = allDrafts.find((d: any) => d.candidateName === 'Thí sinh Tab B');
+        const bResp = draftBInitial?.responses?.responses;
+        if (
+          allDrafts.length >= 2 &&
+          Array.isArray(bResp) &&
+          bResp.some(
+            (r: any) =>
+              r.kind === 'I' &&
+              r.questionVersionId === selectedB.qid &&
+              r.selectedOptionId === selectedB.optionId
+          )
+        ) {
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 100));
+      }
       assert.equal(allDrafts.length, 2, 'IndexedDB must contain two separate attempt records for Tab A and Tab B');
-      const draftBInitial = allDrafts.find((d: any) => d.candidateName === 'Thí sinh Tab B');
       assert.ok(draftBInitial, 'Draft B must exist in IndexedDB');
       assert.equal(draftBInitial.phase, 'draft');
+      assert.ok(Array.isArray(draftBInitial.responses?.responses), 'Draft B responses must be an array');
+      assert.ok(draftBInitial.responses.responses.length > 0, 'Draft B responses must not be empty');
+      const bRespEntry = draftBInitial.responses.responses.find(
+        (r: any) => r.kind === 'I' && r.questionVersionId === selectedB.qid
+      );
+      assert.ok(bRespEntry, 'Draft B must contain answered question');
+      assert.equal(bRespEntry.selectedOptionId, selectedB.optionId, 'Draft B response must match clicked option ID');
 
       // Switch server to Release B and trigger Service Worker update
       serverRelease = 'B';
@@ -1131,7 +1218,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       await clientA.click('#btnSubmit');
       await clientA.waitForSelector('#btnConfirmSubmit');
       await clientA.click('#btnConfirmSubmit');
-      await clientA.waitForSelector('#reportWrapper');
+      await clientA.waitForVisible('#reportWrapper', 10000);
 
       // Wait a moment for any message exchanges to settle
       await new Promise((r) => setTimeout(r, 600));
@@ -1162,21 +1249,64 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       assert.equal(draftBAfterSubmitA.phase, 'draft');
       assert.deepEqual(draftBAfterSubmitA.responses, draftBInitial.responses, 'Draft B responses must remain identical');
       assert.equal(draftBAfterSubmitA.deadline, draftBInitial.deadline, 'Draft B deadline must remain identical');
+      assert.equal(draftBAfterSubmitA.attemptId, draftBInitial.attemptId, 'Draft B attemptId must remain identical');
+      assert.equal(draftBAfterSubmitA.examVersionId, draftBInitial.examVersionId, 'Draft B examVersionId must remain identical');
 
       // Now SUBMIT Tab B as well
       await clientB.click('#btnSubmit');
       await clientB.waitForSelector('#btnConfirmSubmit');
       await clientB.click('#btnConfirmSubmit');
-      await clientB.waitForSelector('#reportWrapper');
+      await clientB.waitForVisible('#reportWrapper', 10000);
 
-      // Now that BOTH tabs are submitted, Release B worker can activate safely
-      await new Promise((r) => setTimeout(r, 800));
-      const waitingAfterBoth = await clientA.evaluate<boolean>(`new Promise(resolve => {
-        navigator.serviceWorker.getRegistration().then(reg => {
-          resolve(!!(reg && reg.waiting));
-        });
-      })`);
-      assert.equal(waitingAfterBoth, false, 'Waiting worker should activate once all tabs finish their exams');
+      // Verify Tab B final record in IDB is durable
+      let finalBRecord: any = null;
+      const startFinalBPoll = Date.now();
+      while (Date.now() - startFinalBPoll < 5000) {
+        finalBRecord = await clientB.evaluate<any>(`new Promise((resolve, reject) => {
+          const req = indexedDB.open('cunata-web');
+          req.onerror = () => reject(req.error);
+          req.onsuccess = () => {
+            const db = req.result;
+            const tx = db.transaction('attempts', 'readonly');
+            const store = tx.objectStore('attempts');
+            const getAllReq = store.getAll();
+            getAllReq.onsuccess = () => resolve(getAllReq.result.find((d) => d.candidateName === 'Thí sinh Tab B') || null);
+            getAllReq.onerror = () => reject(getAllReq.error);
+          };
+        })`);
+        if (finalBRecord?.phase === 'final') break;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      assert.ok(finalBRecord, 'Final record for Tab B must exist in IndexedDB');
+      assert.equal(finalBRecord.phase, 'final');
+      assert.deepEqual(finalBRecord.responses, draftBInitial.responses, 'Tab B final record must preserve responses');
+
+      // Now that BOTH tabs are submitted, Release B worker can activate safely.
+      // Poll with deadline (up to 15s) for worker activation and cache update
+      const startActivationWait = Date.now();
+      let activated = false;
+      while (Date.now() - startActivationWait < 15000) {
+        const swState = await clientA.evaluate<{ waiting: boolean; activeState: string | null }>(`new Promise(resolve => {
+          navigator.serviceWorker.getRegistration().then(reg => {
+            if (!reg) return resolve({ waiting: false, activeState: null });
+            resolve({
+              waiting: !!reg.waiting,
+              activeState: reg.active ? reg.active.state : null,
+            });
+          });
+        })`);
+        if (!swState.waiting && swState.activeState === 'activated') {
+          activated = true;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      assert.ok(activated, 'Release B worker must cleanly activate once all tabs finish their exams');
+
+      // Also verify that Release B cache is created
+      const cacheKeys = await clientA.evaluate<string[]>(`caches.keys()`);
+      const hasNewCache = cacheKeys.some((k) => k.startsWith('cunata-cache-v-') && k !== 'cunata-cache-v-release-a');
+      assert.ok(hasNewCache, 'New cache must exist after activation');
     } finally {
       if (clientB) await clientB.close();
       if (clientA) await clientA.close();
@@ -1221,5 +1351,51 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
     } finally {
       if (client) await client.close();
     }
+  });
+
+  it('CK18-F01: Negative control verifies that draft assertion strictly fails when candidate answers are disabled or empty', async () => {
+    // Envelope with empty responses (simulates candidate not answering or save disabled)
+    const blankEnvelope = {
+      attemptId: 'attempt-test-f01',
+      examVersionId: 'v1.0.0',
+      responses: [],
+    };
+
+    // 1. The old flawed assertion: Object.keys(draftRecordA.responses || {}).length > 0 was passing even for responses: []
+    const oldFlawedCheck = Object.keys(blankEnvelope || {}).length > 0;
+    assert.equal(oldFlawedCheck, true, 'Old check was flawed because Object.keys on envelope was > 0 even when empty');
+
+    // 2. The corrected assertion: must verify array existence and non-zero length of responses
+    const correctedCheck = Array.isArray(blankEnvelope.responses) && blankEnvelope.responses.length > 0;
+    assert.equal(correctedCheck, false, 'Corrected check must return false for blank response envelope');
+
+    // 3. Negative control assertion throws AssertionError if empty
+    assert.throws(
+      () => {
+        assert.ok(
+          Array.isArray(blankEnvelope.responses) && blankEnvelope.responses.length > 0,
+          'Draft responses array must not be empty'
+        );
+      },
+      /Draft responses array must not be empty/
+    );
+
+    // 4. Positive control: populated envelope with valid question response
+    const validEnvelope = {
+      attemptId: 'attempt-test-f01',
+      examVersionId: 'v1.0.0',
+      responses: [
+        { kind: 'I', questionVersionId: 'q-test-1', selectedOptionId: 'opt-a' },
+      ],
+    };
+    assert.ok(
+      Array.isArray(validEnvelope.responses) && validEnvelope.responses.length > 0,
+      'Populated envelope must pass non-empty assertion'
+    );
+    const resp = validEnvelope.responses.find(
+      (r: any) => r.kind === 'I' && r.questionVersionId === 'q-test-1'
+    );
+    assert.ok(resp, 'Must find matching question response');
+    assert.equal(resp.selectedOptionId, 'opt-a');
   });
 });

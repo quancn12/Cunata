@@ -524,7 +524,7 @@
         }
       ],
       "correctOptionId": "ly12-de18-i-17-d",
-      "explanation": "Nhiệt nóng chảy hoàn toàn $Q_nc = m_d λ = 30 · 334 = 10020$ J ($m_d$ là khối lượng nước đá).\nNhiệt lượng nước có thể tỏa ra nếu hạ xuống 0°C là $Q_n = m_n c Δt = 200 · 4,2 · (100 - 20) = 67200$ J. Vì $Q_n > Q_nc$ nên đá tan hết hoàn toàn.\n$Q_nc + m_d c t = m_n c (t_n - t) ⇒ 10020 + 30 · 4,2 · t = 200 · 4,2 · (20 - t) ⇒ t ≈ 7$°C. Chọn D."
+      "explanation": "Nhiệt nóng chảy hoàn toàn $Q_nc = m_d λ = 30 · 334 = 10020$ J ($m_d$ là khối lượng nước đá).\nNhiệt lượng nước có thể tỏa ra nếu hạ xuống 0°C là $Q_n = m_n c Δt = 200 · 4,2 · (20 - 0) = 16800$ J. Vì $Q_n > Q_nc$ nên đá tan hết hoàn toàn.\n$Q_nc + m_d c t = m_n c (t_n - t) ⇒ 10020 + 30 · 4,2 · t = 200 · 4,2 · (20 - t) ⇒ t ≈ 7$°C. Chọn D. (Đã đính chính so với đề gốc.)"
     },
     {
       "kind": "I",

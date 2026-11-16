@@ -333,7 +333,7 @@
       "kind": "I",
       "questionVersionId": "ly12-de20-i-11",
       "title": "Câu 11 (Phần I)",
-      "content": "Một bình dung tích 5 lít chứa 7 g nitơ ($N_2$) ở °C. Biết khối lượng mol của $N_2$ là 28g / mol . Áp suất khí trong bình là:",
+      "content": "Một bình dung tích 5 lít chứa 7 g nitơ ($N_2$) ở 5°C. Biết khối lượng mol của $N_2$ là 28g / mol . Áp suất khí trong bình là:",
       "options": [
         {
           "optionId": "ly12-de20-i-11-a",
@@ -357,7 +357,7 @@
         }
       ],
       "correctOptionId": "ly12-de20-i-11-a",
-      "explanation": "Ta có $n = \\frac{m}{M} = \\frac{7}{28} = 0,25$ mol.\n$\\frac{pV}{T} = nR ⇒ (p·5)/(5 + 273) = 0,25·0,082 ⇒ p ≈ 1,14$ atm. Đáp án A."
+      "explanation": "Ta có $n = \\frac{m}{M} = \\frac{7}{28} = 0,25$ mol.\n$\\frac{pV}{T} = nR ⇒ (p·5)/(5 + 273) = 0,25·0,082 ⇒ p ≈ 1,14$ atm. Đáp án A. (Đã đính chính so với đề gốc.)"
     },
     {
       "kind": "I",
@@ -447,7 +447,7 @@
         }
       ],
       "correctOptionId": "ly12-de20-i-14-b",
-      "explanation": "Đẳng tích $\\frac{p}{T} = const ⇒ 2/(27 + 273) = \\frac{2,5}{T_2} ⇒ T_2 = 375$ K $≈ 102$ °C.\n$ΔT = T_2 - T_1 = 102 - 27 = 75$ °C. Đáp án B."
+      "explanation": "Đẳng tích $\\frac{p}{T} = const ⇒ 2/(27 + 273) = \\frac{2,5}{T_2} ⇒ T_2 = 375$ K $≈ 102$ °C.\n$ΔT = T_2 - T_1 = 102 - 27 = 75$ °C. Đáp án B. (Đã đính chính so với đề gốc.)"
     },
     {
       "kind": "I",

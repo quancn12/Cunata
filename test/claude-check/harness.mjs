@@ -21,7 +21,7 @@ const MIME = {
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Server tĩnh: phục vụ `dir` tại http://127.0.0.1:<port>/Cunata/ . Mọi đường dẫn ngoài /Cunata/ trả 404. */
-export async function startServer(dir) {
+export async function startServer(dir, { overrides = {} } = {}) {
   const root = resolve(dir);
   const hits = [];
   const server = createServer((req, res) => {
@@ -30,6 +30,10 @@ export async function startServer(dir) {
     hits.push(p);
     if (!p.startsWith(SUBPATH)) { res.writeHead(404); res.end('outside subpath'); return; }
     p = p.slice(SUBPATH.length);
+    if (Object.hasOwn(overrides, p)) {   // thay nội dung một file khi phục vụ (vd. public/config.json trỏ tới Apps Script giả lập) — không sửa repo
+      res.writeHead(200, { 'content-type': MIME[extname(p).toLowerCase()] ?? 'text/plain; charset=utf-8', 'cache-control': 'no-cache' });
+      res.end(overrides[p]); return;
+    }
     let file = normalize(join(root, p));
     if (file !== root && !file.startsWith(root + sep)) { res.writeHead(403); res.end(); return; }
     try {

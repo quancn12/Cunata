@@ -327,7 +327,7 @@
       "kind": "I",
       "questionVersionId": "ly12-de21-i-10",
       "title": "Câu 10 (Phần I)",
-      "content": "Một bình kín chứa khí ở áp suất 2,7 atm và nhiệt độ -3 °C. Nếu nhiệt độ của khí tăng lên 27 °C thì áp suất của khí trong bình",
+      "content": "Một bình kín chứa khí ở áp suất 2,7 atm và nhiệt độ -3 °C. Nếu nhiệt độ của khí tăng thêm 27°C thì áp suất của khí trong bình",
       "options": [
         {
           "optionId": "ly12-de21-i-10-a",
@@ -351,7 +351,7 @@
         }
       ],
       "correctOptionId": "ly12-de21-i-10-a",
-      "explanation": "Đẳng tích: $\\frac{p}{T} = const \\Rightarrow 2,7/(-3 + 273) = p/(-3 + 27 + 273) \\Rightarrow p ≈ 3$ atm. Chọn A."
+      "explanation": "Đẳng tích: $\\frac{p}{T} = const \\Rightarrow 2,7/(-3 + 273) = p/(-3 + 27 + 273) \\Rightarrow T_1 = -3 + 273 = 270$ K, $T_2 = -3 + 27 + 273 = 297$ K, $p_2 = 2,7 · 297 / 270 = 2,97 ≈ 3$ atm. Chọn A. (Đã đính chính so với đề gốc.)"
     },
     {
       "kind": "I",

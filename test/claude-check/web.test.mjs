@@ -9,7 +9,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { launchBrowser, sleep, startServer } from './harness.mjs';
 import {
-  SECRET, TARGETS, isVisible, loadExam, makeExam, near, openApp, pageProblems, pickOption, qI, qII, qIII, readReport,
+  SECRET, TARGETS, START_NAME, enterFromStart, onStartScreen, isVisible, loadExam, makeExam, near, openApp, pageProblems, pickOption, qI, qII, qIII, readReport,
   setName, setStatement, shortValue, submit, timerSeconds, typeShort, waitBoot, waitReport, waitSaved,
 } from './app.mjs';
 
@@ -27,6 +27,46 @@ for (const target of TARGETS) {
     const run = (name, fn) => test(`${target.name}: ${name}`, { timeout: 120000 }, async () => {
       const ctx = await browser.newContext();
       try { await fn(ctx); } finally { await ctx.close(); }
+    });
+
+    // WEB-contract mục 16 (Trưởng phòng 16/11/2026): "học sinh vào web phải điền tên và chọn đề trước", không tự hiện một đề.
+    run('[app][student] màn vào thi: mở trang lần đầu thấy ô tên + danh sách đề, chưa hiện câu hỏi nào; thiếu tên hoặc chưa chọn đề thì không bắt đầu được', async (ctx) => {
+      const exams = readManifest();
+      const page = await ctx.newPage();
+      await page.goto(server.url + target.path);
+      await waitBoot(page);
+      assert.equal(await onStartScreen(page), true, 'mở trang lần đầu (chưa có bài dở) phải hiện màn vào thi #startScreen');
+      const s = await page.eval(() => ({
+        cards: [...document.querySelectorAll('#examPane .question-card')].filter((c) => c.getClientRects().length > 0).length,
+        items: [...document.querySelectorAll('#startScreen .exam-list-item[data-exam-url]')].map((b) => b.getAttribute('data-exam-url')),
+        nameInput: !!document.querySelector('#startScreen input#startName'),
+        disabled: document.getElementById('btnStartExam')?.disabled,
+      }));
+      assert.equal(s.cards, 0, 'chưa nhập tên và chọn đề thì không được hiện câu hỏi của bất kỳ đề nào');
+      assert.equal(s.nameInput, true, 'màn vào thi phải có ô nhập tên #startName');
+      assert.deepEqual([...s.items].sort(), exams.map((e) => e.url).sort(), 'màn vào thi phải liệt kê đủ các đề trong public/exams/index.json');
+      assert.equal(s.disabled, true, 'chưa nhập tên, chưa chọn đề: nút #btnStartExam phải bị khóa');
+      const pick = exams[exams.length - 1];
+      await page.click(`#startScreen .exam-list-item[data-exam-url="${pick.url}"]`);
+      assert.equal(await page.eval(() => document.getElementById('btnStartExam').disabled), true, 'đã chọn đề nhưng chưa nhập tên: vẫn chưa được bắt đầu');
+      await page.eval(() => { const e = document.getElementById('startName'); e.focus(); e.select(); });
+      await page.send('Input.insertText', { text: '   ' });
+      assert.equal(await page.eval(() => document.getElementById('btnStartExam').disabled), true, 'tên chỉ có khoảng trắng không được tính là đã nhập tên');
+      await enterFromStart(page, { name: 'Lê Minh 12A1', url: pick.url });
+      await titleIs(page, pick);
+      assert.equal(await page.eval(() => document.getElementById('candidateName')?.value), 'Lê Minh 12A1', 'tên nhập ở màn vào thi phải là tên thí sinh của bài làm');
+      assert.deepEqual(pageProblems(page), [], 'không lỗi JS hay request hỏng');
+    });
+
+    run('[app][student] màn vào thi: nộp bài xong, mở lại trang bằng ?exam= đề khác thì tên đã nhập được điền sẵn', async (ctx) => {
+      const exams = readManifest();
+      const page = await openApp(ctx, server, target);
+      await submit(page);
+      const p2 = await ctx.newPage();
+      await p2.goto(server.url + target.path + '?exam=' + encodeURIComponent(exams[0].id));
+      await waitBoot(p2);
+      assert.equal(await onStartScreen(p2), true, 'bài trước đã nộp, mở đề khác bằng ?exam= phải qua màn vào thi');
+      assert.equal(await p2.eval(() => document.getElementById('startName')?.value), START_NAME, 'ô tên ở màn vào thi phải điền sẵn tên đã dùng lần trước');
     });
 
     run('[app][glue] khởi động: hiện đề mẫu, không lỗi JS, không request hỏng, chạy được dưới đường dẫn con /Cunata/', async (ctx) => {
@@ -323,8 +363,10 @@ for (const target of TARGETS) {
       await page.setViewport(360, 740, true);
       await page.goto(server.url + target.path);
       await waitBoot(page);
-      await loadExam(page, makeExam());
       const over = () => page.eval(() => document.documentElement.scrollWidth - window.innerWidth);
+      assert.ok(await over() <= 1, `màn vào thi tràn ngang ${await over()}px ở bề rộng 360px`);
+      await enterFromStart(page);
+      await loadExam(page, makeExam());
       assert.ok(await over() <= 1, `màn làm bài tràn ngang ${await over()}px ở bề rộng 360px`);
       await pickOption(page, qI(1), 'a');
       await submit(page);
@@ -432,6 +474,15 @@ for (const target of TARGETS) {
       const pick = exams[0];
       const page = await ctx.newPage();
       await page.goto(server.url + target.path + '?exam=' + encodeURIComponent(pick.id));
+      await waitBoot(page);
+      assert.equal(await onStartScreen(page), true, 'mở bằng ?exam=: vẫn phải qua màn vào thi để nhập tên');
+      const sel = await page.eval((u) => { const b = document.querySelector(`#startScreen .exam-list-item[data-exam-url="${u}"]`); return !!b && (b.getAttribute('aria-pressed') === 'true' || b.getAttribute('aria-selected') === 'true' || /selected/.test(b.className)); }, pick.url);
+      assert.equal(sel, true, 'mở bằng ?exam=: đề đó phải được chọn sẵn trên màn vào thi (aria-pressed="true" hoặc class selected)');
+      await page.eval(() => { const e = document.getElementById('startName'); e.focus(); e.select(); });
+      await page.send('Input.insertText', { text: 'Học sinh link' });
+      await page.eval(() => document.getElementById('startName').dispatchEvent(new Event('change', { bubbles: true })));
+      await page.waitFor(() => !document.getElementById('btnStartExam').disabled, 'đề đã chọn sẵn + nhập tên thì bấm được bắt đầu', 5000);
+      await page.click('#btnStartExam');
       await titleIs(page, pick);
     });
 
@@ -444,6 +495,7 @@ for (const target of TARGETS) {
           const page = await ctx.newPage();
           await page.goto(own.url + target.path);
           await waitBoot(page);
+          await enterFromStart(page);
           await page.waitFor(() => navigator.serviceWorker?.getRegistrations().then((r) => r.some((x) => !!x.active)), 'service worker đã đăng ký và active', 15000);
           await sleep(1500);
           await page.reload(); await waitBoot(page);     // lần 2: service worker đã điều khiển trang, cache đủ

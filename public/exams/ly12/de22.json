@@ -16,6 +16,12 @@
   },
   "assets": [
     {
+      "assetId": "de22-c11-dang-nhiet",
+      "mime": "image/svg+xml",
+      "data": "public/exams/ly12/de22/c11-dang-nhiet.svg",
+      "alt": "Hình vẽ đồ thị p theo V đường đẳng nhiệt Câu 11"
+    },
+    {
       "assetId": "de22-p02-1",
       "mime": "image/png",
       "data": "public/exams/ly12/de22/p02-1.png",

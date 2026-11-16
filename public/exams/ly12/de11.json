@@ -538,7 +538,7 @@
       "title": "Câu 27 (Phần III - Trả lời ngắn)",
       "content": "Bỏ 100 g nước đá ở -2°C vào 300 g nước ở 20°C. Cho biết nhiệt nóng chảy riêng của nước đá là $3,4 · 10^5$ J / kg , nhiệt dung riêng của nước là 4200 J / kgK và nhiệt dung riêng của đá là 2100 J / kgK . Khối lượng nước đá còn lại bằng bao nhiêu gam (làm tròn đến 1 chữ số sau dấu phẩy thập phân)?",
       "answerKey": "27,1",
-      "explanation": "Nhiệt lượng nước tỏa ra để giảm nhiệt độ xuống 0°C là: $Q = m_n c_n Δt_n = 0,3 · 4200 · 20 = 25200$ J\n$Q = m_d c_d Δt_d + m_tan λ \\Rightarrow 25200 = 0,1 · 2100 · 2 + m_tan · 3,4 · 10^5 \\Rightarrow m_tan ≈ 0,0723$ kg $= 72,3$ g\nKhối lượng đá còn lại là: $100 - 72,3 ≈ 27,1$ g.\nTrả lời ngắn: 27,1."
+      "explanation": "Nhiệt lượng nước tỏa ra để giảm nhiệt độ xuống 0°C là: $Q = m_n c_n Δt_n = 0,3 · 4200 · 20 = 25200$ J\n$Q = m_d c_d Δt_d + m_tan λ \\Rightarrow 25200 = 0,1 · 2100 · 2 + m_tan · 3,4 · 10^5 \\Rightarrow m_tan = (25200 - 0,1 · 2100 · 2)/(3,4 · 10^5) ≈ 0,07288$ kg $≈ 72,9$ g\nKhối lượng nước đá còn lại là: $100 - 72,9 = 27,1$ g.\nTrả lời ngắn: 27,1. (Đã đính chính so với đề gốc.)"
     },
     {
       "kind": "III",
