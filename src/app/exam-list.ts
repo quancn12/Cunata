@@ -1,6 +1,6 @@
 /**
  * Cunata Web M2-M6 — Public Exam Selection & Manifest Loader
- * Conforms to WEB-contract.md §15 and Shared Product Contract v2.0.
+ * Conforms to WEB-contract.md §15, §16, §17 and Shared Product Contract v2.0.
  */
 
 import type { WebExam } from '../schema/index.ts';
@@ -22,18 +22,173 @@ export interface ExamManifest {
   readonly exams: readonly ManifestEntry[];
 }
 
+export interface MergedExamEntry {
+  readonly id: string;
+  readonly title: string;
+  readonly subject: string;
+  readonly grade: number;
+  readonly durationMinutes: number;
+  readonly questionCount: number;
+  readonly group: string;
+  readonly url?: string;
+  readonly source: 'static' | 'teacher';
+}
+
 export interface ExamListOptions {
   readonly onSelectExam: (exam: WebExam) => void;
   readonly hasUnsavedProgress?: () => boolean;
+  readonly appsScriptUrl?: string;
 }
 
-function escapeHtml(str: string): string {
+export function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+export async function fetchAndMergeExams(appsScriptUrl?: string): Promise<{ exams: MergedExamEntry[]; error?: string; teacherError?: string }> {
+  let staticExams: MergedExamEntry[] = [];
+  let teacherExams: MergedExamEntry[] = [];
+  let mainError: string | undefined;
+  let teacherError: string | undefined;
+
+  try {
+    const res = await fetch('public/exams/index.json');
+    if (res.ok) {
+      const manifest: ExamManifest = await res.json();
+      if (manifest && Array.isArray(manifest.exams)) {
+        staticExams = manifest.exams.map((e) => ({
+          id: String(e.id || ''),
+          title: String(e.title || ''),
+          subject: String(e.subject || ''),
+          grade: Number(e.grade) || 12,
+          durationMinutes: Number(e.durationMinutes) || 50,
+          questionCount: Number(e.questionCount) || 0,
+          group: String(e.group || 'Đề thi'),
+          url: String(e.url || ''),
+          source: 'static' as const,
+        }));
+      }
+    } else {
+      mainError = `HTTP ${res.status}: Không thể tải danh sách đề thi`;
+    }
+  } catch (err: any) {
+    mainError = err?.message || String(err);
+  }
+
+  if (appsScriptUrl && appsScriptUrl.trim()) {
+    try {
+      const separator = appsScriptUrl.includes('?') ? '&' : '?';
+      const res = await fetch(appsScriptUrl + separator + 'action=listExams');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.exams)) {
+          teacherExams = data.exams.map((e: any) => ({
+            id: String(e.id || ''),
+            title: String(e.title || ''),
+            subject: String(e.subject || ''),
+            grade: Number(e.grade) || 12,
+            durationMinutes: Number(e.durationMinutes) || 50,
+            questionCount: Number(e.questionCount) || 0,
+            group: String(e.group || 'Đề giáo viên xuất bản'),
+            source: 'teacher' as const,
+          }));
+        }
+      } else {
+        teacherError = 'chưa tải được đề của giáo viên';
+      }
+    } catch (_) {
+      teacherError = 'chưa tải được đề của giáo viên';
+    }
+  }
+
+  // Merge: if duplicate id, teacher published exam WINS!
+  const teacherMap = new Map<string, MergedExamEntry>();
+  for (const te of teacherExams) {
+    if (te.id) teacherMap.set(te.id, te);
+  }
+
+  const merged: MergedExamEntry[] = [];
+  const handledIds = new Set<string>();
+
+  for (const se of staticExams) {
+    if (teacherMap.has(se.id)) {
+      merged.push(teacherMap.get(se.id)!);
+      handledIds.add(se.id);
+    } else {
+      merged.push(se);
+      handledIds.add(se.id);
+    }
+  }
+
+  for (const te of teacherExams) {
+    if (!handledIds.has(te.id)) {
+      merged.push(te);
+      handledIds.add(te.id);
+    }
+  }
+
+  return { exams: merged, error: mainError, teacherError };
+}
+
+export async function fetchExamData(entry: MergedExamEntry, appsScriptUrl?: string): Promise<WebExam> {
+  if (entry.source === 'teacher' && appsScriptUrl) {
+    const separator = appsScriptUrl.includes('?') ? '&' : '?';
+    const res = await fetch(appsScriptUrl + separator + 'action=getExam&id=' + encodeURIComponent(entry.id));
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Không thể tải đề từ Apps Script`);
+    const data = await res.json();
+    if (!data || !data.success || !data.exam) {
+      throw new Error(data?.message || 'Không tìm thấy đề thi trên máy chủ');
+    }
+    const v = validateExamVersion(data.exam);
+    if (!v.ok) {
+      throw new Error('Dữ liệu đề thi không hợp lệ: ' + v.issues.map((i: any) => i.code + ': ' + i.message).join('; '));
+    }
+    return data.exam as WebExam;
+  } else if (entry.url) {
+    const res = await fetch(entry.url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}: Không thể tải file đề thi`);
+    const data = await res.json();
+    const v = validateExamVersion(data);
+    if (!v.ok) {
+      throw new Error('Dữ liệu đề thi không hợp lệ: ' + v.issues.map((i: any) => i.code + ': ' + i.message).join('; '));
+    }
+    return data as WebExam;
+  }
+  throw new Error('Đề thi không có nguồn hợp lệ');
+}
+
+export function renderExamItemsHtml(exams: readonly MergedExamEntry[], selectedId?: string): string {
+  const groups = new Map<string, MergedExamEntry[]>();
+  for (const e of exams) {
+    const g = e.group || 'Đề thi';
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g)!.push(e);
+  }
+
+  let html = '';
+  for (const [groupTitle, groupExams] of groups.entries()) {
+    html += `<div class="exam-group" style="margin-bottom: 1rem;">`;
+    html += `<div class="exam-group-title" style="font-size: 0.875rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.5rem; text-transform: uppercase;">${escapeHtml(groupTitle)}</div>`;
+    html += `<div class="exam-group-items" style="display: flex; flex-direction: column; gap: 0.5rem;">`;
+    for (const e of groupExams) {
+      const isSelected = selectedId && (e.id === selectedId || e.url === selectedId);
+      const urlAttr = e.url ? ` data-exam-url="${escapeHtml(e.url)}"` : '';
+      const srcAttr = e.source === 'teacher' ? ` data-exam-source="teacher"` : '';
+      const pressedAttr = isSelected ? ` aria-pressed="true" class="exam-list-item btn-secondary selected"` : ` aria-pressed="false" class="exam-list-item btn-secondary"`;
+      html += `
+        <button type="button"${pressedAttr} data-exam-id="${escapeHtml(e.id)}"${urlAttr}${srcAttr} style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 0.75rem 1rem; width: 100%; border-radius: 6px; cursor: pointer;">
+          <strong style="font-size: 0.9375rem; color: var(--gray-900);">${escapeHtml(e.title)}</strong>
+          <span style="font-size: 0.8125rem; color: var(--gray-600); margin-top: 0.25rem;">(${e.questionCount} câu · ${e.durationMinutes} phút · ${escapeHtml(e.subject)})</span>
+        </button>
+      `;
+    }
+    html += `</div></div>`;
+  }
+  return html;
 }
 
 export function initExamList(root: HTMLElement, options: ExamListOptions): () => void {
@@ -98,7 +253,7 @@ export function initExamList(root: HTMLElement, options: ExamListOptions): () =>
     }
   };
 
-  const loadExamFromUrl = async (url: string) => {
+  const loadExamFromEntry = async (entry: MergedExamEntry) => {
     if (options.hasUnsavedProgress?.()) {
       if (typeof confirm === 'function') {
         const ok = confirm('Bạn có bài làm dở. Chuyển sang đề mới sẽ bỏ bài dở này. Tiếp tục?');
@@ -107,16 +262,8 @@ export function initExamList(root: HTMLElement, options: ExamListOptions): () =>
     }
 
     try {
-      const res = await fetch(url);
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: Không thể tải file đề thi`);
-      }
-      const raw = await res.json();
-      const v = validateExamVersion(raw);
-      if (!v.ok) {
-        throw new Error('Dữ liệu đề thi không hợp lệ: ' + v.issues.map((i: any) => i.code + ': ' + i.message).join('; '));
-      }
-      options.onSelectExam(raw as WebExam);
+      const examData = await fetchExamData(entry, options.appsScriptUrl);
+      options.onSelectExam(examData);
       closeModal();
     } catch (err: any) {
       if (container) {
@@ -135,53 +282,36 @@ export function initExamList(root: HTMLElement, options: ExamListOptions): () =>
     }
 
     try {
-      const res = await fetch('public/exams/index.json');
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: Không thể tải danh sách đề thi`);
+      const { exams, error, teacherError } = await fetchAndMergeExams(options.appsScriptUrl);
+      if (error && exams.length === 0) {
+        if (container) {
+          container.innerHTML = `<div style="color: var(--danger); padding: 1rem; text-align: center;">Lỗi tải danh sách đề thi: ${escapeHtml(error)}</div>`;
+        }
+        return;
       }
-      const manifest: ExamManifest = await res.json();
-      if (!manifest.exams || !Array.isArray(manifest.exams) || manifest.exams.length === 0) {
+      if (exams.length === 0) {
         if (container) {
           container.innerHTML = '<div style="text-align: center; color: var(--gray-500); padding: 1rem;">Hiện chưa có đề thi nào trong danh sách.</div>';
         }
         return;
       }
 
-      // Group exams by group field
-      const groups = new Map<string, ManifestEntry[]>();
-      for (const e of manifest.exams) {
-        const g = e.group || 'Đề thi';
-        if (!groups.has(g)) groups.set(g, []);
-        groups.get(g)!.push(e);
-      }
-
-      let html = '';
-      for (const [groupTitle, exams] of groups.entries()) {
-        html += `<div class="exam-group" style="margin-bottom: 1rem;">`;
-        html += `<div class="exam-group-title" style="font-size: 0.875rem; font-weight: 700; color: var(--gray-600); margin-bottom: 0.5rem; text-transform: uppercase;">${escapeHtml(groupTitle)}</div>`;
-        html += `<div class="exam-group-items" style="display: flex; flex-direction: column; gap: 0.5rem;">`;
-        for (const e of exams) {
-          html += `
-            <button type="button" class="exam-list-item btn-secondary" data-exam-url="${escapeHtml(e.url)}" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 0.75rem 1rem; width: 100%; border-radius: 6px; cursor: pointer;">
-              <strong style="font-size: 0.9375rem; color: var(--gray-900);">${escapeHtml(e.title)}</strong>
-              <span style="font-size: 0.8125rem; color: var(--gray-600); margin-top: 0.25rem;">(${e.questionCount} câu · ${e.durationMinutes} phút · ${escapeHtml(e.subject)})</span>
-            </button>
-          `;
-        }
-        html += `</div></div>`;
+      let noticeHtml = '';
+      if (teacherError) {
+        noticeHtml = `<div style="padding: 0.5rem; margin-bottom: 0.5rem; background: #fffbeb; color: #b45309; border-radius: 4px; font-size: 0.8125rem;">Lưu ý: ${escapeHtml(teacherError)}</div>`;
       }
 
       if (container) {
-        container.innerHTML = html;
-        const items = container.querySelectorAll('.exam-list-item[data-exam-url]');
+        container.innerHTML = noticeHtml + renderExamItemsHtml(exams);
+        const items = container.querySelectorAll('.exam-list-item');
         items.forEach((btn) => {
           btn.addEventListener('click', () => {
-            const url = btn.getAttribute('data-exam-url');
-            if (url) loadExamFromUrl(url);
+            const id = btn.getAttribute('data-exam-id');
+            const entry = exams.find((e) => e.id === id);
+            if (entry) loadExamFromEntry(entry);
           });
         });
 
-        // Focus first item
         const first = container.querySelector('.exam-list-item') as HTMLElement | null;
         if (first && typeof first.focus === 'function') first.focus();
       }
@@ -192,18 +322,10 @@ export function initExamList(root: HTMLElement, options: ExamListOptions): () =>
     }
   };
 
-  // Event handlers
-  if (btnOpen) {
-    btnOpen.addEventListener('click', openModal);
-  }
-  if (btnClose) {
-    btnClose.addEventListener('click', closeModal);
-  }
-  if (btnCancel) {
-    btnCancel.addEventListener('click', closeModal);
-  }
+  if (btnOpen) btnOpen.addEventListener('click', openModal);
+  if (btnClose) btnClose.addEventListener('click', closeModal);
+  if (btnCancel) btnCancel.addEventListener('click', closeModal);
 
-  // Escape key handler
   const onKeyDown = (e: KeyboardEvent) => {
     if (modal && modal.style.display === 'flex') {
       if (e.key === 'Escape') {
@@ -215,32 +337,6 @@ export function initExamList(root: HTMLElement, options: ExamListOptions): () =>
   };
   if (typeof doc.addEventListener === 'function') {
     doc.addEventListener('keydown', onKeyDown);
-  }
-
-  // Direct link query param: ?exam=<examId>
-  if (typeof window !== 'undefined' && window.location && window.location.search) {
-    const params = new URLSearchParams(window.location.search);
-    const queryExamId = params.get('exam');
-    if (queryExamId) {
-      fetch('public/exams/index.json')
-        .then((r) => r.json())
-        .then((manifest: ExamManifest) => {
-          const match = manifest.exams?.find((e) => e.id === queryExamId);
-          if (match && match.url) {
-            return fetch(match.url)
-              .then((r) => r.json())
-              .then((examData: unknown) => {
-                const v = validateExamVersion(examData);
-                if (v.ok) {
-                  options.onSelectExam(examData as WebExam);
-                }
-              });
-          }
-        })
-        .catch((err) => {
-          console.warn('[ExamList] Lỗi tải đề theo ?exam:', err);
-        });
-    }
   }
 
   return () => {

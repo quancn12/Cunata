@@ -92,6 +92,30 @@
   </header>
 
   <!-- ================= Giao Diện Làm Bài (Exam View) ================= -->
+  <!-- ================= Màn Vào Thi (Start Screen - WEB-contract §16) ================= -->
+  <div id="startScreen" class="start-screen" style="display: none; max-width: 760px; width: 95%; margin: 2rem auto; padding: 1.5rem; background: var(--card-bg, #fff); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); box-sizing: border-box;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+      <h1 style="font-size: 1.375rem; font-weight: 700; margin: 0; color: var(--gray-900, #111827);">Phòng Luyện Thi Trực Tuyến GDPT 2018</h1>
+      <button type="button" id="btnTeacher" class="btn-secondary" style="font-size: 0.875rem; padding: 0.4rem 0.75rem;">👨‍🏫 Giáo viên</button>
+    </div>
+
+    <div style="margin-bottom: 1.25rem;">
+      <label for="startName" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--gray-700, #374151);">Họ và tên thí sinh <span style="color: var(--danger, #ef4444);">*</span></label>
+      <input type="text" id="startName" placeholder="Nhập họ và tên hoặc mã dự thi..." style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid var(--border-color, #d1d5db); border-radius: 6px; font-size: 1rem; box-sizing: border-box;" autocomplete="name" />
+    </div>
+
+    <div style="margin-bottom: 1.5rem;">
+      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--gray-700, #374151);">Chọn đề thi <span style="color: var(--danger, #ef4444);">*</span></label>
+      <div id="startExamListContainer" class="exam-list-container" style="max-height: 380px; overflow-y: auto; border: 1px solid var(--border-color, #e5e7eb); border-radius: 6px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+        <div style="text-align: center; color: var(--gray-500, #6b7280); padding: 1rem;">Đang tải danh sách đề thi...</div>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end;">
+      <button type="button" id="btnStartExam" class="btn-primary" disabled style="padding: 0.625rem 1.5rem; font-size: 1rem; font-weight: 600; border-radius: 6px; cursor: pointer;">Bắt đầu làm bài</button>
+    </div>
+  </div>
+
   <div class="main-wrapper" id="examWrapper">
     <!-- Sidebar Bảng Điều Hướng (Palette) -->
     <aside class="palette-card" aria-label="Bảng điều hướng câu hỏi">
@@ -356,6 +380,8 @@
 
       <!-- Builder Actions -->
       <div class="modal-actions" style="margin-top: 1.5rem;">
+        <span id="teacherPublishStatus" style="margin-right: auto; font-size: 0.875rem; font-weight: 600;"></span>
+        <button type="button" class="btn-primary" id="btnPublishExam" style="display: none;">Xuất bản lên web</button>
         <button type="button" class="btn-secondary" id="btnCancelBuilder">Đóng</button>
         <button type="button" class="btn-secondary" id="btnExportExamJson">💾 Tải file JSON</button>
         <button type="button" class="btn-submit" id="btnPublishToRunner">🚀 Nạp vào phòng thi ngay</button>
@@ -430,6 +456,42 @@
 
   <!-- ================= Modal Xem Trước & Hiệu Đính Nhập (Import Preview) ================= -->
   <div class="modal-overlay" id="previewModal" style="display: none; z-index: 1100;" role="dialog" aria-modal="true" aria-label="Xem trước đề nhập"></div>
+
+  <!-- ================= Modal Giáo Viên (Teacher Mode - WEB-contract §17) ================= -->
+  <div class="modal-overlay" id="teacherModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="teacherModalTitle">
+    <div class="modal-content" style="max-width: 680px; width: 92%;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 id="teacherModalTitle" style="font-size: 1.25rem; font-weight: 700; margin: 0;">Khu Vực Giáo Viên</h2>
+        <button type="button" class="btn-close" id="btnCloseTeacherModal" aria-label="Đóng" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <!-- Login Section -->
+      <div id="teacherLogin" style="padding: 0.5rem 0;">
+        <div id="teacherLoginBody">
+          <div style="margin-bottom: 1rem;">
+            <label for="teacherPassword" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Mật khẩu giáo viên:</label>
+            <input type="password" id="teacherPassword" placeholder="Nhập mật khẩu giáo viên..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-color, #d1d5db); border-radius: 6px; box-sizing: border-box;" autocomplete="current-password" />
+          </div>
+          <div id="teacherLoginError" style="color: var(--danger, #ef4444); margin-bottom: 1rem; font-size: 0.875rem; min-height: 1.25rem;"></div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+            <button type="button" class="btn-secondary" id="btnCancelTeacherLogin">Hủy</button>
+            <button type="button" class="btn-primary" id="btnTeacherLogin">Đăng nhập</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Teacher Panel -->
+      <div id="teacherPanel" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h3 style="margin: 0; font-size: 1rem; font-weight: 600;">Quản lý kho đề thi</h3>
+          <button type="button" class="btn-primary" id="btnTeacherNewExam" style="font-size: 0.875rem; padding: 0.4rem 0.75rem;">+ Soạn đề mới</button>
+        </div>
+        <div id="teacherExamList" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
+          <!-- .teacher-exam-row items -->
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ================= Ứng Dụng Client Script (ES Module) ================= -->
 

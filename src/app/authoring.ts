@@ -19,6 +19,9 @@ export interface AuthoringOptions {
   readonly getExam: () => WebExam | null;
   readonly onPublish: (exam: WebExam) => void;
   readonly idGen?: () => string;
+  readonly getAppsScriptUrl?: () => string;
+  readonly getTeacherPassword?: () => string | null;
+  readonly onPublishedToWeb?: (exam: WebExam) => void;
 }
 
 function escapeHtml(str: string): string {
@@ -521,6 +524,70 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): () 
   if (btnAddPartI) btnAddPartI.addEventListener('click', () => addQuestion('I'));
   if (btnAddPartII) btnAddPartII.addEventListener('click', () => addQuestion('II'));
   if (btnAddPartIII) btnAddPartIII.addEventListener('click', () => addQuestion('III'));
+
+  const btnPublishExam = root.querySelector('#btnPublishExam') as HTMLButtonElement | null;
+  const teacherPublishStatus = root.querySelector('#teacherPublishStatus') as HTMLElement | null;
+
+  if (btnPublishExam) {
+    btnPublishExam.addEventListener('click', async () => {
+      try {
+        const draft = exportDraft();
+        if (!draft) return;
+        const appsScriptUrl = options.getAppsScriptUrl ? options.getAppsScriptUrl() : '';
+        const password = options.getTeacherPassword ? options.getTeacherPassword() : null;
+        if (!appsScriptUrl || !password) {
+          if (teacherPublishStatus) teacherPublishStatus.textContent = 'Chưa cấu hình hoặc chưa đăng nhập giáo viên';
+          return;
+        }
+
+        if (teacherPublishStatus) teacherPublishStatus.textContent = 'Đang xuất bản...';
+        const res = await fetch(appsScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'publishExam',
+            password,
+            exam: draft,
+          }),
+        });
+        const data = await res.json();
+        if (data && data.success) {
+          if (teacherPublishStatus) teacherPublishStatus.textContent = 'Đã xuất bản (revision ' + (data.revision || 1) + ')';
+          if (options.onPublishedToWeb) {
+            options.onPublishedToWeb(draft);
+          }
+        } else {
+          if (teacherPublishStatus) teacherPublishStatus.textContent = 'Lỗi xuất bản: ' + (data?.message || data?.error || 'Không hợp lệ');
+        }
+      } catch (err: any) {
+        if (teacherPublishStatus) teacherPublishStatus.textContent = 'Lỗi xuất bản: ' + (err?.message || String(err));
+      }
+    });
+  }
+
+  const titleEl = root.querySelector('#builderExamTitle') as HTMLInputElement | null;
+  if (titleEl) {
+    const onTitleChange = () => {
+      if (titleEl.value.trim()) {
+        builderExamState.title = titleEl.value.trim();
+      }
+    };
+    titleEl.addEventListener('input', onTitleChange);
+    titleEl.addEventListener('change', onTitleChange);
+  }
+
+  (root as any).__cunata_loadBuilderExam = (exam: WebExam) => {
+    builderExamState = JSON.parse(JSON.stringify(exam));
+    editingQuestionIdx = -1;
+    if (titleEl) titleEl.value = exam.title || '';
+    const idEl = root.querySelector('#builderExamId') as HTMLInputElement | null;
+    if (idEl) idEl.value = exam.examId || '';
+    const durEl = root.querySelector('#builderDuration') as HTMLInputElement | null;
+    if (durEl) durEl.value = String(exam.settings?.durationMinutes || exam.durationMinutes || 50);
+    if (teacherPublishStatus) teacherPublishStatus.textContent = '';
+    if (btnPublishExam) btnPublishExam.style.display = 'inline-block';
+    openBuilder();
+  };
 
   if (btnPublishToRunner) {
     btnPublishToRunner.addEventListener('click', () => {
