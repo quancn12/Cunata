@@ -5,6 +5,7 @@
  * Zero external framework/CDN dependencies.
  */
 import { ensureScopedStyles } from './styles.js';
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export const BREAKPOINTS = {
     mobileSm: 320,
     mobile: 390,
@@ -17,6 +18,7 @@ export const BREAKPOINTS = {
  * - ArrowDown / ArrowRight: Moves selection and focus to next item (with cyclic wrapping).
  * - ArrowUp / ArrowLeft: Moves selection and focus to previous item (with cyclic wrapping).
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function handleRadioGroupKeyDown(e, options) {
     const { items, currentIndex, onSelect, focusAfterSelect = true } = options;
     if (!items || items.length === 0)
@@ -52,14 +54,16 @@ export function handleRadioGroupKeyDown(e, options) {
     }
     return false;
 }
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export const LAYOUT_STYLE_ELEMENT_ID = 'cunata-ui-layout-styles';
 /**
  * Inlined CSS matching src/ui/layout.css for direct document injection.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export const LAYOUT_CSS = `
 .cunata-layout-root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: #0f172a;
+  font-family: var(--font);
+  color: var(--c-text);
   background-color: transparent;
   line-height: 1.5;
   box-sizing: border-box;
@@ -74,15 +78,15 @@ export const LAYOUT_CSS = `
   left: 16px;
   z-index: 100000;
   padding: 12px 16px;
-  background-color: #1d4ed8;
-  color: #ffffff;
+  background-color: var(--c-primary);
+  color: var(--c-surface);
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   text-decoration: none;
 }
 .cunata-skip-link:focus, .cunata-skip-link:focus-visible {
   top: 16px;
-  outline: 3px solid #ffffff;
+  outline: var(--focus-width) solid var(--c-surface);
   outline-offset: 2px;
 }
 .cunata-touch-target {
@@ -98,10 +102,10 @@ export const LAYOUT_CSS = `
   display: block;
   margin: 6px 0;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 .cunata-math-overflow-guard:focus {
-  outline: 2px dashed #1d4ed8;
+  outline: 2px dashed var(--c-primary);
   outline-offset: 1px;
 }
 .cunata-table-responsive-wrapper {
@@ -110,11 +114,11 @@ export const LAYOUT_CSS = `
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   margin: 12px 0;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
 }
 .cunata-table-responsive-wrapper:focus {
-  outline: 2px dashed #1d4ed8;
+  outline: 2px dashed var(--c-primary);
   outline-offset: 1px;
 }
 .cunata-status-badge {
@@ -122,24 +126,24 @@ export const LAYOUT_CSS = `
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: 9999px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  border-radius: var(--r-sm);
   border: 1px solid transparent;
   line-height: 1.4;
   white-space: nowrap;
 }
-.cunata-status--local_saved { background-color: #eff6ff; color: #1e40af; border-color: #93c5fd; }
-.cunata-status--queued { background-color: #fefce8; color: #854d0e; border-color: #fde047; }
-.cunata-status--sending { background-color: #f0fdf4; color: #166534; border-color: #86efac; }
-.cunata-status--server_confirmed { background-color: #ecfdf5; color: #065f46; border-color: #6ee7b7; }
-.cunata-status--failed, .cunata-status--error { background-color: #fef2f2; color: #991b1b; border-color: #fca5a5; }
-.cunata-status--offline { background-color: #f8fafc; color: #334155; border-color: #cbd5e1; }
+.cunata-status--local_saved { background-color: var(--c-primary-soft); color: var(--c-primary); border-color: var(--c-border); }
+.cunata-status--queued { background-color: var(--c-surface-2); color: var(--c-warning); border-color: var(--c-border); }
+.cunata-status--sending { background-color: var(--c-surface-2); color: var(--c-success); border-color: var(--c-border); }
+.cunata-status--server_confirmed { background-color: var(--c-surface-2); color: var(--c-success); border-color: var(--c-border); }
+.cunata-status--failed, .cunata-status--error { background-color: var(--c-surface-2); color: var(--c-danger); border-color: var(--c-border); }
+.cunata-status--offline { background-color: var(--c-surface-2); color: var(--c-text-2); border-color: var(--c-border); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 0.01ms !important;
+    animation: none !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition: none !important;
     scroll-behavior: auto !important;
   }
 }
@@ -150,7 +154,7 @@ export const LAYOUT_CSS = `
     display: none !important;
   }
   .cunata-ui, .cunata-layout-root {
-    color: #000000 !important; background: #ffffff !important; font-size: 11pt !important;
+    color: var(--c-text) !important; background: var(--c-surface) !important; font-size: var(--fs-sm) !important;
   }
   .cunata-layout-main { display: block !important; padding: 0 !important; }
   .cunata-layout-content { width: 100% !important; }
@@ -164,7 +168,7 @@ export const LAYOUT_CSS = `
     border: 2px solid ButtonText !important;
   }
   .cunata-ui :focus-visible, .cunata-modal-dialog :focus-visible {
-    outline: 3px solid Highlight !important; outline-offset: 2px;
+    outline: var(--focus-width) solid Highlight !important; outline-offset: 2px;
   }
 }
 `;
@@ -175,6 +179,7 @@ export const LAYOUT_CSS = `
  * - tablet: 481px - 1024px (covering 768px tablet)
  * - desktop: >= 1025px (covering 1280px desktop)
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function classifyBreakpoint(widthPx) {
     if (widthPx <= BREAKPOINTS.mobileSm) {
         return 'mobile-sm';
@@ -190,6 +195,7 @@ export function classifyBreakpoint(widthPx) {
 /**
  * Ensures responsive layout CSS styles are injected into document head.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function ensureLayoutStyles(doc) {
     const targetDoc = doc || (typeof document !== 'undefined' ? document : null);
     if (!targetDoc)
@@ -212,6 +218,7 @@ export function ensureLayoutStyles(doc) {
 /**
  * Enforces the minimum 44px x 44px accessible touch target size (WCAG 2.5.5 / 2.5.8).
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function enforceTouchTarget(element, minPx = 44) {
     element.classList.add('cunata-touch-target');
     if (element.style) {
@@ -225,6 +232,7 @@ export function enforceTouchTarget(element, minPx = 44) {
  * Prevents complex formulas from overflowing screen or covering answer choices.
  * Keyboard-navigable with tabIndex 0 so keyboard users can scroll horizontal formulas.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function wrapMathOverflow(mathElement, options = {}) {
     const doc = options.document || mathElement.ownerDocument || (typeof document !== 'undefined' ? document : null);
     if (!doc) {
@@ -246,6 +254,7 @@ export function wrapMathOverflow(mathElement, options = {}) {
  * Wraps table elements with an accessible responsive horizontal scroll wrapper.
  * Keyboard-navigable with tabIndex 0 for users navigating without a mouse.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function wrapTableResponsive(tableElement, options = {}) {
     const doc = options.document || tableElement.ownerDocument || (typeof document !== 'undefined' ? document : null);
     if (!doc) {
@@ -277,6 +286,7 @@ const DEFAULT_STATE_LABELS = {
 /**
  * Creates an accessible status badge representing the active synchronization or network state.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function createStatusBadge(options) {
     const doc = options.document || (typeof document !== 'undefined' ? document : null);
     if (!doc) {
@@ -294,6 +304,7 @@ export function createStatusBadge(options) {
 /**
  * Creates an accessible skip-to-content navigation link for keyboard users.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function createSkipLink(options) {
     const doc = options.document || (typeof document !== 'undefined' ? document : null);
     if (!doc) {
@@ -308,6 +319,7 @@ export function createSkipLink(options) {
 /**
  * Detects if the current environment or user prefers reduced motion.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function isReducedMotionPreferred(win) {
     const targetWin = win || (typeof window !== 'undefined' ? window : null);
     if (!targetWin || typeof targetWin.matchMedia !== 'function') {
@@ -328,6 +340,7 @@ export function isReducedMotionPreferred(win) {
  * - Collapsible navigation palette drawer for mobile/tablet with ARIA expanded state.
  * - Desktop side-by-side view with non-overlapping sticky palette.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function createExamLayout(options) {
     const doc = options.document || options.content.ownerDocument || (typeof document !== 'undefined' ? document : null);
     if (!doc) {
@@ -366,7 +379,7 @@ export function createExamLayout(options) {
             p.className = 'cunata-exam-subtitle';
             p.textContent = meta.subtitle;
             p.style.fontSize = '0.875rem';
-            p.style.color = '#475569';
+            p.style.color = 'var(--c-text-2)';
             p.style.margin = '2px 0 0 0';
             titleGroup.appendChild(p);
         }

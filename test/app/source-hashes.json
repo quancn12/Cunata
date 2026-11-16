@@ -1,0 +1,38 @@
+﻿[
+    {
+        "Path":  "D:\\Cunata\\src\\app\\main.ts",
+        "Hash":  "AAFAEBF12F6C23B8C6DB268489AF625599780071456EDBC25FF1B9899A32F6A1"
+    },
+    {
+        "Path":  "D:\\Cunata\\src\\app\\routes.ts",
+        "Hash":  "9C332BD012D1F08D06DC6FD42F1D213F96C0F4917A9B32C7B4560EDEB2157683"
+    },
+    {
+        "Path":  "D:\\Cunata\\src\\app\\role-shell.ts",
+        "Hash":  "82CDB974D87232442F688BE3D158607C8D34BCE42715FDE53D49FDF2BB6AD2DD"
+    },
+    {
+        "Path":  "D:\\Cunata\\src\\app\\shell.html",
+        "Hash":  "0153DBC1808A28F25A36A6986BE6FACF827E055206AA60D3261C65A30B437C7A"
+    },
+    {
+        "Path":  "D:\\Cunata\\src\\app\\exam-list.ts",
+        "Hash":  "B0C0A5AAA33455AF2ADC587D6CE14DD92D79677547827163FBFC473844630E1B"
+    },
+    {
+        "Path":  "D:\\Cunata\\src\\app\\authoring.ts",
+        "Hash":  "9B5BAC68E64291832D78F87327EE14AF9F688DEB875E4FE8BE5A582EEFAE24E5"
+    },
+    {
+        "Path":  "D:\\Cunata\\src\\offline\\service-worker.ts",
+        "Hash":  "71B1C5A80A5D8A1E9B43A4F58122E20BE0D8531025C430A5E7F5769F43139AF7"
+    },
+    {
+        "Path":  "D:\\Cunata\\scripts\\web-build.ts",
+        "Hash":  "0C340F03A7BC73D72ED60793FD81F271C0E539A489ECD94FDCFC0397F0A6FB87"
+    },
+    {
+        "Path":  "D:\\Cunata\\styles\\app.css",
+        "Hash":  "C110E0315AEF2030062FF2825F9993ABF40DAD32D6DB36AFFA653F788F31718E"
+    }
+]

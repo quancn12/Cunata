@@ -1,0 +1,7 @@
+.role-chooser { padding-top: var(--sp-7); }
+.role-chooser h1 { font-size: var(--fs-2xl); margin-bottom: 0; }
+.role-chooser p { color: var(--c-text-2); }
+.role-chooser .ui-exam-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.role-chooser .ui-button { display: flex; flex-direction: column; align-items: flex-start; width: 100%; gap: var(--sp-3); padding: var(--sp-5); font-size: var(--fs-lg); }
+.role-description { font-size: var(--fs-md); font-weight: 400; color: var(--c-text-2); text-align: start; }
+@media (max-width: 639px) { .role-chooser .ui-exam-grid { grid-template-columns: minmax(0, 1fr); } }

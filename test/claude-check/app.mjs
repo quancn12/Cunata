@@ -54,29 +54,67 @@ export const qIII = (n) => `ck-iii-${String(n).padStart(2, '0')}`;
 const shown = (id) => { const e = document.getElementById(id); return !!e && getComputedStyle(e).display !== 'none' && e.getClientRects().length > 0; };
 export const START_NAME = 'Học sinh kiểm định';
 
-/** Chờ ứng dụng khởi động xong: hoặc màn vào thi (#startScreen), hoặc đang làm bài (có câu hỏi), hoặc báo cáo. */
+/** Chờ ứng dụng khởi động xong: màn chọn vai, khu học sinh (cổng tên / lưới đề), đang làm bài, hoặc báo cáo (WEB-contract 19.1; bản gốc: mục 16). */
 export async function waitBoot(page, timeout = 15000) {
   await page.waitFor(`(() => { const shown = ${shown}; const t = document.getElementById('examTitle')?.textContent ?? '';
     const exam = shown('examWrapper') && document.querySelectorAll('#examPane .question-card').length > 0 && t.trim() !== '' && !/Đang tải/.test(t);
-    const start = shown('startScreen') && document.querySelectorAll('#startScreen .exam-list-item[data-exam-url]').length > 0;
-    return exam || start || (shown('reportWrapper') && /\\d/.test(document.getElementById('scoreTotal')?.textContent ?? '')); })()`,
-  'ứng dụng khởi động xong: màn vào thi #startScreen có danh sách đề, hoặc đang làm bài, hoặc màn báo cáo (WEB-contract mục 16)', timeout);
+    const start = shown('startScreen') && (document.querySelectorAll('#startScreen .exam-list-item').length > 0 || !!document.querySelector('#studentNameGate input#startName'));
+    const role = shown('roleChooser');
+    return exam || start || role || (shown('reportWrapper') && /\\d/.test(document.getElementById('scoreTotal')?.textContent ?? '')); })()`,
+  'ứng dụng khởi động xong: màn chọn vai #roleChooser, khu học sinh #startScreen, đang làm bài, hoặc màn báo cáo (WEB-contract 19.1)', timeout);
 }
 
 export const onStartScreen = (page) => page.eval(`(() => { const shown = ${shown}; return shown('startScreen'); })()`);
+export const onRoleChooser = (page) => page.eval(`(() => { const shown = ${shown}; return shown('roleChooser'); })()`);
 
-/** Đi qua màn vào thi: nhập tên, chọn đề (mặc định đề đầu danh sách), bấm bắt đầu. */
-export async function enterFromStart(page, { name = START_NAME, url } = {}) {
-  if (!(await onStartScreen(page))) return;
+/** Vào khu học sinh từ màn chọn vai (nếu đang ở đó) và qua cổng tên (nếu có). */
+export async function enterStudentArea(page, { name = START_NAME } = {}) {
+  if (await onRoleChooser(page)) {
+    await page.click('#btnRoleStudent');
+    await page.waitFor(() => !!document.querySelector('#studentNameGate input#startName') || document.querySelectorAll('#startScreen .exam-list-item').length > 0,
+      'bấm #btnRoleStudent: vào khu học sinh (cổng tên #studentNameGate hoặc lưới đề)', 10000);
+  }
+  const gate = await page.eval(`(() => { const shown = ${shown}; return shown('studentNameGate'); })()`);
+  if (gate) {
+    await page.eval(() => { const e = document.getElementById('startName'); e.focus(); e.select(); });
+    await page.send('Input.insertText', { text: name });
+    await page.eval(() => document.getElementById('startName').dispatchEvent(new Event('input', { bubbles: true })));
+    await page.waitFor(() => { const b = document.getElementById('btnNameContinue'); return !!b && !b.disabled; }, 'nhập tên thì #btnNameContinue bấm được', 5000);
+    await page.click('#btnNameContinue');
+    await page.waitFor(() => document.querySelectorAll('#startScreen .exam-list-item').length > 0, 'qua cổng tên: hiện lưới thẻ đề', 10000);
+  }
+}
+
+/** Mở #examPreview của một thẻ đề rồi bấm #btnStartExam. */
+export async function startFromCard(page, sel) {
+  await page.waitFor((q) => !!document.querySelector(q), 'thẻ đề cần chọn có trên trang học sinh: ' + sel, 10000, sel);
+  await page.click(sel);
+  await page.waitFor(`(() => { const shown = ${shown}; const b = document.getElementById('btnStartExam'); return shown('examPreview') && !!b && !b.disabled; })()`,
+    'bấm thẻ đề: mở #examPreview có nút #btnStartExam bấm được', 8000);
+  await page.click('#btnStartExam');
+  await page.waitFor(`(() => { const shown = ${shown}; return shown('examWrapper') && document.querySelectorAll('#examPane .question-card').length > 0; })()`,
+    'bấm #btnStartExam: vào màn làm bài có câu hỏi', 10000);
+}
+
+/** Bản build: chọn vai → học sinh → tên → thẻ đề → xem trước → bắt đầu. Bản gốc (index.html): màn vào thi cũ (mục 16) nếu có. */
+export async function enterFromStart(page, { name = START_NAME, url, id } = {}) {
+  const role = await onRoleChooser(page);
+  if (!role && !(await onStartScreen(page))) return;
+  if (role || await page.eval(() => !!document.getElementById('studentNameGate') || !!document.querySelector('#startScreen .exam-card'))) {
+    await enterStudentArea(page, { name });
+    const sel = id ? `#startScreen .exam-list-item[data-exam-id="${id}"]` : url ? `#startScreen .exam-list-item[data-exam-url="${url}"]` : '#startScreen .exam-list-item[data-exam-url]';
+    await startFromCard(page, sel);
+    return;
+  }
+  // bản cũ (mục 16): ô tên + danh sách + nút bắt đầu trên cùng một màn
   await page.eval(() => { const e = document.getElementById('startName'); e.focus(); e.select(); });
   await page.send('Input.insertText', { text: name });
   await page.eval(() => document.getElementById('startName').dispatchEvent(new Event('change', { bubbles: true })));
-  const sel = url ? `#startScreen .exam-list-item[data-exam-url="${url}"]` : '#startScreen .exam-list-item[data-exam-url]';
-  await page.click(sel);
+  await page.click(url ? `#startScreen .exam-list-item[data-exam-url="${url}"]` : '#startScreen .exam-list-item[data-exam-url]');
   await page.waitFor(() => { const b = document.getElementById('btnStartExam'); return !!b && !b.disabled; }, 'nhập tên + chọn đề thì nút #btnStartExam phải bấm được', 5000);
   await page.click('#btnStartExam');
   await page.waitFor(`(() => { const shown = ${shown}; return !shown('startScreen') && shown('examWrapper') && document.querySelectorAll('#examPane .question-card').length > 0; })()`,
-    'bấm #btnStartExam: màn vào thi đóng, vào màn làm bài có câu hỏi', 10000);
+    'bấm #btnStartExam: vào màn làm bài có câu hỏi', 10000);
 }
 
 export async function openApp(ctx, server, target) {

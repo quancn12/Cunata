@@ -444,3 +444,46 @@ export function mountTeacherPortal(root: HTMLElement, deps: TeacherPortalDeps): 
 // + vùng #teacherPublishStatus, nối outbox với createAppsScriptCollectorPort và hiện trạng thái trong #syncText ("Đang gửi…", "Đã gửi",
 // "Chưa gửi được — sẽ thử lại", "Đã lưu cục bộ" khi chưa cấu hình).
 ```
+
+### 17.6 Cấu hình và danh sách đề không được kẹt bản cũ (lỗi thật 16/11/2026)
+Trưởng phòng đổi sang link Apps Script mới, nhưng trình duyệt đã mở trang trước đó vẫn đọc `public/config.json` cũ từ cache của service worker, nên đăng nhập giáo viên nhận lỗi của bản Apps Script cũ ("Thiếu trường attempt_id bắt buộc"). Bắt buộc: `public/config.json` và `public/exams/index.json` đi **mạng trước** (`cache: 'no-store'` khi fetch, service worker dùng network-first), chỉ lấy bản cache khi mất mạng. Kiểm định: ca "[offline][app] cấu hình và danh sách đề luôn lấy bản mới nhất" trong `test/claude-check/teacher.test.mjs`.
+
+## 19. Làm lại giao diện theo vai + lớp học + tài khoản (Trưởng phòng chốt 16/11/2026)
+
+Thay cho phần giao diện của mục 15–17 (giữ nguyên hành vi chấm, lưu, gửi). Chỉ làm trên bản build `dist/` (mục 18). Quy chuẩn hình ảnh: `docs/design/DESIGN.md` (BẮT BUỘC).
+Quyết định: (1) học sinh vào lớp bằng **mã lớp** + tự gõ tên; (2) **Admin tạo từng tài khoản giáo viên**, mỗi giáo viên chỉ thấy lớp/đề/kết quả của mình; (3) đề giao cho lớp có **giờ mở và hạn nộp**.
+
+### 19.1 Trang và DOM bắt buộc (kiểm định dựa vào)
+- **Chọn vai** (mở `index.html` không hash, chưa có bài dở): `#roleChooser` gồm `#btnRoleStudent`, `#btnRoleTeacher`. Không còn tự hiện đề. Vai đã chọn được nhớ; lần sau vào thẳng khu của vai đó, có nút đổi vai trên TopBar.
+- **Học sinh** `#/hoc-sinh` → khối `#startScreen` (giữ id cũ):
+  - Chưa có tên: cổng `#studentNameGate` với `input#startName` + `#btnNameContinue` (khóa tới khi có tên thật). Có tên rồi: TopBar hiện tên + `#btnChangeName`.
+  - Vào lớp: `input#classCodeInput` + `#btnJoinClass`; sai mã → lỗi ngay dưới ô (`#classCodeError`). Lớp đã vào liệt kê trong `#myClasses` (mỗi lớp `.class-section[data-class-code]` có các thẻ đề được giao).
+  - Đề luyện tập công khai: lưới `#practiceExams`.
+  - Mỗi đề là **ExamCard** `.exam-card.exam-list-item[data-exam-id]` (đề tĩnh có thêm `data-exam-url`, đề được giao có `data-assignment-id`), chứa `.exam-status` (StatusBadge). Bấm thẻ → hộp thoại/tấm trượt `#examPreview` (tiêu đề, mô tả, số câu, thời gian, giờ mở/hạn nộp nếu có, trạng thái) với nút `#btnStartExam` ("Bắt đầu làm bài" / "Làm tiếp" / "Xem kết quả"; đề chưa mở hoặc hết hạn thì khóa và nói lý do).
+  - `?exam=<examId>` → vào khu học sinh, mở sẵn `#examPreview` của đề đó (vẫn qua cổng tên nếu chưa có tên). Có bài dở → vào thẳng bài dở (D03).
+- **Làm bài**: giữ các id hiện có (`#examWrapper`, `#examPane`, `.question-card`, `#btnSubmit`, `#submitModal`, `#timerBox`, `#syncText`, `#candidateName` chỉ đọc). Bảng số câu: cột phải ≥1024px; điện thoại là nút `#btnPalette` mở tấm trượt. KHÔNG có nút nạp JSON/soạn đề/ngân hàng trên màn học sinh. Nút `#btnOpenExamList` đổi thành "Về trang học sinh".
+- **Kết quả**: giữ `#reportWrapper`, `#scorePartI/II/III`, `#scoreTotal`, `#btnDownloadReportHtml`, `#btnRestart` (chỉ khi còn lượt và còn hạn).
+- **Giáo viên** `#/giao-vien` (và `?teacher`): `#teacherLogin` gồm `input#teacherUsername`, `input#teacherPassword[type=password]`, `#btnTeacherLogin`, `#teacherLoginError`; chưa cấu hình Apps Script → chữ "chưa cấu hình". Đăng nhập xong → `#teacherShell` với điều hướng `#teacherNav` có `a[data-nav="lop"]`, `a[data-nav="de"]`, `a[data-nav="ket-qua"]` (mục đang chọn `aria-current="page"`), nút `#btnTeacherLogout`.
+  - **Lớp học** `#/giao-vien/lop`: `#btnCreateClass` → hộp thoại tên lớp → lớp mới hiện thành thẻ `.class-card[data-class-id]` có tên, mã lớp `.class-code` (6 ký tự in hoa, không có 0/O/1/I), nút sao chép mã + link mời (`…/#/hoc-sinh?lop=<MÃ>`), sĩ số (số học sinh đã nộp ít nhất 1 bài). Bấm thẻ → chi tiết lớp: danh sách đề đã giao (`.assignment-row[data-assignment-id]` có giờ mở, hạn nộp, số bài đã nộp), nút `#btnAssignExam`.
+  - **Giao đề** (`#assignDialog`): chọn đề (của mình + kho chung), `input#assignOpenAt[type=datetime-local]`, `input#assignDueAt[type=datetime-local]` (hạn > mở), nút `#btnAssignConfirm`.
+  - **Đề thi** `#/giao-vien/de`: lưới ExamCard của mình (`data-exam-id`) + "Kho đề chung" (đề tĩnh); nút `#btnTeacherNewExam`; mỗi thẻ có `.btn-teacher-edit`, `.btn-teacher-assign`, đề của mình có `.btn-teacher-unpublish`. Trình soạn đề giữ `#builderModal`, `#builderExamTitle`, `#btnPublishExam`, `#teacherPublishStatus` và PHẢI giữ nguyên mọi trường của đề khi chỉ sửa một phần (lỗi thật: 15 phút thành 50 phút).
+  - **Kết quả** `#/giao-vien/ket-qua`: chọn lớp + đề → bảng `#resultsTable` (tên, lúc nộp, điểm từng phần, tổng), nút `#btnExportResults` (CSV chống công thức).
+- **Admin** `admin.html` (trang riêng, không có liên kết từ trang học sinh): `#adminLogin` (`input#adminPassword`, `#btnAdminLogin`, `#adminLoginError`) → `#adminPanel`: `#btnCreateTeacher` → hộp thoại `input#newTeacherName`, `input#newTeacherUsername`, `input#newTeacherPassword`, `#btnCreateTeacherConfirm`; danh sách `.teacher-row[data-username]` với nút `.btn-reset-password`, `.btn-toggle-teacher` (khóa/mở); số liệu tổng `#adminStats` (số giáo viên, lớp, đề, bài nộp).
+
+### 19.2 Apps Script — hành động mới (cùng quy tắc 17.2–17.6: GET đọc công khai, POST text/plain, không lộ mật khẩu, ES2019)
+- Script Properties: `ADMIN_PASSWORD` (Admin), giữ `TEACHER_PASSWORD` cũ chỉ để tương thích (đăng nhập bằng tên `admin`? KHÔNG — bỏ; giáo viên phải có tài khoản).
+- Trang tính mới: `GiaoVien` (username, tên, muối + băm SHA-256 của mật khẩu, trạng thái, tạo lúc), `Lop` (classId, code, tên, username giáo viên, tạo lúc), `GiaoDe` (assignmentId, classId, examId, openAt, dueAt, tạo lúc). `DeThi` thêm cột `owner` (username). `KetQua` thêm cột `class_code`, `assignment_id`.
+- Phiên: `teacherLogin {username, password}` → `{success, token, name, expiresAt}` (token ngẫu nhiên 32 byte, lưu CacheService 8 giờ); `adminLogin {password}` → token admin. Mọi hành động cần quyền gửi `token`, KHÔNG gửi lại mật khẩu. Token sai/hết hạn → `UNAUTHORIZED`.
+- Admin: `adminCreateTeacher {token, name, username, password}` (username 3–32 ký tự a-z0-9._-, trùng → `USERNAME_TAKEN`, mật khẩu ≥ 8 ký tự), `adminListTeachers {token}`, `adminResetPassword {token, username, password}`, `adminSetTeacherActive {token, username, active}`, `adminStats {token}`. Giáo viên bị khóa không đăng nhập được.
+- Giáo viên: `createClass {token, name}` → `{classId, code}`; `listMyClasses {token}`; `publishExam {token, exam}` (chủ sở hữu = giáo viên; sửa đề của giáo viên khác → `FORBIDDEN`); `unpublishExam {token, examId}`; `assignExam {token, classId, examId, openAt, dueAt}` (lớp phải của mình; `dueAt > openAt`; ISO 8601) ; `listAssignments {token, classId}`; `listResults {token, classId, assignmentId?}` (chỉ kết quả lớp của mình).
+- Học sinh (GET, không cần đăng nhập): `getClass&code=<MÃ>` → `{class:{code,name,teacherName}, assignments:[{assignmentId, examId, title, openAt, dueAt, questionCount, durationMinutes}]}` (mã sai → `NOT_FOUND`); `listExams`/`getExam` như cũ.
+- Nộp bài: payload thêm `class_code`, `assignment_id` (nếu làm đề được giao). Server kiểm: bài giao chưa mở → `NOT_OPEN`; nộp sau `dueAt` + 2 phút (bù trễ mạng) → `PAST_DUE` (bài vẫn lưu trên máy, báo trung thực "Nộp sau hạn — giáo viên chưa nhận"). Idempotent theo `attempt_id` như cũ.
+
+### 19.3 Ranh giới module (làm song song)
+- `src/ui/**` — vùng ui: `tokens.css`, `components.css`, `components.ts` (Button, Input, Card, ExamCard, StatusBadge, TopBar, NavRail/BottomNav, Dialog/BottomSheet, Toast, EmptyState, ErrorState, Skeleton, Table), `icons.ts`. Các vùng khác CHỈ dùng các hàm/class này.
+- `src/collect/appsScript.ts` — vùng collect: thêm hàm client cho mọi hành động 19.2 (`teacherLogin(username,password)` trả token; các hàm sau nhận token), lưu token giáo viên/admin trong sessionStorage.
+- `src/student/**` — vùng student: khu học sinh (`#startScreen`, cổng tên, vào lớp, lưới đề, `#examPreview`), màn làm bài và kết quả theo DESIGN.md.
+- `src/teacher/**` — vùng teacher: khu giáo viên (`#teacherLogin`, `#teacherShell`, Lớp/Đề/Kết quả, giao đề).
+- `src/admin/**` + `admin.html` (qua `scripts/web-build.ts`) — vùng admin.
+- `src/app/**` — vùng app: chọn vai `#roleChooser`, định tuyến hash, nạp cấu hình, nối các vùng.
+- `apps-script/**` — Apps Script (19.2).

@@ -1007,10 +1007,14 @@ export function mount(root, model, actions = {}) {
                     const opt = doc.createElement("option");
                     opt.value = k;
                     opt.textContent = `Phần ${k}`;
-                    if (k === kind)
+                    if (k === kind) {
                         opt.selected = true;
+                        selKind.value = k;
+                    }
                     selKind.appendChild(opt);
                 }
+                if (!selKind.value)
+                    selKind.value = kind;
                 grpKind.appendChild(selKind);
                 grid1.appendChild(grpKind);
                 // Subject selection
@@ -1039,10 +1043,14 @@ export function mount(root, model, actions = {}) {
                     const opt = doc.createElement("option");
                     opt.value = String(g);
                     opt.textContent = `Lớp ${g}`;
-                    if (g === q.grade)
+                    if (g === q.grade) {
                         opt.selected = true;
+                        selGrade.value = String(g);
+                    }
                     selGrade.appendChild(opt);
                 }
+                if (!selGrade.value)
+                    selGrade.value = String(q.grade ?? 12);
                 grpGrade.appendChild(selGrade);
                 grid1.appendChild(grpGrade);
                 // Difficulty selection
@@ -1058,10 +1066,14 @@ export function mount(root, model, actions = {}) {
                     const opt = doc.createElement("option");
                     opt.value = d;
                     opt.textContent = d;
-                    if (d === q.difficulty)
+                    if (d === q.difficulty) {
                         opt.selected = true;
+                        selDiff.value = d;
+                    }
                     selDiff.appendChild(opt);
                 }
+                if (!selDiff.value)
+                    selDiff.value = q.difficulty ?? "Thông hiểu";
                 grpDiff.appendChild(selDiff);
                 grid1.appendChild(grpDiff);
                 editForm.appendChild(grid1);
@@ -1098,10 +1110,10 @@ export function mount(root, model, actions = {}) {
                 btnSaveForm.textContent = "Lưu thay đổi";
                 attachListener(btnSaveForm, "click", () => {
                     const patch = {
-                        kind: selKind.value,
+                        kind: (selKind.value || kind),
                         subject: inpSubj.value,
-                        grade: Number(selGrade.value),
-                        difficulty: selDiff.value,
+                        grade: Number(selGrade.value || q.grade || 12),
+                        difficulty: (selDiff.value || q.difficulty || "Thông hiểu"),
                         content: txtContent.value,
                         explanation: txtExp.value,
                     };

@@ -636,3 +636,5 @@ export async function resumeAttempt(key, deps) {
     }
     return { ok: true, value: controller };
 }
+export * from "./area.js";
+export * from "./view.js";

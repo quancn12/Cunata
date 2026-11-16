@@ -1,0 +1,759 @@
+{
+  "schemaVersion": "web-exam-v1",
+  "examId": "ly12-hang-tuan-de-10",
+  "examVersionId": "v1.0.0",
+  "title": "Vật lí 12 — Đề số 10 hàng tuần",
+  "subject": "Vật lí",
+  "grade": 12,
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  },
+  "assets": [],
+  "questions": [
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-01",
+      "title": "Câu 1 (Phần I)",
+      "content": "Trường hợp nào dưới đây làm biến đổi nội năng không do thực hiện công?",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-01-a",
+          "label": "A",
+          "text": "Mài dao."
+        },
+        {
+          "optionId": "ly12-de10-i-01-b",
+          "label": "B",
+          "text": "Đóng đinh."
+        },
+        {
+          "optionId": "ly12-de10-i-01-c",
+          "label": "C",
+          "text": "Khuấy nước."
+        },
+        {
+          "optionId": "ly12-de10-i-01-d",
+          "label": "D",
+          "text": "Nung sắt trong lò."
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-01-d",
+      "explanation": "Đáp án D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-02",
+      "title": "Câu 2 (Phần I)",
+      "content": "Cho 2 vật $A$ và $B$ tiếp xúc nhau. Nhiệt chỉ truyền từ $A$ sang $B$ khi",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-02-a",
+          "label": "A",
+          "text": "nhiệt độ của $B$ lớn hơn của $A$"
+        },
+        {
+          "optionId": "ly12-de10-i-02-b",
+          "label": "B",
+          "text": "nhiệt độ của $A$ lớn hơn của $B$"
+        },
+        {
+          "optionId": "ly12-de10-i-02-c",
+          "label": "C",
+          "text": "nội năng của $B$ lớn hơn của $A$"
+        },
+        {
+          "optionId": "ly12-de10-i-02-d",
+          "label": "D",
+          "text": "nội năng của $B$ nhỏ hơn của $A$"
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-02-b",
+      "explanation": "Đáp án B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-03",
+      "title": "Câu 3 (Phần I)",
+      "content": "Phát biểu nào là không đúng khi nói về nội năng?",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-03-a",
+          "label": "A",
+          "text": "Nội năng là 1 dạng của năng lượng nên có thể chuyển hóa thành các dạng năng lượng khác"
+        },
+        {
+          "optionId": "ly12-de10-i-03-b",
+          "label": "B",
+          "text": "Nội năng của 1 vật phụ thuộc vào nhiệt độ và thể tích của vật."
+        },
+        {
+          "optionId": "ly12-de10-i-03-c",
+          "label": "C",
+          "text": "Nội năng của 1 vật không phụ thuộc vào nhiệt độ và thể tích của vật."
+        },
+        {
+          "optionId": "ly12-de10-i-03-d",
+          "label": "D",
+          "text": "Nội năng của vật có thể tăng lên hoặc giảm xuống"
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-03-c",
+      "explanation": "Đáp án C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-04",
+      "title": "Câu 4 (Phần I)",
+      "content": "Trường hợp nào sau đây, chứng tỏ chất khí dễ bị nén?",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-04-a",
+          "label": "A",
+          "text": "Bơm không khí làm căng săm xe đạp, sau đó dùng tay bóp vào săm xe."
+        },
+        {
+          "optionId": "ly12-de10-i-04-b",
+          "label": "B",
+          "text": "Bơm không khí vào chai thủy tinh đậy nắp và nút kín, sau đó dùng tay bóp chai thủy tinh."
+        },
+        {
+          "optionId": "ly12-de10-i-04-c",
+          "label": "C",
+          "text": "Bơm khí ga vào bình chứa, sau đó lấy búa gõ nhẹ vào thành bình."
+        },
+        {
+          "optionId": "ly12-de10-i-04-d",
+          "label": "D",
+          "text": "Bơm không khí vào ống đồng đậy nắp và nút kín, sau đó dùng tay bóp vào thành ống."
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-04-a",
+      "explanation": "Đáp án A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-05",
+      "title": "Câu 5 (Phần I)",
+      "content": "Giữa các phân tử có lực hút và lực đẩy. Phát biểu nào sau đây đúng?",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-05-a",
+          "label": "A",
+          "text": "Lực hút giữa các phân tử trong chất rắn luôn lớn hơn lực đẩy."
+        },
+        {
+          "optionId": "ly12-de10-i-05-b",
+          "label": "B",
+          "text": "Khí có thể lấp đầy không gian bình chứa vì lực đẩy giữa các phân tử lớn hơn lực hút."
+        },
+        {
+          "optionId": "ly12-de10-i-05-c",
+          "label": "C",
+          "text": "Khi khoảng cách giữa các phân tử tăng lên thì cả lực hút và lực đẩy đều yếu đi."
+        },
+        {
+          "optionId": "ly12-de10-i-05-d",
+          "label": "D",
+          "text": "Khi khoảng cách giữa các phân tử tăng lên thì lực hút mạnh lên, còn lực đẩy yếu đi."
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-05-c",
+      "explanation": "Đáp án C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-06",
+      "title": "Câu 6 (Phần I)",
+      "content": "Khi nói về nhiệt nóng chảy riêng của chất rắn:",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-06-a",
+          "label": "A",
+          "text": "Nhiệt nóng chảy riêng của một chất có độ lớn bằng nhiệt lượng cần cung cấp để làm nóng chảy 1 kg chất đó ở nhiệt độ nóng chảy"
+        },
+        {
+          "optionId": "ly12-de10-i-06-b",
+          "label": "B",
+          "text": "Đơn vị của nhiệt nóng chảy riêng là Jun trên kilôgam (J/kg)"
+        },
+        {
+          "optionId": "ly12-de10-i-06-c",
+          "label": "C",
+          "text": "Các chất khác nhau thì nhiệt nóng chảy riêng của chúng khác nhau"
+        },
+        {
+          "optionId": "ly12-de10-i-06-d",
+          "label": "D",
+          "text": "Cả A, B, C đều đúng"
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-06-d",
+      "explanation": "Đáp án D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-07",
+      "title": "Câu 7 (Phần I)",
+      "content": "Nhiệt độ là 46°C thì nhiệt độ tính theo thang nhiệt độ Kelvin (K) là:",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-07-a",
+          "label": "A",
+          "text": "78 K"
+        },
+        {
+          "optionId": "ly12-de10-i-07-b",
+          "label": "B",
+          "text": "319 K"
+        },
+        {
+          "optionId": "ly12-de10-i-07-c",
+          "label": "C",
+          "text": "223 K"
+        },
+        {
+          "optionId": "ly12-de10-i-07-d",
+          "label": "D",
+          "text": "14 K"
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-07-b",
+      "explanation": "$T(K) ≈ t(°C) + 273 = 46 + 273 = 319$ K. Chọn B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-08",
+      "title": "Câu 8 (Phần I)",
+      "content": "Một bình kín chứa $N = 9,03 · 10^23$ nguyên tử khí Heli. Khối lượng khí trong bình đó là",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-08-a",
+          "label": "A",
+          "text": "4,0 g"
+        },
+        {
+          "optionId": "ly12-de10-i-08-b",
+          "label": "B",
+          "text": "2,7 g"
+        },
+        {
+          "optionId": "ly12-de10-i-08-c",
+          "label": "C",
+          "text": "1,5 g"
+        },
+        {
+          "optionId": "ly12-de10-i-08-d",
+          "label": "D",
+          "text": "6,0 g"
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-08-d",
+      "explanation": "$n = \\frac{N}{N_A} = \\frac{9,03 · 10^23}{6,02 · 10^23} = 1,5$ mol\n$m = nM = 1,5 · 4 = 6$ g. Chọn D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-09",
+      "title": "Câu 9 (Phần I)",
+      "content": "Người ta truyền nhiệt lượng 1200 J cho chất khí trong xi lanh. Khí dãn nở thực hiện công 700 J đẩy pít tông dịch chuyển. Độ biến thiên nội năng của khí là",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-09-a",
+          "label": "A",
+          "text": "500 J"
+        },
+        {
+          "optionId": "ly12-de10-i-09-b",
+          "label": "B",
+          "text": "5000 J"
+        },
+        {
+          "optionId": "ly12-de10-i-09-c",
+          "label": "C",
+          "text": "1900 J"
+        },
+        {
+          "optionId": "ly12-de10-i-09-d",
+          "label": "D",
+          "text": "-500 J"
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-09-a",
+      "explanation": "$ΔU = Q + A = 1200 - 700 = 500$ J. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-10",
+      "title": "Câu 10 (Phần I)",
+      "content": "Nhiệt lượng cần cung cấp cho miếng nhôm có khối lượng 100 g ở nhiệt độ 20°C, để nó hoá lỏng ở nhiệt độ 658°C là bao nhiêu? Biết nhôm có nhiệt dung riêng là 896 J / (kg · K), nhiệt nóng chảy riêng là $3,9 · 10^5$ J / kg.",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-10-a",
+          "label": "A",
+          "text": "96,16 J."
+        },
+        {
+          "optionId": "ly12-de10-i-10-b",
+          "label": "B",
+          "text": "95,16 J."
+        },
+        {
+          "optionId": "ly12-de10-i-10-c",
+          "label": "C",
+          "text": "57,16 kJ."
+        },
+        {
+          "optionId": "ly12-de10-i-10-d",
+          "label": "D",
+          "text": "96,16 kJ."
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-10-d",
+      "explanation": "$Q = mcΔt + mλ = 0,1 · 896 · (658 - 20) + 0,1 · 3,9 · 10^5 = 96164,8$ J $≈ 96,16$ kJ. Chọn D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-11",
+      "title": "Câu 11 (Phần I)",
+      "content": "Một động cơ nhiệt có hiệu suất 25%, công suất 30 kW. Tính nhiệt lượng mà nó tỏa ra cho nguồn lạnh trong 5 giờ làm việc liên tục là",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-11-a",
+          "label": "A",
+          "text": "$176 · 10^7$ J."
+        },
+        {
+          "optionId": "ly12-de10-i-11-b",
+          "label": "B",
+          "text": "$194 · 10^7$ J."
+        },
+        {
+          "optionId": "ly12-de10-i-11-c",
+          "label": "C",
+          "text": "$213 · 10^7$ J."
+        },
+        {
+          "optionId": "ly12-de10-i-11-d",
+          "label": "D",
+          "text": "$162 · 10^7$ J."
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-11-d",
+      "explanation": "$A = Pt = 30 · 10^3 · 5 · 60 · 60 = 54 · 10^7$ J\n$Q_1 = \\frac{A}{H} = \\frac{54 · 10^7}{0,25} = 216 · 10^7$ J\n$Q_2 = Q_1 - A = 216 · 10^7 - 54 · 10^7 = 162 · 10^7$ J. Chọn D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-12",
+      "title": "Câu 12 (Phần I)",
+      "content": "Biết năng suất tỏa nhiệt của củi khô là $10^7$ J / kg, nhiệt dung riêng của nước là 4200 J / (kg · K). Dùng bếp củi có hiệu suất 30% để đun sôi 5 kg nước ở 25°C thì cần bao nhiêu kg củi khô?",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-12-a",
+          "label": "A",
+          "text": "0,525 kg."
+        },
+        {
+          "optionId": "ly12-de10-i-12-b",
+          "label": "B",
+          "text": "0,425 kg."
+        },
+        {
+          "optionId": "ly12-de10-i-12-c",
+          "label": "C",
+          "text": "0,325 kg."
+        },
+        {
+          "optionId": "ly12-de10-i-12-d",
+          "label": "D",
+          "text": "0,225 kg."
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-12-a",
+      "explanation": "$Q_ci = mcΔt = 5 · 4200 · (100 - 25) = 1,575 · 10^6$ J\n$Q = \\frac{Q_ci}{H} = \\frac{1575 · 10^3}{0,3} = 5,25 · 10^6$ J\n$m = \\frac{Q}{q} = \\frac{5,25 · 10^6}{10^7} = 0,525$ kg. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-13",
+      "title": "Câu 13 (Phần I)",
+      "content": "Một phòng học có diện tích sàn 15 m² và cao 3 m có chứa không khí ở điều kiện tiêu chuẩn. Biết không khí có khối lượng mol 29 g / mol và thể tích mol 22,4 lít/mol. Khối lượng không khí trong phòng học là",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-13-a",
+          "label": "A",
+          "text": "58,3 kg."
+        },
+        {
+          "optionId": "ly12-de10-i-13-b",
+          "label": "B",
+          "text": "58,3 g."
+        },
+        {
+          "optionId": "ly12-de10-i-13-c",
+          "label": "C",
+          "text": "2,6 kg."
+        },
+        {
+          "optionId": "ly12-de10-i-13-d",
+          "label": "D",
+          "text": "2,6 g."
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-13-a",
+      "explanation": "$V = Sh = 15 · 3 = 45$ m³\n$n = \\frac{V}{22,4 · 10^-3} = \\frac{45}{22,4 · 10^-3}$ mol\n$m = nM = \\frac{45}{22,4 · 10^-3} · 29 · 10^-3 ≈ 58,3$ kg. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-14",
+      "title": "Câu 14 (Phần I)",
+      "content": "Khi truyền nhiệt lượng $6 · 10^6$ J cho khí trong một xilanh hình trụ thì khí nở ra đẩy pit-tông làm thể tích của khí tăng thêm 0,25 m³. Biết áp suất của khí là $8 · 10^6$ N / m² và coi áp suất này không đổi trong quá trình khí thực hiện công. Tính độ biến thiên nội năng của khí?",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-14-a",
+          "label": "A",
+          "text": "$6 · 10^6$ J."
+        },
+        {
+          "optionId": "ly12-de10-i-14-b",
+          "label": "B",
+          "text": "$4 · 10^6$ J."
+        },
+        {
+          "optionId": "ly12-de10-i-14-c",
+          "label": "C",
+          "text": "$2 · 10^6$ J."
+        },
+        {
+          "optionId": "ly12-de10-i-14-d",
+          "label": "D",
+          "text": "$8 · 10^6$ J."
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-14-b",
+      "explanation": "|A| = $pΔV = 8 · 10^6 · 0,25 = 2 · 10^6$ J ⇒ $A = -2 · 10^6$ J\n$ΔU = Q + A = 6 · 10^6 - 2 · 10^6 = 4 · 10^6$ J. Chọn B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-15",
+      "title": "Câu 15 (Phần I)",
+      "content": "Một cốc nhôm có khối lượng 120 g chứa 400 g nước ở nhiệt độ 24°C. Người ta thả vào cốc nước một thìa đồng khối lượng 80 g ở nhiệt độ 100°C. Xác định nhiệt độ của nước trong cốc khi có sự cân bằng nhiệt. Biết nhiệt dung riêng của nhôm là 880 J / kgK, của đồng là 380 J / kgK và của nước là $4,19 · 10^3$ J / kgK.",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-15-a",
+          "label": "A",
+          "text": "25,3°C"
+        },
+        {
+          "optionId": "ly12-de10-i-15-b",
+          "label": "B",
+          "text": "35,3°C"
+        },
+        {
+          "optionId": "ly12-de10-i-15-c",
+          "label": "C",
+          "text": "45,3°C"
+        },
+        {
+          "optionId": "ly12-de10-i-15-d",
+          "label": "D",
+          "text": "15,3°C"
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-15-a",
+      "explanation": "Kí hiệu: nhôm là 1, đồng là 2, nước là 3\n$t = \\frac{m_1 c_1 t_1 + m_2 c_2 t_2 + m_3 c_3 t_3}{m_1 c_1 + m_2 c_2 + m_3 c_3} = \\frac{120 · 880 · 24 + 400 · 4,19 · 10^3 · 24 + 80 · 380 · 100}{120 · 880 + 400 · 4,19 · 10^3 + 80 · 380} ≈ 25,3$°C. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-16",
+      "title": "Câu 16 (Phần I)",
+      "content": "1 g nước đá ở 0°C được đặt vào một nhiệt lượng kế chứa 1 g nước ở 40°C. Bỏ qua nhiệt dung của nhiệt lượng kế. Biết nhiệt nóng chảy riêng của nước đá là $3,36 · 10^5$ J / kg, nhiệt dung riêng của nước là 4200 J / (kg · K). Trạng thái cân bằng của hệ gồm",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-16-a",
+          "label": "A",
+          "text": "1,5 g nước và 0,5 g nước đá"
+        },
+        {
+          "optionId": "ly12-de10-i-16-b",
+          "label": "B",
+          "text": "1,4 g nước và 0,8 g nước đá"
+        },
+        {
+          "optionId": "ly12-de10-i-16-c",
+          "label": "C",
+          "text": "0,75 g nước và 1,25 g nước đá"
+        },
+        {
+          "optionId": "ly12-de10-i-16-d",
+          "label": "D",
+          "text": "1,25 g nước và 0,75 g nước đá"
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-16-a",
+      "explanation": "Nhiệt lượng nước tỏa ra khi giảm nhiệt độ xuống 0°C là:\n$Q = mcΔt = 10^-3 · 4200 · 40 = 168$ J\nKhối lượng nước đá tan thành nước là $\\frac{Q}{λ} = \\frac{168}{3,36 · 10^5} = 0,5 · 10^-3$ kg $= 0,5$ g\nKhối lượng nước khi cân bằng là $1 + 0,5 = 1,5$ g\nKhối lượng nước đá khi cân bằng là $1 - 0,5 = 0,5$ g. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-17",
+      "title": "Câu 17 (Phần I)",
+      "content": "Bỏ một khối nước đá 1 kg ở -5°C vào một bình thép có khối lượng 500 g đựng 5 kg nước ở 30°C. Cho biết nhiệt dung riêng của nước đá $c_d = 2100$ J / kgK, của nước $c_n = 4180$ J / kgK, của thép $c_t = 500$ J / kgK. Nhiệt nóng chảy riêng của nước đá là $λ = 334000$ J / kg. Bỏ qua sự trao đổi nhiệt với môi trường bên ngoài. Tính nhiệt độ của bình nước khi có sự cân bằng nhiệt.",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-17-a",
+          "label": "A",
+          "text": "$t ≈ 10,7$°C"
+        },
+        {
+          "optionId": "ly12-de10-i-17-b",
+          "label": "B",
+          "text": "$t ≈ 11,4$°C"
+        },
+        {
+          "optionId": "ly12-de10-i-17-c",
+          "label": "C",
+          "text": "$t ≈ 12,5$°C"
+        },
+        {
+          "optionId": "ly12-de10-i-17-d",
+          "label": "D",
+          "text": "$t = 0$°C"
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-17-b",
+      "explanation": "Nhiệt lượng để nước đá tăng nhiệt độ và nóng chảy hoàn toàn là:\n$Q_d = m_d c_d Δt_d + m_d λ = 1 · 2100 · 5 + 1 · 334000 = 344500$ J\nNhiệt lượng mà bình thép và nước tỏa ra khi giảm nhiệt độ xuống 0°C là:\n$Q = (m_n c_n + m_t c_t)Δt = (5 · 4180 + 0,5 · 500) · 30 = 634500$ J\nVì $Q > Q_d$ nên đá tan hoàn toàn ⇒ nhiệt độ cân bằng lớn hơn 0°C\n$Q_d + m_d c_n t_cb = (m_n c_n + m_t c_t)(t - t_cb) ⇒ 344500 + 1 · 4180 · t_cb = (5 · 4180 + 0,5 · 500) · (30 - t_cb) ⇒ t_cb ≈ 11,4$°C. Chọn B. (Đã đính chính so với đề gốc.)"
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de10-i-18",
+      "title": "Câu 18 (Phần I)",
+      "content": "Một cốc nước nóng và một cốc nước lạnh chứa lượng nước như nhau. Bỏ qua sự trao đổi nhiệt của nước với cốc và môi trường. Đổ một nửa lượng nước trong cốc nước nóng vào cốc nước lạnh thì nhiệt độ cốc nước lạnh tăng thêm 21°C khi cân bằng nhiệt. Tiếp tục đổ một nửa của lượng nước còn lại trong cốc nước nóng vào cốc nước lạnh thì nhiệt độ của cốc nước lạnh sẽ tiếp tục tăng thêm\n\n![Hình minh họa](public/exams/ly12/de10/p02-1.png)",
+      "image": "public/exams/ly12/de10/p02-1.png",
+      "options": [
+        {
+          "optionId": "ly12-de10-i-18-a",
+          "label": "A",
+          "text": "10,5°C."
+        },
+        {
+          "optionId": "ly12-de10-i-18-b",
+          "label": "B",
+          "text": "8°C."
+        },
+        {
+          "optionId": "ly12-de10-i-18-c",
+          "label": "C",
+          "text": "6°C."
+        },
+        {
+          "optionId": "ly12-de10-i-18-d",
+          "label": "D",
+          "text": "5°C."
+        }
+      ],
+      "correctOptionId": "ly12-de10-i-18-c",
+      "explanation": "Gọi khối lượng của nước trong mỗi cốc ban đầu là m\nNhiệt độ nước nóng ban đầu là $t_n$, nhiệt độ nước lạnh ban đầu là $t_l$\nĐổ m / 2 nước nóng sang cốc nước lạnh thì nhiệt độ cân bằng là $t_l + 21$\n$\\frac{m}{2}(t_n - t_l - 21) = m · 21 ⇒ t_n - t_l = 63$\nTiếp tục đổ m / 4 nước nóng sang cốc nước lạnh thì nhiệt độ cân bằng là $t_l + 21 + Δt$\n$\\frac{m}{4}(t_n - t_l - 21 - Δt) = (m + \\frac{m}{2}) · Δt ⇒ \\frac{1}{4}(63 - 21 - Δt) = \\frac{3}{2} · Δt ⇒ Δt = 6$°C. Chọn C."
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de10-ii-01",
+      "title": "Câu 19 (Phần II - Đúng / Sai)",
+      "content": "Cho các phát biểu sau về chất rắn, chất lỏng và chất khí.",
+      "statements": [
+        {
+          "statementId": "ly12-de10-ii-01-a",
+          "label": "a",
+          "text": "Chất khí không có hình dạng và thể tích xác định",
+          "answer": true,
+          "explanation": "Đúng."
+        },
+        {
+          "statementId": "ly12-de10-ii-01-b",
+          "label": "b",
+          "text": "Chất lỏng không có thể tích riêng xác định",
+          "answer": false,
+          "explanation": "Sai. Chất lỏng có thể tích riêng xác định."
+        },
+        {
+          "statementId": "ly12-de10-ii-01-c",
+          "label": "c",
+          "text": "Lực tương tác giữa các phân tử trong chất rắn là rất mạnh",
+          "answer": true,
+          "explanation": "Đúng."
+        },
+        {
+          "statementId": "ly12-de10-ii-01-d",
+          "label": "d",
+          "text": "Trong chất lỏng các phân tử dao động quanh vị trí cân bằng cố định",
+          "answer": false,
+          "explanation": "Sai. Trong chất lỏng các phân tử dao động quanh vị trí cân bằng không cố định."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de10-ii-02",
+      "title": "Câu 20 (Phần II - Đúng / Sai)",
+      "content": "Hình bên là đồ thị của lực tương tác F giữa hai phân tử phụ thuộc vào khoảng cách r của chúng.\n\n![Hình minh họa](public/exams/ly12/de10/p02-2.png)",
+      "image": "public/exams/ly12/de10/p02-2.png",
+      "statements": [
+        {
+          "statementId": "ly12-de10-ii-02-a",
+          "label": "a",
+          "text": "Khi $r < r_1$, lực hút giữa hai phân tử bằng không.",
+          "answer": false,
+          "explanation": "Sai. Lực hút giữa hai phân tử khác không."
+        },
+        {
+          "statementId": "ly12-de10-ii-02-b",
+          "label": "b",
+          "text": "Khi $r = r_1$ thì không còn lực đẩy và lực hút phân tử.",
+          "answer": false,
+          "explanation": "Sai. Vẫn còn lực đẩy và lực hút phân tử cân bằng nhau."
+        },
+        {
+          "statementId": "ly12-de10-ii-02-c",
+          "label": "c",
+          "text": "Khi $r > r_1$ thì lực hút phân tử mạnh hơn lực đẩy phân tử.",
+          "answer": true,
+          "explanation": "Đúng."
+        },
+        {
+          "statementId": "ly12-de10-ii-02-d",
+          "label": "d",
+          "text": "Khi $r = r_2$, độ lớn lực hút giữa hai phân tử đạt cực đại.",
+          "answer": false,
+          "explanation": "Sai. r càng nhỏ thì lực hút giữa hai phân tử càng mạnh."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de10-ii-03",
+      "title": "Câu 21 (Phần II - Đúng / Sai)",
+      "content": "Một vật có khối lượng 3 kg trượt không vận tốc đầu từ đỉnh mặt phẳng nghiêng 30° so với phương ngang và mất 1,5 s thì trượt được 2 m để xuống chân mặt phẳng nghiêng. Coi cơ năng của vật bị mất đi chuyển hóa thành nội năng của nó. Lấy $g = 10$ m / s².\n\n![Hình minh họa](public/exams/ly12/de10/p03-1.png)",
+      "image": "public/exams/ly12/de10/p03-1.png",
+      "statements": [
+        {
+          "statementId": "ly12-de10-ii-03-a",
+          "label": "a",
+          "text": "Động năng của vật tại chân mặt phẳng nghiêng là 30 J .",
+          "answer": false,
+          "explanation": "Sai.\n$s = \\frac{1}{2}at^2 ⇒ 2 = \\frac{1}{2} · a · 1,5^2 ⇒ a = \\frac{16}{9}$ m / s²\nVận tốc tại chân mặt phẳng nghiêng là $v = \\sqrt{2as} = \\sqrt{2 · (16/9) · 2} = \\frac{8}{3}$ m / s\nĐộng năng tại chân mặt phẳng nghiêng là $W_d = \\frac{1}{2}mv^2 = \\frac{1}{2} · 3 · (8/3)^2 = \\frac{32}{3}$ J $≠ 30$ J."
+        },
+        {
+          "statementId": "ly12-de10-ii-03-b",
+          "label": "b",
+          "text": "Hệ số ma sát giữa vật và mặt phẳng nghiêng xấp xỉ là 0,37 .",
+          "answer": true,
+          "explanation": "Đúng. Theo định luật II Newton: $mg sin 30° - F_ms = ma ⇒ 3 · 10 · sin 30° - F_ms = 3 · \\frac{16}{9} ⇒ F_ms = \\frac{29}{3}$ N\n$F_ms = μmg cos 30° ⇒ \\frac{29}{3} = μ · 3 · 10 · cos 30° ⇒ μ ≈ 0,37$."
+        },
+        {
+          "statementId": "ly12-de10-ii-03-c",
+          "label": "c",
+          "text": "Nội năng của vật trong quá trình trên tăng $\\frac{58}{3}$ J .",
+          "answer": true,
+          "explanation": "Đúng. $ΔU = F_ms · s = \\frac{29}{3} · 2 = \\frac{58}{3}$ J."
+        },
+        {
+          "statementId": "ly12-de10-ii-03-d",
+          "label": "d",
+          "text": "Để giữ cho vật ban đầu không trượt xuống, người ta tác dụng lên vật lực F song song với mặt phẳng nghiêng thì độ lớn của lực F tối thiểu là $\\frac{16}{3}$ N .",
+          "answer": true,
+          "explanation": "Đúng. Lực F tối thiểu là $F = ma = 3 · \\frac{16}{9} = \\frac{16}{3}$ N."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de10-ii-04",
+      "title": "Câu 22 (Phần II - Đúng / Sai)",
+      "content": "Hai hình trụ được nối với nhau nhờ một ống có tiết diện nhỏ (có thể bỏ qua). Hình trụ A (tiết diện 2S) chứa đầy băng (0°C) với chiều cao $H = 1,2$ m và hình trụ B (tiết diện S) thì chứa đầy nước (60°C) có cùng độ cao với cột băng ở hình trụ A. Do trao đổi nhiệt băng bắt đầu bị tan ra. Cho rằng băng tan theo từng lớp mỏng và bắt đầu tan từ lớp dưới cùng. Khối băng di chuyển mà không có ma sát với thành hình trụ và không có nước lọt qua phần tiếp xúc giữa băng với thành hình trụ để di chuyển lên trên khối băng. Nhiệt độ chỉ trao đổi giữa băng và nước. Cho biết khối lượng riêng của nước và băng tương ứng là 1 g / cm³ và 0,9 g / cm³. Nhiệt dung riêng của nước là 1 cal / (g · °C), nhiệt nóng chảy riêng của băng là 80 cal / g.\n\n![Hình minh họa](public/exams/ly12/de10/p03-2.png)",
+      "image": "public/exams/ly12/de10/p03-2.png",
+      "statements": [
+        {
+          "statementId": "ly12-de10-ii-04-a",
+          "label": "a",
+          "text": "Nhiệt độ của hệ ở trạng thái cân bằng là 0°C.",
+          "answer": true,
+          "explanation": "Đúng.\n$V_A = 2S · H = 2S · 1,2 = 2,4S ⇒ m_A = V_A D_A = 2,4S · 0,9 = 2,16S$\n$V_B = S · H = S · 1,2 = 1,2S ⇒ m_B = V_B D_B = 1,2S · 1 = 1,2S$\nNhiệt lượng để nước giảm về 0°C là $Q_B = m_B cΔt = 1,2S · 1 · 60 = 72S$\nNhiệt nóng chảy hoàn toàn $Q_A = m_A λ = 2,16S · 80 = 172,8S$\n$Q_A > Q_B ⇒$ băng không tan hết và nhiệt độ cân bằng là 0°C."
+        },
+        {
+          "statementId": "ly12-de10-ii-04-b",
+          "label": "b",
+          "text": "Chiều cao của khối băng bị tan là 1 m .",
+          "answer": false,
+          "explanation": "Sai. $Q_B = λ m_Atan ⇒ 72S = 80 m_Atan ⇒ m_Atan = 0,9S$\n$m_Atan = V_Atan D_A ⇒ 0,9S = V_Atan · 0,9 ⇒ V_Atan = S$\n$V_Atan = 2S · H_tan ⇒ S = 2S · H_tan ⇒ H_tan = 0,5$ m."
+        },
+        {
+          "statementId": "ly12-de10-ii-04-c",
+          "label": "c",
+          "text": "Khi cân bằng nhiệt chiều cao hai cột chênh lệch nhau 0,56 m.",
+          "answer": false,
+          "explanation": "Sai. $V_b = V_A - V_Atan ⇒ 2S h_A = 2,4S - S ⇒ h_A = 0,7$ m\nTheo nguyên lý bình thông nhau: $p_A = p_B ⇒ h_A D_A g = h_B D_B g ⇒ 0,7 · 0,9 = h_B · 1 ⇒ h_B = 0,63$ m\n$Δh = h_A - h_B = 0,7 - 0,63 = 0,07$ m."
+        },
+        {
+          "statementId": "ly12-de10-ii-04-d",
+          "label": "d",
+          "text": "Độ cao của khối nước ở hình trụ B khi cân bằng nhiệt là 1,54 m.",
+          "answer": false,
+          "explanation": "Sai. Độ cao của khối nước ở hình trụ B khi cân bằng nhiệt phải nhỏ hơn $H = 1,2$ m.\n\n![Hình minh họa lời giải](public/exams/ly12/de10/p09-2.png)\n\n$V_n = V_B + m_Atan / D_B ⇒ 2Sx + S(x + 0,63) = 1,2S + 0,9S / 1 ⇒ x = 0,49$ m\nĐộ cao của khối nước ở hình trụ B khi cân bằng nhiệt là $x + h_B = 0,49 + 0,63 = 1,12$ m."
+        }
+      ]
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de10-iii-01",
+      "title": "Câu 23 (Phần III - Trả lời ngắn)",
+      "content": "Năm 2003, nhiệt độ ngày tại thung lũng Death Valley, California được xác định qua hàm số $t(d) = -0,0018d^2 + 0,657d + 50,95$, với t là nhiệt độ tính theo Fahrenheit (°F) và d là số ngày trong năm tính từ 1/1/2003. Nhiệt độ cao nhất trong năm đó là bao nhiêu độ F (làm tròn đến hàng đơn vị)?\n\n![Hình minh họa](public/exams/ly12/de10/p03-3.png)",
+      "image": "public/exams/ly12/de10/p03-3.png",
+      "answerKey": "111",
+      "explanation": "$t'(d) = -2 · 0,0018d + 0,657 = 0 ⇒ d = 182,5 ⇒ t ≈ 110,9$°F. Trả lời ngắn: 111."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de10-iii-02",
+      "title": "Câu 24 (Phần III - Trả lời ngắn)",
+      "content": "Một động cơ nhiệt lí tưởng làm việc giữa 2 nguồn nhiệt. Mỗi giây nhận nhiệt lượng 2400 J, đồng thời nhường cho nguồn lạnh nhiệt lượng $Q_2$, công suất của động cơ là 700 W. Nhiệt lượng $Q_2$ mà nguồn lạnh nhận được trong mỗi giây là bao nhiêu J?",
+      "answerKey": "1700",
+      "explanation": "$A = Pt = 700$ J\n$Q_2 = Q_1 - A = 2400 - 700 = 1700$ J.\nTrả lời ngắn: 1700."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de10-iii-03",
+      "title": "Câu 25 (Phần III - Trả lời ngắn)",
+      "content": "Thả một cục nước đá có khối lượng 30 g ở 0°C vào cốc nước chứa 200 g nước ở 20°C. Bỏ qua nhiệt dung của cốc. Cho biết nhiệt dung riêng của nước là 4,2 J / g.K, nhiệt nóng chảy riêng của nước đá là 334 J / g. Nhiệt độ cuối của cốc nước bằng bao nhiêu độ C (làm tròn đến hàng đơn vị)?",
+      "answerKey": "7",
+      "explanation": "$m_d λ + m_d c t = m_n c (t_n - t) ⇒ 30 · 334 + 30 · 4,2 · t = 200 · 4,2 · (20 - t) ⇒ t ≈ 7$°C. Trả lời ngắn: 7."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de10-iii-04",
+      "title": "Câu 26 (Phần III - Trả lời ngắn)",
+      "content": "Cho một luồng hơi nước ở 100°C đi qua một bình nhiệt lượng kế chứa 0,9 kg nước ở 0°C thì khối lượng nước trong bình tăng thêm 0,1 kg. Cho nhiệt dung riêng của nước là 4200 J / kgK, nhiệt hóa hơi riêng của nước là $2,3 · 10^6$ J / kg. Bỏ qua nhiệt dung của bình nhiệt lượng kế. Nhiệt độ của hệ khi cân bằng nhiệt là bao nhiêu độ C (làm tròn đến 1 chữ số sau dấu phẩy thập phân)?",
+      "answerKey": "64,8",
+      "explanation": "$m_h L + m_h cΔt_h = m_n cΔt_n ⇒ 0,1 · 2,3 · 10^6 + 0,1 · 4200 · (100 - t) = 0,9 · 4200 · t ⇒ t ≈ 64,8$°C. Trả lời ngắn: 64,8."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de10-iii-05",
+      "title": "Câu 27 (Phần III - Trả lời ngắn)",
+      "content": "Cho hai bình A và B cùng chứa một lượng nước M. Nhiệt độ của nước trong bình A là 20°C, trong bình B là 80°C. Múc một ca nước từ bình B đổ sang bình A thì sau khi cân bằng nhiệt, nhiệt độ của nước trong bình A là 24°C. Hỏi sau đó múc một ca nước trong bình A đổ sang bình B thì khi cân bằng nhiệt, nhiệt độ của nước trong bình B là bao nhiêu độ C? Cho biết các ca nước chứa cùng một khối lượng nước. Bỏ qua sự hấp thụ nhiệt của ca, của bình và mọi mất mát nhiệt ra môi trường.\n\n![Hình minh họa](public/exams/ly12/de10/p04-1.png)",
+      "image": "public/exams/ly12/de10/p04-1.png",
+      "answerKey": "76",
+      "explanation": "Cân bằng nhiệt ở bình A được:\n$Mc(t_1 - t_A) = mc(t_B - t_1) ⇒ M(24 - 20) = m(80 - 24) ⇒ M = 14m$\nCân bằng nhiệt ở bình B được:\n$(M - m)c(t_B - t_2) = mc(t_2 - t_1) ⇒ (14 - 1)(80 - t_2) = t_2 - 24 ⇒ t_2 = 76$°C. Trả lời ngắn: 76."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de10-iii-06",
+      "title": "Câu 28 (Phần III - Trả lời ngắn)",
+      "content": "Một viên đạn bằng chì khối lượng m, bay với vận tốc v = 195 m / s, va chạm mềm vào một quả cầu bằng chì cùng khối lượng m đang đứng yên. Nhiệt dung riêng của chì là c = 130 J / kgK. Nhiệt độ ban đầu của viên đạn và quả cầu bằng nhau. Coi nhiệt lượng truyền ra môi trường là không đáng kể. Độ tăng nhiệt độ của viên đạn và quả cầu là bao nhiêu độ C (làm tròn đến 1 chữ số sau dấu phẩy thập phân)?\n\n![Hình minh họa](public/exams/ly12/de10/p04-2.png)",
+      "image": "public/exams/ly12/de10/p04-2.png",
+      "answerKey": "36,6",
+      "explanation": "Bảo toàn động lượng: $V = \\frac{mv}{m + m} = \\frac{v}{2} = \\frac{195}{2} = 97,5$ m / s\n$Q = W_1 - W_2 ⇒ 2mcΔt = \\frac{1}{2}mv^2 - \\frac{1}{2} · 2m · V^2 ⇒ 2 · 130 · Δt = \\frac{1}{2} · 195^2 - \\frac{1}{2} · 2 · 97,5^2 ⇒ Δt ≈ 36,6$°C. Trả lời ngắn: 36,6."
+    }
+  ]
+}

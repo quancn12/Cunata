@@ -1,8 +1,8 @@
 // Cunata Web Native Service Worker
-// Build Digest: fb128caccae216a9
-const BUILD_VERSION = 'v-fb128caccae216a9';
+// Build Digest: a318d516270016a5
+const BUILD_VERSION = 'v-a318d516270016a5';
 const CACHE_NAME_PREFIX = 'cunata-cache-';
-const CACHE_NAME = 'cunata-cache-v-fb128caccae216a9';
+const CACHE_NAME = 'cunata-cache-v-a318d516270016a5';
 const DEFAULT_PRECACHE_ENTRIES = [
   {
     "url": "index.html",
@@ -11,6 +11,30 @@ const DEFAULT_PRECACHE_ENTRIES = [
   {
     "url": "./",
     "critical": true
+  },
+  {
+    "url": "admin/admin.css",
+    "critical": true
+  },
+  {
+    "url": "admin/index.js",
+    "critical": true
+  },
+  {
+    "url": "admin/main.js",
+    "critical": true
+  },
+  {
+    "url": "admin/types.js",
+    "critical": true
+  },
+  {
+    "url": "admin/view.js",
+    "critical": true
+  },
+  {
+    "url": "admin.html",
+    "critical": false
   },
   {
     "url": "app/authoring.js",
@@ -33,6 +57,10 @@ const DEFAULT_PRECACHE_ENTRIES = [
     "critical": true
   },
   {
+    "url": "app/role-shell.js",
+    "critical": true
+  },
+  {
     "url": "app/routes.js",
     "critical": true
   },
@@ -46,6 +74,10 @@ const DEFAULT_PRECACHE_ENTRIES = [
   },
   {
     "url": "bank/types.js",
+    "critical": true
+  },
+  {
+    "url": "bank/view.css",
     "critical": true
   },
   {
@@ -1089,6 +1121,10 @@ const DEFAULT_PRECACHE_ENTRIES = [
     "critical": true
   },
   {
+    "url": "report/print.css",
+    "critical": true
+  },
+  {
     "url": "report/types.js",
     "critical": true
   },
@@ -1129,6 +1165,10 @@ const DEFAULT_PRECACHE_ENTRIES = [
     "critical": true
   },
   {
+    "url": "student/area.js",
+    "critical": true
+  },
+  {
     "url": "student/index.js",
     "critical": true
   },
@@ -1137,7 +1177,15 @@ const DEFAULT_PRECACHE_ENTRIES = [
     "critical": true
   },
   {
+    "url": "student/view.css",
+    "critical": true
+  },
+  {
     "url": "student/view.js",
+    "critical": true
+  },
+  {
+    "url": "styles/app.css",
     "critical": true
   },
   {
@@ -1157,11 +1205,23 @@ const DEFAULT_PRECACHE_ENTRIES = [
     "critical": true
   },
   {
+    "url": "teacher/view.css",
+    "critical": true
+  },
+  {
     "url": "teacher/view.js",
     "critical": true
   },
   {
     "url": "ui/blocks.js",
+    "critical": true
+  },
+  {
+    "url": "ui/components.css",
+    "critical": true
+  },
+  {
+    "url": "ui/components.js",
     "critical": true
   },
   {
@@ -1173,7 +1233,15 @@ const DEFAULT_PRECACHE_ENTRIES = [
     "critical": true
   },
   {
+    "url": "ui/icons.js",
+    "critical": true
+  },
+  {
     "url": "ui/index.js",
+    "critical": true
+  },
+  {
+    "url": "ui/layout.css",
     "critical": true
   },
   {
@@ -1201,6 +1269,10 @@ const DEFAULT_PRECACHE_ENTRIES = [
     "critical": true
   },
   {
+    "url": "ui/tokens.css",
+    "critical": true
+  },
+  {
     "url": "ui/types.js",
     "critical": true
   }
@@ -1216,7 +1288,7 @@ function isCacheableRequest(requestUrl, method) {
   if (method && method.toUpperCase() !== 'GET') return false;
   const lower = requestUrl.toLowerCase();
   if (lower.startsWith('chrome-extension:') || lower.startsWith('file:') || lower.startsWith('data:') || lower.startsWith('blob:')) return false;
-  if (lower.includes('script.google.com') || lower.includes('macros.google.com') || lower.includes('appsscript')) return false;
+  if (lower.includes('script.google.com') || lower.includes('macros.google.com') || lower.includes('script.googleusercontent.com')) return false;
   return true;
 }
 
@@ -1432,6 +1504,20 @@ self.addEventListener('fetch', (event) => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     const cached = (await cache.match(req)) || (await cache.match(req.url));
+    const pathname = new URL(req.url).pathname;
+    const mutableMetadata = pathname.endsWith('/public/config.json') || pathname.endsWith('/public/exams/index.json');
+    if (mutableMetadata) {
+      try {
+        const fresh = await fetch(req, { cache: 'no-store' });
+        if (fresh && fresh.ok) {
+          try { await cache.put(req, fresh.clone()); } catch (_) {}
+        }
+        return fresh;
+      } catch (_) {
+        if (cached) return cached;
+        return new Response('Offline', { status: 503, statusText: 'Offline' });
+      }
+    }
     if (cached) return cached;
     try {
       const network = await fetch(req);

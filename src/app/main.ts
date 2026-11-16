@@ -31,8 +31,13 @@ import {
   scoreLegacyAttempt,
   type LegacyScoredResult,
 } from './legacy.ts';
-import { initExamList, initStartScreen, initTeacherModal } from './exam-list.ts';
+import { fetchAndMergeExams, fetchExamData } from './exam-list.ts';
+import { mountStudentArea } from '../student/index.ts';
 import { initAuthoring } from './authoring.ts';
+import { mountRoleShell, readRememberedRole } from './role-shell.ts';
+import { mountTeacherPortal } from '../teacher/portal.ts';
+import { createAppsScriptClient, loadAppConfig } from '../collect/appsScript.ts';
+import { ErrorState } from '../ui/components.ts';
 
 function formatDisplayScore(val: string): string {
   return formatRationalScore(val);
@@ -455,6 +460,9 @@ function toDomainResponses(exam: WebExam, attId: string, resMap: Record<string, 
 function fromDomainResponses(domainResp: any): Record<string, any> {
   const map: Record<string, any> = Object.create(null);
   if (!domainResp) return map;
+  if (!Array.isArray(domainResp.responses) && typeof domainResp === 'object') {
+    return { ...domainResp };
+  }
   const list = Array.isArray(domainResp.responses) ? domainResp.responses : [];
   for (const r of list) {
     if (r.kind === 'I') {
@@ -528,7 +536,7 @@ export async function bootstrap(
         async clearAll() { return { ok: false, error: storageErr }; },
       };
 
-  const router = createRouter(options?.initialRoute ?? 'exam');
+  const router = createRouter(options?.initialRoute ?? (options?.initialExam ? 'exam' : 'chooser'));
   const doc = root.ownerDocument || (typeof document !== 'undefined' ? document : null);
   let announcer: ReturnType<typeof createStatusAnnouncer> | null = null;
   if (doc) {
@@ -573,9 +581,20 @@ export async function bootstrap(
       }
     } catch (_) {}
   }
+  if (examTitle && currentExam?.title && (!examTitle.textContent || examTitle.textContent === 'Đang tải đề thi...')) {
+    examTitle.textContent = currentExam.title;
+  }
 
   let attemptId = 'attempt-' + now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+  let loadedExamId: string | null = null;
   let candidateName = 'Thí sinh tự do';
+  try { candidateName = localStorage.getItem('cunata:candidate_name') || candidateName; } catch { /* Optional preference. */ }
+  const roleShell = doc && typeof root.prepend === 'function' ? mountRoleShell(root, router, () => {
+    router.navigate('student');
+    root.querySelector<HTMLInputElement>('#startName')?.focus();
+  }) : null;
+  let teacherCtrl: ReturnType<typeof mountTeacherPortal> | null = null;
+  let onAreaRoute: ((state: RouteState) => void) | null = null;
   let responses: Record<string, any> = Object.create(null);
   let presentationOrder: PresentationOrder | null = null;
   let isSubmitted = false;
@@ -638,7 +657,7 @@ export async function bootstrap(
       if (typeof banner.setAttribute === 'function') {
         banner.setAttribute('role', 'alert');
       }
-      banner.style.cssText = 'background: #fef2f2; border: 1px solid #f87171; color: #991b1b; padding: 0.5rem 1rem; margin: 0.5rem auto; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; max-width: 960px;';
+      banner.style.cssText = 'background: var(--c-surface-2); border: 1px solid var(--c-danger); color: var(--c-danger); padding: 0.5rem 1rem; margin: 0.5rem auto; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; max-width: 960px;';
 
       const msgSpan = (root.ownerDocument || document).createElement('span');
       msgSpan.textContent = 'Cảnh báo STORAGE_UNAVAILABLE: Lưu trữ IndexedDB không khả dụng. Trạng thái chỉ lưu tạm.';
@@ -707,7 +726,7 @@ export async function bootstrap(
     if (btnSubmit) btnSubmit.style.display = 'none';
     if (candidateInput) candidateInput.disabled = true;
 
-    router.navigate('report');
+    router.navigate('report', { attemptId });
 
     if (announcer && typeof announcer.announce === 'function') {
       announcer.announce(`Lỗi toàn vẹn dữ liệu: ${err.code} - ${err.message}`, 'assertive');
@@ -738,7 +757,7 @@ export async function bootstrap(
     const reportSubtitle = root.querySelector('#reportSubtitle') as HTMLElement | null;
     if (reportSubtitle) {
       reportSubtitle.textContent = `Lỗi toàn vẹn dữ liệu: ${err.code}`;
-      reportSubtitle.style.color = 'var(--danger, #ef4444)';
+      reportSubtitle.style.color = 'var(--danger)';
     }
 
     let errBanner = root.querySelector('#integrityErrorBanner') as HTMLElement | null;
@@ -749,7 +768,7 @@ export async function bootstrap(
       if (typeof errBanner.setAttribute === 'function') {
         errBanner.setAttribute('role', 'alert');
       }
-      errBanner.style.cssText = 'background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 1rem 1.5rem; margin: 1rem auto; border-radius: 8px; max-width: 960px;';
+      errBanner.style.cssText = 'background: var(--c-surface-2); border: 2px solid var(--c-danger); color: var(--c-danger); padding: 1rem 1.5rem; margin: 1rem auto; border-radius: 8px; max-width: 960px;';
 
       const errHeader = (root.ownerDocument || document).createElement('h2');
       errHeader.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1.125rem; font-weight: 700;';
@@ -811,6 +830,8 @@ export async function bootstrap(
   };
 
   const adoptFinalRecord = (record: AttemptRecord, isDurable = true) => {
+    attemptId = record.attemptId;
+    loadedExamId = record.examId;
     isSubmitted = true;
     notifyWorkerAttemptState(false);
     activateWaitingWorker();
@@ -1497,18 +1518,25 @@ export async function bootstrap(
         const key = getStorageKey(currentExam, { attemptId });
         const pointerKey = 'cunata:active_attempt:' + encodeURIComponent(currentExam.examId) + ':' + encodeURIComponent(currentExam.examVersionId);
         localStorage.setItem(pointerKey, attemptId);
+        const domResp = toDomainResponses(currentExam, attemptId, responses);
+        const scoreDTO = scoreResultToDTO(scoreAttempt(domainExam, domResp));
         const payload = {
+          schemaVersion: 'web-attempt-v1',
           examId: currentExam.examId,
           examVersionId: currentExam.examVersionId,
           attemptId,
+          revision: 2,
           candidateName,
-          responses,
+          examSnapshot: currentExam,
           presentationOrder,
+          responses: domResp,
           startedAt,
           submittedAt,
           deadline,
+          phase: 'final',
           submitted: true,
           scoreResult: scoredResult,
+          scoreDTO,
           degradedRescueMirror: !isStorageAvailable,
         };
         const jsonStr = JSON.stringify(payload, (_k, v) => (typeof v === 'bigint' ? v.toString() : v));
@@ -1531,8 +1559,25 @@ export async function bootstrap(
         }
         return String(val);
       };
+      let classCode: string | undefined;
+      let assignmentId: string | undefined;
+      try {
+        const raw = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('cunata:active_assignment') : null) ||
+                    (typeof localStorage !== 'undefined' ? localStorage.getItem('cunata:active_assignment') : null);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed.classCode || parsed.class_code) classCode = (parsed.classCode || parsed.class_code).trim().toUpperCase();
+          if (parsed.assignmentId || parsed.assignment_id) assignmentId = parsed.assignmentId || parsed.assignment_id;
+        }
+      } catch {}
+      if (!classCode && (currentExam as any).classCode) {
+        classCode = String((currentExam as any).classCode).trim().toUpperCase();
+      }
+      if (!assignmentId && (currentExam as any).assignmentId) {
+        assignmentId = String((currentExam as any).assignmentId);
+      }
       const scoreDTO = scoreResultToDTO(scoreAttempt(domainExam, domResponses));
-      const asPayload = {
+      const asPayload: any = {
         action: 'submitResult',
         attempt_id: attemptId,
         exam_id: currentExam.examId,
@@ -1550,6 +1595,7 @@ export async function bootstrap(
         total: toRatStr((scoreDTO as any).total),
         maxTotal: toRatStr((scoreDTO as any).maxTotal),
         raw_answers_json: responses,
+        ...(classCode && assignmentId ? { class_code: classCode, assignment_id: assignmentId } : {}),
       };
 
       const sendToGas = async (retry = 0) => {
@@ -1578,7 +1624,7 @@ export async function bootstrap(
       sendToGas();
     } else {
       if (syncText) {
-        syncText.textContent = submitOk ? 'Đã lưu cục bộ' : 'Chưa lưu';
+        syncText.textContent = submitOk ? 'Đã nộp & lưu cục bộ' : 'Chưa lưu';
       }
     }
     if (!submitOk) {
@@ -1589,7 +1635,9 @@ export async function bootstrap(
   };
 
   // Unified load or resume exam helper (CK08-F05)
-  const loadOrResumeExam = async (examData: WebExam, forceNew = false) => {
+  const loadOrResumeExam = async (examData: WebExam, forceNew = false, requestedAttemptId?: string) => {
+    controller?.dispose();
+    controller = null;
     currentExam = examData;
     const examId = currentExam.examId;
     const version = currentExam.examVersionId;
@@ -1625,8 +1673,8 @@ export async function bootstrap(
     let isDurableRecord = false;
 
     if (!forceNew) {
-      let foundAttemptId: string | null = null;
-      if (typeof localStorage !== 'undefined') {
+      let foundAttemptId: string | null = requestedAttemptId ?? null;
+      if (!foundAttemptId && typeof localStorage !== 'undefined') {
         const pointerKey = 'cunata:active_attempt:' + encodeURIComponent(examId) + ':' + encodeURIComponent(version);
         foundAttemptId = localStorage.getItem(pointerKey);
         if (!foundAttemptId) {
@@ -1684,6 +1732,7 @@ export async function bootstrap(
       }
     }
 
+    if (requestedAttemptId && !resumedRecord) throw new Error('Không tìm thấy bài làm trên máy này.');
     if (resumedRecord && resumedRecord.examId === examId && resumedRecord.examVersionId === version) {
       attemptId = resumedRecord.attemptId;
       if (resumedRecord.candidateName) candidateName = resumedRecord.candidateName;
@@ -1835,7 +1884,6 @@ export async function bootstrap(
     if (examTitle) examTitle.textContent = currentExam.title || 'Đề thi';
     if (candidateInput) {
       candidateInput.value = candidateName;
-      candidateInput.disabled = false;
     }
     if (examWrapper) examWrapper.style.display = '';
     if (reportWrapper) reportWrapper.style.display = 'none';
@@ -1848,10 +1896,12 @@ export async function bootstrap(
       }
     }
 
-    router.navigate('exam');
+    loadedExamId = currentExam.examId;
+    router.navigate('exam', { examId: currentExam.examId });
     renderExamPane();
     updatePalette();
     startTimer();
+    roleShell?.show(router.getState(), candidateName, true);
   };
 
   // Show Report View
@@ -1877,7 +1927,7 @@ export async function bootstrap(
       examTitle.textContent = currentExam.title || 'Đề thi';
     }
 
-    router.navigate('report');
+    router.navigate('report', { attemptId });
 
     if (record) {
       if (record.phase === 'final') {
@@ -2003,7 +2053,7 @@ export async function bootstrap(
 <head>
   <meta charset="utf-8">
   <title>Báo Cáo Kết Quả — ${safeName}</title>
-  <style>body{font-family:sans-serif;padding:2rem;line-height:1.6;color:#1e293b}h1,h2{color:#0f172a}</style>
+  <style>body{font-family:sans-serif;padding:2rem;line-height:1.6;color:var(--c-text)}h1,h2{color:var(--c-text)}</style>
 </head>
 <body>
   <h1>Báo Cáo Kết Quả Thi</h1>
@@ -2166,9 +2216,21 @@ export async function bootstrap(
 
   // Route synchronization
   const applyRoute = (state: RouteState) => {
+    roleShell?.show(state, state.route === 'teacher' ? '' : candidateName === 'Thí sinh tự do' ? '' : candidateName, Boolean(controller));
+    const startScr = root.querySelector('#startScreen') as HTMLElement | null;
+    if (startScr && state.route !== 'student') startScr.style.display = 'none';
+    if (state.route !== 'teacher') teacherCtrl?.close();
     switch (state.route) {
+      case 'chooser':
+      case 'student':
+      case 'teacher':
+        if (examWrapper) examWrapper.style.display = 'none';
+        if (reportWrapper) reportWrapper.style.display = 'none';
+        if (builderModal) builderModal.style.display = 'none';
+        if (bankModal) bankModal.style.display = 'none';
+        if (startScr) startScr.style.display = state.route === 'student' ? 'block' : 'none';
+        break;
       case 'exam':
-        const startScr = root.querySelector('#startScreen') as HTMLElement | null;
         const isStartActive = startScr && startScr.style.display !== 'none';
         if (examWrapper) examWrapper.style.display = isStartActive ? 'none' : '';
         if (reportWrapper) reportWrapper.style.display = 'none';
@@ -2205,6 +2267,7 @@ export async function bootstrap(
   applyRoute(router.getState());
   const unsubscribeRouter = router.subscribe((state) => {
     applyRoute(state);
+    onAreaRoute?.(state);
   });
 
   // Modal actions
@@ -2343,9 +2406,9 @@ export async function bootstrap(
         const text = evt.target?.result;
         if (typeof text !== 'string') return;
         const parsed = JSON.parse(text);
-        const v = validateExamVersion(parsed);
+        const v = parseExam(parsed);
         if (v.ok) {
-          switchExam(parsed as WebExam, true);
+          void switchExam(v.value, true);
         }
       } catch (_) {}
     };
@@ -2353,106 +2416,55 @@ export async function bootstrap(
   };
 
   // 1. Fetch appsScriptUrl configuration if available
-  try {
-    const cfgRes = await fetch('public/config.json');
-    if (cfgRes.ok) {
-      const cfg = await cfgRes.json();
-      if (cfg && typeof cfg.appsScriptUrl === 'string') {
-        appsScriptUrl = cfg.appsScriptUrl.trim();
-      }
-    }
-  } catch (_) {}
+  appsScriptUrl = (await loadAppConfig()).appsScriptUrl;
+  const appsScriptClient = createAppsScriptClient(appsScriptUrl);
 
   const urlParams = (typeof window !== 'undefined' && window.location && window.location.search)
     ? new URLSearchParams(window.location.search)
     : new URLSearchParams();
-  const queryExamId = urlParams.get('exam');
-  const isTeacherQuery = urlParams.has('teacher');
+  const hasExplicitHash = typeof window !== 'undefined' && Boolean(window.location?.hash && window.location.hash !== '#');
+  const queryExamId = router.getState().params.examId ?? router.getState().params.exam ?? (!hasExplicitHash ? urlParams.get('exam') : null);
+  const isTeacherQuery = urlParams.has('teacher') && !hasExplicitHash;
 
-  let shouldShowStartScreen = false;
-  if (!options?.initialExam) {
-    if (queryExamId) {
-      let hasDraft = false;
-      let hasFinal = false;
-      try {
-        const draftPrefix = 'cunata:attempt:' + encodeURIComponent(queryExamId) + ':';
-        const finalPrefix = 'cunata:final:' + encodeURIComponent(queryExamId) + ':';
-        for (let i = 0; i < localStorage.length; i++) {
-          const k = localStorage.key(i);
-          if (k && k.startsWith(draftPrefix)) {
-            const raw = localStorage.getItem(k);
-            if (raw) {
-              const item = JSON.parse(raw);
-              if (item && item.submitted !== true && item.phase !== 'final') hasDraft = true;
-            }
-          }
-          if (k && k.startsWith(finalPrefix)) hasFinal = true;
-        }
-      } catch (_) {}
-      shouldShowStartScreen = !(hasDraft && !hasFinal);
-    } else {
-      let hasSnapshot = false;
-      let hasDraftOrFinal = false;
-      try {
-        const snapRaw = localStorage.getItem('cunata:active_exam_snapshot');
-        if (snapRaw) {
-          const snap = JSON.parse(snapRaw);
-          if (snap && snap.examId) {
-            hasSnapshot = true;
-            const draftPrefix = 'cunata:attempt:' + encodeURIComponent(snap.examId) + ':';
-            const finalPrefix = 'cunata:final:' + encodeURIComponent(snap.examId) + ':';
-            for (let i = 0; i < localStorage.length; i++) {
-              const k = localStorage.key(i);
-              if (k && (k.startsWith(draftPrefix) || k.startsWith(finalPrefix))) {
-                hasDraftOrFinal = true;
-                break;
-              }
-            }
-          }
-        }
-      } catch (_) {}
-      shouldShowStartScreen = !(hasSnapshot && hasDraftOrFinal);
+  let shouldShowStartScreen = !options?.initialExam && options?.initialRoute !== 'exam';
+  let resumableDraft: AttemptRecord | null = null;
+  if (!options?.initialExam && isStorageAvailable && (!queryExamId || queryExamId === currentExam.examId)) {
+    const attempts = await storage.listAttempts(currentExam.examId, currentExam.examVersionId);
+    if (attempts.ok) {
+      resumableDraft = [...attempts.value].filter((item) => item.phase === 'draft').sort((a, b) => b.startedAt - a.startedAt)[0] ?? null;
+      shouldShowStartScreen = !resumableDraft;
     }
   }
   const startScreen = root.querySelector('#startScreen') as HTMLElement | null;
 
-  // Teacher modal controller
-  const teacherCtrl = initTeacherModal(root, {
-    appsScriptUrl,
-    onEditExam: (examData) => {
-      (root as any).__cunata_loadBuilderExam?.(examData);
-    },
-    onNewExam: () => {
-      if (builderModal) builderModal.style.display = 'flex';
-      const btnPub = root.querySelector('#btnPublishExam') as HTMLElement | null;
-      if (btnPub) btnPub.style.display = 'inline-block';
-    },
-  });
-
-  // Start screen controller
+  // Start screen controller (WEB-contract §19 student area)
   let startCtrl: any = null;
   if (startScreen) {
-    startCtrl = initStartScreen(root, {
+    startCtrl = mountStudentArea(startScreen, {
       appsScriptUrl,
+      client: appsScriptClient,
       initialExamId: queryExamId,
-      onOpenTeacher: () => teacherCtrl.openModal(),
-      onStartExam: async (exam, name) => {
+      now,
+      onOpenTeacher: () => router.navigate('teacher'),
+      onStartExam: async (exam, name, meta) => {
         candidateName = name;
+        if (meta && (meta.classCode || meta.assignmentId)) {
+          try {
+            sessionStorage.setItem('cunata:active_assignment', JSON.stringify({
+              classCode: meta.classCode,
+              assignmentId: meta.assignmentId,
+            }));
+          } catch {}
+        }
         if (candidateInput) candidateInput.value = candidateName;
         if (examWrapper) examWrapper.style.display = '';
-        await loadOrResumeExam(exam, true);
+        router.navigate('exam');
+        await loadOrResumeExam(exam, false);
       },
     });
   }
 
-  // Connect Exam List Modal (§15) and Teacher Authoring Modal
-  initExamList(root, {
-    onSelectExam: (exam) => switchExam(exam, true),
-    hasUnsavedProgress: hasInProgressAttempt,
-    appsScriptUrl,
-  });
-
-  initAuthoring(root, {
+  const authoringCtrl = initAuthoring(root, {
     getExam: () => currentExam,
     onPublish: (exam) => switchExam(exam, true),
     idGen,
@@ -2465,18 +2477,115 @@ export async function bootstrap(
       }
     },
     onPublishedToWeb: () => {
-      teacherCtrl.refreshList();
+      teacherCtrl?.refreshList();
       if (startCtrl) startCtrl.refreshList();
     },
   });
 
-  if (isTeacherQuery) {
-    teacherCtrl.openModal();
+  teacherCtrl = mountTeacherPortal(root, {
+    client: appsScriptClient,
+    listAllExams: async () => {
+      const { exams } = await fetchAndMergeExams(appsScriptUrl, appsScriptClient);
+      return exams.map((entry) => ({
+        ...entry,
+        load: async () => {
+          const examData = await fetchExamData(entry, appsScriptUrl, appsScriptClient);
+          const clone = JSON.parse(JSON.stringify(examData));
+          if (clone.durationMinutes === undefined && clone.settings?.durationMinutes !== undefined) {
+            clone.durationMinutes = clone.settings.durationMinutes;
+          }
+          return clone;
+        },
+      }));
+    },
+    openBuilder: (exam, opts) => authoringCtrl.openBuilder(exam, opts),
+  });
+  const onReturnToStudent = () => router.navigate('student');
+  const returnButton = root.querySelector<HTMLButtonElement>('#btnOpenExamList');
+  if (returnButton) {
+    returnButton.textContent = 'Về trang học sinh';
+    returnButton.addEventListener('click', onReturnToStudent);
   }
+  let routeGeneration = 0;
+  const resolveAreaRoute = async (state: RouteState, generation: number) => {
+    if (state.route === 'teacher') teacherCtrl?.open();
+    if (state.route === 'student') {
+      await startCtrl?.refreshList();
+      if (generation !== routeGeneration) return;
+      if (state.params.exam) startCtrl?.selectExamId(state.params.exam);
+    }
+    if (state.route === 'exam' && state.params.examId && state.params.examId !== loadedExamId) {
+      const { exams } = await fetchAndMergeExams(appsScriptUrl, appsScriptClient);
+      if (generation !== routeGeneration) return;
+      const entry = exams.find((exam) => exam.id === state.params.examId);
+      if (!entry) throw new Error('Không tìm thấy đề này. Vui lòng chọn lại đề.');
+      const exam = await fetchExamData(entry, appsScriptUrl, appsScriptClient);
+      if (generation !== routeGeneration) return;
+      const name = root.querySelector<HTMLInputElement>('#startName')?.value.trim();
+      if (!name) { router.navigate('student', { exam: entry.id }); return; }
+      candidateName = name;
+      await loadOrResumeExam(exam, false);
+    }
+    if (state.route === 'report' && state.params.attemptId && state.params.attemptId !== finalRecord?.attemptId) {
+      const snapshots: WebExam[] = [currentExam];
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key?.startsWith('cunata:snapshot:')) continue;
+          const parsed = parseExam(JSON.parse(localStorage.getItem(key) ?? 'null'));
+          if (parsed.ok) snapshots.push(parsed.value);
+        }
+      } catch { /* Durable storage remains authoritative. */ }
+      for (const snapshot of snapshots) {
+        try {
+          const loaded = await storage.load({ examId: snapshot.examId, examVersionId: snapshot.examVersionId, attemptId: state.params.attemptId });
+          if (generation !== routeGeneration) return;
+          if (loaded.ok && loaded.value?.phase === 'final') {
+            adoptFinalRecord(loaded.value); return;
+          }
+        } catch (_) {}
+      }
+      if (typeof localStorage !== 'undefined') {
+        for (const snapshot of snapshots) {
+          const finalKey = 'cunata:final:' + encodeURIComponent(snapshot.examId) + ':' + encodeURIComponent(snapshot.examVersionId) + ':' + encodeURIComponent(state.params.attemptId);
+          const raw = localStorage.getItem(finalKey);
+          if (raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              if (parsed && (parsed.phase === 'final' || parsed.submitted)) {
+                adoptFinalRecord(parsed, false);
+                return;
+              }
+            } catch (_) {}
+          }
+        }
+      }
+      throw new Error('Không tìm thấy kết quả trên máy này.');
+    }
+  };
+  onAreaRoute = (state) => {
+    const generation = ++routeGeneration;
+    root.querySelector('#routeError')?.remove();
+    void resolveAreaRoute(state, generation).catch(() => {
+      if (generation !== routeGeneration || !doc) return;
+      if (examWrapper) examWrapper.style.display = 'none';
+      if (reportWrapper) reportWrapper.style.display = 'none';
+      roleShell?.show(state, '', false);
+      const error = ErrorState({ message: 'Chưa mở được trang này. Hãy thử lại hoặc trở về trang học sinh.', action: { label: 'Thử lại', onClick: () => onAreaRoute?.(router.getState()) } }, doc);
+      error.id = 'routeError'; error.classList.add('ui-page'); root.appendChild(error);
+    });
+  };
 
   // Candidate Name Input Listener
   const onCandidateNameInput = async (e: any) => {
     candidateName = e.target.value;
+    try {
+      localStorage.setItem('cunata:candidate_name', candidateName);
+      localStorage.setItem('cunata:last_candidate_name', candidateName);
+    } catch {}
+    if (startCtrl && typeof startCtrl.setCandidateName === 'function') {
+      try { startCtrl.setCandidateName(candidateName); } catch {}
+    }
     let renameSuccess = false;
     if (isStorageAvailable && controller) {
       try {
@@ -2519,6 +2628,10 @@ export async function bootstrap(
   if (btnCancelSubmit) btnCancelSubmit.addEventListener('click', onCancelSubmitClick);
   if (btnCloseBuilder) btnCloseBuilder.addEventListener('click', onCloseBuilderClick);
   if (btnCloseBank) btnCloseBank.addEventListener('click', onCloseBankClick);
+  const btnLoadExam = root.querySelector('#btnLoadExam') as HTMLButtonElement | null;
+  if (btnLoadExam && examFileInput) {
+    btnLoadExam.addEventListener('click', () => examFileInput.click());
+  }
   if (candidateInput) {
     candidateInput.addEventListener('input', onCandidateNameInput);
     candidateInput.addEventListener('change', onCandidateNameInput);
@@ -2537,15 +2650,26 @@ export async function bootstrap(
     winTarget.addEventListener('storage', onStorageEvent);
   }
 
-  // Initial load or resume
-  if (shouldShowStartScreen) {
-    if (startScreen) startScreen.style.display = 'block';
-    if (examWrapper) examWrapper.style.display = 'none';
-    if (reportWrapper) reportWrapper.style.display = 'none';
-    if (examPane) examPane.innerHTML = '';
-  } else {
+  // An unfinished durable attempt wins over a remembered role; a final never auto-starts an exam.
+  const entryRoute = router.getState();
+  if (isTeacherQuery || entryRoute.route === 'teacher') {
+    router.navigate('teacher', entryRoute.params);
+  } else if (entryRoute.route === 'report' && entryRoute.params.attemptId) {
+    await resolveAreaRoute(entryRoute, ++routeGeneration);
+  } else if (entryRoute.route === 'exam' && entryRoute.params.examId && !resumableDraft) {
+    await resolveAreaRoute(entryRoute, ++routeGeneration);
+  } else if (!shouldShowStartScreen) {
     if (startScreen) startScreen.style.display = 'none';
-    await loadOrResumeExam(currentExam, false);
+    await loadOrResumeExam(resumableDraft?.examSnapshot ?? currentExam, false, resumableDraft?.attemptId);
+  } else {
+    if (examPane) examPane.innerHTML = '';
+    let rememberedRole: 'student' | 'teacher' | null = null;
+    try { rememberedRole = readRememberedRole(doc?.defaultView?.localStorage); } catch { /* Optional preference. */ }
+    if (queryExamId || entryRoute.route === 'student' || entryRoute.route === 'exam' || entryRoute.route === 'report') {
+      router.navigate('student', { ...entryRoute.params, ...(queryExamId ? { exam: queryExamId } : {}) });
+    } else {
+      router.navigate(rememberedRole ?? 'chooser');
+    }
   }
 
   // Register Native Service Worker in real browser HTTP environment
@@ -2559,7 +2683,7 @@ export async function bootstrap(
       .register('./service-worker.js', { scope: './' })
       .then((reg) => {
         swRegistration = reg;
-        notifyWorkerAttemptState(!isSubmitted);
+        notifyWorkerAttemptState(Boolean(controller) && !isSubmitted);
 
         reg.addEventListener('updatefound', () => {
           const installingWorker = reg.installing;
@@ -2567,7 +2691,7 @@ export async function bootstrap(
           installingWorker.addEventListener('statechange', () => {
             if (installingWorker.state === 'installed') {
               if (reg.waiting) {
-                if (isSubmitted) {
+                if (!controller || isSubmitted) {
                   activateWaitingWorker();
                 }
               }
@@ -2575,14 +2699,14 @@ export async function bootstrap(
           });
         });
 
-        if (reg.waiting && isSubmitted) {
+        if (reg.waiting && (!controller || isSubmitted)) {
           activateWaitingWorker();
         }
       })
       .catch(() => {});
 
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      notifyWorkerAttemptState(!isSubmitted);
+      notifyWorkerAttemptState(Boolean(controller) && !isSubmitted);
     });
 
     navigator.serviceWorker.addEventListener('message', (event: any) => {
@@ -2590,7 +2714,7 @@ export async function bootstrap(
       if (!data || typeof data !== 'object') return;
       if (data.type === 'QUERY_ATTEMPT_ACTIVE') {
         const port = event.ports && event.ports[0];
-        const active = !isSubmitted;
+        const active = Boolean(controller) && !isSubmitted;
         if (port) {
           port.postMessage({ active, isSubmitted });
         } else if (event.source && typeof event.source.postMessage === 'function') {
@@ -2613,6 +2737,12 @@ export async function bootstrap(
       } catch (_) {}
     }
     if (timerIntervalId) clearInterval(timerIntervalId);
+    routeGeneration++;
+    startCtrl?.dispose();
+    teacherCtrl?.dispose();
+    authoringCtrl.dispose();
+    roleShell?.dispose();
+    returnButton?.removeEventListener('click', onReturnToStudent);
     unsubscribeRouter();
     router.dispose();
     if (announcer) announcer.dispose();

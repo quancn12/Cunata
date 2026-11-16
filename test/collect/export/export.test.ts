@@ -11,6 +11,7 @@ import {
   isFormulaDangerous,
   serializeResultsJson,
   serializeResultsCsv,
+  buildWebResultPayload,
   CSV_HEADERS,
 } from '../../../src/collect/export.ts';
 
@@ -565,5 +566,25 @@ describe('M4 Export: Codex Verification — JSON Raw & CSV Formula Protection fo
       assert.ok(!cells.some(c => /^[\s\u0000-\u001f]*[=+@-]/u.test(c)), 'no executable spreadsheet cell prefix');
     });
   }
+
+  it('preserves final candidate name exactly in web-result-v1 and CSV export', async () => {
+    const candidateName = 'Codex trạng thái cục bộ';
+    const final = createSampleFinal('codex-no-endpoint', {
+      candidateName,
+    });
+    const payload = buildWebResultPayload(final);
+    assert.equal(payload.candidateName, candidateName);
+
+    const jsonBlob = exportResults([final], 'json');
+    const jsonText = await jsonBlob.text();
+    const rawJson = JSON.parse(jsonText);
+    assert.equal(rawJson.candidateName, candidateName);
+
+    const csvBlob = exportResults([final], 'csv');
+    const csvText = await csvBlob.text();
+    const rows = parseCsvRfc4180(csvText);
+    const candidateCell = rows[1]?.[3]; // column D is candidate_display
+    assert.equal(candidateCell, candidateName);
+  });
 });
 

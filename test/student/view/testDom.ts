@@ -25,6 +25,23 @@ export class EnhancedMockElement extends MockElement {
     // Stub for scrollIntoView
   }
 
+  append(...children: (MockNode | string)[]): void {
+    for (const c of children) {
+      if (typeof c === "string") {
+        this.appendChild(new MockTextNode(c));
+      } else if (c) {
+        this.appendChild(c);
+      }
+    }
+  }
+
+  replaceChildren(...children: (MockNode | string)[]): void {
+    while (this.childNodes.length > 0) {
+      this.removeChild(this.childNodes[0]!);
+    }
+    this.append(...children);
+  }
+
   click(): void {
     if (this.disabled || this.hasAttribute("disabled")) {
       return;
@@ -218,6 +235,10 @@ export class EnhancedMockDocument extends MockDocument {
       };
     }
     return el;
+  }
+
+  createElementNS(_ns: string, tagName: string): EnhancedMockElement {
+    return this.createElement(tagName);
   }
 
   getElementById(id: string): EnhancedMockElement | null {

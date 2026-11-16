@@ -3,6 +3,10 @@
  * Cunata Web M6 Foundations: Safe DOM, Focus, Dialogs, and IME Primitives.
  * Conforms to WEB-contract.md §3, §5, §9 and Shared Product Contract v2.0.
  */
+// Legacy exports below are retained for compatibility.
+// New screens should use components.ts and components.css (DESIGN.md §4).
+export { Button, Input, Select, Textarea, Card, ExamCard, StatusBadge, TopBar, NavRail, BottomNav, Dialog, BottomSheet, Toast, EmptyState, ErrorState, OfflineBanner, Skeleton, Table, createButton, createInput, createSelect, createTextarea, createCard, createExamCard, createExamStatusBadge, createTopBar, createNavRail, createBottomNav, createDialog, createBottomSheet, createToast, createEmptyState, createErrorState, createOfflineBanner, createSkeleton, createTable, } from './components.js';
+export { Icon, createIcon } from './icons.js';
 // 1. Mount convention
 export { mount } from './mount.js';
 // 3. Security, URL, and MIME validation

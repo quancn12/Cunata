@@ -2,21 +2,30 @@
 
 /**
  * Cunata Web — Teacher Portal (src/teacher/portal.ts)
- * Conforms to WEB-contract.md §17.4, §18.1 and Shared Product Contract v2.0.
+ * Conforms to WEB-contract.md §17, §18.1, §19.1, §19.3 and DESIGN.md.
  *
  * Implements:
- * - #teacherLogin: password input (#teacherPassword), login button (#btnTeacherLogin),
- *   error container (#teacherLoginError), and unconfigured state notice.
- * - #teacherPanel: lists exams from deps.listAllExams() as .teacher-exam-row[data-exam-id].
- * - .btn-teacher-edit: loads full exam via entry.load() and calls deps.openBuilder(exam, { onPublish }).
- * - .btn-teacher-unpublish (for teacher source): calls client.unpublishExam(password, id) and refreshes list.
- * - #btnTeacherNewExam: calls deps.openBuilder(null, { onPublish }).
- * - onPublish: calls client.publishExam(password, exam) and returns AsResult.
- * - Password strictly kept in sessionStorage ('cunata_teacher_pw'); never in localStorage, never in URL.
- * - Accessible modal dialog: role="dialog", aria-modal="true", Esc key dismiss, focus trap, and return focus.
+ * - #teacherLogin:
+ *     - input#teacherUsername
+ *     - input#teacherPassword[type=password]
+ *     - button#btnTeacherLogin
+ *     - div#teacherLoginError
+ *     - Unconfigured notice when !client.configured ("chưa cấu hình")
+ * - #teacherShell:
+ *     - #teacherNav (a[data-nav="lop"], a[data-nav="de"], a[data-nav="ket-qua"], aria-current="page")
+ *     - button#btnTeacherLogout
+ *     - Section Lớp học (#btnCreateClass, .class-card[data-class-id] .class-code, copy code/link,
+ *       class details, .assignment-row[data-assignment-id], #btnAssignExam, #assignDialog with
+ *       exam select + #assignOpenAt + #assignDueAt + #btnAssignConfirm)
+ *     - Section Đề thi (.exam-card[data-exam-id], .btn-teacher-edit, .btn-teacher-assign,
+ *       .btn-teacher-unpublish, #btnTeacherNewExam)
+ *     - Section Kết quả (#resultsTable, #btnExportResults with CSV formula injection protection)
+ * - Strict adherence to DESIGN.md tokens (no raw hex or rgb colors), 44px touch targets,
+ *   focus rings, no emoji (SVG icons only), and single system font inheritance.
  */
 
-import { trapFocus } from "../ui/index.ts";
+import { Icon } from "../ui/icons.ts";
+import type { IconName } from "../ui/icons.ts";
 
 export type AsResult<T> =
   | { ok: true; value: T }
@@ -38,9 +47,14 @@ export interface AppsScriptClient {
   readonly configured: boolean;
   listExams(): Promise<AsResult<PublishedExamMeta[]>>;
   getExam(id: string): Promise<AsResult<unknown>>;
-  teacherLogin(password: string): Promise<AsResult<true>>;
-  publishExam(password: string, exam: unknown): Promise<AsResult<{ examId: string; revision: number }>>;
-  unpublishExam(password: string, examId: string): Promise<AsResult<true>>;
+  teacherLogin(usernameOrPassword: string, password?: string): Promise<AsResult<any>>;
+  publishExam(tokenOrPassword: string, exam: unknown): Promise<AsResult<{ examId: string; revision: number }>>;
+  unpublishExam(tokenOrPassword: string, examId: string): Promise<AsResult<true>>;
+  createClass?(tokenOrName: string, name?: string): Promise<AsResult<{ classId: string; code: string }>>;
+  listMyClasses?(token?: string): Promise<AsResult<Array<{ classId: string; code: string; name: string; createdAt: string; studentCount: number }>>>;
+  assignExam?(tokenOrClassId: string, classIdOrExamId: string, examIdOrOpenAt?: string, openAtOrDueAt?: string, dueAt?: string): Promise<AsResult<{ assignmentId: string }>>;
+  listAssignments?(tokenOrClassId: string, classId?: string): Promise<AsResult<Array<{ assignmentId: string; classId: string; examId: string; openAt: string; dueAt: string; createdAt: string; title: string; questionCount: number; durationMinutes: number; submissionCount?: number }>>>;
+  listResults?(tokenOrClassId: string, classIdOrAssignmentId?: string, assignmentId?: string): Promise<AsResult<any[]>>;
 }
 
 export interface TeacherExamEntry {
@@ -48,13 +62,26 @@ export interface TeacherExamEntry {
   title: string;
   source: 'static' | 'teacher';
   load(): Promise<unknown>;
+  subject?: string;
+  grade?: number;
   questionCount?: number;
   durationMinutes?: number;
+  description?: string;
 }
 
 export interface TeacherPortalDeps {
   client: AppsScriptClient;
-  listAllExams(): Promise<Array<{ id: string; title: string; source: 'static' | 'teacher'; load(): Promise<unknown> }>>;
+  listAllExams(): Promise<Array<{
+    id: string;
+    title: string;
+    source: 'static' | 'teacher';
+    load(): Promise<unknown>;
+    subject?: string;
+    grade?: number;
+    questionCount?: number;
+    durationMinutes?: number;
+    description?: string;
+  }>>;
   openBuilder(
     exam: unknown | null,
     opts: {
@@ -64,22 +91,23 @@ export interface TeacherPortalDeps {
 }
 
 export interface TeacherPortalController {
-  open(): void;
+  open(section?: 'lop' | 'de' | 'ket-qua'): void;
   close(): void;
   refreshList(): Promise<void>;
   dispose(): void;
 }
 
 export const TEACHER_SESSION_PW_KEY = 'cunata_teacher_pw';
+export const TEACHER_TOKEN_KEY = 'cunata_teacher_token';
+export const TEACHER_NAME_KEY = 'cunata_teacher_name';
+export const TEACHER_ROLE_KEY = 'cunata:role';
 
 export function getStoredTeacherPassword(): string | null {
   try {
     if (typeof sessionStorage !== 'undefined') {
       return sessionStorage.getItem(TEACHER_SESSION_PW_KEY);
     }
-  } catch {
-    // Ignore storage availability errors
-  }
+  } catch {}
   return null;
 }
 
@@ -88,9 +116,7 @@ export function setStoredTeacherPassword(pw: string): void {
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.setItem(TEACHER_SESSION_PW_KEY, pw);
     }
-  } catch {
-    // Ignore storage availability errors
-  }
+  } catch {}
 }
 
 export function clearStoredTeacherPassword(): void {
@@ -98,306 +124,86 @@ export function clearStoredTeacherPassword(): void {
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.removeItem(TEACHER_SESSION_PW_KEY);
     }
-  } catch {
-    // Ignore storage availability errors
-  }
+  } catch {}
 }
 
-interface PortalElements {
-  modal: HTMLElement;
-  loginSection: HTMLElement;
-  panelSection: HTMLElement;
-  examListContainer: HTMLElement;
-  closeBtn: HTMLElement | null;
-  newExamBtn: HTMLElement | null;
-}
-
-function clearElementChildren(el: HTMLElement): void {
-  el.textContent = '';
-  while (el.childNodes && el.childNodes.length > 0) {
-    const first = el.childNodes[0];
-    if (!first) break;
-    el.removeChild(first);
-  }
-}
-
-function ensurePortalElements(root: HTMLElement): PortalElements {
-  const doc = root.ownerDocument || (typeof document !== 'undefined' ? document : null);
-  if (!doc) {
-    throw new Error('DOM Document is required to mount teacher portal');
-  }
-
-  // Look for #teacherModal in root or root's owner document
-  let modal = root.querySelector('#teacherModal') as HTMLElement | null;
-  if (!modal && root.id === 'teacherModal') {
-    modal = root;
-  }
-  if (!modal && doc.getElementById) {
-    modal = doc.getElementById('teacherModal');
-  }
-
-  if (!modal) {
-    modal = doc.createElement('div');
-    modal.id = 'teacherModal';
-    modal.className = 'modal-overlay';
-    modal.style.display = 'none';
-    modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-labelledby', 'teacherModalTitle');
-    modal.setAttribute('tabindex', '-1');
-
-    const content = doc.createElement('div');
-    content.className = 'modal-content';
-    content.style.maxWidth = '680px';
-    content.style.width = '92%';
-
-    const header = doc.createElement('div');
-    header.className = 'modal-header';
-    header.style.display = 'flex';
-    header.style.justifyContent = 'space-between';
-    header.style.alignItems = 'center';
-    header.style.marginBottom = '1rem';
-
-    const title = doc.createElement('h2');
-    title.id = 'teacherModalTitle';
-    title.style.fontSize = '1.25rem';
-    title.style.fontWeight = '700';
-    title.style.margin = '0';
-    title.textContent = 'Khu Vực Giáo Viên';
-
-    const closeBtn = doc.createElement('button') as HTMLButtonElement;
-    closeBtn.type = 'button';
-    closeBtn.className = 'btn-close';
-    closeBtn.id = 'btnCloseTeacherModal';
-    closeBtn.setAttribute('aria-label', 'Đóng');
-    closeBtn.style.background = 'none';
-    closeBtn.style.border = 'none';
-    closeBtn.style.fontSize = '1.5rem';
-    closeBtn.style.cursor = 'pointer';
-    closeBtn.textContent = '×';
-
-    header.appendChild(title);
-    header.appendChild(closeBtn);
-    content.appendChild(header);
-
-    const loginSec = doc.createElement('div');
-    loginSec.id = 'teacherLogin';
-    loginSec.style.padding = '0.5rem 0';
-    content.appendChild(loginSec);
-
-    const panelSec = doc.createElement('div');
-    panelSec.id = 'teacherPanel';
-    panelSec.style.display = 'none';
-
-    const panelHeader = doc.createElement('div');
-    panelHeader.style.display = 'flex';
-    panelHeader.style.justifyContent = 'space-between';
-    panelHeader.style.alignItems = 'center';
-    panelHeader.style.marginBottom = '1rem';
-    panelHeader.style.flexWrap = 'wrap';
-    panelHeader.style.gap = '0.5rem';
-
-    const panelTitle = doc.createElement('h3');
-    panelTitle.style.margin = '0';
-    panelTitle.style.fontSize = '1rem';
-    panelTitle.style.fontWeight = '600';
-    panelTitle.textContent = 'Quản lý kho đề thi';
-
-    const newBtn = doc.createElement('button') as HTMLButtonElement;
-    newBtn.type = 'button';
-    newBtn.className = 'btn-primary';
-    newBtn.id = 'btnTeacherNewExam';
-    newBtn.style.fontSize = '0.875rem';
-    newBtn.style.padding = '0.4rem 0.75rem';
-    newBtn.textContent = '+ Soạn đề mới';
-
-    panelHeader.appendChild(panelTitle);
-    panelHeader.appendChild(newBtn);
-    panelSec.appendChild(panelHeader);
-
-    const examListDiv = doc.createElement('div');
-    examListDiv.id = 'teacherExamList';
-    examListDiv.style.maxHeight = '400px';
-    examListDiv.style.overflowY = 'auto';
-    examListDiv.style.display = 'flex';
-    examListDiv.style.flexDirection = 'column';
-    examListDiv.style.gap = '0.5rem';
-    panelSec.appendChild(examListDiv);
-
-    content.appendChild(panelSec);
-    modal.appendChild(content);
-    root.appendChild(modal);
-  }
-
-  // Ensure modal accessibility attributes
-  modal.setAttribute('role', 'dialog');
-  modal.setAttribute('aria-modal', 'true');
-  if (!modal.hasAttribute('aria-labelledby') && !modal.hasAttribute('aria-label')) {
-    modal.setAttribute('aria-labelledby', 'teacherModalTitle');
-  }
-  if (!modal.hasAttribute('tabindex')) {
-    modal.setAttribute('tabindex', '-1');
-  }
-
-  let loginSection = modal.querySelector('#teacherLogin') as HTMLElement | null;
-  if (!loginSection) {
-    loginSection = doc.createElement('div');
-    loginSection.id = 'teacherLogin';
-    loginSection.style.padding = '0.5rem 0';
-    const content = modal.querySelector('.modal-content') || modal;
-    content.appendChild(loginSection);
-  }
-
-  let panelSection = modal.querySelector('#teacherPanel') as HTMLElement | null;
-  if (!panelSection) {
-    panelSection = doc.createElement('div');
-    panelSection.id = 'teacherPanel';
-    panelSection.style.display = 'none';
-    const content = modal.querySelector('.modal-content') || modal;
-    content.appendChild(panelSection);
-  }
-
-  let examListContainer = panelSection.querySelector('#teacherExamList') as HTMLElement | null;
-  if (!examListContainer) {
-    examListContainer = doc.createElement('div');
-    examListContainer.id = 'teacherExamList';
-    examListContainer.style.maxHeight = '400px';
-    examListContainer.style.overflowY = 'auto';
-    examListContainer.style.display = 'flex';
-    examListContainer.style.flexDirection = 'column';
-    examListContainer.style.gap = '0.5rem';
-    panelSection.appendChild(examListContainer);
-  }
-
-  let newExamBtn = panelSection.querySelector('#btnTeacherNewExam') as HTMLElement | null;
-  if (!newExamBtn) {
-    const btn = doc.createElement('button') as HTMLButtonElement;
-    btn.type = 'button';
-    btn.className = 'btn-primary';
-    btn.id = 'btnTeacherNewExam';
-    btn.textContent = '+ Soạn đề mới';
-    if (typeof (panelSection as any).insertBefore === 'function') {
-      panelSection.insertBefore(btn, examListContainer);
-    } else {
-      panelSection.appendChild(btn);
+export function getStoredTeacherToken(): string | null {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      return sessionStorage.getItem(TEACHER_TOKEN_KEY) || sessionStorage.getItem(TEACHER_SESSION_PW_KEY);
     }
-    newExamBtn = btn;
+  } catch {}
+  return null;
+}
+
+export function setStoredTeacherToken(token: string): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem(TEACHER_TOKEN_KEY, token);
+    }
+  } catch {}
+}
+
+export function clearStoredTeacherToken(): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(TEACHER_TOKEN_KEY);
+      sessionStorage.removeItem(TEACHER_NAME_KEY);
+      sessionStorage.removeItem(TEACHER_SESSION_PW_KEY);
+    }
+  } catch {}
+}
+
+function clearChildren(el: HTMLElement | any): void {
+  el.textContent = '';
+  while (el.firstChild) {
+    el.removeChild(el.firstChild);
   }
-
-  const closeBtn = modal.querySelector('#btnCloseTeacherModal') as HTMLElement | null;
-
-  return {
-    modal,
-    loginSection,
-    panelSection,
-    examListContainer,
-    closeBtn,
-    newExamBtn,
-  };
-}
-
-function renderUnconfiguredNotice(loginSection: HTMLElement, doc: Document): void {
-  clearElementChildren(loginSection);
-
-  const container = doc.createElement('div');
-  container.className = 'teacher-unconfigured-notice';
-  container.style.padding = '1.5rem';
-  container.style.textAlign = 'center';
-  container.style.color = 'var(--gray-700, #374151)';
-
-  const titleP = doc.createElement('p');
-  titleP.style.fontWeight = '600';
-  titleP.style.fontSize = '1.05rem';
-  titleP.style.marginBottom = '0.5rem';
-  titleP.textContent = 'Chức năng máy chủ Google Apps Script chưa cấu hình.';
-
-  const descP = doc.createElement('p');
-  descP.style.fontSize = '0.875rem';
-  descP.style.color = 'var(--gray-500, #6b7280)';
-  descP.style.margin = '0';
-  descP.textContent = 'Vui lòng thiết lập appsScriptUrl trong public/config.json để kích hoạt kho đề và tính năng giáo viên.';
-
-  container.appendChild(titleP);
-  container.appendChild(descP);
-  loginSection.appendChild(container);
-}
-
-function renderLoginForm(loginSection: HTMLElement, doc: Document): {
-  pwInput: HTMLInputElement;
-  loginBtn: HTMLButtonElement;
-  loginError: HTMLElement;
-  cancelBtn: HTMLButtonElement | null;
-} {
-  let pwInput = loginSection.querySelector('#teacherPassword') as HTMLInputElement | null;
-  let loginBtn = loginSection.querySelector('#btnTeacherLogin') as HTMLButtonElement | null;
-  let loginError = loginSection.querySelector('#teacherLoginError') as HTMLElement | null;
-  let cancelBtn = loginSection.querySelector('#btnCancelTeacherLogin') as HTMLButtonElement | null;
-
-  if (!pwInput || !loginBtn || !loginError) {
-    clearElementChildren(loginSection);
-
-    const body = doc.createElement('div');
-    body.id = 'teacherLoginBody';
-
-    const fieldGroup = doc.createElement('div');
-    fieldGroup.style.marginBottom = '1rem';
-
-    const label = doc.createElement('label');
-    label.setAttribute('for', 'teacherPassword');
-    label.style.display = 'block';
-    label.style.fontWeight = '600';
-    label.style.marginBottom = '0.5rem';
-    label.textContent = 'Mật khẩu giáo viên:';
-    fieldGroup.appendChild(label);
-
-    const input = doc.createElement('input') as HTMLInputElement;
-    input.type = 'password';
-    input.id = 'teacherPassword';
-    input.placeholder = 'Nhập mật khẩu giáo viên...';
-    input.style.width = '100%';
-    input.style.padding = '0.625rem';
-    input.style.border = '1px solid var(--border-color, #d1d5db)';
-    input.style.borderRadius = '6px';
-    input.style.boxSizing = 'border-box';
-    input.setAttribute('autocomplete', 'current-password');
-    fieldGroup.appendChild(input);
-    body.appendChild(fieldGroup);
-
-    loginError = doc.createElement('div');
-    loginError.id = 'teacherLoginError';
-    loginError.style.color = 'var(--danger, #ef4444)';
-    loginError.style.marginBottom = '1rem';
-    loginError.style.fontSize = '0.875rem';
-    loginError.style.minHeight = '1.25rem';
-    body.appendChild(loginError);
-
-    const btnGroup = doc.createElement('div');
-    btnGroup.style.display = 'flex';
-    btnGroup.style.justifyContent = 'flex-end';
-    btnGroup.style.gap = '0.5rem';
-
-    cancelBtn = doc.createElement('button') as HTMLButtonElement;
-    cancelBtn.type = 'button';
-    cancelBtn.className = 'btn-secondary';
-    cancelBtn.id = 'btnCancelTeacherLogin';
-    cancelBtn.textContent = 'Hủy';
-    btnGroup.appendChild(cancelBtn);
-
-    loginBtn = doc.createElement('button') as HTMLButtonElement;
-    loginBtn.type = 'button';
-    loginBtn.className = 'btn-primary';
-    loginBtn.id = 'btnTeacherLogin';
-    loginBtn.textContent = 'Đăng nhập';
-    btnGroup.appendChild(loginBtn);
-
-    body.appendChild(btnGroup);
-    loginSection.appendChild(body);
-    pwInput = input;
+  if (Array.isArray(el.childNodes)) {
+    el.childNodes = [];
   }
-
-  return { pwInput, loginBtn, loginError, cancelBtn };
 }
 
+function formatViDateTime(isoStr?: string | null): string {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return String(isoStr);
+    const p = (n: number) => String(n).padStart(2, '0');
+    return `${p(d.getHours())}:${p(d.getMinutes())}, ${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()}`;
+  } catch {
+    return String(isoStr);
+  }
+}
+
+function escapeCsvCell(val: unknown): string {
+  if (val === null || val === undefined) return '""';
+  let s = String(val);
+  // Anti formula injection: prefix with single quote if starts with = + - @
+  if (/^[=+\-@]/.test(s)) {
+    s = "'" + s;
+  }
+  return `"${s.replace(/"/g, '""')}"`;
+}
+
+function toVietnameseErrorMessage(code: string, serverMsg?: string): string {
+  if (code === 'UNAUTHORIZED') return 'Sai tên đăng nhập hoặc mật khẩu';
+  if (code === 'FORBIDDEN') return 'Bạn không có quyền thực hiện thao tác này';
+  if (code === 'NOT_CONFIGURED') return 'Chức năng kết nối máy chủ chưa cấu hình';
+  if (code === 'TIMEOUT') return 'Hết thời gian chờ kết nối máy chủ (15s)';
+  if (code === 'NETWORK') return 'Lỗi kết nối mạng, vui lòng kiểm tra đường truyền';
+  if (code === 'USERNAME_TAKEN') return 'Tên đăng nhập đã được dùng';
+  if (code === 'INVALID_EXAM') return serverMsg ? `Cấu trúc đề không hợp lệ: ${serverMsg}` : 'Cấu trúc đề không hợp lệ';
+  if (code === 'INVALID_DATES') return 'Hạn nộp phải sau giờ mở';
+  if (serverMsg && serverMsg.trim() && !/^[A-Z0-9_]+$/.test(serverMsg.trim())) {
+    return serverMsg.trim();
+  }
+  return 'Yêu cầu không thành công, vui lòng thử lại';
+}
+
+/**
+ * Mount Teacher Portal into root element.
+ */
 export function mountTeacherPortal(
   root: HTMLElement,
   deps: TeacherPortalDeps
@@ -407,342 +213,1753 @@ export function mountTeacherPortal(
     throw new Error('DOM Document is required to mount teacher portal');
   }
 
-  const elems = ensurePortalElements(root);
-  let isModalOpen = false;
-  let returnFocusTo: HTMLElement | null = null;
-
-  // onPublish callback passed to builder
-  const onPublish = async (
-    exam: unknown
-  ): Promise<AsResult<{ examId: string; revision: number }>> => {
-    const pw = getStoredTeacherPassword() || '';
-    if (!pw) {
-      return {
-        ok: false,
-        code: 'UNAUTHORIZED',
-        message: 'Chưa đăng nhập giáo viên',
-      };
-    }
-    const res = await deps.client.publishExam(pw, exam);
-    if (res.ok) {
-      void refreshList();
-    }
-    return res;
-  };
-
-  // Refresh exam list inside #teacherPanel
-  const refreshList = async (): Promise<void> => {
-    clearElementChildren(elems.examListContainer);
-    const loadingDiv = doc.createElement('div');
-    loadingDiv.style.textAlign = 'center';
-    loadingDiv.style.color = 'var(--gray-500, #6b7280)';
-    loadingDiv.style.padding = '1rem';
-    loadingDiv.textContent = 'Đang tải danh sách đề thi...';
-    elems.examListContainer.appendChild(loadingDiv);
-
-    try {
-      const exams = await deps.listAllExams();
-      clearElementChildren(elems.examListContainer);
-
-      if (exams.length === 0) {
-        const emptyDiv = doc.createElement('div');
-        emptyDiv.style.textAlign = 'center';
-        emptyDiv.style.color = 'var(--gray-500, #6b7280)';
-        emptyDiv.style.padding = '1rem';
-        emptyDiv.textContent = 'Chưa có đề thi nào.';
-        elems.examListContainer.appendChild(emptyDiv);
-        return;
+  // --- Style Injection (strictly uses design tokens) ---
+  const STYLE_ID = 'cunata-teacher-portal-styles';
+  if (!doc.getElementById(STYLE_ID) && doc.head) {
+    const styleEl = doc.createElement('style');
+    styleEl.id = STYLE_ID;
+    styleEl.textContent = `
+      .teacher-area-container {
+        font-family: var(--font, system-ui, sans-serif);
+        color: var(--c-text);
+        max-width: var(--content-width, 1120px);
+        margin: 0 auto;
+        padding: var(--sp-4, 16px);
+        box-sizing: border-box;
       }
-
-      for (const entry of exams) {
-        const isTeacher = entry.source === 'teacher';
-        const row = doc.createElement('div');
-        row.className = 'teacher-exam-row';
-        row.setAttribute('data-exam-id', entry.id);
-        if (isTeacher) {
-          row.setAttribute('data-exam-source', 'teacher');
+      .teacher-login-box {
+        max-width: 440px;
+        margin: var(--sp-6, 32px) auto;
+        padding: var(--sp-5, 24px);
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md, 12px);
+        box-shadow: var(--shadow-1);
+      }
+      .teacher-login-title {
+        font-size: var(--fs-xl, 24px);
+        font-weight: 700;
+        margin: 0 0 var(--sp-2, 8px) 0;
+        color: var(--c-text);
+      }
+      .teacher-login-desc {
+        font-size: var(--fs-sm, 14px);
+        color: var(--c-text-2);
+        margin: 0 0 var(--sp-4, 16px) 0;
+      }
+      .teacher-unconfigured-notice {
+        padding: var(--sp-3, 12px);
+        background: var(--c-surface-2);
+        border: 1px solid var(--c-warning);
+        border-radius: var(--r-sm, 8px);
+        color: var(--c-warning);
+        font-size: var(--fs-sm, 14px);
+        margin-bottom: var(--sp-4, 16px);
+      }
+      .teacher-field-group {
+        margin-bottom: var(--sp-4, 16px);
+      }
+      .teacher-field-label {
+        display: block;
+        font-size: var(--fs-sm, 14px);
+        font-weight: 600;
+        margin-bottom: var(--sp-1, 4px);
+        color: var(--c-text);
+      }
+      .teacher-control {
+        width: 100%;
+        min-height: var(--target, 44px);
+        padding: 0 var(--sp-3, 12px);
+        font-size: var(--fs-md, 16px);
+        font-family: inherit;
+        color: var(--c-text);
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-sm, 8px);
+        box-sizing: border-box;
+      }
+      .teacher-control:focus-visible {
+        outline: 2px solid var(--c-primary);
+        outline-offset: 2px;
+      }
+      .teacher-error-text {
+        font-size: var(--fs-sm, 14px);
+        color: var(--c-danger);
+        min-height: var(--fs-sm, 14px);
+        margin-top: var(--sp-2, 8px);
+        margin-bottom: var(--sp-3, 12px);
+      }
+      .teacher-shell-layout {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-4, 16px);
+      }
+      @media (min-width: 1024px) {
+        .teacher-shell-layout {
+          flex-direction: row;
+          align-items: flex-start;
         }
-        row.style.display = 'flex';
-        row.style.justifyContent = 'space-between';
-        row.style.alignItems = 'center';
-        row.style.padding = '0.625rem 0.75rem';
-        row.style.border = '1px solid var(--border-color, #e5e7eb)';
-        row.style.borderRadius = '6px';
-        row.style.background = 'var(--card-bg, #fff)';
-        row.style.gap = '0.5rem';
-
-        const infoDiv = doc.createElement('div');
-        infoDiv.style.flex = '1';
-        infoDiv.style.minWidth = '0';
-
-        const titleEl = doc.createElement('strong');
-        titleEl.style.fontSize = '0.9375rem';
-        titleEl.style.display = 'block';
-        titleEl.style.whiteSpace = 'nowrap';
-        titleEl.style.overflow = 'hidden';
-        titleEl.style.textOverflow = 'ellipsis';
-        titleEl.style.color = 'var(--gray-900, #111827)';
-        titleEl.textContent = entry.title;
-        infoDiv.appendChild(titleEl);
-
-        const metaSpan = doc.createElement('span');
-        metaSpan.style.fontSize = '0.8125rem';
-        metaSpan.style.color = 'var(--gray-500, #6b7280)';
-        const metaParts: string[] = [];
-        const anyEntry = entry as { questionCount?: number; durationMinutes?: number };
-        if (typeof anyEntry.questionCount === 'number') {
-          metaParts.push(`${anyEntry.questionCount} câu`);
+      }
+      .teacher-nav-rail {
+        width: 100%;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md, 12px);
+        padding: var(--sp-2, 8px);
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: var(--sp-2, 8px);
+        box-sizing: border-box;
+      }
+      @media (min-width: 1024px) {
+        .teacher-nav-rail {
+          width: var(--rail-width, 240px);
+          flex-shrink: 0;
+          flex-direction: column;
         }
-        if (typeof anyEntry.durationMinutes === 'number') {
-          metaParts.push(`${anyEntry.durationMinutes} phút`);
+      }
+      .teacher-nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--sp-2, 8px);
+        min-height: var(--target, 44px);
+        padding: 0 var(--sp-3, 12px);
+        font-size: var(--fs-md, 16px);
+        font-weight: 500;
+        color: var(--c-text);
+        text-decoration: none;
+        border-radius: var(--r-sm, 8px);
+        cursor: pointer;
+        transition: background 0.15s ease;
+        box-sizing: border-box;
+      }
+      .teacher-nav-link:hover {
+        background: var(--c-surface-2);
+      }
+      .teacher-nav-link[aria-current="page"] {
+        background: var(--c-primary-soft);
+        color: var(--c-primary);
+        font-weight: 600;
+      }
+      .teacher-nav-link:focus-visible {
+        outline: 2px solid var(--c-primary);
+        outline-offset: 2px;
+      }
+      .teacher-logout-btn {
+        margin-top: auto;
+        color: var(--c-danger);
+      }
+      .teacher-main-pane {
+        flex: 1;
+        min-width: 0;
+      }
+      .teacher-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--sp-3, 12px);
+        margin-bottom: var(--sp-4, 16px);
+      }
+      .teacher-section-title {
+        font-size: var(--fs-xl, 24px);
+        font-weight: 700;
+        margin: 0;
+        color: var(--c-text);
+      }
+      .teacher-grid-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--sp-4, 16px);
+      }
+      @media (min-width: 640px) {
+        .teacher-grid-list {
+          grid-template-columns: repeat(2, 1fr);
         }
-        metaParts.push(isTeacher ? 'Đã xuất bản' : 'Đề tĩnh');
-        metaSpan.textContent = metaParts.join(' · ');
-        infoDiv.appendChild(metaSpan);
-
-        row.appendChild(infoDiv);
-
-        const actionsDiv = doc.createElement('div');
-        actionsDiv.style.display = 'flex';
-        actionsDiv.style.gap = '0.375rem';
-        actionsDiv.style.flexShrink = '0';
-
-        const btnEdit = doc.createElement('button') as HTMLButtonElement;
-        btnEdit.type = 'button';
-        btnEdit.className = 'btn-secondary btn-teacher-edit';
-        btnEdit.style.fontSize = '0.8125rem';
-        btnEdit.style.padding = '0.3rem 0.6rem';
-        btnEdit.textContent = 'Sửa';
-        btnEdit.addEventListener('click', async () => {
-          try {
-            btnEdit.disabled = true;
-            const examData = await entry.load();
-            closeModal();
-            deps.openBuilder(examData, { onPublish });
-          } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : String(err);
-            if (typeof alert === 'function') {
-              alert('Lỗi nạp đề thi để sửa: ' + msg);
-            }
-          } finally {
-            btnEdit.disabled = false;
-          }
-        });
-        actionsDiv.appendChild(btnEdit);
-
-        if (isTeacher) {
-          const btnUnpub = doc.createElement('button') as HTMLButtonElement;
-          btnUnpub.type = 'button';
-          btnUnpub.className = 'btn-secondary btn-teacher-unpublish';
-          btnUnpub.style.fontSize = '0.8125rem';
-          btnUnpub.style.padding = '0.3rem 0.6rem';
-          btnUnpub.style.color = 'var(--danger, #ef4444)';
-          btnUnpub.style.borderColor = '#fca5a5';
-          btnUnpub.textContent = 'Gỡ xuất bản';
-          btnUnpub.addEventListener('click', async () => {
-            const ok = typeof confirm === 'function' ? confirm(`Gỡ xuất bản đề "${entry.title}"?`) : true;
-            if (!ok) return;
-            try {
-              btnUnpub.disabled = true;
-              const pw = getStoredTeacherPassword() || '';
-              const res = await deps.client.unpublishExam(pw, entry.id);
-              if (res.ok) {
-                await refreshList();
-              } else {
-                const msg = res.message || res.code || 'Không thể gỡ xuất bản';
-                if (typeof alert === 'function') {
-                  alert('Lỗi gỡ xuất bản: ' + msg);
-                }
-              }
-            } catch (err: unknown) {
-              const msg = err instanceof Error ? err.message : String(err);
-              if (typeof alert === 'function') {
-                alert('Lỗi kết nối máy chủ: ' + msg);
-              }
-            } finally {
-              btnUnpub.disabled = false;
-            }
-          });
-          actionsDiv.appendChild(btnUnpub);
+      }
+      @media (min-width: 1024px) {
+        .teacher-grid-list {
+          grid-template-columns: repeat(3, 1fr);
         }
-
-        row.appendChild(actionsDiv);
-        elems.examListContainer.appendChild(row);
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      clearElementChildren(elems.examListContainer);
-      const errDiv = doc.createElement('div');
-      errDiv.style.color = 'var(--danger, #ef4444)';
-      errDiv.style.padding = '1rem';
-      errDiv.style.textAlign = 'center';
-      errDiv.textContent = 'Lỗi tải danh sách đề: ' + msg;
-      elems.examListContainer.appendChild(errDiv);
-    }
-  };
-
-  const closeModal = (): void => {
-    if (!isModalOpen) return;
-    isModalOpen = false;
-    elems.modal.style.display = 'none';
-
-    if (returnFocusTo && typeof returnFocusTo.focus === 'function') {
-      try {
-        returnFocusTo.focus();
-      } catch {
-        // Silently catch if detached
+      .class-card {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md, 12px);
+        padding: var(--sp-4, 16px);
+        box-shadow: var(--shadow-1);
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-2, 8px);
+        cursor: pointer;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
       }
-    }
-  };
-
-  const openModal = (): void => {
-    returnFocusTo = doc.activeElement as HTMLElement | null;
-    isModalOpen = true;
-    elems.modal.style.display = 'flex';
-
-    if (!deps.client.configured) {
-      renderUnconfiguredNotice(elems.loginSection, doc);
-      elems.loginSection.style.display = 'block';
-      elems.panelSection.style.display = 'none';
-      if (elems.closeBtn && typeof elems.closeBtn.focus === 'function') {
-        elems.closeBtn.focus();
-      } else if (typeof elems.modal.focus === 'function') {
-        elems.modal.focus();
+      .class-card:hover {
+        border-color: var(--c-primary);
+        box-shadow: var(--shadow-2);
       }
-      return;
-    }
-
-    const savedPw = getStoredTeacherPassword();
-    if (savedPw) {
-      elems.loginSection.style.display = 'none';
-      elems.panelSection.style.display = 'block';
-      void refreshList();
-      if (elems.newExamBtn && typeof elems.newExamBtn.focus === 'function') {
-        elems.newExamBtn.focus();
+      .class-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
       }
-      return;
-    }
-
-    // Not logged in: show login form
-    elems.loginSection.style.display = 'block';
-    elems.panelSection.style.display = 'none';
-    const { pwInput, loginBtn, loginError, cancelBtn } = renderLoginForm(elems.loginSection, doc);
-    pwInput.value = '';
-    loginError.textContent = '';
-
-    const handleLoginSubmit = async () => {
-      const pw = pwInput.value;
-      if (!pw) {
-        loginError.textContent = 'Vui lòng nhập mật khẩu giáo viên';
-        return;
+      .class-name {
+        font-size: var(--fs-lg, 20px);
+        font-weight: 600;
+        margin: 0;
+        color: var(--c-text);
       }
-      loginError.textContent = 'Đang kiểm tra mật khẩu...';
-      loginBtn.disabled = true;
-
-      try {
-        const res = await deps.client.teacherLogin(pw);
-        if (res.ok) {
-          setStoredTeacherPassword(pw);
-          loginError.textContent = '';
-          elems.loginSection.style.display = 'none';
-          elems.panelSection.style.display = 'block';
-          await refreshList();
-          if (elems.newExamBtn && typeof elems.newExamBtn.focus === 'function') {
-            elems.newExamBtn.focus();
-          }
-        } else {
-          loginError.textContent = res.message || 'Mật khẩu giáo viên không chính xác';
-          if (typeof pwInput.focus === 'function') {
-            pwInput.focus();
-            if (typeof pwInput.select === 'function') pwInput.select();
-          }
-        }
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        loginError.textContent = 'Lỗi kết nối máy chủ: ' + msg;
-      } finally {
-        loginBtn.disabled = false;
+      .class-code-badge {
+        font-size: var(--fs-md, 16px);
+        font-weight: 700;
+        letter-spacing: 1px;
+        background: var(--c-surface-2);
+        padding: var(--sp-1, 4px) var(--sp-2, 8px);
+        border-radius: var(--r-sm, 8px);
+        border: 1px solid var(--c-border);
+        color: var(--c-primary);
       }
-    };
-
-    loginBtn.onclick = () => {
-      void handleLoginSubmit();
-    };
-
-    pwInput.onkeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        void handleLoginSubmit();
+      .class-actions-bar {
+        display: flex;
+        gap: var(--sp-2, 8px);
+        flex-wrap: wrap;
+        margin-top: var(--sp-2, 8px);
       }
-    };
-
-    if (cancelBtn) {
-      cancelBtn.onclick = () => {
-        closeModal();
-      };
-    }
-
-    if (typeof pwInput.focus === 'function') {
-      pwInput.focus();
-    }
-  };
-
-  // Wire up top close button
-  if (elems.closeBtn) {
-    elems.closeBtn.addEventListener('click', closeModal);
+      .class-btn-action {
+        min-height: var(--target, 44px);
+        min-width: var(--target, 44px);
+        padding: 0 var(--sp-3, 12px);
+        font-size: var(--fs-sm, 14px);
+        font-weight: 500;
+        font-family: inherit;
+        border-radius: var(--r-sm, 8px);
+        border: 1px solid var(--c-border);
+        background: var(--c-surface);
+        color: var(--c-text);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--sp-1, 4px);
+      }
+      .class-btn-action:hover {
+        background: var(--c-surface-2);
+      }
+      .class-btn-action:focus-visible {
+        outline: 2px solid var(--c-primary);
+        outline-offset: 2px;
+      }
+      .assignment-row {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-sm, 8px);
+        padding: var(--sp-3, 12px) var(--sp-4, 16px);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--sp-2, 8px);
+        margin-bottom: var(--sp-2, 8px);
+      }
+      .assignment-title {
+        font-weight: 600;
+        font-size: var(--fs-md, 16px);
+      }
+      .assignment-meta-info {
+        font-size: var(--fs-sm, 14px);
+        color: var(--c-text-2);
+        display: flex;
+        gap: var(--sp-3, 12px);
+        flex-wrap: wrap;
+      }
+      .teacher-dialog-backdrop {
+        position: fixed;
+        inset: 0;
+        background: var(--c-backdrop);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: var(--sp-4, 16px);
+        box-sizing: border-box;
+      }
+      .teacher-dialog-box {
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-lg, 16px);
+        box-shadow: var(--shadow-2);
+        max-width: 540px;
+        width: 100%;
+        padding: var(--sp-5, 24px);
+        box-sizing: border-box;
+      }
+      .teacher-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md, 12px);
+        box-shadow: var(--shadow-1);
+      }
+      .teacher-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--fs-sm, 14px);
+        text-align: left;
+      }
+      .teacher-table th {
+        background: var(--c-surface-2);
+        padding: var(--sp-3, 12px) var(--sp-4, 16px);
+        font-weight: 600;
+        color: var(--c-text);
+        border-bottom: 1px solid var(--c-border);
+      }
+      .teacher-table td {
+        padding: var(--sp-3, 12px) var(--sp-4, 16px);
+        border-bottom: 1px solid var(--c-border);
+        color: var(--c-text);
+      }
+      .teacher-table tr:hover td {
+        background: var(--c-surface-2);
+      }
+      .btn-teacher-primary {
+        min-height: var(--target, 44px);
+        min-width: var(--target, 44px);
+        padding: 0 var(--sp-4, 16px);
+        font-size: var(--fs-md, 16px);
+        font-weight: 600;
+        font-family: inherit;
+        background: var(--c-primary);
+        color: var(--c-primary-ink);
+        border: none;
+        border-radius: var(--r-sm, 8px);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--sp-2, 8px);
+      }
+      .btn-teacher-primary:hover:not(:disabled) {
+        filter: brightness(1.1);
+      }
+      .btn-teacher-primary:focus-visible {
+        outline: 2px solid var(--c-primary);
+        outline-offset: 2px;
+      }
+      .btn-teacher-secondary {
+        min-height: var(--target, 44px);
+        min-width: var(--target, 44px);
+        padding: 0 var(--sp-4, 16px);
+        font-size: var(--fs-md, 16px);
+        font-weight: 500;
+        font-family: inherit;
+        background: var(--c-surface);
+        color: var(--c-text);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-sm, 8px);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--sp-2, 8px);
+      }
+      .btn-teacher-secondary:hover:not(:disabled) {
+        background: var(--c-surface-2);
+      }
+      .btn-teacher-secondary:focus-visible {
+        outline: 2px solid var(--c-primary);
+        outline-offset: 2px;
+      }
+    `;
+    doc.head.appendChild(styleEl);
   }
 
-  // Wire up New Exam button
-  if (elems.newExamBtn) {
-    elems.newExamBtn.addEventListener('click', () => {
-      closeModal();
-      deps.openBuilder(null, { onPublish });
+  // --- Ensure Container Elements in Root ---
+  let loginSection = root.querySelector('#teacherLogin') as HTMLElement | null;
+  if (!loginSection) {
+    loginSection = doc.createElement('div');
+    loginSection.id = 'teacherLogin';
+    loginSection.className = 'teacher-area-container';
+    loginSection.style.display = 'none';
+    root.appendChild(loginSection);
+  }
+
+  let shell = root.querySelector('#teacherShell') as HTMLElement | null;
+  if (!shell) {
+    shell = doc.createElement('div');
+    shell.id = 'teacherShell';
+    shell.className = 'teacher-area-container';
+    shell.style.display = 'none';
+    root.appendChild(shell);
+  }
+
+  // Active state
+  let currentNav: 'lop' | 'de' | 'ket-qua' = 'lop';
+  let cachedMyClasses: Array<{ classId: string; code: string; name: string; createdAt: string; studentCount: number }> = [];
+  let selectedClassIdForDetail: string | null = null;
+  let cachedAssignments: Array<{ assignmentId: string; classId: string; examId: string; openAt: string; dueAt: string; createdAt: string; title: string; questionCount: number; durationMinutes: number; submissionCount?: number }> = [];
+
+  // --------------------------------------------------------------------------
+  // 1. Render #teacherLogin
+  // --------------------------------------------------------------------------
+  function renderLoginView(): void {
+    if (!loginSection) return;
+    clearChildren(loginSection);
+
+    const box = doc.createElement('div');
+    box.className = 'teacher-login-box';
+
+    const h2 = doc.createElement('h2');
+    h2.className = 'teacher-login-title';
+    h2.textContent = 'Giáo viên đăng nhập';
+    box.appendChild(h2);
+
+    const desc = doc.createElement('p');
+    desc.className = 'teacher-login-desc';
+    desc.textContent = 'Quản lý lớp học, kho đề thi và xem kết quả của học sinh.';
+    box.appendChild(desc);
+
+    if (!deps.client.configured) {
+      const unconf = doc.createElement('div');
+      unconf.className = 'teacher-unconfigured-notice';
+      unconf.textContent = 'Máy chủ chưa cấu hình kết nối Google Apps Script. Vui lòng liên hệ quản trị viên.';
+      box.appendChild(unconf);
+    }
+
+    const form = doc.createElement('form');
+    form.id = 'teacherLoginForm';
+    form.setAttribute('novalidate', 'true');
+
+    // Username field
+    const userGroup = doc.createElement('div');
+    userGroup.className = 'teacher-field-group';
+    const userLabel = doc.createElement('label');
+    userLabel.className = 'teacher-field-label';
+    userLabel.setAttribute('for', 'teacherUsername');
+    userLabel.textContent = 'Tên đăng nhập';
+    const userInput = doc.createElement('input');
+    userInput.id = 'teacherUsername';
+    userInput.name = 'teacherUsername';
+    userInput.type = 'text';
+    userInput.className = 'teacher-control';
+    userInput.setAttribute('autocomplete', 'username');
+    userInput.required = true;
+    userGroup.appendChild(userLabel);
+    userGroup.appendChild(userInput);
+    form.appendChild(userGroup);
+
+    // Password field
+    const pwGroup = doc.createElement('div');
+    pwGroup.className = 'teacher-field-group';
+    const pwLabel = doc.createElement('label');
+    pwLabel.className = 'teacher-field-label';
+    pwLabel.setAttribute('for', 'teacherPassword');
+    pwLabel.textContent = 'Mật khẩu';
+    const pwInput = doc.createElement('input');
+    pwInput.id = 'teacherPassword';
+    pwInput.name = 'teacherPassword';
+    pwInput.type = 'password';
+    pwInput.className = 'teacher-control';
+    pwInput.setAttribute('autocomplete', 'current-password');
+    pwInput.required = true;
+    pwGroup.appendChild(pwLabel);
+    pwGroup.appendChild(pwInput);
+    form.appendChild(pwGroup);
+
+    // Error div
+    const errDiv = doc.createElement('div');
+    errDiv.id = 'teacherLoginError';
+    errDiv.className = 'teacher-error-text';
+    errDiv.setAttribute('aria-live', 'polite');
+    form.appendChild(errDiv);
+
+    // Submit button
+    const submitBtn = doc.createElement('button');
+    submitBtn.id = 'btnTeacherLogin';
+    submitBtn.type = 'submit';
+    submitBtn.className = 'btn-teacher-primary';
+    submitBtn.style.width = '100%';
+    submitBtn.textContent = 'Đăng nhập';
+    form.appendChild(submitBtn);
+
+    form.addEventListener('submit', async (e: any) => {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      errDiv.textContent = '';
+      const u = userInput.value.trim();
+      const p = pwInput.value;
+
+      if (!u && !p) {
+        errDiv.textContent = 'Vui lòng nhập tên đăng nhập và mật khẩu';
+        if (typeof userInput.focus === 'function') userInput.focus();
+        return;
+      }
+      if (!u) {
+        errDiv.textContent = 'Vui lòng nhập tên đăng nhập';
+        if (typeof userInput.focus === 'function') userInput.focus();
+        return;
+      }
+      if (!p) {
+        errDiv.textContent = 'Vui lòng nhập mật khẩu';
+        if (typeof pwInput.focus === 'function') pwInput.focus();
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Đang đăng nhập...';
+
+      try {
+        const res = await deps.client.teacherLogin(u, p);
+        if (res.ok) {
+          const tok = (typeof res.value === 'object' && res.value && (res.value as any).token)
+            ? (res.value as any).token
+            : p;
+          const name = (typeof res.value === 'object' && res.value && (res.value as any).name)
+            ? (res.value as any).name
+            : u;
+
+          setStoredTeacherToken(tok);
+          setStoredTeacherPassword(p);
+          try {
+            sessionStorage.setItem(TEACHER_NAME_KEY, name);
+            localStorage.setItem(TEACHER_ROLE_KEY, 'teacher');
+          } catch {}
+
+          errDiv.textContent = '';
+          showShell('lop');
+        } else {
+          errDiv.textContent = toVietnameseErrorMessage(res.code, res.message);
+        }
+      } catch (err: any) {
+        errDiv.textContent = toVietnameseErrorMessage('NETWORK', err?.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Đăng nhập';
+      }
+    });
+
+    box.appendChild(form);
+    loginSection.appendChild(box);
+  }
+
+  // --------------------------------------------------------------------------
+  // 2. Render #teacherShell and Sections
+  // --------------------------------------------------------------------------
+  function renderShellView(): void {
+    if (!shell) return;
+    clearChildren(shell);
+
+    const layout = doc.createElement('div');
+    layout.className = 'teacher-shell-layout';
+
+    // NavRail
+    const nav = doc.createElement('nav');
+    nav.id = 'teacherNav';
+    nav.className = 'teacher-nav-rail';
+    nav.setAttribute('aria-label', 'Điều hướng giáo viên');
+
+    const links: Array<{ key: 'lop' | 'de' | 'ket-qua'; label: string; href: string; icon: IconName }> = [
+      { key: 'lop', label: 'Lớp học', href: '#/giao-vien/lop', icon: 'classes' },
+      { key: 'de', label: 'Đề thi', href: '#/giao-vien/de', icon: 'book' },
+      { key: 'ket-qua', label: 'Kết quả', href: '#/giao-vien/ket-qua', icon: 'results' },
+    ];
+
+    for (const item of links) {
+      const a = doc.createElement('a');
+      a.href = item.href;
+      a.className = 'teacher-nav-link';
+      a.setAttribute('data-nav', item.key);
+      if (a.dataset) a.dataset.nav = item.key;
+      if (item.key === currentNav) {
+        a.setAttribute('aria-current', 'page');
+      }
+
+      a.appendChild(Icon(item.icon, doc));
+      const span = doc.createElement('span');
+      span.textContent = item.label;
+      a.appendChild(span);
+
+      a.addEventListener('click', (e: any) => {
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
+        setNav(item.key);
+      });
+      nav.appendChild(a);
+    }
+
+    // Logout button
+    const logoutBtn = doc.createElement('button');
+    logoutBtn.id = 'btnTeacherLogout';
+    logoutBtn.type = 'button';
+    logoutBtn.className = 'teacher-nav-link teacher-logout-btn';
+    logoutBtn.style.border = 'none';
+    logoutBtn.style.background = 'none';
+    logoutBtn.appendChild(Icon('logout', doc));
+    const logoutSpan = doc.createElement('span');
+    logoutSpan.textContent = 'Đăng xuất';
+    logoutBtn.appendChild(logoutSpan);
+
+    logoutBtn.addEventListener('click', () => {
+      clearStoredTeacherToken();
+      clearStoredTeacherPassword();
+      try {
+        localStorage.removeItem(TEACHER_ROLE_KEY);
+      } catch {}
+      showLogin();
+    });
+    nav.appendChild(logoutBtn);
+
+    layout.appendChild(nav);
+
+    // Main Content
+    const main = doc.createElement('main');
+    main.id = 'teacherMainContent';
+    main.className = 'teacher-main-pane';
+    layout.appendChild(main);
+
+    shell.appendChild(layout);
+    renderActiveSection();
+  }
+
+  function setNav(navKey: 'lop' | 'de' | 'ket-qua'): void {
+    currentNav = navKey;
+    const allLinks = shell?.querySelectorAll<HTMLAnchorElement>('#teacherNav a[data-nav]');
+    allLinks?.forEach((a) => {
+      const key = a.getAttribute('data-nav') || a.dataset?.nav;
+      if (key === navKey) {
+        a.setAttribute('aria-current', 'page');
+      } else {
+        a.removeAttribute('aria-current');
+      }
+    });
+
+    try {
+      const targetHash = `#/giao-vien/${navKey}`;
+      if (window.location.hash !== targetHash) {
+        window.history.pushState(null, '', targetHash);
+      }
+    } catch {}
+
+    renderActiveSection();
+  }
+
+  function renderActiveSection(): void {
+    const main = shell?.querySelector('#teacherMainContent') as HTMLElement | null;
+    if (!main) return;
+    clearChildren(main);
+
+    if (currentNav === 'lop') {
+      renderClassesSection(main);
+    } else if (currentNav === 'de') {
+      renderExamsSection(main);
+    } else if (currentNav === 'ket-qua') {
+      renderResultsSection(main);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // 3. Section: Lớp học
+  // --------------------------------------------------------------------------
+  async function renderClassesSection(container: HTMLElement): Promise<void> {
+    clearChildren(container);
+
+    // If viewing class detail
+    if (selectedClassIdForDetail) {
+      renderClassDetailView(container, selectedClassIdForDetail);
+      return;
+    }
+
+    const header = doc.createElement('div');
+    header.className = 'teacher-section-header';
+
+    const title = doc.createElement('h2');
+    title.className = 'teacher-section-title';
+    title.textContent = 'Lớp học của tôi';
+    header.appendChild(title);
+
+    const createBtn = doc.createElement('button');
+    createBtn.id = 'btnCreateClass';
+    createBtn.type = 'button';
+    createBtn.className = 'btn-teacher-primary';
+    createBtn.appendChild(Icon('plus', doc));
+    const btnSpan = doc.createElement('span');
+    btnSpan.textContent = 'Tạo lớp học';
+    createBtn.appendChild(btnSpan);
+
+    createBtn.addEventListener('click', () => {
+      openCreateClassDialog(() => {
+        void loadClasses();
+      });
+    });
+    header.appendChild(createBtn);
+    container.appendChild(header);
+
+    const listContainer = doc.createElement('div');
+    listContainer.className = 'teacher-grid-list';
+    listContainer.id = 'teacherClassGrid';
+    container.appendChild(listContainer);
+
+    async function loadClasses() {
+      clearChildren(listContainer);
+      const tok = getStoredTeacherToken() || '';
+      if (!deps.client.listMyClasses) {
+        const p = doc.createElement('p');
+        p.className = 'teacher-empty-text';
+        p.textContent = 'Chưa hỗ trợ danh sách lớp.';
+        listContainer.appendChild(p);
+        return;
+      }
+      try {
+        const res = await deps.client.listMyClasses(tok);
+        if (res.ok) {
+          cachedMyClasses = res.value;
+          if (cachedMyClasses.length === 0) {
+            const p = doc.createElement('p');
+            p.className = 'teacher-empty-text';
+            p.textContent = 'Chưa có lớp nào. Hãy bấm "Tạo lớp học" để bắt đầu.';
+            listContainer.appendChild(p);
+            return;
+          }
+          clearChildren(listContainer);
+          for (const cls of cachedMyClasses) {
+            const card = doc.createElement('div');
+            card.className = 'class-card';
+            card.setAttribute('data-class-id', cls.classId);
+            if (card.dataset) card.dataset.classId = cls.classId;
+
+            const cardHeader = doc.createElement('div');
+            cardHeader.className = 'class-card-header';
+            const nameEl = doc.createElement('h3');
+            nameEl.className = 'class-name';
+            nameEl.textContent = cls.name;
+            const codeBadge = doc.createElement('div');
+            codeBadge.className = 'class-code-badge';
+            const codeSpan = doc.createElement('span');
+            codeSpan.className = 'class-code';
+            codeSpan.textContent = cls.code;
+            codeBadge.appendChild(codeSpan);
+            cardHeader.appendChild(nameEl);
+            cardHeader.appendChild(codeBadge);
+            card.appendChild(cardHeader);
+
+            const countEl = doc.createElement('div');
+            countEl.style.fontSize = 'var(--fs-sm, 14px)';
+            countEl.style.color = 'var(--c-text-2)';
+            countEl.textContent = `Sĩ số: ${cls.studentCount || 0} học sinh`;
+            card.appendChild(countEl);
+
+            const actions = doc.createElement('div');
+            actions.className = 'class-actions-bar';
+
+            const copyCodeBtn = doc.createElement('button');
+            copyCodeBtn.type = 'button';
+            copyCodeBtn.className = 'class-btn-action';
+            copyCodeBtn.setAttribute('aria-label', `Sao chép mã lớp ${cls.code}`);
+            copyCodeBtn.appendChild(Icon('copy', doc));
+            const copyCodeSpan = doc.createElement('span');
+            copyCodeSpan.textContent = 'Sao chép mã';
+            copyCodeBtn.appendChild(copyCodeSpan);
+            copyCodeBtn.addEventListener('click', (e: any) => {
+              if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+              try {
+                navigator.clipboard?.writeText(cls.code);
+                copyCodeSpan.textContent = 'Đã chép!';
+                setTimeout(() => { copyCodeSpan.textContent = 'Sao chép mã'; }, 2000);
+              } catch {}
+            });
+            actions.appendChild(copyCodeBtn);
+
+            const copyLinkBtn = doc.createElement('button');
+            copyLinkBtn.type = 'button';
+            copyLinkBtn.className = 'class-btn-action';
+            copyLinkBtn.setAttribute('aria-label', `Sao chép liên kết mời`);
+            copyLinkBtn.appendChild(Icon('arrow', doc));
+            const copyLinkSpan = doc.createElement('span');
+            copyLinkSpan.textContent = 'Link mời';
+            copyLinkBtn.appendChild(copyLinkSpan);
+            copyLinkBtn.addEventListener('click', (e: any) => {
+              if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+              try {
+                const inviteUrl = `${window.location.origin}${window.location.pathname}#/hoc-sinh?lop=${cls.code}`;
+                navigator.clipboard?.writeText(inviteUrl);
+                copyLinkSpan.textContent = 'Đã chép link!';
+                setTimeout(() => { copyLinkSpan.textContent = 'Link mời'; }, 2000);
+              } catch {}
+            });
+            actions.appendChild(copyLinkBtn);
+
+            card.appendChild(actions);
+
+            card.addEventListener('click', () => {
+              selectedClassIdForDetail = cls.classId;
+              renderActiveSection();
+            });
+
+            listContainer.appendChild(card);
+          }
+        } else {
+          const errP = doc.createElement('p');
+          errP.className = 'teacher-error-text';
+          errP.textContent = toVietnameseErrorMessage(res.code, res.message);
+          listContainer.appendChild(errP);
+        }
+      } catch (err: any) {
+        const errP = doc.createElement('p');
+        errP.className = 'teacher-error-text';
+        errP.textContent = `Không thể tải danh sách lớp học: ${err?.message || ''}`;
+        listContainer.appendChild(errP);
+      }
+    }
+
+    void loadClasses();
+  }
+
+  function openCreateClassDialog(onCreated: () => void): void {
+    const backdrop = doc.createElement('div');
+    backdrop.className = 'teacher-dialog-backdrop';
+
+    const box = doc.createElement('div');
+    box.className = 'teacher-dialog-box';
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-modal', 'true');
+    box.setAttribute('aria-labelledby', 'createClassTitle');
+
+    const h3 = doc.createElement('h3');
+    h3.id = 'createClassTitle';
+    h3.style.margin = '0 0 var(--sp-3, 12px) 0';
+    h3.textContent = 'Tạo lớp học mới';
+    box.appendChild(h3);
+
+    const form = doc.createElement('form');
+    const field = doc.createElement('div');
+    field.className = 'teacher-field-group';
+    const label = doc.createElement('label');
+    label.className = 'teacher-field-label';
+    label.textContent = 'Tên lớp';
+    const input = doc.createElement('input');
+    input.type = 'text';
+    input.className = 'teacher-control';
+    input.placeholder = 'Ví dụ: 12A1 Toán';
+    input.required = true;
+    field.appendChild(label);
+    field.appendChild(input);
+    form.appendChild(field);
+
+    const err = doc.createElement('div');
+    err.className = 'teacher-error-text';
+    form.appendChild(err);
+
+    const btnRow = doc.createElement('div');
+    btnRow.style.display = 'flex';
+    btnRow.style.justifyContent = 'flex-end';
+    btnRow.style.gap = 'var(--sp-2, 8px)';
+
+    const cancelBtn = doc.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-teacher-secondary';
+    cancelBtn.textContent = 'Hủy';
+    cancelBtn.addEventListener('click', () => backdrop.remove());
+
+    const submitBtn = doc.createElement('button');
+    submitBtn.type = 'submit';
+    submitBtn.className = 'btn-teacher-primary';
+    submitBtn.textContent = 'Tạo lớp';
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(submitBtn);
+    form.appendChild(btnRow);
+
+    form.addEventListener('submit', async (e: any) => {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      const val = input.value.trim();
+      if (!val) {
+        err.textContent = 'Vui lòng nhập tên lớp';
+        if (typeof input.focus === 'function') input.focus();
+        return;
+      }
+      submitBtn.disabled = true;
+      try {
+        const tok = getStoredTeacherToken() || '';
+        if (deps.client.createClass) {
+          const res = await deps.client.createClass(tok, val);
+          if (res.ok) {
+            backdrop.remove();
+            onCreated();
+          } else {
+            err.textContent = toVietnameseErrorMessage(res.code, res.message);
+          }
+        }
+      } catch (ex: any) {
+        err.textContent = 'Lỗi tạo lớp: ' + (ex?.message || String(ex));
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    box.appendChild(form);
+    backdrop.appendChild(box);
+    doc.body.appendChild(backdrop);
+    if (typeof input.focus === 'function') input.focus();
+  }
+
+  // --------------------------------------------------------------------------
+  // 3.1 Class Detail View (Assignments and Assign Exam)
+  // --------------------------------------------------------------------------
+  async function renderClassDetailView(container: HTMLElement, classId: string): Promise<void> {
+    const cls = cachedMyClasses.find((c) => c.classId === classId);
+
+    const topBar = doc.createElement('div');
+    topBar.className = 'teacher-section-header';
+
+    const left = doc.createElement('div');
+    const backBtn = doc.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'btn-teacher-secondary';
+    backBtn.style.marginBottom = 'var(--sp-2, 8px)';
+    backBtn.textContent = '← Quay lại danh sách lớp';
+    backBtn.addEventListener('click', () => {
+      selectedClassIdForDetail = null;
+      renderActiveSection();
+    });
+    left.appendChild(backBtn);
+
+    const h2 = doc.createElement('h2');
+    h2.className = 'teacher-section-title';
+    h2.textContent = cls ? `Lớp ${cls.name} (Mã: ${cls.code})` : 'Chi tiết lớp học';
+    left.appendChild(h2);
+    topBar.appendChild(left);
+
+    const assignBtn = doc.createElement('button');
+    assignBtn.id = 'btnAssignExam';
+    assignBtn.type = 'button';
+    assignBtn.className = 'btn-teacher-primary';
+    assignBtn.appendChild(Icon('plus', doc));
+    const btnSpan = doc.createElement('span');
+    btnSpan.textContent = 'Giao đề thi';
+    assignBtn.appendChild(btnSpan);
+    assignBtn.addEventListener('click', () => {
+      openAssignDialog(classId, () => {
+        void loadAssignments();
+      });
+    });
+    topBar.appendChild(assignBtn);
+
+    container.appendChild(topBar);
+
+    const assignListContainer = doc.createElement('div');
+    assignListContainer.id = 'assignedExamsList';
+    container.appendChild(assignListContainer);
+
+    async function loadAssignments() {
+      clearChildren(assignListContainer);
+      const tok = getStoredTeacherToken() || '';
+      if (!deps.client.listAssignments) {
+        const p = doc.createElement('p');
+        p.className = 'teacher-empty-text';
+        p.textContent = 'Chưa hỗ trợ danh sách bài giao.';
+        assignListContainer.appendChild(p);
+        return;
+      }
+      try {
+        const res = await deps.client.listAssignments(tok, classId);
+        if (res.ok) {
+          cachedAssignments = res.value;
+          if (cachedAssignments.length === 0) {
+            const p = doc.createElement('p');
+            p.className = 'teacher-empty-text';
+            p.textContent = 'Lớp chưa được giao đề thi nào. Bấm "Giao đề thi" để giao bài.';
+            assignListContainer.appendChild(p);
+            return;
+          }
+          clearChildren(assignListContainer);
+          for (const a of cachedAssignments) {
+            const row = doc.createElement('div');
+            row.className = 'assignment-row';
+            row.setAttribute('data-assignment-id', a.assignmentId);
+            if (row.dataset) row.dataset.assignmentId = a.assignmentId;
+
+            const info = doc.createElement('div');
+            const titleSpan = doc.createElement('div');
+            titleSpan.className = 'assignment-title';
+            titleSpan.textContent = a.title || 'Đề thi';
+            info.appendChild(titleSpan);
+
+            const meta = doc.createElement('div');
+            meta.className = 'assignment-meta-info';
+            meta.textContent = `Mở: ${formatViDateTime(a.openAt)} · Hạn nộp: ${formatViDateTime(a.dueAt)} · ${a.submissionCount || 0} bài đã nộp`;
+            info.appendChild(meta);
+            row.appendChild(info);
+
+            assignListContainer.appendChild(row);
+          }
+        } else {
+          const errP = doc.createElement('p');
+          errP.className = 'teacher-error-text';
+          errP.textContent = toVietnameseErrorMessage(res.code, res.message);
+          assignListContainer.appendChild(errP);
+        }
+      } catch (err: any) {
+        const errP = doc.createElement('p');
+        errP.className = 'teacher-error-text';
+        errP.textContent = `Lỗi nạp bài giao: ${err?.message || ''}`;
+        assignListContainer.appendChild(errP);
+      }
+    }
+
+    void loadAssignments();
+  }
+
+  // --------------------------------------------------------------------------
+  // 3.2 #assignDialog (Giao đề thi)
+  // --------------------------------------------------------------------------
+  async function openAssignDialog(targetClassId: string | null, onAssigned: () => void, preselectedExamId?: string): Promise<void> {
+    const existing = doc.getElementById('assignDialog');
+    if (existing) existing.remove();
+
+    const backdrop = doc.createElement('div');
+    backdrop.id = 'assignDialog';
+    backdrop.className = 'teacher-dialog-backdrop';
+    backdrop.setAttribute('role', 'dialog');
+    backdrop.setAttribute('aria-modal', 'true');
+    backdrop.setAttribute('aria-labelledby', 'assignDialogTitle');
+    backdrop.style.display = 'flex';
+
+    const box = doc.createElement('div');
+    box.className = 'teacher-dialog-box';
+
+    const h3 = doc.createElement('h3');
+    h3.id = 'assignDialogTitle';
+    h3.style.margin = '0 0 var(--sp-3, 12px) 0';
+    h3.textContent = 'Giao đề thi cho lớp';
+    box.appendChild(h3);
+
+    const form = doc.createElement('form');
+    form.setAttribute('novalidate', 'true');
+
+    // Class selection (if not pre-targeted)
+    let classSelect: HTMLSelectElement | null = null;
+    if (!targetClassId) {
+      const clsGroup = doc.createElement('div');
+      clsGroup.className = 'teacher-field-group';
+      const clsLabel = doc.createElement('label');
+      clsLabel.className = 'teacher-field-label';
+      clsLabel.textContent = 'Chọn lớp học';
+      classSelect = doc.createElement('select');
+      classSelect.className = 'teacher-control';
+      for (const c of cachedMyClasses) {
+        const opt = doc.createElement('option');
+        opt.value = c.classId;
+        opt.textContent = `${c.name} (${c.code})`;
+        classSelect.appendChild(opt);
+      }
+      clsGroup.appendChild(clsLabel);
+      clsGroup.appendChild(classSelect);
+      form.appendChild(clsGroup);
+    }
+
+    // Exam selection: select element AND item list for testing flexibility
+    const examGroup = doc.createElement('div');
+    examGroup.className = 'teacher-field-group';
+    const examLabel = doc.createElement('label');
+    examLabel.className = 'teacher-field-label';
+    examLabel.textContent = 'Chọn đề thi (kho chung hoặc đề đã tạo)';
+
+    const examSelect = doc.createElement('select');
+    examSelect.id = 'assignExamSelect';
+    examSelect.className = 'teacher-control';
+    examGroup.appendChild(examLabel);
+    examGroup.appendChild(examSelect);
+
+    const examListDiv = doc.createElement('div');
+    examListDiv.style.maxHeight = '140px';
+    examListDiv.style.overflowY = 'auto';
+    examListDiv.style.marginTop = 'var(--sp-2, 8px)';
+    examListDiv.style.border = '1px solid var(--c-border)';
+    examListDiv.style.borderRadius = 'var(--r-sm, 8px)';
+    examListDiv.style.padding = 'var(--sp-1, 4px)';
+    examGroup.appendChild(examListDiv);
+    form.appendChild(examGroup);
+
+    // OpenAt field
+    const openGroup = doc.createElement('div');
+    openGroup.className = 'teacher-field-group';
+    const openLabel = doc.createElement('label');
+    openLabel.className = 'teacher-field-label';
+    openLabel.setAttribute('for', 'assignOpenAt');
+    openLabel.textContent = 'Thời gian mở đề';
+    const openInput = doc.createElement('input');
+    openInput.id = 'assignOpenAt';
+    openInput.name = 'assignOpenAt';
+    openInput.type = 'datetime-local';
+    openInput.className = 'teacher-control';
+    openInput.required = true;
+    openGroup.appendChild(openLabel);
+    openGroup.appendChild(openInput);
+    form.appendChild(openGroup);
+
+    // DueAt field
+    const dueGroup = doc.createElement('div');
+    dueGroup.className = 'teacher-field-group';
+    const dueLabel = doc.createElement('label');
+    dueLabel.className = 'teacher-field-label';
+    dueLabel.setAttribute('for', 'assignDueAt');
+    dueLabel.textContent = 'Hạn nộp bài';
+    const dueInput = doc.createElement('input');
+    dueInput.id = 'assignDueAt';
+    dueInput.name = 'assignDueAt';
+    dueInput.type = 'datetime-local';
+    dueInput.className = 'teacher-control';
+    dueInput.required = true;
+    dueGroup.appendChild(dueLabel);
+    dueGroup.appendChild(dueInput);
+    form.appendChild(dueGroup);
+
+    // Error message
+    const errDiv = doc.createElement('div');
+    errDiv.className = 'teacher-error-text';
+    form.appendChild(errDiv);
+
+    // Buttons
+    const btnRow = doc.createElement('div');
+    btnRow.style.display = 'flex';
+    btnRow.style.justifyContent = 'flex-end';
+    btnRow.style.gap = 'var(--sp-2, 8px)';
+
+    const cancelBtn = doc.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-teacher-secondary';
+    cancelBtn.textContent = 'Hủy';
+    cancelBtn.addEventListener('click', () => backdrop.remove());
+
+    const confirmBtn = doc.createElement('button');
+    confirmBtn.id = 'btnAssignConfirm';
+    confirmBtn.type = 'submit';
+    confirmBtn.className = 'btn-teacher-primary';
+    confirmBtn.textContent = 'Xác nhận giao';
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(confirmBtn);
+    form.appendChild(btnRow);
+
+    // Populate exams
+    try {
+      const allExams = await deps.listAllExams();
+      clearChildren(examSelect);
+      clearChildren(examListDiv);
+
+      for (const e of allExams) {
+        const opt = doc.createElement('option');
+        opt.value = e.id;
+        opt.textContent = e.title;
+        if (preselectedExamId && e.id === preselectedExamId) {
+          opt.selected = true;
+          examSelect.value = e.id;
+        } else if (!examSelect.value) {
+          examSelect.value = e.id;
+        }
+        examSelect.appendChild(opt);
+
+        const itemBtn = doc.createElement('button');
+        itemBtn.type = 'button';
+        itemBtn.className = 'class-btn-action';
+        itemBtn.setAttribute('data-exam-id', e.id);
+        if (itemBtn.dataset) itemBtn.dataset.examId = e.id;
+        itemBtn.style.width = '100%';
+        itemBtn.style.textAlign = 'left';
+        itemBtn.style.justifyContent = 'flex-start';
+        itemBtn.style.marginBottom = 'var(--sp-1, 4px)';
+        itemBtn.textContent = e.title;
+        itemBtn.addEventListener('click', () => {
+          examSelect.value = e.id;
+          examSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        examListDiv.appendChild(itemBtn);
+      }
+    } catch {}
+
+    form.addEventListener('submit', async (e: any) => {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      errDiv.textContent = '';
+      const chosenClassId = targetClassId || classSelect?.value || '';
+      const chosenExamId = examSelect.value;
+      const openVal = openInput.value;
+      const dueVal = dueInput.value;
+
+      if (!chosenClassId) {
+        errDiv.textContent = 'Vui lòng chọn lớp học';
+        return;
+      }
+      if (!chosenExamId) {
+        errDiv.textContent = 'Vui lòng chọn đề thi';
+        return;
+      }
+      if (!openVal || !dueVal) {
+        errDiv.textContent = 'Vui lòng nhập cả giờ mở và hạn nộp';
+        return;
+      }
+
+      const openMs = new Date(openVal).getTime();
+      const dueMs = new Date(dueVal).getTime();
+      if (isNaN(openMs) || isNaN(dueMs) || dueMs <= openMs) {
+        errDiv.textContent = 'Hạn nộp bài phải sau thời gian mở đề';
+        return;
+      }
+
+      confirmBtn.disabled = true;
+      try {
+        const tok = getStoredTeacherToken() || '';
+        if (deps.client.assignExam) {
+          const res = await deps.client.assignExam(
+            tok,
+            chosenClassId,
+            chosenExamId,
+            new Date(openVal).toISOString(),
+            new Date(dueVal).toISOString()
+          );
+          if (res.ok) {
+            backdrop.remove();
+            onAssigned();
+          } else {
+            errDiv.textContent = toVietnameseErrorMessage(res.code, res.message);
+          }
+        }
+      } catch (ex: any) {
+        errDiv.textContent = 'Lỗi giao đề: ' + (ex?.message || String(ex));
+      } finally {
+        confirmBtn.disabled = false;
+      }
+    });
+
+    box.appendChild(form);
+    backdrop.appendChild(box);
+    doc.body.appendChild(backdrop);
+  }
+
+  // --------------------------------------------------------------------------
+  // 4. Section: Đề thi
+  // --------------------------------------------------------------------------
+  async function renderExamsSection(container: HTMLElement): Promise<void> {
+    clearChildren(container);
+
+    const header = doc.createElement('div');
+    header.className = 'teacher-section-header';
+
+    const title = doc.createElement('h2');
+    title.className = 'teacher-section-title';
+    title.textContent = 'Kho đề thi & Quản lý đề';
+    header.appendChild(title);
+
+    const newBtn = doc.createElement('button');
+    newBtn.id = 'btnTeacherNewExam';
+    newBtn.type = 'button';
+    newBtn.className = 'btn-teacher-primary';
+    newBtn.appendChild(Icon('plus', doc));
+    const btnSpan = doc.createElement('span');
+    btnSpan.textContent = 'Soạn đề mới';
+    newBtn.appendChild(btnSpan);
+
+    newBtn.addEventListener('click', () => {
+      deps.openBuilder(null, {
+        onPublish: async (exam) => {
+          const tok = getStoredTeacherToken() || '';
+          const res = await deps.client.publishExam(tok, exam);
+          if (res.ok) {
+            void loadExams();
+          }
+          return res;
+        },
+      });
+    });
+    header.appendChild(newBtn);
+    container.appendChild(header);
+
+    const grid = doc.createElement('div');
+    grid.className = 'teacher-grid-list';
+    grid.id = 'teacherExamGrid';
+    container.appendChild(grid);
+
+    async function loadExams() {
+      clearChildren(grid);
+      const loadingP = doc.createElement('p');
+      loadingP.className = 'teacher-empty-text';
+      loadingP.textContent = 'Đang tải danh sách đề thi...';
+      grid.appendChild(loadingP);
+
+      try {
+        const allExams = await deps.listAllExams();
+        clearChildren(grid);
+        if (allExams.length === 0) {
+          const emptyP = doc.createElement('p');
+          emptyP.className = 'teacher-empty-text';
+          emptyP.textContent = 'Chưa có đề thi nào.';
+          grid.appendChild(emptyP);
+          return;
+        }
+
+        for (const exam of allExams) {
+          const card = doc.createElement('div');
+          card.className = 'class-card';
+          card.setAttribute('data-exam-id', exam.id);
+          if (card.dataset) card.dataset.examId = exam.id;
+
+          const h3 = doc.createElement('h3');
+          h3.className = 'class-name';
+          h3.textContent = exam.title;
+          card.appendChild(h3);
+
+          const desc = doc.createElement('div');
+          desc.style.fontSize = 'var(--fs-sm, 14px)';
+          desc.style.color = 'var(--c-text-2)';
+          desc.textContent = exam.description || `Môn ${exam.subject || 'GDPT'} · ${exam.questionCount || 0} câu · ${exam.durationMinutes || 50} phút`;
+          card.appendChild(desc);
+
+          const srcBadge = doc.createElement('div');
+          srcBadge.style.fontSize = 'var(--fs-xs, 12px)';
+          srcBadge.style.color = exam.source === 'teacher' ? 'var(--c-primary)' : 'var(--c-text-2)';
+          srcBadge.textContent = exam.source === 'teacher' ? 'Đề giáo viên đã xuất bản' : 'Kho đề minh họa chung';
+          card.appendChild(srcBadge);
+
+          const actions = doc.createElement('div');
+          actions.className = 'class-actions-bar';
+
+          // Edit button
+          const editBtn = doc.createElement('button');
+          editBtn.type = 'button';
+          editBtn.className = 'btn-teacher-edit class-btn-action';
+          editBtn.appendChild(Icon('edit', doc));
+          const editSpan = doc.createElement('span');
+          editSpan.textContent = 'Sửa đề';
+          editBtn.appendChild(editSpan);
+
+          editBtn.addEventListener('click', async () => {
+            editBtn.disabled = true;
+            try {
+              const fullExam = (await exam.load()) as any;
+              if (fullExam && typeof fullExam === 'object') {
+                if (fullExam.durationMinutes === undefined && fullExam.settings?.durationMinutes !== undefined) {
+                  fullExam.durationMinutes = fullExam.settings.durationMinutes;
+                }
+              }
+              deps.openBuilder(fullExam, {
+                onPublish: async (updatedExam: any) => {
+                  const tok = getStoredTeacherToken() || '';
+                  const mergedExam = { ...fullExam, ...updatedExam };
+                  if (fullExam.settings && updatedExam.settings) {
+                    mergedExam.settings = { ...fullExam.settings, ...updatedExam.settings };
+                  }
+                  const res = await deps.client.publishExam(tok, mergedExam);
+                  if (res.ok) {
+                    void loadExams();
+                  }
+                  return res;
+                },
+              });
+            } catch (err: any) {
+              alert('Lỗi nạp đề thi để sửa: ' + (err?.message || String(err)));
+            } finally {
+              editBtn.disabled = false;
+            }
+          });
+          actions.appendChild(editBtn);
+
+          // Assign button
+          const assignBtn = doc.createElement('button');
+          assignBtn.type = 'button';
+          assignBtn.className = 'btn-teacher-assign class-btn-action';
+          assignBtn.appendChild(Icon('classes', doc));
+          const assignSpan = doc.createElement('span');
+          assignSpan.textContent = 'Giao đề';
+          assignBtn.appendChild(assignSpan);
+
+          assignBtn.addEventListener('click', () => {
+            openAssignDialog(null, () => {
+              alert('Đã giao đề thành công!');
+            }, exam.id);
+          });
+          actions.appendChild(assignBtn);
+
+          // Unpublish button (for teacher source)
+          if (exam.source === 'teacher') {
+            const unpubBtn = doc.createElement('button');
+            unpubBtn.type = 'button';
+            unpubBtn.className = 'btn-teacher-unpublish class-btn-action';
+            unpubBtn.style.color = 'var(--c-danger)';
+            unpubBtn.appendChild(Icon('trash', doc));
+            const unpubSpan = doc.createElement('span');
+            unpubSpan.textContent = 'Gỡ';
+            unpubBtn.appendChild(unpubSpan);
+
+            unpubBtn.addEventListener('click', async () => {
+              if (typeof confirm === 'function' && !confirm(`Bạn có chắc chắn muốn gỡ xuất bản đề "${exam.title}"?`)) return;
+              unpubBtn.disabled = true;
+              try {
+                const tok = getStoredTeacherToken() || '';
+                const res = await deps.client.unpublishExam(tok, exam.id);
+                if (res.ok) {
+                  void loadExams();
+                } else {
+                  alert(toVietnameseErrorMessage(res.code, res.message));
+                }
+              } catch (ex: any) {
+                alert('Lỗi gỡ đề: ' + (ex?.message || String(ex)));
+              } finally {
+                unpubBtn.disabled = false;
+              }
+            });
+            actions.appendChild(unpubBtn);
+          }
+
+          card.appendChild(actions);
+          grid.appendChild(card);
+        }
+      } catch (err: any) {
+        clearChildren(grid);
+        const errP = doc.createElement('p');
+        errP.className = 'teacher-error-text';
+        errP.textContent = `Lỗi nạp danh sách đề: ${err?.message || ''}`;
+        grid.appendChild(errP);
+      }
+    }
+
+    void loadExams();
+  }
+
+  // --------------------------------------------------------------------------
+  // 5. Section: Kết quả (#resultsTable, #btnExportResults)
+  // --------------------------------------------------------------------------
+  async function renderResultsSection(container: HTMLElement): Promise<void> {
+    clearChildren(container);
+
+    const header = doc.createElement('div');
+    header.className = 'teacher-section-header';
+
+    const title = doc.createElement('h2');
+    title.className = 'teacher-section-title';
+    title.textContent = 'Kết quả bài làm của học sinh';
+    header.appendChild(title);
+
+    const exportBtn = doc.createElement('button');
+    exportBtn.id = 'btnExportResults';
+    exportBtn.type = 'button';
+    exportBtn.className = 'btn-teacher-secondary';
+    exportBtn.appendChild(Icon('download', doc));
+    const btnSpan = doc.createElement('span');
+    btnSpan.textContent = 'Xuất kết quả CSV';
+    exportBtn.appendChild(btnSpan);
+    header.appendChild(exportBtn);
+    container.appendChild(header);
+
+    // Filters row: Class select
+    const filterRow = doc.createElement('div');
+    filterRow.style.display = 'flex';
+    filterRow.style.gap = 'var(--sp-3, 12px)';
+    filterRow.style.flexWrap = 'wrap';
+    filterRow.style.marginBottom = 'var(--sp-4, 16px)';
+
+    const clsGroup = doc.createElement('div');
+    clsGroup.style.minWidth = '240px';
+    const clsLabel = doc.createElement('label');
+    clsLabel.className = 'teacher-field-label';
+    clsLabel.textContent = 'Lớp học';
+    const clsSelect = doc.createElement('select');
+    clsSelect.id = 'resultsClassSelect';
+    clsSelect.className = 'teacher-control';
+    clsGroup.appendChild(clsLabel);
+    clsGroup.appendChild(clsSelect);
+    filterRow.appendChild(clsGroup);
+
+    container.appendChild(filterRow);
+
+    // Results table wrapper
+    const tableWrap = doc.createElement('div');
+    tableWrap.className = 'teacher-table-wrap';
+
+    const table = doc.createElement('table');
+    table.id = 'resultsTable';
+    table.className = 'teacher-table';
+
+    const thead = doc.createElement('thead');
+    const headerRow = doc.createElement('tr');
+    for (const hText of ['Học sinh', 'Lớp', 'Thời gian nộp', 'Phần I', 'Phần II', 'Phần III', 'Tổng điểm']) {
+      const th = doc.createElement('th');
+      th.setAttribute('scope', 'col');
+      th.textContent = hText;
+      headerRow.appendChild(th);
+    }
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = doc.createElement('tbody');
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    container.appendChild(tableWrap);
+
+    let currentResultsData: any[] = [];
+
+    exportBtn.addEventListener('click', () => {
+      if (currentResultsData.length === 0) {
+        alert('Chưa có dữ liệu kết quả để xuất.');
+        return;
+      }
+      const headers = ['Hoc sinh', 'Lop', 'Thoi gian nop', 'Phan I', 'Phan II', 'Phan III', 'Tong diem'];
+      const rows = currentResultsData.map((r) => [
+        escapeCsvCell(r.candidateName || r.candidate_display || ''),
+        escapeCsvCell(r.class_code || ''),
+        escapeCsvCell(r.submitted_at || ''),
+        escapeCsvCell(r.sections?.I ? `${r.sections.I.score}/${r.sections.I.max}` : ''),
+        escapeCsvCell(r.sections?.II ? `${r.sections.II.score}/${r.sections.II.max}` : ''),
+        escapeCsvCell(r.sections?.III ? `${r.sections.III.score}/${r.sections.III.max}` : ''),
+        escapeCsvCell(r.total ? `${r.total}/${r.maxTotal || 10}` : ''),
+      ]);
+
+      const csvContent = '\uFEFF' + [headers.map((h) => `"${h}"`).join(','), ...rows.map((row) => row.join(','))].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = doc.createElement('a');
+      a.href = url;
+      a.download = `Cunata_KetQua_${Date.now()}.csv`;
+      doc.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        a.remove();
+        URL.revokeObjectURL(url);
+      }, 500);
+    });
+
+    async function loadResults() {
+      clearChildren(tbody);
+      const loadingTr = doc.createElement('tr');
+      const loadingTd = doc.createElement('td');
+      loadingTd.setAttribute('colspan', '7');
+      loadingTd.textContent = 'Đang nạp kết quả...';
+      loadingTr.appendChild(loadingTd);
+      tbody.appendChild(loadingTr);
+
+      const tok = getStoredTeacherToken() || '';
+      const chosenClassId = clsSelect.value || '';
+      if (!deps.client.listResults) {
+        clearChildren(tbody);
+        const tr = doc.createElement('tr');
+        const td = doc.createElement('td');
+        td.setAttribute('colspan', '7');
+        td.textContent = 'Chức năng xem kết quả chưa được hỗ trợ.';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+      try {
+        const res = await deps.client.listResults(tok, chosenClassId);
+        if (res.ok) {
+          currentResultsData = res.value || [];
+          clearChildren(tbody);
+          if (currentResultsData.length === 0) {
+            const tr = doc.createElement('tr');
+            const td = doc.createElement('td');
+            td.setAttribute('colspan', '7');
+            td.style.textAlign = 'center';
+            td.style.color = 'var(--c-text-2)';
+            td.textContent = 'Chưa có bài nộp nào.';
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+            return;
+          }
+          for (const item of currentResultsData) {
+            const tr = doc.createElement('tr');
+            const name = item.candidateName || item.candidate_display || 'Học sinh';
+            const clsCode = item.class_code || '';
+            const subAt = formatViDateTime(item.submitted_at);
+            const pI = item.sections?.I ? `${item.sections.I.score}/${item.sections.I.max}` : '-';
+            const pII = item.sections?.II ? `${item.sections.II.score}/${item.sections.II.max}` : '-';
+            const pIII = item.sections?.III ? `${item.sections.III.score}/${item.sections.III.max}` : '-';
+            const total = item.total ? `${item.total} / ${item.maxTotal || 10}` : '-';
+
+            const tdName = doc.createElement('td');
+            const strongName = doc.createElement('strong');
+            strongName.textContent = name;
+            tdName.appendChild(strongName);
+            tr.appendChild(tdName);
+
+            const tdCode = doc.createElement('td');
+            tdCode.textContent = clsCode;
+            tr.appendChild(tdCode);
+
+            const tdSubAt = doc.createElement('td');
+            tdSubAt.textContent = subAt;
+            tr.appendChild(tdSubAt);
+
+            const tdPI = doc.createElement('td');
+            tdPI.textContent = pI;
+            tr.appendChild(tdPI);
+
+            const tdPII = doc.createElement('td');
+            tdPII.textContent = pII;
+            tr.appendChild(tdPII);
+
+            const tdPIII = doc.createElement('td');
+            tdPIII.textContent = pIII;
+            tr.appendChild(tdPIII);
+
+            const tdTotal = doc.createElement('td');
+            const strongTotal = doc.createElement('strong');
+            strongTotal.textContent = total;
+            tdTotal.appendChild(strongTotal);
+            tr.appendChild(tdTotal);
+
+            tbody.appendChild(tr);
+          }
+        } else {
+          clearChildren(tbody);
+          const tr = doc.createElement('tr');
+          const td = doc.createElement('td');
+          td.setAttribute('colspan', '7');
+          td.className = 'teacher-error-text';
+          td.textContent = toVietnameseErrorMessage(res.code, res.message);
+          tr.appendChild(td);
+          tbody.appendChild(tr);
+        }
+      } catch (err: any) {
+        clearChildren(tbody);
+        const tr = doc.createElement('tr');
+        const td = doc.createElement('td');
+        td.setAttribute('colspan', '7');
+        td.className = 'teacher-error-text';
+        td.textContent = `Lỗi nạp kết quả: ${err?.message || ''}`;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+      }
+    }
+
+    // Populate class options
+    clearChildren(clsSelect);
+    const defaultOpt = doc.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = '-- Tất cả lớp --';
+    clsSelect.appendChild(defaultOpt);
+
+    if (deps.client.listMyClasses) {
+      try {
+        const tok = getStoredTeacherToken() || '';
+        const res = await deps.client.listMyClasses(tok);
+        if (res.ok) {
+          cachedMyClasses = res.value;
+          for (const c of cachedMyClasses) {
+            const opt = doc.createElement('option');
+            opt.value = c.classId;
+            opt.textContent = `${c.name} (${c.code})`;
+            clsSelect.appendChild(opt);
+          }
+        }
+      } catch {}
+    }
+
+    clsSelect.addEventListener('change', () => {
+      void loadResults();
+    });
+
+    void loadResults();
+  }
+
+  // --------------------------------------------------------------------------
+  // Visibility and Routing Helpers
+  // --------------------------------------------------------------------------
+  function isLoggedIn(): boolean {
+    return Boolean(getStoredTeacherToken());
+  }
+
+  function showLogin(): void {
+    if (shell) shell.style.display = 'none';
+    if (loginSection) {
+      loginSection.style.display = 'block';
+      renderLoginView();
+    }
+  }
+
+  function showShell(section: 'lop' | 'de' | 'ket-qua' = 'lop'): void {
+    if (loginSection) loginSection.style.display = 'none';
+    if (shell) {
+      shell.style.display = 'block';
+      currentNav = section;
+      renderShellView();
+    }
+  }
+
+  let roleChosen = false;
+
+  const onChooseTeacher = () => {
+    roleChosen = true;
+    const chooser = doc.getElementById('roleChooser');
+    if (chooser) {
+      chooser.hidden = true;
+    }
+    if (isLoggedIn()) {
+      showShell(currentNav);
+    } else {
+      showLogin();
+    }
+  };
+
+  if (doc.addEventListener) {
+    doc.addEventListener('click', (ev: Event) => {
+      const target = ev.target as HTMLElement | null;
+      if (target && (target.id === 'btnRoleTeacher' || (target.closest && target.closest('#btnRoleTeacher')))) {
+        onChooseTeacher();
+      }
     });
   }
 
-  // Accessible keyboard events: Escape to dismiss, Tab trap
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (!isModalOpen) return;
-    if (e.key === 'Escape' || e.key === 'Esc') {
-      e.preventDefault();
-      e.stopPropagation();
-      closeModal();
-      return;
-    }
-    if (e.key === 'Tab') {
-      trapFocus(elems.modal, e);
-    }
-  };
-
-  elems.modal.addEventListener('keydown', handleKeyDown as EventListener);
-  if (typeof doc.addEventListener === 'function') {
-    doc.addEventListener('keydown', handleKeyDown as EventListener);
-  }
-
-  // Click outside to dismiss
-  const handleOverlayClick = (e: MouseEvent) => {
-    if (e.target === elems.modal) {
-      closeModal();
-    }
-  };
-  elems.modal.addEventListener('click', handleOverlayClick as EventListener);
-
-  const dispose = (): void => {
-    closeModal();
-    elems.modal.removeEventListener('keydown', handleKeyDown as EventListener);
-    if (typeof doc.removeEventListener === 'function') {
-      doc.removeEventListener('keydown', handleKeyDown as EventListener);
-    }
-    elems.modal.removeEventListener('click', handleOverlayClick as EventListener);
-    if (elems.closeBtn) {
-      elems.closeBtn.removeEventListener('click', closeModal);
-    }
-  };
+  // Initial render of login form
+  renderLoginView();
 
   return {
-    open: openModal,
-    close: closeModal,
-    refreshList,
-    dispose,
+    open(section?: 'lop' | 'de' | 'ket-qua') {
+      const activeSection = section || currentNav;
+
+      const chooser = doc.getElementById('roleChooser');
+      let rememberedRole: string | null = null;
+      try {
+        rememberedRole = localStorage.getItem(TEACHER_ROLE_KEY);
+      } catch {}
+
+      if (rememberedRole === 'teacher') {
+        roleChosen = true;
+      }
+
+      if (chooser && !roleChosen && !isLoggedIn()) {
+        chooser.hidden = false;
+        if (loginSection) loginSection.style.display = 'none';
+        if (shell) shell.style.display = 'none';
+        return;
+      }
+
+      if (chooser) {
+        chooser.hidden = true;
+      }
+
+      if (isLoggedIn()) {
+        showShell(activeSection);
+      } else {
+        showLogin();
+      }
+    },
+
+    close() {
+      roleChosen = false;
+      if (loginSection) loginSection.style.display = 'none';
+      if (shell) shell.style.display = 'none';
+      const assignDlg = doc.getElementById('assignDialog');
+      if (assignDlg) assignDlg.remove();
+    },
+
+    async refreshList() {
+      if (isLoggedIn() && shell && shell.style.display !== 'none') {
+        renderActiveSection();
+      }
+    },
+
+    dispose() {
+      loginSection?.remove();
+      shell?.remove();
+      const dlg = doc.getElementById('assignDialog');
+      if (dlg) dlg.remove();
+    },
   };
 }

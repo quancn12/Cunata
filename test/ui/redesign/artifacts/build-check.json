@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "validation": {
+    "valid": true,
+    "bareImports": [],
+    "testArtifacts": [],
+    "absolutePaths": [],
+    "issues": []
+  },
+  "promoted": false,
+  "emittedFiles": 302,
+  "componentsCssCopied": false,
+  "tokensCssCopied": false
+}

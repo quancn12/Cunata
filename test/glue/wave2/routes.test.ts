@@ -30,9 +30,9 @@ describe('WEB-W2-GLUE — Router & Hash Management', () => {
   });
 
   it('parseHash parses route and query parameters safely', () => {
-    assert.deepEqual(parseHash(''), { route: 'exam', params: {} });
-    assert.deepEqual(parseHash('#'), { route: 'exam', params: {} });
-    assert.deepEqual(parseHash('#/'), { route: 'exam', params: {} });
+    assert.deepEqual(parseHash(''), { route: 'chooser', params: {} });
+    assert.deepEqual(parseHash('#'), { route: 'chooser', params: {} });
+    assert.deepEqual(parseHash('#/'), { route: 'chooser', params: {} });
     assert.deepEqual(parseHash('#/exam'), { route: 'exam', params: {} });
 
     assert.deepEqual(parseHash('#/report?attemptId=att-123&release=immediate'), {
@@ -45,9 +45,9 @@ describe('WEB-W2-GLUE — Router & Hash Management', () => {
       params: { draftId: 'd-1' },
     });
 
-    // Unknown route falls back to 'exam'
+    // Unknown route falls back to 'chooser'
     assert.deepEqual(parseHash('#/unknown-route?foo=bar'), {
-      route: 'exam',
+      route: 'chooser',
       params: { foo: 'bar' },
     });
   });

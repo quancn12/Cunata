@@ -755,3 +755,7 @@ export async function resumeAttempt(
 
   return { ok: true, value: controller };
 }
+
+export * from "./area.ts";
+export * from "./view.ts";
+

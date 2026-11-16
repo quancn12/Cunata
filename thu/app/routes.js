@@ -9,22 +9,43 @@ export const VALID_ROUTES = [
     'bank',
     ['im', 'port'].join(''),
 ];
+export const ALL_APP_ROUTES = [
+    ...VALID_ROUTES,
+    'chooser',
+    'student',
+    'teacher',
+];
 export function isValidRoute(val) {
-    return typeof val === 'string' && VALID_ROUTES.includes(val);
+    return typeof val === 'string' && ALL_APP_ROUTES.includes(val);
 }
 export function parseHash(rawHash) {
     const hash = rawHash.replace(/^[#\/]+/, '');
     if (!hash) {
-        return { route: 'exam', params: {} };
+        return { route: 'chooser', params: {} };
     }
     const [routePart, queryPart] = hash.split('?');
-    const routeName = (routePart || '').trim().toLowerCase();
-    const route = isValidRoute(routeName) ? routeName : 'exam';
+    const [page, rawId] = (routePart || '').split('/');
+    const routeName = (page || '').trim().toLowerCase();
+    const aliases = { 'hoc-sinh': 'student', 'giao-vien': 'teacher', 'lam-bai': 'exam', 'ket-qua': 'report' };
+    const route = Object.hasOwn(aliases, routeName) ? aliases[routeName] : (isValidRoute(routeName) ? routeName : 'chooser');
     const params = {};
     if (queryPart) {
         const searchParams = new URLSearchParams(queryPart);
         for (const [k, v] of searchParams.entries()) {
             params[k] = v;
+        }
+    }
+    if (rawId) {
+        try {
+            if (route === 'exam')
+                params.examId = decodeURIComponent(rawId);
+            if (route === 'report')
+                params.attemptId = decodeURIComponent(rawId);
+            if (route === 'teacher' && ['lop', 'de', 'ket-qua'].includes(rawId))
+                params.section = rawId;
+        }
+        catch {
+            return { route: 'chooser', params: {} };
         }
     }
     return {
@@ -34,9 +55,21 @@ export function parseHash(rawHash) {
 }
 export function serializeRouteState(state) {
     const params = state.params;
-    const keys = Object.keys(params).sort();
+    let routePath = state.route;
+    const consumed = new Set();
+    if (state.route === 'chooser')
+        routePath = '';
+    if (state.route === 'student')
+        routePath = 'hoc-sinh';
+    if (state.route === 'teacher') {
+        routePath = 'giao-vien';
+        if (params.section && ['lop', 'de', 'ket-qua'].includes(params.section))
+            routePath += '/' + params.section;
+        consumed.add('section');
+    }
+    const keys = Object.keys(params).filter((key) => !consumed.has(key)).sort();
     if (keys.length === 0) {
-        return `#/${state.route}`;
+        return `#/${routePath}`;
     }
     const search = new URLSearchParams();
     for (const k of keys) {
@@ -45,7 +78,7 @@ export function serializeRouteState(state) {
             search.set(k, val);
         }
     }
-    return `#/${state.route}?${search.toString()}`;
+    return `#/${routePath}?${search.toString()}`;
 }
 export function createRouter(initialRoute = 'exam', initialParams = {}, injectedWindow) {
     const win = injectedWindow ?? (typeof window !== 'undefined' ? window : undefined);

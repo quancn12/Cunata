@@ -3,8 +3,8 @@
 import { createServer } from 'node:http';
 import { makeGas } from './gas-fake.mjs';
 
-export async function startGasServer({ password = 'MatKhau-GV-123', failPosts = 0 } = {}) {
-  const gas = makeGas({ password });
+export async function startGasServer({ password = 'MatKhau-GV-123', adminPassword = 'Admin-Cunata-2026', failPosts = 0 } = {}) {
+  const gas = makeGas({ password, adminPassword });
   const echo = new Map();
   const log = [];          // {method, url, body}
   let seq = 0, toFail = failPosts;
@@ -34,7 +34,7 @@ export async function startGasServer({ password = 'MatKhau-GV-123', failPosts = 
   });
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   return {
-    url: `http://127.0.0.1:${server.address().port}/exec`, gas, log, password,
+    url: `http://127.0.0.1:${server.address().port}/exec`, gas, log, password, adminPassword,
     setFailPosts(n) { toFail = n; },
     close: () => new Promise((r) => { server.closeAllConnections?.(); server.close(() => r()); }),
   };

@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import vm from 'node:vm';
+import { createHash } from 'node:crypto';
 import { PROJECT_ROOT } from './harness.mjs';
 
 const CELL_LIMIT = 50000;
@@ -46,7 +47,7 @@ class Sheet {
   clearContents() { this.rows = []; return this; }
 }
 
-export function makeGas({ password = 'MatKhau-GV-123' } = {}) {
+export function makeGas({ password = 'MatKhau-GV-123', adminPassword = 'Admin-Cunata-2026' } = {}) {
   const sheets = new Map();
   const book = {
     getSheetByName: (n) => sheets.get(n) ?? null,
@@ -55,7 +56,10 @@ export function makeGas({ password = 'MatKhau-GV-123' } = {}) {
     getActiveSheet: () => { if (!sheets.size) book.insertSheet('Sheet1'); return [...sheets.values()][0]; },
   };
   book.insertSheet('Sheet1');                                    // trang tính mặc định của một Google Sheet mới
-  const props = new Map(password === null ? [] : [['TEACHER_PASSWORD', password]]);
+  const props = new Map([...(password === null ? [] : [['TEACHER_PASSWORD', password]]), ...(adminPassword === null ? [] : [['ADMIN_PASSWORD', adminPassword]])]);
+  const cache = new Map();
+  const cacheSvc = { get: (k) => { const v = cache.get(k); if (!v || v.exp < Date.now()) return null; return v.val; }, put: (k, val, sec = 600) => { cache.set(k, { val: String(val), exp: Date.now() + Math.min(sec, 21600) * 1000 }); }, remove: (k) => cache.delete(k) };
+  const toSigned = (buf) => [...buf].map((b) => (b > 127 ? b - 256 : b));
   const out = (text) => ({ text, mime: null, setMimeType(m) { this.mime = m; return this; }, getContent() { return this.text; } });
   const context = {
     console, JSON, Math, Date, Object, Array, String, Number, Boolean, BigInt, RegExp, Error, TypeError, Map, Set, parseInt, parseFloat, isFinite, encodeURIComponent, decodeURIComponent,
@@ -63,7 +67,11 @@ export function makeGas({ password = 'MatKhau-GV-123' } = {}) {
     ContentService: { createTextOutput: out, MimeType: { JSON: 'application/json', TEXT: 'text/plain' } },
     LockService: { getScriptLock: () => ({ tryLock: () => true, waitLock: () => {}, releaseLock: () => {}, hasLock: () => true }) },
     PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => props.get(k) ?? null, getProperties: () => Object.fromEntries(props), setProperty: (k, v) => props.set(k, v) }) },
-    Utilities: { getUuid: () => crypto.randomUUID(), sleep: () => {}, computeDigest: () => [], DigestAlgorithm: {}, Charset: {}, base64Encode: (s) => Buffer.from(String(s)).toString('base64') },
+    Utilities: { getUuid: () => crypto.randomUUID(), sleep: () => {}, DigestAlgorithm: { SHA_256: 'sha256' }, Charset: { UTF_8: 'utf8' },
+      computeDigest: (alg, value) => toSigned(createHash(alg === 'sha256' ? 'sha256' : 'sha256').update(typeof value === 'string' ? Buffer.from(value, 'utf8') : Buffer.from(value.map((b) => b & 255))).digest()),
+      base64Encode: (v) => Buffer.from(typeof v === 'string' ? v : v.map((b) => b & 255)).toString('base64'),
+      base64EncodeWebSafe: (v) => Buffer.from(typeof v === 'string' ? v : v.map((b) => b & 255)).toString('base64url') },
+    CacheService: { getScriptCache: () => cacheSvc },
     Session: { getScriptTimeZone: () => 'Asia/Ho_Chi_Minh' },
     module: { exports: {} },
   };
@@ -71,7 +79,7 @@ export function makeGas({ password = 'MatKhau-GV-123' } = {}) {
   vm.runInContext(readFileSync(join(PROJECT_ROOT, 'apps-script', 'Code.js'), 'utf8'), context, { filename: 'apps-script/Code.js' });
   const parse = (r) => { assert(r && typeof r.text === 'string', 'doGet/doPost phải trả về ContentService.createTextOutput(...)'); return JSON.parse(r.text); };
   return {
-    sheets, book,
+    sheets, book, props, cache,
     get: (params) => parse(vm.runInContext('doGet', context)({ parameter: params, parameters: Object.fromEntries(Object.entries(params).map(([k, v]) => [k, [v]])) })),
     post: (body) => parse(vm.runInContext('doPost', context)({ postData: { contents: JSON.stringify(body), type: 'text/plain' }, parameter: {} })),
     rawResponses: [],

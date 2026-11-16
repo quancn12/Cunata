@@ -92,6 +92,7 @@ function buildDialogBase(options, builder) {
 /**
  * Creates an accessible confirmation dialog with double-click guard.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function createConfirmDialog(options) {
     let isConfirmed = false;
     let isSubmitting = false;
@@ -169,6 +170,7 @@ export function createConfirmDialog(options) {
 /**
  * Creates an accessible non-blocking alert dialog (never halts background timer countdowns).
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function createAlertDialog(options) {
     return buildDialogBase({ ...options, role: 'alertdialog' }, (dialogEl, closeDialog) => {
         const doc = options.document || dialogEl.ownerDocument || document;
@@ -208,6 +210,7 @@ export function createAlertDialog(options) {
  * - Double-click / double-trigger protection against race conditions.
  * - Restores focus to trigger button upon cancellation.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function createSubmitConfirmDialog(options) {
     let isConfirmed = false;
     let isSubmitting = false;
@@ -244,20 +247,20 @@ export function createSubmitConfirmDialog(options) {
         statsList.style.margin = '8px 0';
         const liAnswered = doc.createElement('li');
         liAnswered.textContent = `Đã trả lời: ${options.answeredCount} câu`;
-        liAnswered.style.color = '#15803d'; // green-700
+        liAnswered.style.color = 'var(--c-success)'; // green-700
         liAnswered.style.fontWeight = '600';
         statsList.appendChild(liAnswered);
         const liUnanswered = doc.createElement('li');
         liUnanswered.textContent = `Chưa trả lời: ${options.unansweredCount} câu`;
         if (options.unansweredCount > 0) {
-            liUnanswered.style.color = '#b91c1c'; // red-700
+            liUnanswered.style.color = 'var(--c-danger)'; // red-700
             liUnanswered.style.fontWeight = '700';
         }
         statsList.appendChild(liUnanswered);
         if (options.flaggedCount !== undefined && options.flaggedCount > 0) {
             const liFlagged = doc.createElement('li');
             liFlagged.textContent = `Đánh dấu xem lại: ${options.flaggedCount} câu`;
-            liFlagged.style.color = '#b45309'; // amber-700
+            liFlagged.style.color = 'var(--c-warning)'; // amber-700
             statsList.appendChild(liFlagged);
         }
         bodyEl.appendChild(statsList);
@@ -272,7 +275,7 @@ export function createSubmitConfirmDialog(options) {
         else {
             const allDoneP = doc.createElement('p');
             allDoneP.textContent = 'Bạn đã hoàn thành tất cả các câu hỏi trong đề thi!';
-            allDoneP.style.color = '#15803d';
+            allDoneP.style.color = 'var(--c-success)';
             allDoneP.style.fontWeight = '600';
             bodyEl.appendChild(allDoneP);
         }
@@ -338,6 +341,7 @@ export function createSubmitConfirmDialog(options) {
  * - Enter key pressed during IME composition (Telex/VNI) DOES NOT submit the form.
  * - Preserves native text input and cursor position.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function createPromptDialog(options) {
     let isConfirmed = false;
     let isSubmitting = false;
@@ -380,7 +384,7 @@ export function createPromptDialog(options) {
         enforceTouchTarget(input, 44);
         const errorMsg = doc.createElement('div');
         errorMsg.className = 'cunata-prompt-error';
-        errorMsg.style.color = '#dc2626';
+        errorMsg.style.color = 'var(--c-danger)';
         errorMsg.style.fontSize = '0.875rem';
         errorMsg.style.marginTop = '4px';
         errorMsg.style.minHeight = '1.25rem';

@@ -1,0 +1,1200 @@
+/* ==========================================================================
+   Hệ Thống Luyện Thi & Khảo Sát Năng Lực GDPT 2018 - CSS Stylesheet
+   Thiết kế thích ứng (Responsive), Dễ tiếp cận (A11y), Chuẩn di động & desktop
+   ========================================================================== */
+
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-light: #eff6ff;
+  --primary-border: #bfdbfe;
+  
+  --success: #16a34a;
+  --success-light: #f0fdf4;
+  --success-border: #bbf7d0;
+  
+  --warning: #d97706;
+  --warning-light: #fffbeb;
+  --warning-border: #fde68a;
+  
+  --danger: #dc2626;
+  --danger-light: #fef2f2;
+  --danger-border: #fecaca;
+  
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 9999px;
+  
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--gray-50);
+  color: var(--gray-900);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ----------------- Header & Thanh Trạng Thái ----------------- */
+.app-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--gray-200);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+
+.header-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-badge {
+  background: linear-gradient(135deg, var(--primary), #4f46e5);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+}
+
+.exam-meta-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.candidate-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.candidate-input-wrap label {
+  font-size: 0.8125rem;
+  color: var(--gray-600);
+  font-weight: 500;
+}
+
+.candidate-input {
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  padding: 0.375rem 0.625rem;
+  font-size: 0.875rem;
+  color: var(--gray-800);
+  outline: none;
+  width: 140px;
+  transition: border-color 0.15s ease;
+}
+
+.candidate-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.timer-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  color: var(--gray-800);
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-box.timer-warning {
+  background-color: var(--danger-light);
+  border-color: var(--danger-border);
+  color: var(--danger);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.btn-submit {
+  background-color: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.125rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sync-status-badge {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--success);
+}
+
+.sync-status-badge.sync-error {
+  color: var(--danger);
+}
+
+.sync-status-badge.sync-error .sync-dot {
+  background-color: var(--danger);
+}
+
+.sync-status-badge.sync-saved {
+  color: var(--gray-500);
+}
+
+.sync-status-badge.sync-saved .sync-dot {
+  background-color: var(--success);
+}
+
+.sync-status-badge.sync-sending {
+  color: #d97706;
+}
+
+.sync-status-badge.sync-sending .sync-dot {
+  background-color: #f59e0b;
+}
+
+.sync-status-badge.sync-confirmed {
+  color: #059669;
+}
+
+.sync-status-badge.sync-confirmed .sync-dot {
+  background-color: #10b981;
+}
+
+/* ----------------- Khung Bố Cục Chính (Layout) ----------------- */
+.main-wrapper {
+  max-width: 1280px;
+  margin: 1.25rem auto;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .main-wrapper {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ----------------- Sidebar / Bảng Điều Hướng ----------------- */
+.palette-card {
+  background-color: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 4.5rem;
+}
+
+.palette-header {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.palette-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--gray-800);
+}
+
+.palette-progress-text {
+  font-size: 0.8125rem;
+  color: var(--gray-500);
+  margin-top: 0.25rem;
+}
+
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.palette-btn {
+  height: 42px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-200);
+  background-color: var(--gray-50);
+  color: var(--gray-700);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.palette-btn:hover {
+  border-color: var(--gray-400);
+}
+
+.palette-btn.active {
+  border: 2px solid var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.palette-btn.answered {
+  background-color: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.palette-btn.partial {
+  background-color: var(--warning-light);
+  color: var(--warning);
+  border-color: var(--warning-border);
+}
+
+.palette-btn.flagged::after {
+  content: "★";
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: 9px;
+  color: var(--warning);
+}
+
+.palette-legend {
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--gray-100);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.swatch-answered { background-color: var(--primary); }
+.swatch-partial { background-color: var(--warning-light); border: 1px solid var(--warning-border); }
+.swatch-unanswered { background-color: var(--gray-50); border: 1px solid var(--gray-200); }
+.swatch-flagged { color: var(--warning); font-size: 11px; }
+
+/* ----------------- Khu Vực Đề Thi (Exam Pane) ----------------- */
+.exam-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.section-banner {
+  background-color: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  padding: 1rem 1.25rem;
+  border-left: 4px solid var(--primary);
+}
+
+.section-tag {
+  display: inline-block;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.35rem;
+}
+
+.section-banner h2 {
+  font-size: 1.125rem;
+  color: var(--gray-900);
+  margin-bottom: 0.25rem;
+}
+
+.section-banner p {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+}
+
+.question-card {
+  background-color: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  scroll-margin-top: 5rem;
+  transition: border-color 0.15s ease;
+}
+
+.question-card.highlight {
+  border-color: var(--primary);
+}
+
+.question-meta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.question-num-tag {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.point-badge {
+  background-color: var(--gray-100);
+  color: var(--gray-600);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+}
+
+.btn-flag {
+  background: transparent;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  color: var(--gray-600);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.15s ease;
+}
+
+.btn-flag.flagged {
+  background-color: var(--warning-light);
+  border-color: var(--warning-border);
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.question-stem {
+  font-size: 1.0625rem;
+  color: var(--gray-900);
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+}
+
+/* ----------------- Phần I: 4 Lựa Chọn (Cards) ----------------- */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+}
+
+.option-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background-color: #fff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 48px;
+}
+
+.option-card:hover {
+  background-color: var(--gray-50);
+  border-color: var(--gray-300);
+}
+
+.option-card.selected {
+  background-color: var(--primary-light);
+  border-color: var(--primary);
+}
+
+.option-letter {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--gray-300);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  color: var(--gray-700);
+  background-color: #fff;
+  flex-shrink: 0;
+}
+
+.option-card.selected .option-letter {
+  background-color: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.option-text {
+  font-size: 0.9375rem;
+  color: var(--gray-800);
+}
+
+/* ----------------- Phần II: Đúng/Sai 4 ý ----------------- */
+.statements-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.statement-row {
+  border-top: 1px solid var(--gray-200);
+  padding: 0.85rem 0;
+  display: grid;
+  grid-template-columns: 32px 1fr 140px;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.statement-label {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--primary);
+}
+
+.statement-text {
+  font-size: 0.9375rem;
+  color: var(--gray-800);
+  line-height: 1.5;
+}
+
+.tf-toggle-group {
+  display: inline-flex;
+  border-radius: var(--radius-sm);
+  background-color: var(--gray-100);
+  padding: 2px;
+  gap: 2px;
+}
+
+.tf-btn {
+  padding: 0.35rem 0.65rem;
+  border: none;
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  min-width: 54px;
+}
+
+.tf-btn.selected-true {
+  background-color: var(--success);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.tf-btn.selected-false {
+  background-color: var(--danger);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ----------------- Phần III: Trả lời ngắn ----------------- */
+.short-answer-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 380px;
+}
+
+.short-answer-input-wrap {
+  position: relative;
+}
+
+.short-answer-input {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  padding: 0.65rem 0.85rem;
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  text-transform: uppercase;
+  transition: border-color 0.15s ease;
+}
+
+.short-answer-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.short-answer-chars-preview {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.char-box {
+  width: 44px;
+  height: 48px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+  background-color: #fff;
+  color: var(--gray-800);
+}
+
+.char-box.filled {
+  border-color: var(--primary);
+  background-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.quick-keys-bar {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.quick-key-btn {
+  background-color: var(--gray-100);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.quick-key-btn:hover {
+  background-color: var(--gray-200);
+}
+
+.input-hint-text {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+/* ----------------- Màn Hình Báo Cáo Kết Quả ----------------- */
+.report-view {
+  background-color: #fff;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.report-header {
+  text-align: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--gray-200);
+  margin-bottom: 1.5rem;
+}
+
+.report-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--gray-900);
+}
+
+.report-subtitle {
+  font-size: 0.9375rem;
+  color: var(--gray-500);
+  margin-top: 0.25rem;
+}
+
+.summary-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .summary-cards-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.summary-card {
+  background-color: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  text-align: center;
+}
+
+.summary-card.total-card {
+  background: linear-gradient(135deg, var(--primary-light), #e0e7ff);
+  border-color: var(--primary-border);
+}
+
+.summary-card-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.summary-card-score {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--gray-900);
+  margin: 0.35rem 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.total-card .summary-card-score {
+  color: var(--primary);
+}
+
+.summary-card-detail {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.report-actions-bar {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.btn-secondary {
+  background-color: #fff;
+  border: 1px solid var(--gray-300);
+  color: var(--gray-700);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--gray-50);
+  border-color: var(--gray-400);
+}
+
+.review-question-item {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.review-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-full);
+}
+
+.status-badge.full {
+  background-color: var(--success-light);
+  color: var(--success);
+  border: 1px solid var(--success-border);
+}
+
+.status-badge.partial {
+  background-color: var(--warning-light);
+  color: var(--warning);
+  border: 1px solid var(--warning-border);
+}
+
+.status-badge.wrong {
+  background-color: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid var(--danger-border);
+}
+
+.status-badge.unanswered {
+  background-color: var(--gray-100);
+  color: var(--gray-600);
+  border: 1px solid var(--gray-200);
+}
+
+.explanation-box {
+  background-color: var(--gray-50);
+  border-left: 3px solid var(--primary);
+  padding: 0.75rem 1rem;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+}
+
+.explanation-title {
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+/* ----------------- Modal Xác Nhận Nộp Bài ----------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 200;
+}
+
+.modal-content {
+  background-color: #fff;
+  border-radius: var(--radius-lg);
+  max-width: 440px;
+  width: 100%;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin-bottom: 0.5rem;
+}
+
+.modal-body {
+  font-size: 0.9375rem;
+  color: var(--gray-600);
+  margin-bottom: 1.5rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.palette-footer {
+  margin-top: 1.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.answer-hidden-notice {
+  margin-top: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background-color: var(--gray-50);
+  border: 1px dashed var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shuffle-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  background-color: var(--primary-light);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  margin-top: 0.5rem;
+}
+
+/* ----------------- Lịch Sử Các Lượt Thi (Attempt History) ----------------- */
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  background-color: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.history-table th {
+  background-color: var(--gray-100);
+  color: var(--gray-700);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.history-table td {
+  padding: 0.625rem 0.75rem;
+  border-bottom: 1px solid var(--gray-100);
+  color: var(--gray-800);
+}
+
+.history-table tr:last-child td {
+  border-bottom: none;
+}
+
+.history-table tr:hover td {
+  background-color: var(--gray-50);
+}
+
+.max-attempts-notice {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--warning-light);
+  border: 1px solid var(--warning-border);
+  color: #92400e;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  display: none;
+}
+
+/* ----------------- Teacher Exam Builder & Question Bank ----------------- */
+.builder-modal-content {
+  max-width: 920px;
+  max-height: 90vh;
+  overflow-y: auto;
+  width: 95%;
+  padding: 1.5rem;
+}
+
+.builder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--gray-200);
+  padding-bottom: 0.75rem;
+}
+
+.builder-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+
+.builder-subtitle {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  margin-top: 0.25rem;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--gray-400);
+  padding: 0.25rem;
+}
+
+.btn-close:hover {
+  color: var(--gray-700);
+}
+
+.builder-section {
+  margin-bottom: 1.25rem;
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+
+.builder-section-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: 0.75rem;
+}
+
+.builder-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-group label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.form-input {
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  background: #fff;
+  color: var(--gray-900);
+  font-family: inherit;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-border);
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: row;
+  gap: 1.25rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.builder-score-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.builder-score-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.builder-score-card .label {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin-bottom: 0.25rem;
+}
+
+.builder-score-card .value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.builder-questions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.builder-q-card {
+  background: #fff;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.builder-q-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--gray-100);
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.builder-q-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.badge-part-i { background: #dbeafe; color: #1e40af; }
+.badge-part-ii { background: #fef3c7; color: #92400e; }
+.badge-part-iii { background: #dcfce7; color: #166534; }
+
+.builder-errors {
+  background: var(--danger-light);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+  white-space: pre-line;
+}
+
+.bank-filter-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.builder-edit-card {
+  background: #f8fafc;
+  border: 1.5px solid var(--primary-border);
+  border-radius: var(--radius-sm);
+  padding: 0.875rem;
+  margin-top: 0.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.edit-q-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.btn-q-move-up, .btn-q-move-down {
+  font-family: inherit;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .builder-modal-content {
+    padding: 1rem;
+    max-height: 95vh;
+  }
+  .builder-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ----------------- In Ấn (Print Styles) ----------------- */
+@media print {
+  .app-header, .palette-card, .report-actions-bar, .btn-submit {
+    display: none !important;
+  }
+  .main-wrapper {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .report-view {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+}

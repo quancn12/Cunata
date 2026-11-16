@@ -166,6 +166,18 @@ export function computeExamMaxFromQuestions(questions: readonly Question[]): Leg
       else if (q.kind === 'III') n3++;
     }
   }
+  if (n1 === 0 && n2 === 0 && n3 === 0) {
+    return {
+      n1: 0,
+      n2: 0,
+      n3: 0,
+      maxI: ZERO,
+      maxII: ZERO,
+      pointIII: ZERO,
+      maxIII: ZERO,
+      maxTotal: ZERO,
+    };
+  }
   const domainMax = computeExamMax({ n1, n2, n3 });
   return {
     n1,

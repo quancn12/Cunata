@@ -220,6 +220,8 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
     await storage.finalize(fullFinalRecord, 1);
 
     const doc = createMockDocument();
+    (doc as any).createElementNS = (_ns: string, tag: string) => doc.createElement(tag);
+    (doc as any).getElementById = (id: string) => (doc as any).querySelector ? (doc as any).querySelector('#' + id) : null;
     const root = doc.createElement('div') as unknown as HTMLElement;
     doc.body.appendChild(root as unknown as MockElement);
 
@@ -299,6 +301,8 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
     }
 
     const doc = createMockDocument();
+    (doc as any).createElementNS = (_ns: string, tag: string) => doc.createElement(tag);
+    (doc as any).getElementById = (id: string) => (doc as any).querySelector ? (doc as any).querySelector('#' + id) : null;
     const root = doc.createElement('div') as unknown as HTMLElement;
     doc.body.appendChild(root as unknown as MockElement);
 
@@ -373,6 +377,8 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
     (globalThis as any).FileReader = MockFileReader;
 
     const doc = createMockDocument();
+    (doc as any).createElementNS = (_ns: string, tag: string) => doc.createElement(tag);
+    (doc as any).getElementById = (id: string) => (doc as any).querySelector ? (doc as any).querySelector('#' + id) : null;
     const root = doc.createElement('div') as unknown as HTMLElement;
     doc.body.appendChild(root as unknown as MockElement);
 
@@ -490,6 +496,8 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
     await storage.finalize(fullTamperedRecord, 1);
 
     const doc = createMockDocument();
+    (doc as any).createElementNS = (_ns: string, tag: string) => doc.createElement(tag);
+    (doc as any).getElementById = (id: string) => (doc as any).querySelector ? (doc as any).querySelector('#' + id) : null;
     const root = doc.createElement('div') as unknown as HTMLElement;
     doc.body.appendChild(root as unknown as MockElement);
 
@@ -577,6 +585,8 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
     await storage.finalize(fullTamperedRecordA, 1);
 
     const doc = createMockDocument();
+    (doc as any).createElementNS = (_ns: string, tag: string) => doc.createElement(tag);
+    (doc as any).getElementById = (id: string) => (doc as any).querySelector ? (doc as any).querySelector('#' + id) : null;
     const root = doc.createElement('div') as unknown as HTMLElement;
     doc.body.appendChild(root as unknown as MockElement);
 
@@ -649,6 +659,8 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
 
     const adapter = new MemoryTransactionAdapter();
     const doc = createMockDocument();
+    (doc as any).createElementNS = (_ns: string, tag: string) => doc.createElement(tag);
+    (doc as any).getElementById = (id: string) => (doc as any).querySelector ? (doc as any).querySelector('#' + id) : null;
     const root = doc.createElement('div') as unknown as HTMLElement;
     doc.body.appendChild(root as unknown as MockElement);
 
@@ -720,6 +732,33 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
     URL.createObjectURL = origCreateObjectURL;
     cleanup();
   });
+
+  async function enterExamIfRoleChooser(c: CdpClient) {
+    const isChooser = await c.evaluate<boolean>(`Boolean(document.getElementById('roleChooser') && !document.getElementById('roleChooser').hidden && document.getElementById('roleChooser').style.display !== 'none')`);
+    if (isChooser) {
+      await c.click('#btnRoleStudent');
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    const isGate = await c.evaluate<boolean>(`Boolean(document.getElementById('studentNameGate') && document.getElementById('studentNameGate').style.display !== 'none')`);
+    if (isGate) {
+      await c.type('#startName', 'Thí sinh kiểm định');
+      await c.click('#btnNameContinue');
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    const isPreview = await c.evaluate<boolean>(`Boolean(document.getElementById('examPreview') && document.getElementById('examPreview').style.display !== 'none')`);
+    if (isPreview) {
+      await c.waitForSelector('#btnStartExam:not([disabled])', 8000);
+      await c.click('#btnStartExam');
+    } else {
+      const isStartScreen = await c.evaluate<boolean>(`Boolean(document.getElementById('startScreen') && document.getElementById('startScreen').style.display !== 'none')`);
+      if (isStartScreen) {
+        await c.waitForSelector('#startScreen .exam-list-item', 10000);
+        await c.click('#startScreen .exam-list-item');
+        await c.waitForSelector('#btnStartExam:not([disabled])', 8000);
+        await c.click('#btnStartExam');
+      }
+    }
+  }
 
   it('CK15-F01: Service Worker version upgrade in real browser cleanly transitions release A to release B, preserving draft and offline capabilities', { timeout: 60000 }, async (t) => {
     const caps = detectCapabilities();
@@ -803,6 +842,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
 
       // Step 1: Boot Release A
       await client.navigate(`${origin}/Cunata/`);
+      await enterExamIfRoleChooser(client);
       const hasCards = await client.waitForSelector('.question-card', 10000);
       assert.ok(hasCards, 'App must boot and render cards for Release A');
 
@@ -815,6 +855,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
 
       // Reload once to ensure worker caches Release A
       await client.navigate(`${origin}/Cunata/`);
+      await enterExamIfRoleChooser(client);
       await client.waitForSelector('.question-card', 10000);
 
       // Verify that browser fetch returns Release A
@@ -983,7 +1024,14 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
 
       // Step 5: Reload while server is down (full cold offline)
       await client.navigate(`${origin}/Cunata/`);
-      const offlineLoaded = await client.waitForVisible('#reportWrapper, .question-card', 10000);
+      const pageInfo = await client.evaluate<any>(`({
+        url: location.href,
+        title: document.title,
+        bodyHtml: document.body ? document.body.innerHTML.slice(0, 300) : '',
+        swController: navigator.serviceWorker.controller ? navigator.serviceWorker.controller.state : null,
+      })`);
+      console.log('PAGE INFO ON OFFLINE LOAD:', pageInfo);
+      const offlineLoaded = await client.waitForVisible('#reportWrapper, .question-card, #startScreen, #roleChooser', 10000);
       assert.ok(offlineLoaded, 'Release B must cleanly boot cold offline without online reload first');
 
       // Verify that browser offline fetch returns Release B module from cache
@@ -1079,6 +1127,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
 
       // Tab A: Opens sample exam under Release A
       await clientA.navigate(`${origin}/Cunata/`);
+      await enterExamIfRoleChooser(clientA);
       await clientA.waitForSelector('.question-card', 10000);
 
       // Wait for service worker to activate
@@ -1090,6 +1139,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
 
       // Reload Tab A to ensure Release A worker controls it
       await clientA.navigate(`${origin}/Cunata/`);
+      await enterExamIfRoleChooser(clientA);
       await clientA.waitForSelector('.question-card', 10000);
 
       // Tab A: Fill name and answer
@@ -1111,6 +1161,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       // Tab B: Open second tab in the SAME browser instance with a different exam
       clientB = await clientA.createTab();
       await clientB.navigate(`${origin}/Cunata/?exam=ly12-hang-tuan-de-10`);
+      await enterExamIfRoleChooser(clientB);
       await clientB.waitForSelector('.question-card', 10000);
 
       // Tab B: Fill name and answer

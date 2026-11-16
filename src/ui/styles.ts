@@ -6,11 +6,12 @@
  * Meets WCAG AA contrast (>= 4.5:1 text, >= 3:1 UI), 44px touch targets,
  * responsive viewports (320px/390px/768px/1280px), zoom 200%, and reduced motion.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export const SCOPED_UI_CSS = `
 /* Scoped Cunata UI Region */
 .cunata-ui {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  color: #0f172a;
+  font-family: var(--font);
+  color: var(--c-text);
   background-color: transparent;
   line-height: 1.5;
   box-sizing: border-box;
@@ -31,12 +32,12 @@ export const SCOPED_UI_CSS = `
   min-height: 44px;
   min-width: 44px;
   padding: 10px 16px;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: 6px;
-  border: 1px solid #cbd5e1;
-  background-color: #ffffff;
-  color: #0f172a;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--c-border);
+  background-color: var(--c-surface);
+  color: var(--c-text);
   cursor: pointer;
   touch-action: manipulation;
   display: inline-flex;
@@ -51,18 +52,18 @@ export const SCOPED_UI_CSS = `
 .cunata-ui select {
   min-height: 44px;
   padding: 8px 12px;
-  font-size: 1rem;
-  border-radius: 6px;
-  border: 1px solid #94a3b8;
-  background-color: #ffffff;
-  color: #0f172a;
+  font-size: var(--fs-md);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--c-border);
+  background-color: var(--c-surface);
+  color: var(--c-text);
   width: 100%;
 }
 
 /* Accessible visible focus indication */
 .cunata-ui :focus-visible,
 .cunata-modal-dialog :focus-visible {
-  outline: 3px solid #1d4ed8;
+  outline: var(--focus-width) solid var(--c-primary);
   outline-offset: 2px;
 }
 
@@ -76,18 +77,18 @@ export const SCOPED_UI_CSS = `
 .cunata-ui .cunata-math {
   display: inline-block;
   padding: 2px 8px;
-  background-color: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  border-radius: 4px;
+  background-color: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
   max-width: 100%;
   overflow-x: auto;
   vertical-align: middle;
 }
 
 .cunata-ui .cunata-math-source {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 0.95em;
-  color: #0369a1;
+  font-family: var(--font-math);
+  font-size: var(--fs-sm);
+  color: var(--c-primary);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -104,23 +105,23 @@ export const SCOPED_UI_CSS = `
   height: auto;
   display: block;
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: var(--r-sm);
 }
 
 .cunata-ui .cunata-image-placeholder {
   display: inline-block;
   padding: 12px 16px;
-  background-color: #f8fafc;
-  border: 1px dashed #94a3b8;
-  border-radius: 6px;
-  color: #475569;
-  font-size: 0.95rem;
+  background-color: var(--c-surface-2);
+  border: 1px dashed var(--c-border);
+  border-radius: var(--r-sm);
+  color: var(--c-text-2);
+  font-size: var(--fs-sm);
 }
 
 .cunata-ui .cunata-image-unsafe {
-  background-color: #fef2f2;
-  border-color: #f87171;
-  color: #991b1b;
+  background-color: var(--c-surface-2);
+  border-color: var(--c-border);
+  color: var(--c-danger);
 }
 
 /* Tables: responsive wrapper to prevent overflow */
@@ -129,35 +130,35 @@ export const SCOPED_UI_CSS = `
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   margin: 12px 0;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
 }
 
 .cunata-ui .cunata-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size: var(--fs-sm);
   text-align: left;
 }
 
 .cunata-ui .cunata-table th,
 .cunata-ui .cunata-table td {
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--c-border);
   padding: 10px 14px;
   vertical-align: top;
 }
 
 .cunata-ui .cunata-table th {
-  background-color: #f8fafc;
+  background-color: var(--c-surface-2);
   font-weight: 600;
-  color: #0f172a;
+  color: var(--c-text);
 }
 
 /* Modal and dialogs */
 .cunata-modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.65);
+  background-color: var(--c-backdrop);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -166,17 +167,17 @@ export const SCOPED_UI_CSS = `
 }
 
 .cunata-modal-dialog {
-  background-color: #ffffff;
-  color: #0f172a;
+  background-color: var(--c-surface);
+  color: var(--c-text);
   border-radius: 8px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-2);
   width: 100%;
   max-width: 540px;
   max-height: 90vh;
   overflow-y: auto;
   padding: 24px;
-  outline: none;
-  border: 1px solid #cbd5e1;
+  outline: var(--focus-width) solid transparent;
+  border: 1px solid var(--c-border);
 }
 
 /* Visually hidden utility for aria-live status announcers */
@@ -194,8 +195,8 @@ export const SCOPED_UI_CSS = `
 
 /* Form accessibility: Fieldset and legend */
 .cunata-ui fieldset {
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
   padding: 16px;
   margin: 16px 0;
 }
@@ -203,23 +204,23 @@ export const SCOPED_UI_CSS = `
 .cunata-ui legend {
   font-weight: 600;
   padding: 0 8px;
-  color: #0f172a;
+  color: var(--c-text);
 }
 
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   .cunata-ui *,
   .cunata-modal-backdrop * {
-    animation-duration: 0.01ms !important;
+    animation: none !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition: none !important;
   }
 }
 
 /* Responsive adjustments */
 @media (max-width: 390px) {
   .cunata-ui {
-    font-size: 0.95rem;
+    font-size: var(--fs-sm);
   }
   .cunata-modal-dialog {
     padding: 16px;
@@ -233,6 +234,7 @@ const STYLE_ELEMENT_ID = 'cunata-ui-scoped-styles';
  * Injects or ensures scoped CSS styles exist in the document or container,
  * without altering any root stylesheets or global files.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function ensureScopedStyles(doc?: Document): void {
   const targetDoc = doc || (typeof document !== 'undefined' ? document : null);
   if (!targetDoc) return;

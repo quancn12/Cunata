@@ -191,7 +191,7 @@ function ensureHeaderRow(sheet) {
             'total_score',
             'max_total',
             'policy_version',
-            'raw_answers_json'
+            'raw_answers_json', 'class_code', 'assignment_id'
         ];
         sheet.appendRow(headers);
         SpreadsheetApp.flush();
@@ -335,50 +335,14 @@ function doPost(e) {
         // Action routing (WEB-contract mục 17)
         var action = payload.action ? String(payload.action).trim() : '';
 
-        // 1. teacherLogin
-        if (action === 'teacherLogin') {
-            var propService = PropertiesService.getScriptProperties();
-            var teacherPw = propService ? propService.getProperty('TEACHER_PASSWORD') : null;
-            if (teacherPw === null || teacherPw === undefined || teacherPw === '') {
-                return ContentService.createTextOutput(JSON.stringify({
-                    success: false,
-                    error: 'TEACHER_PASSWORD_NOT_SET',
-                    message: 'Chưa đặt TEACHER_PASSWORD trong Script Properties'
-                })).setMimeType(ContentService.MimeType.JSON);
-            }
-            var inputPw = payload.password !== undefined && payload.password !== null ? String(payload.password) : '';
-            if (inputPw === String(teacherPw)) {
-                return ContentService.createTextOutput(JSON.stringify({
-                    success: true
-                })).setMimeType(ContentService.MimeType.JSON);
-            }
-            return ContentService.createTextOutput(JSON.stringify({
-                success: false,
-                error: 'UNAUTHORIZED',
-                message: 'Mật khẩu giáo viên không chính xác'
-            })).setMimeType(ContentService.MimeType.JSON);
-        }
-
+        var routed = accountAction(action, payload);
+        if (routed !== null) return jsonOutput(routed);
+        if (action && ['publishExam', 'unpublishExam', 'submitResult'].indexOf(action) < 0)
+            return jsonOutput(failure('UNKNOWN_ACTION', 'Thao tác không hợp lệ'));
         // 2. publishExam
         if (action === 'publishExam') {
-            var propService = PropertiesService.getScriptProperties();
-            var teacherPw = propService ? propService.getProperty('TEACHER_PASSWORD') : null;
-            if (teacherPw === null || teacherPw === undefined || teacherPw === '') {
-                return ContentService.createTextOutput(JSON.stringify({
-                    success: false,
-                    error: 'TEACHER_PASSWORD_NOT_SET',
-                    message: 'Chưa đặt TEACHER_PASSWORD trong Script Properties'
-                })).setMimeType(ContentService.MimeType.JSON);
-            }
-            var inputPw = payload.password !== undefined && payload.password !== null ? String(payload.password) : '';
-            if (inputPw !== String(teacherPw)) {
-                return ContentService.createTextOutput(JSON.stringify({
-                    success: false,
-                    error: 'UNAUTHORIZED',
-                    message: 'Mật khẩu giáo viên không chính xác'
-                })).setMimeType(ContentService.MimeType.JSON);
-            }
-
+            var principal = sessionPrincipal(payload.token, 'teacher');
+            if (!principal) return jsonOutput(failure('UNAUTHORIZED', 'Phiên đăng nhập không hợp lệ'));
             var exam = payload.exam;
             var validationErrors = validatePublishedExam(exam);
             if (validationErrors.length > 0) {
@@ -399,15 +363,18 @@ function doPost(e) {
             }
 
             try {
+                principal = sessionPrincipal(payload.token, 'teacher');
+                if (!principal) return jsonOutput(failure('UNAUTHORIZED', 'Phiên đăng nhập không hợp lệ'));
                 var ss = SpreadsheetApp.getActiveSpreadsheet();
                 var sheet = ss.getSheetByName('DeThi');
                 if (!sheet) {
                     sheet = ss.insertSheet('DeThi');
                 }
                 if (sheet.getLastRow() === 0) {
-                    sheet.appendRow(['id', 'title', 'subject', 'grade', 'durationMinutes', 'questionCount', 'group', 'revision', 'updatedAt', 'chunks']);
+                    sheet.appendRow(['id', 'title', 'subject', 'grade', 'durationMinutes', 'questionCount', 'group', 'revision', 'updatedAt', 'owner', 'chunks']);
                 }
 
+                migrateExamOwner(sheet);
                 // Check existing row
                 var existingRow = -1;
                 var currentRevision = 0;
@@ -415,6 +382,8 @@ function doPost(e) {
                 for (var r = 2; r <= lastRow; r++) {
                     var cellVal = String(sheet.getRange(r, 1, 1, 1).getValue());
                     if (cellVal === pubExamId) {
+                        if (String(sheet.getRange(r, 10, 1, 1).getValue()) !== principal.username)
+                            return jsonOutput(failure('FORBIDDEN', 'Đề thi thuộc giáo viên khác'));
                         existingRow = r;
                         currentRevision = Number(sheet.getRange(r, 8, 1, 1).getValue()) || 1;
                         break;
@@ -454,7 +423,8 @@ function doPost(e) {
                     questionCount,
                     examTextCell(group),
                     revision,
-                    updatedAt
+                    updatedAt,
+                    examTextCell(principal.username)
                 ].concat(chunks);
 
                 // One range write; pad stale chunks when the replacement is shorter.
@@ -479,24 +449,8 @@ function doPost(e) {
 
         // 3. unpublishExam
         if (action === 'unpublishExam') {
-            var propService = PropertiesService.getScriptProperties();
-            var teacherPw = propService ? propService.getProperty('TEACHER_PASSWORD') : null;
-            if (teacherPw === null || teacherPw === undefined || teacherPw === '') {
-                return ContentService.createTextOutput(JSON.stringify({
-                    success: false,
-                    error: 'TEACHER_PASSWORD_NOT_SET',
-                    message: 'Chưa đặt TEACHER_PASSWORD trong Script Properties'
-                })).setMimeType(ContentService.MimeType.JSON);
-            }
-            var inputPw = payload.password !== undefined && payload.password !== null ? String(payload.password) : '';
-            if (inputPw !== String(teacherPw)) {
-                return ContentService.createTextOutput(JSON.stringify({
-                    success: false,
-                    error: 'UNAUTHORIZED',
-                    message: 'Mật khẩu giáo viên không chính xác'
-                })).setMimeType(ContentService.MimeType.JSON);
-            }
-
+            var principal = sessionPrincipal(payload.token, 'teacher');
+            if (!principal) return jsonOutput(failure('UNAUTHORIZED', 'Phiên đăng nhập không hợp lệ'));
             var unpublishId = String(payload.examId || '');
             if (!unpublishId) {
                 return ContentService.createTextOutput(JSON.stringify({
@@ -517,6 +471,8 @@ function doPost(e) {
             }
 
             try {
+                principal = sessionPrincipal(payload.token, 'teacher');
+                if (!principal) return jsonOutput(failure('UNAUTHORIZED', 'Phiên đăng nhập không hợp lệ'));
                 var ss = SpreadsheetApp.getActiveSpreadsheet();
                 var sheet = ss.getSheetByName('DeThi');
                 if (sheet && sheet.getLastRow() > 1) {
@@ -524,6 +480,7 @@ function doPost(e) {
                     for (var r = 2; r <= lastRow; r++) {
                         var cellVal = String(sheet.getRange(r, 1, 1, 1).getValue());
                         if (cellVal === unpublishId) {
+                            if (examOwner(sheet, r) !== principal.username) return jsonOutput(failure('FORBIDDEN', 'Đề thi thuộc giáo viên khác'));
                             sheet.deleteRow(r);
                             break;
                         }
@@ -787,6 +744,11 @@ function doPost(e) {
             })).setMimeType(ContentService.MimeType.JSON);
         }
         const toCanonicalStr = (r) => (r.den === BigInt(1) ? String(r.num) : String(r.num) + '/' + String(r.den));
+        var classCode = typeof payload.class_code === 'string' ? payload.class_code.trim().toUpperCase() : '';
+        var assignmentId = typeof payload.assignment_id === 'string' ? payload.assignment_id : '';
+        if ((payload.class_code !== undefined && typeof payload.class_code !== 'string') ||
+            (payload.assignment_id !== undefined && typeof payload.assignment_id !== 'string') || (!!classCode !== !!assignmentId))
+            return jsonOutput(failure('INVALID_ASSIGNMENT', 'Thiếu thông tin lớp hoặc bài giao'));
         const canonicalPayload = {
             attempt_id: attemptId,
             exam_id: examId,
@@ -803,7 +765,7 @@ function doPost(e) {
             total: toCanonicalStr(totalRat),
             maxTotal: toCanonicalStr(maxTotalRat),
             policy_version: policyVersion,
-            raw_answers_json: payload.raw_answers_json || payload.responses || ''
+            raw_answers_json: payload.raw_answers_json || payload.raw_answers || payload.responses || ''
         };
         // 5. ScriptLock bảo vệ concurrency (LC33-F06: Không ghi Sheets ngoài lock)
         const lock = LockService.getScriptLock();
@@ -817,11 +779,12 @@ function doPost(e) {
         }
         try {
             var ss = SpreadsheetApp.getActiveSpreadsheet();
-            var sheet = ss.getSheetByName('KetQua');
+            var sheet = (typeof ss.getSheetByName === 'function' ? ss.getSheetByName('KetQua') : null);
             if (!sheet) {
-                sheet = ss.insertSheet('KetQua');
+                sheet = (typeof ss.insertSheet === 'function' ? ss.insertSheet('KetQua') : null) || (typeof ss.getActiveSheet === 'function' ? ss.getActiveSheet() : null);
             }
             ensureHeaderRow(sheet);
+            if (classCode && sheet.getLastColumn() < 19) sheet.getRange(1, 18, 1, 2).setValues([['class_code', 'assignment_id']]);
             // 6. Kiểm tra lũy nghiệm (Idempotency) và phát hiện xung đột dữ liệu toàn diện (LC33-F01, LC34-F02)
             const existingRow = findRowByAttemptId(sheet, attemptId);
             if (existingRow > 0) {
@@ -868,6 +831,9 @@ function doPost(e) {
                     const exPolicy = getColVal(16);
                     const exRaw = getColVal(17);
                     const newRaw = cleanCell(expectedRow[16]);
+                    if (classCode || (typeof sheet.getLastColumn === 'function' && sheet.getLastColumn() >= 19)) {
+                        if (getColVal(18) !== classCode || getColVal(19) !== assignmentId) conflict = true;
+                    }
                     const ratEqual = (aStr, bStr) => {
                         const ra = parseRational(aStr);
                         const rb = parseRational(bStr);
@@ -938,8 +904,10 @@ function doPost(e) {
                 })).setMimeType(ContentService.MimeType.JSON);
             }
             // 7. Định dạng dòng và ghi vào bảng
+            var assignmentError = validateSubmissionAssignment(classCode, assignmentId, examId);
+            if (assignmentError) return jsonOutput(assignmentError);
             const row = formatRecordRow(canonicalPayload);
-            sheet.appendRow(row);
+            sheet.appendRow(row.concat([examTextCell(classCode), examTextCell(assignmentId)]));
             SpreadsheetApp.flush();
             return ContentService.createTextOutput(JSON.stringify({
                 success: true,
@@ -969,6 +937,7 @@ function doGet(e) {
         var params = (e && e.parameter) ? e.parameter : {};
         var action = params.action ? String(params.action) : '';
 
+        if (action === 'getClass') return jsonOutput(publicClass(params.code));
         if (action === 'listExams') {
             var ss = SpreadsheetApp.getActiveSpreadsheet();
             var sheet = ss.getSheetByName('DeThi');
@@ -1046,8 +1015,9 @@ function doGet(e) {
             }
             var lastCol = sheet.getLastColumn();
             var chunks = [];
-            if (lastCol >= 10) {
-                var chunkVals = sheet.getRange(foundRow, 10, 1, lastCol - 9).getValues()[0];
+            var chunkStart = String(sheet.getRange(1, 10, 1, 1).getValue()) === 'owner' ? 11 : 10;
+            if (lastCol >= chunkStart) {
+                var chunkVals = sheet.getRange(foundRow, chunkStart, 1, lastCol - chunkStart + 1).getValues()[0];
                 for (var c = 0; c < chunkVals.length; c++) {
                     var val = chunkVals[c];
                     if (val !== undefined && val !== null && val !== '') {
@@ -1097,4 +1067,206 @@ if (typeof module !== 'undefined' && module.exports) {
         doGet,
         DANGEROUS_TRIGGERS
     };
+}
+// Accounts, sessions and class assignments (WEB-contract 19.2).
+function failure(code, message) { return { success: false, error: code, message: message }; }
+function tableRows(name) {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(name);
+    return sheet && sheet.getLastRow() > 1 ? sheet.getRange(2, 1, sheet.getLastRow() - 1, sheet.getLastColumn()).getValues() : [];
+}
+function writeTable(name, headers) {
+    var book = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = book.getSheetByName(name) || book.insertSheet(name);
+    if (!sheet.getLastRow()) sheet.appendRow(headers);
+    return sheet;
+}
+function digest(value) {
+    return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value, Utilities.Charset.UTF_8)
+        .map(function (b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
+}
+function constantEqual(a, b) {
+    // Compare fixed-length digests, including when the input lengths differ.
+    a = digest(String(a)); b = digest(String(b));
+    var difference = 0;
+    for (var i = 0; i < 64; i++) difference |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    return difference === 0;
+}
+function randomToken() { return (Utilities.getUuid() + Utilities.getUuid()).replace(/-/g, ''); }
+function teacherRow(username) {
+    var rows = tableRows('GiaoVien');
+    for (var i = 0; i < rows.length; i++) if (rows[i][0] === username) return { row: i + 2, values: rows[i] };
+    return null;
+}
+function newSession(role, username, name, credential) {
+    var token = randomToken();
+    var expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
+    CacheService.getScriptCache().put('session:' + token, JSON.stringify({ role: role, username: username,
+        name: name, credential: credential, expiresAt: expiresAt }), 21600); // CacheService maximum; eight-hour retention needs owner decision.
+    return { success: true, token: token, name: name, expiresAt: expiresAt };
+}
+function sessionPrincipal(token, role) {
+    if (typeof token !== 'string' || !/^[a-f0-9]{64}$/i.test(token)) return null;
+    var raw = CacheService.getScriptCache().get('session:' + token);
+    if (!raw) return null;
+    var session = JSON.parse(raw);
+    if (session.role !== role || Date.parse(session.expiresAt) <= Date.now()) return null;
+    if (role === 'teacher') {
+        var teacher = teacherRow(session.username);
+        if (!teacher || teacher.values[4] !== true || !constantEqual(session.credential, teacher.values[3])) return null;
+    } else {
+        var password = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD');
+        if (!password || !constantEqual(session.credential, digest(password))) return null;
+    }
+    return session;
+}
+function examOwner(sheet, row) {
+    return String(sheet.getRange(1, 10, 1, 1).getValue()) === 'owner' ? String(sheet.getRange(row, 10, 1, 1).getValue()) : '';
+}
+function migrateExamOwner(sheet) {
+    if (String(sheet.getRange(1, 10, 1, 1).getValue()) === 'owner') return;
+    var width = Math.max(10, sheet.getLastColumn());
+    if (typeof sheet.getMaxColumns === 'function' && width + 1 > sheet.getMaxColumns()) sheet.insertColumnsAfter(sheet.getMaxColumns(), width + 1 - sheet.getMaxColumns());
+    var rows = sheet.getRange(1, 1, sheet.getLastRow(), width).getValues();
+    rows.forEach(function (row, i) { row.splice(9, 0, i === 0 ? 'owner' : ''); });
+    sheet.getRange(1, 1, rows.length, width + 1).setValues(rows);
+}
+function classBy(key, value) {
+    return tableRows('Lop').find(function (r) { return String(r[key]) === value; }) || null;
+}
+function classResults(code, assignmentId) {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('KetQua');
+    if (!sheet || sheet.getLastRow() <= 1 || sheet.getLastColumn() < 19) return [];
+    return sheet.getRange(2, 1, sheet.getLastRow() - 1, 19).getValues().filter(function (r) {
+        return String(r[17]) === code && (!assignmentId || String(r[18]) === assignmentId);
+    }).map(function (r) {
+        return { attempt_id: String(r[0]), exam_id: String(r[1]), exam_version_id: String(r[2]), candidate_display: String(r[3]),
+            started_at: String(r[4]), submitted_at: String(r[5]), duration_seconds: r[6],
+            sections: { I: { score: String(r[7]), max: String(r[8]) }, II: { score: String(r[9]), max: String(r[10]) }, III: { score: String(r[11]), max: String(r[12]) } },
+            score_p1: String(r[7]), max_p1: String(r[8]), score_p2: String(r[9]), max_p2: String(r[10]), score_p3: String(r[11]), max_p3: String(r[12]),
+            total: String(r[13]), maxTotal: String(r[14]), class_code: String(r[17]), assignment_id: String(r[18]) };
+    });
+}
+function examMetadata(id) {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('DeThi');
+    if (!sheet) return null;
+    var rows = tableRows('DeThi');
+    for (var i = 0; i < rows.length; i++) if (String(rows[i][0]) === id)
+        return { title: String(rows[i][1]), questionCount: Number(rows[i][5]), durationMinutes: rows[i][4] === '' ? null : Number(rows[i][4]), owner: examOwner(sheet, i + 2) };
+    return null;
+}
+function assignmentsFor(classId, code) {
+    return tableRows('GiaoDe').filter(function (r) { return r[1] === classId; }).map(function (r) {
+        var meta = examMetadata(String(r[2]));
+        return { assignmentId: String(r[0]), classId: classId, examId: String(r[2]), openAt: String(r[3]), dueAt: String(r[4]),
+            title: meta ? meta.title : String(r[2]), questionCount: meta ? meta.questionCount : null,
+            durationMinutes: meta ? meta.durationMinutes : null, submissionCount: classResults(code, String(r[0])).length };
+    });
+}
+function publicClass(rawCode) {
+    var code = typeof rawCode === 'string' ? rawCode.trim().toUpperCase() : '';
+    var cls = classBy(1, code);
+    if (!cls) return failure('NOT_FOUND', 'Không tìm thấy lớp');
+    var teacher = teacherRow(cls[3]);
+    return { success: true, class: { code: code, name: String(cls[2]), teacherName: teacher ? String(teacher.values[1]) : '' }, assignments: assignmentsFor(cls[0], code).map(function (a) {
+        // Public reads never include student names or submission counts.
+        delete a.submissionCount; delete a.classId; return a;
+    }) };
+}
+function validateSubmissionAssignment(code, id, examId) {
+    if (!code && !id) return null;
+    var cls = classBy(1, code);
+    var assignment = tableRows('GiaoDe').find(function (r) { return r[0] === id; });
+    if (!cls || !assignment || assignment[1] !== cls[0] || assignment[2] !== examId) return failure('INVALID_ASSIGNMENT', 'Bài giao không thuộc lớp hoặc đề đã chọn');
+    if (Date.now() < Date.parse(assignment[3])) return failure('NOT_OPEN', 'Bài giao chưa mở');
+    if (Date.now() > Date.parse(assignment[4]) + 120000) return failure('PAST_DUE', 'Nộp sau hạn — giáo viên chưa nhận');
+    return null;
+}
+function accountAction(action, payload) {
+    if (action === 'adminLogin') {
+        var configured = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD');
+        if (!configured) return failure('ADMIN_PASSWORD_NOT_SET', 'Chưa đặt ADMIN_PASSWORD trong Script Properties');
+        if (typeof payload.password !== 'string' || !constantEqual(payload.password, configured)) return failure('UNAUTHORIZED', 'Sai mật khẩu');
+        return newSession('admin', '', 'Admin', digest(configured));
+    }
+    if (action === 'teacherLogin') {
+        var teacher = teacherRow(payload.username);
+        var hash = digest((teacher ? teacher.values[2] : 'invalid') + ':' + (typeof payload.password === 'string' ? payload.password : ''));
+        var valid = constantEqual(hash, teacher ? teacher.values[3] : digest('invalid'));
+        if (!teacher || teacher.values[4] !== true || !valid) return failure('UNAUTHORIZED', 'Sai tên đăng nhập hoặc mật khẩu');
+        return newSession('teacher', teacher.values[0], teacher.values[1], teacher.values[3]);
+    }
+    var adminActions = ['adminCreateTeacher', 'adminListTeachers', 'adminResetPassword', 'adminSetTeacherActive', 'adminStats'];
+    var teacherActions = ['createClass', 'listMyClasses', 'assignExam', 'listAssignments', 'listResults'];
+    var role = adminActions.indexOf(action) >= 0 ? 'admin' : teacherActions.indexOf(action) >= 0 ? 'teacher' : '';
+    if (!role) return null;
+    var lock = LockService.getScriptLock();
+    if (!lock.tryLock(30000)) return failure('SERVER_BUSY', 'Máy chủ đang bận, vui lòng thử lại');
+    try {
+        var principal = sessionPrincipal(payload.token, role);
+        if (!principal) return failure('UNAUTHORIZED', 'Phiên đăng nhập không hợp lệ');
+        if (action === 'adminListTeachers') return { success: true, teachers: tableRows('GiaoVien').map(function (r) {
+            return { username: String(r[0]), name: String(r[1]), active: r[4] === true, createdAt: String(r[5]) };
+        }) };
+        if (action === 'adminStats') return { success: true, stats: { teachers: tableRows('GiaoVien').length, classes: tableRows('Lop').length, exams: tableRows('DeThi').length, results: tableRows('KetQua').length } };
+        if (['adminCreateTeacher', 'adminResetPassword', 'adminSetTeacherActive'].indexOf(action) >= 0) {
+            var username = payload.username;
+            if (typeof username !== 'string' || username.length < 3 || username.length > 32 || /[^a-z0-9._-]/.test(username)) return failure('INVALID_USERNAME', 'Tên đăng nhập phải có 3–32 ký tự a-z0-9._-');
+            var existing = teacherRow(username);
+            if (action === 'adminCreateTeacher' && existing) return failure('USERNAME_TAKEN', 'Tên đăng nhập đã được dùng');
+            if (action !== 'adminCreateTeacher' && !existing) return failure('NOT_FOUND', 'Không tìm thấy giáo viên');
+            if (action === 'adminSetTeacherActive') {
+                if (typeof payload.active !== 'boolean') return failure('INVALID_ACTIVE', 'Trạng thái không hợp lệ');
+                writeTable('GiaoVien', []).getRange(existing.row, 5).setValue(payload.active);
+            } else {
+                if (typeof payload.password !== 'string' || Array.from(payload.password).length < 8) return failure('INVALID_PASSWORD', 'Mật khẩu cần ít nhất 8 ký tự');
+                if (action === 'adminCreateTeacher' && (typeof payload.name !== 'string' || !payload.name.trim())) return failure('INVALID_NAME', 'Cần nhập tên giáo viên');
+                var sheet = writeTable('GiaoVien', ['username', 'name', 'salt', 'hash', 'active', 'createdAt']);
+                var salt = randomToken();
+                var passwordHash = digest(salt + ':' + payload.password);
+                if (existing) sheet.getRange(existing.row, 3, 1, 2).setValues([[salt, passwordHash]]);
+                else sheet.appendRow([examTextCell(username), examTextCell(payload.name.trim()), salt, passwordHash, true, new Date().toISOString()]);
+            }
+            SpreadsheetApp.flush(); return { success: true };
+        }
+        if (action === 'createClass') {
+            if (typeof payload.name !== 'string' || !payload.name.trim()) return failure('INVALID_NAME', 'Cần nhập tên lớp');
+            var alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            var code = '';
+            for (var tries = 0; tries < 100; tries++) {
+                // UUID hex digits are unbiased; discard bytes beyond an even multiple of alphabet length.
+                var random = randomToken(); code = '';
+                for (var i = 0; i + 1 < random.length && code.length < 6; i += 2) {
+                    var byte = parseInt(random.slice(i, i + 2), 16);
+                    if (byte < Math.floor(256 / alphabet.length) * alphabet.length) code += alphabet[byte % alphabet.length];
+                }
+                if (code.length === 6 && !classBy(1, code)) break;
+                code = '';
+            }
+            if (!code) return failure('SERVER_BUSY', 'Chưa tạo được mã lớp, vui lòng thử lại');
+            var classId = Utilities.getUuid();
+            writeTable('Lop', ['classId', 'code', 'name', 'username', 'createdAt']).appendRow([classId, code, examTextCell(payload.name.trim()), examTextCell(principal.username), new Date().toISOString()]);
+            SpreadsheetApp.flush(); return { success: true, classId: classId, code: code };
+        }
+        if (action === 'listMyClasses') return { success: true, classes: tableRows('Lop').filter(function (r) { return r[3] === principal.username; }).map(function (r) {
+            var results = classResults(r[1]);
+            return { classId: String(r[0]), code: String(r[1]), name: String(r[2]), createdAt: String(r[4]), studentCount: new Set(results.map(function (x) { return x.candidate_display; })).size };
+        }) };
+        var cls = classBy(0, payload.classId);
+        if (!cls) return failure('NOT_FOUND', 'Không tìm thấy lớp');
+        if (cls[3] !== principal.username) return failure('FORBIDDEN', 'Lớp thuộc giáo viên khác');
+        if (action === 'listAssignments') return { success: true, assignments: assignmentsFor(cls[0], cls[1]) };
+        if (action === 'listResults') return { success: true, results: classResults(cls[1], payload.assignmentId) };
+        if (action === 'assignExam') {
+            var isoDate = function (s) { return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/.test(s) && Number.isFinite(Date.parse(s)); };
+            if (!isoDate(payload.openAt) || !isoDate(payload.dueAt) || Date.parse(payload.dueAt) <= Date.parse(payload.openAt)) return failure('INVALID_DATES', 'Hạn nộp phải sau giờ mở, theo ISO 8601');
+            if (typeof payload.examId !== 'string' || !payload.examId.trim()) return failure('INVALID_EXAM', 'Thiếu mã đề');
+            var meta = examMetadata(payload.examId);
+            if (meta && meta.owner !== principal.username && meta.owner !== '') return failure('FORBIDDEN', 'Đề thuộc giáo viên khác');
+            // Static shared exams live on the frontend; no client-supplied title/key is persisted here.
+            var assignmentId = Utilities.getUuid();
+            writeTable('GiaoDe', ['assignmentId', 'classId', 'examId', 'openAt', 'dueAt', 'createdAt']).appendRow([assignmentId, cls[0], examTextCell(payload.examId), new Date(payload.openAt).toISOString(), new Date(payload.dueAt).toISOString(), new Date().toISOString()]);
+            SpreadsheetApp.flush(); return { success: true, assignmentId: assignmentId };
+        }
+    } finally { lock.releaseLock(); }
+    return failure('UNKNOWN_ACTION', 'Thao tác không hợp lệ');
 }

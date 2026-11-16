@@ -14,12 +14,44 @@ import {
   loadAppConfig,
   createAppsScriptClient,
   createAppsScriptCollectorPort,
+  TEACHER_TOKEN_STORAGE_KEY,
+  ADMIN_TOKEN_STORAGE_KEY,
+  LEGACY_TEACHER_PW_STORAGE_KEY,
+  getTeacherToken,
+  setTeacherToken,
+  clearTeacherToken,
+  getAdminToken,
+  setAdminToken,
+  clearAdminToken,
+  teacherLogout,
+  adminLogout,
+  ERROR_MESSAGES_VI,
+  mapErrorToVietnamese,
   enqueue,
   drainOutbox,
   validateReceipt,
   CollectorError,
   type AsResult,
 } from '../../src/collect/index.ts';
+
+class MockSessionStorage {
+  private store = new Map<string, string>();
+  getItem(key: string): string | null {
+    return this.store.get(key) ?? null;
+  }
+  setItem(key: string, value: string): void {
+    this.store.set(key, String(value));
+  }
+  removeItem(key: string): void {
+    this.store.delete(key);
+  }
+  clear(): void {
+    this.store.clear();
+  }
+}
+
+const mockSession = new MockSessionStorage();
+(globalThis as any).sessionStorage = mockSession;
 
 function assertAsOk<T>(res: AsResult<T>): T {
   assert.equal(res.ok, true, !res.ok ? res.message : '');
@@ -186,8 +218,10 @@ class InMemoryStorage implements StoragePort {
 describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () => {
   describe('loadAppConfig', () => {
     it('returns appsScriptUrl when public/config.json is successfully fetched and valid', async () => {
-      const fakeFetch: typeof fetch = async (input) => {
+      let passedInit: RequestInit | undefined;
+      const fakeFetch: typeof fetch = async (input, init) => {
         assert.equal(String(input), 'public/config.json');
+        passedInit = init;
         return new Response(JSON.stringify({ appsScriptUrl: 'https://script.google.com/macros/s/xyz/exec' }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
@@ -196,6 +230,7 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
 
       const cfg = await loadAppConfig(fakeFetch);
       assert.deepEqual(cfg, { appsScriptUrl: 'https://script.google.com/macros/s/xyz/exec' });
+      assert.equal(passedInit?.cache, 'no-store', 'loadAppConfig must fetch with cache: "no-store" (17.6)');
     });
 
     it('trims whitespace in appsScriptUrl', async () => {
@@ -249,14 +284,57 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
         const rGet = await client.getExam('some-id');
         assertAsErr(rGet, 'NOT_CONFIGURED');
 
-        const rLogin = await client.teacherLogin('pass');
-        assertAsErr(rLogin, 'NOT_CONFIGURED');
+        const rClass = await client.getClass('12A1');
+        assertAsErr(rClass, 'NOT_CONFIGURED');
+
+        const rLogin1 = await client.teacherLogin('pass');
+        assertAsErr(rLogin1, 'NOT_CONFIGURED');
+
+        const rLogin2 = await client.teacherLogin('teacher1', 'pass');
+        assertAsErr(rLogin2, 'NOT_CONFIGURED');
 
         const rPub = await client.publishExam('pass', {});
         assertAsErr(rPub, 'NOT_CONFIGURED');
 
         const rUnpub = await client.unpublishExam('pass', 'some-id');
         assertAsErr(rUnpub, 'NOT_CONFIGURED');
+
+        const rCreateCls = await client.createClass('12A1');
+        assertAsErr(rCreateCls, 'NOT_CONFIGURED');
+
+        const rMyClasses = await client.listMyClasses();
+        assertAsErr(rMyClasses, 'NOT_CONFIGURED');
+
+        const rAssign = await client.assignExam('cls-1', 'ex-1', '2026-11-16T10:00:00Z', '2026-11-16T12:00:00Z');
+        assertAsErr(rAssign, 'NOT_CONFIGURED');
+
+        const rListAssign = await client.listAssignments('cls-1');
+        assertAsErr(rListAssign, 'NOT_CONFIGURED');
+
+        const rListRes = await client.listResults('cls-1');
+        assertAsErr(rListRes, 'NOT_CONFIGURED');
+
+        const rAdminLogin = await client.adminLogin('adminpass');
+        assertAsErr(rAdminLogin, 'NOT_CONFIGURED');
+
+        const rAdminCreate = await client.adminCreateTeacher('tok', 'Teacher Name', 'teacher_user', 'password123');
+        assertAsErr(rAdminCreate, 'NOT_CONFIGURED');
+
+        const rAdminList = await client.adminListTeachers();
+        assertAsErr(rAdminList, 'NOT_CONFIGURED');
+
+        const rAdminReset = await client.adminResetPassword('teacher_user', 'newpassword123');
+        assertAsErr(rAdminReset, 'NOT_CONFIGURED');
+
+        const rAdminActive = await client.adminSetTeacherActive('teacher_user', false);
+        assertAsErr(rAdminActive, 'NOT_CONFIGURED');
+
+        const rAdminStats = await client.adminStats();
+        assertAsErr(rAdminStats, 'NOT_CONFIGURED');
+
+        // Logout helpers must run safely without throwing
+        client.teacherLogout();
+        client.adminLogout();
 
         assert.equal(fetchCalled, false, 'Fetch must never be called when unconfigured');
       }
@@ -347,6 +425,33 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
       const res = await client.getExam('non-existent');
       const err = assertAsErr(res, 'NOT_FOUND');
       assert.equal(err.message, 'Không tìm thấy đề');
+    });
+
+    it('getExam falls back to public/exams/index.json when Apps Script returns NOT_FOUND', async () => {
+      const dummyExam = createDummyExam();
+      const fakeFetch: typeof fetch = async (url) => {
+        const urlStr = String(url);
+        if (urlStr.includes('action=getExam')) {
+          return new Response(JSON.stringify({ success: false, error: 'NOT_FOUND', message: 'Không tìm thấy đề' }), { status: 200 });
+        }
+        if (urlStr === 'public/exams/index.json') {
+          return new Response(JSON.stringify({
+            version: 1,
+            exams: [
+              { id: 'shared-static-exam-01', url: 'public/exams/shared-static.json' },
+            ],
+          }), { status: 200 });
+        }
+        if (urlStr === 'public/exams/shared-static.json') {
+          return new Response(JSON.stringify(dummyExam), { status: 200 });
+        }
+        return new Response('Not found', { status: 404 });
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      const res = await client.getExam('shared-static-exam-01');
+      const val = assertAsOk(res);
+      assert.deepEqual(val, dummyExam);
     });
 
     it('teacherLogin performs POST with text/plain, password in body, never in URL', async () => {
@@ -491,6 +596,427 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
       const client = createAppsScriptClient(BASE_URL, fakeFetch);
       const res = await client.listExams();
       assertAsErr(res, 'BAD_RESPONSE');
+    });
+  });
+
+  describe('createAppsScriptClient — 19.2 Account, Class, and Admin Actions', () => {
+    const BASE_URL = 'https://script.google.com/macros/s/xyz/exec';
+
+    it('getClass performs GET ?action=getClass&code=<code> with cache:no-store and maps ClassInfo', async () => {
+      const recordedCalls: { url: string; init?: RequestInit }[] = [];
+      const fakeFetch: typeof fetch = async (url, init) => {
+        recordedCalls.push({ url: String(url), init });
+        return new Response(
+          JSON.stringify({
+            success: true,
+            class: { code: '12A1OK', name: '12A1 Chuyên Lý', teacherName: 'Cô Lan' },
+            assignments: [
+              {
+                assignmentId: 'asn-01',
+                examId: 'exam-ly-12',
+                title: 'Đề kiểm tra 1 tiết',
+                openAt: '2026-11-16T08:00:00Z',
+                dueAt: '2026-11-16T10:00:00Z',
+                questionCount: 28,
+                durationMinutes: 50,
+              },
+            ],
+          }),
+          { status: 200 }
+        );
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      const res = await client.getClass('12A1OK');
+      const val = assertAsOk(res);
+      assert.equal(val.class.code, '12A1OK');
+      assert.equal(val.class.name, '12A1 Chuyên Lý');
+      assert.equal(val.class.teacherName, 'Cô Lan');
+      assert.equal(val.assignments.length, 1);
+      assert.equal(val.assignments[0]?.assignmentId, 'asn-01');
+      assert.equal(val.assignments[0]?.title, 'Đề kiểm tra 1 tiết');
+      assert.match(recordedCalls[0]?.url ?? '', /action=getClass&code=12A1OK/);
+      assert.equal(recordedCalls[0]?.init?.cache, 'no-store');
+    });
+
+    it('getClass maps NOT_FOUND error when class does not exist', async () => {
+      const fakeFetch: typeof fetch = async () => {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'NOT_FOUND',
+            message: 'Không tìm thấy lớp học',
+          }),
+          { status: 200 }
+        );
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      const res = await client.getClass('ZZZZZZ');
+      const err = assertAsErr(res, 'NOT_FOUND');
+      assert.match(err.message, /Không tìm thấy lớp học/i);
+    });
+
+    it('teacherLogin with (username, password) returns token and stores in sessionStorage', async () => {
+      mockSession.clear();
+      const recordedCalls: { url: string; init?: RequestInit }[] = [];
+      const fakeFetch: typeof fetch = async (url, init) => {
+        recordedCalls.push({ url: String(url), init });
+        return new Response(
+          JSON.stringify({
+            success: true,
+            token: 'token-teacher-32-bytes-long-string-value',
+            name: 'Cô Lan',
+            expiresAt: '2026-11-16T18:00:00Z',
+          }),
+          { status: 200 }
+        );
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      const res = await client.teacherLogin('colan', 'MatKhau-Lan-01');
+      const val = assertAsOk(res);
+      assert.equal(val.token, 'token-teacher-32-bytes-long-string-value');
+      assert.equal(val.name, 'Cô Lan');
+      assert.equal(getTeacherToken(), 'token-teacher-32-bytes-long-string-value');
+
+      const body = JSON.parse(String(recordedCalls[0]?.init?.body));
+      assert.equal(body.action, 'teacherLogin');
+      assert.equal(body.username, 'colan');
+      assert.equal(body.password, 'MatKhau-Lan-01');
+
+      // Logout clears token
+      client.teacherLogout();
+      assert.equal(getTeacherToken(), null);
+    });
+
+    it('teacherLogin maps UNAUTHORIZED to Vietnamese "Sai tên đăng nhập hoặc mật khẩu"', async () => {
+      const fakeFetch: typeof fetch = async () => {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'UNAUTHORIZED',
+            message: 'Sai mật khẩu',
+          }),
+          { status: 200 }
+        );
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      const res = await client.teacherLogin('colan', 'wrong-pass');
+      const err = assertAsErr(res, 'UNAUTHORIZED');
+      assert.equal(err.message, 'Sai tên đăng nhập hoặc mật khẩu');
+    });
+
+    it('createClass sends POST and returns classId and 6-char code; falls back to stored token', async () => {
+      setTeacherToken('my-saved-teacher-token');
+      const recordedCalls: { url: string; init?: RequestInit }[] = [];
+      const fakeFetch: typeof fetch = async (url, init) => {
+        recordedCalls.push({ url: String(url), init });
+        return new Response(
+          JSON.stringify({
+            success: true,
+            classId: 'cls-12a1',
+            code: 'ABCDEF',
+          }),
+          { status: 200 }
+        );
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      // Call with name only (token from sessionStorage)
+      const res = await client.createClass('12A1');
+      const val = assertAsOk(res);
+      assert.equal(val.classId, 'cls-12a1');
+      assert.equal(val.code, 'ABCDEF');
+
+      const body = JSON.parse(String(recordedCalls[0]?.init?.body));
+      assert.equal(body.action, 'createClass');
+      assert.equal(body.token, 'my-saved-teacher-token');
+      assert.equal(body.name, '12A1');
+      clearTeacherToken();
+    });
+
+    it('listMyClasses sends POST and returns TeacherClassMeta[]', async () => {
+      const fakeFetch: typeof fetch = async () => {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            classes: [
+              { classId: 'cls-1', code: 'ABCDEF', name: '12A1', createdAt: '2026-11-16T08:00:00Z', studentCount: 25 },
+              { classId: 'cls-2', code: 'GHJKLM', name: '12A2', createdAt: '2026-11-16T09:00:00Z', studentCount: 30 },
+            ],
+          }),
+          { status: 200 }
+        );
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      const res = await client.listMyClasses('explicit-token');
+      const val = assertAsOk(res);
+      assert.equal(val.length, 2);
+      assert.equal(val[0]?.name, '12A1');
+      assert.equal(val[0]?.studentCount, 25);
+    });
+
+    it('assignExam sends POST and maps assignmentId; maps INVALID_DATES error', async () => {
+      const recordedCalls: { url: string; init?: RequestInit }[] = [];
+      const fakeFetch: typeof fetch = async (url, init) => {
+        recordedCalls.push({ url: String(url), init });
+        return new Response(
+          JSON.stringify({
+            success: true,
+            assignmentId: 'assign-xyz-99',
+          }),
+          { status: 200 }
+        );
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      const res = await client.assignExam('tok', 'cls-1', 'exam-01', '2026-11-16T08:00:00Z', '2026-11-16T10:00:00Z');
+      const val = assertAsOk(res);
+      assert.equal(val.assignmentId, 'assign-xyz-99');
+
+      const body = JSON.parse(String(recordedCalls[0]?.init?.body));
+      assert.equal(body.action, 'assignExam');
+      assert.equal(body.classId, 'cls-1');
+      assert.equal(body.examId, 'exam-01');
+
+      // Test error mapping
+      const errorFetch: typeof fetch = async () => {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'INVALID_DATES',
+            message: 'Hạn nộp phải sau giờ mở, theo ISO 8601',
+          }),
+          { status: 200 }
+        );
+      };
+      const clientErr = createAppsScriptClient(BASE_URL, errorFetch);
+      const errRes = await clientErr.assignExam('tok', 'cls-1', 'exam-01', '2026-11-16T12:00:00Z', '2026-11-16T10:00:00Z');
+      const err = assertAsErr(errRes, 'INVALID_DATES');
+      assert.match(err.message, /Hạn nộp phải sau giờ mở/i);
+    });
+
+    it('listAssignments sends POST and returns AssignmentMeta[]', async () => {
+      const fakeFetch: typeof fetch = async () => {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            assignments: [
+              {
+                assignmentId: 'a1',
+                classId: 'c1',
+                examId: 'e1',
+                openAt: '2026-11-16T08:00:00Z',
+                dueAt: '2026-11-16T12:00:00Z',
+                createdAt: '2026-11-16T07:00:00Z',
+                title: 'Đề 1',
+                questionCount: 20,
+                durationMinutes: 45,
+                submissionCount: 5,
+              },
+            ],
+          }),
+          { status: 200 }
+        );
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      const res = await client.listAssignments('tok', 'c1');
+      const val = assertAsOk(res);
+      assert.equal(val.length, 1);
+      assert.equal(val[0]?.title, 'Đề 1');
+      assert.equal(val[0]?.submissionCount, 5);
+    });
+
+    it('listResults sends POST and maps results; maps FORBIDDEN error', async () => {
+      const fakeFetch: typeof fetch = async () => {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            results: [
+              { candidate_display: 'Nguyễn An', total: '19/4', maxTotal: '10' },
+            ],
+          }),
+          { status: 200 }
+        );
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      const res = await client.listResults('tok', 'cls-1');
+      const val = assertAsOk(res);
+      assert.equal(val.length, 1);
+      assert.equal(val[0]?.candidate_display, 'Nguyễn An');
+
+      // FORBIDDEN error
+      const forbiddenFetch: typeof fetch = async () => {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'FORBIDDEN',
+            message: 'Lớp thuộc giáo viên khác',
+          }),
+          { status: 200 }
+        );
+      };
+      const clientForbidden = createAppsScriptClient(BASE_URL, forbiddenFetch);
+      const errRes = await clientForbidden.listResults('tok', 'cls-other');
+      const err = assertAsErr(errRes, 'FORBIDDEN');
+      assert.match(err.message, /Lớp thuộc giáo viên khác|không có quyền/i);
+    });
+
+    it('adminLogin sends POST and stores admin token in sessionStorage', async () => {
+      mockSession.clear();
+      const fakeFetch: typeof fetch = async () => {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            token: 'admin-token-secure-32-bytes-long',
+            expiresAt: '2026-11-16T20:00:00Z',
+          }),
+          { status: 200 }
+        );
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      const res = await client.adminLogin('Admin-Cunata-2026');
+      const val = assertAsOk(res);
+      assert.equal(val.token, 'admin-token-secure-32-bytes-long');
+      assert.equal(getAdminToken(), 'admin-token-secure-32-bytes-long');
+
+      client.adminLogout();
+      assert.equal(getAdminToken(), null);
+    });
+
+    it('adminCreateTeacher sends POST, handles USERNAME_TAKEN', async () => {
+      setAdminToken('admin-tok-stored');
+      const recordedCalls: { url: string; init?: RequestInit }[] = [];
+      const fakeFetch: typeof fetch = async (url, init) => {
+        recordedCalls.push({ url: String(url), init });
+        return new Response(JSON.stringify({ success: true }), { status: 200 });
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      const res = await client.adminCreateTeacher({
+        name: 'Thầy Hùng',
+        username: 'thayhung',
+        password: 'MatKhau-Hung-01',
+      });
+      assert.equal(assertAsOk(res), true);
+
+      const body = JSON.parse(String(recordedCalls[0]?.init?.body));
+      assert.equal(body.action, 'adminCreateTeacher');
+      assert.equal(body.token, 'admin-tok-stored');
+      assert.equal(body.username, 'thayhung');
+
+      // USERNAME_TAKEN mapping
+      const dupFetch: typeof fetch = async () => {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'USERNAME_TAKEN',
+            message: 'Tên đăng nhập đã được dùng',
+          }),
+          { status: 200 }
+        );
+      };
+      const clientDup = createAppsScriptClient(BASE_URL, dupFetch);
+      const dupRes = await clientDup.adminCreateTeacher('tok', 'Thầy Hùng', 'thayhung', 'MatKhau-Hung-01');
+      const err = assertAsErr(dupRes, 'USERNAME_TAKEN');
+      assert.equal(err.message, 'Tên đăng nhập đã được dùng');
+      clearAdminToken();
+    });
+
+    it('adminListTeachers sends POST and maps TeacherAccountInfo[]', async () => {
+      const fakeFetch: typeof fetch = async () => {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            teachers: [
+              { username: 'colan', name: 'Cô Lan', active: true, createdAt: '2026-11-16T08:00:00Z' },
+              { username: 'thayminh', name: 'Thầy Minh', active: false, createdAt: '2026-11-16T09:00:00Z' },
+            ],
+          }),
+          { status: 200 }
+        );
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      const res = await client.adminListTeachers('admin-tok');
+      const val = assertAsOk(res);
+      assert.equal(val.length, 2);
+      assert.equal(val[0]?.username, 'colan');
+      assert.equal(val[0]?.active, true);
+      assert.equal(val[1]?.active, false);
+    });
+
+    it('adminResetPassword and adminSetTeacherActive send POST', async () => {
+      const fakeFetch: typeof fetch = async () => new Response(JSON.stringify({ success: true }), { status: 200 });
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+
+      const r1 = await client.adminResetPassword('admin-tok', 'colan', 'NewPassword-99');
+      assert.equal(assertAsOk(r1), true);
+
+      const r2 = await client.adminSetTeacherActive('admin-tok', 'colan', false);
+      assert.equal(assertAsOk(r2), true);
+    });
+
+    it('adminStats sends POST and maps AdminStats counters', async () => {
+      const fakeFetch: typeof fetch = async () => {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            stats: { teachers: 5, classes: 12, exams: 25, results: 140 },
+          }),
+          { status: 200 }
+        );
+      };
+
+      const client = createAppsScriptClient(BASE_URL, fakeFetch);
+      const res = await client.adminStats('admin-tok');
+      const val = assertAsOk(res);
+      assert.equal(val.teachers, 5);
+      assert.equal(val.classes, 12);
+      assert.equal(val.exams, 25);
+      assert.equal(val.results, 140);
+    });
+  });
+
+  describe('Vietnamese Error Mapping & sessionStorage Helpers', () => {
+    it('mapErrorToVietnamese maps standard error codes accurately', () => {
+      assert.equal(mapErrorToVietnamese('UNAUTHORIZED'), 'Sai tên đăng nhập hoặc mật khẩu');
+      assert.equal(mapErrorToVietnamese('UNAUTHORIZED', 'Mật khẩu sai'), 'Sai tên đăng nhập hoặc mật khẩu');
+      assert.equal(mapErrorToVietnamese('FORBIDDEN'), 'Bạn không có quyền thực hiện thao tác này');
+      assert.equal(mapErrorToVietnamese('FORBIDDEN', 'Lớp thuộc giáo viên khác'), 'Lớp thuộc giáo viên khác');
+      assert.equal(mapErrorToVietnamese('NOT_OPEN'), 'Bài thi chưa đến giờ mở');
+      assert.equal(mapErrorToVietnamese('PAST_DUE'), 'Nộp sau hạn — giáo viên chưa nhận');
+      assert.equal(mapErrorToVietnamese('USERNAME_TAKEN'), 'Tên đăng nhập đã được dùng');
+      assert.equal(mapErrorToVietnamese('NOT_FOUND'), 'Không tìm thấy dữ liệu yêu cầu');
+      assert.equal(mapErrorToVietnamese('TIMEOUT'), 'Hết thời gian chờ kết nối máy chủ Apps Script (15s)');
+      assert.equal(mapErrorToVietnamese('CUSTOM_ERR', 'Thông báo tiếng Việt tùy chỉnh'), 'Thông báo tiếng Việt tùy chỉnh');
+    });
+
+    it('sessionStorage token helpers store and clear tokens properly', () => {
+      clearTeacherToken();
+      clearAdminToken();
+
+      assert.equal(getTeacherToken(), null);
+      assert.equal(getAdminToken(), null);
+
+      setTeacherToken('test-teacher-tok');
+      assert.equal(getTeacherToken(), 'test-teacher-tok');
+
+      setAdminToken('test-admin-tok');
+      assert.equal(getAdminToken(), 'test-admin-tok');
+
+      teacherLogout();
+      assert.equal(getTeacherToken(), null);
+      assert.equal(getAdminToken(), 'test-admin-tok');
+
+      adminLogout();
+      assert.equal(getAdminToken(), null);
     });
   });
 
@@ -769,6 +1295,126 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
         },
         (err: any) => {
           assert.equal(err.code, 'BAD_RESPONSE');
+          return true;
+        }
+      );
+    });
+
+    it('attaches class_code and assignment_id to submitResult payload when present on final', async () => {
+      const recordedCalls: { url: string; init?: RequestInit }[] = [];
+      const fakeFetch: typeof fetch = async (url, init) => {
+        recordedCalls.push({ url: String(url), init });
+        return new Response(
+          JSON.stringify({
+            success: true,
+            status: 'NEWLY_RECORDED',
+            attempt_id: 'att-with-class',
+            recorded_at: '2026-11-16T08:30:00.000Z',
+          }),
+          { status: 200 }
+        );
+      };
+
+      const port = createAppsScriptCollectorPort(BASE_URL, fakeFetch);
+      const final: any = {
+        ...createSampleAttempt('att-with-class'),
+        class_code: '12a1ok',
+        assignment_id: 'assign-uuid-456',
+      };
+      const ac = new AbortController();
+      const res = await port.send(final, ac.signal);
+      assert.ok(res && typeof res === 'object');
+
+      const body = JSON.parse(String(recordedCalls[0]?.init?.body));
+      assert.equal(body.action, 'submitResult');
+      assert.equal(body.class_code, '12A1OK', 'class_code must be trimmed and uppercase');
+      assert.equal(body.assignment_id, 'assign-uuid-456');
+    });
+
+    it('attaches class_code and assignment_id from metadata when present', async () => {
+      const recordedCalls: { url: string; init?: RequestInit }[] = [];
+      const fakeFetch: typeof fetch = async (url, init) => {
+        recordedCalls.push({ url: String(url), init });
+        return new Response(
+          JSON.stringify({
+            success: true,
+            status: 'NEWLY_RECORDED',
+            attempt_id: 'att-meta',
+            recorded_at: '2026-11-16T08:30:00.000Z',
+          }),
+          { status: 200 }
+        );
+      };
+
+      const port = createAppsScriptCollectorPort(BASE_URL, fakeFetch);
+      const final: any = {
+        ...createSampleAttempt('att-meta'),
+        metadata: {
+          classCode: 'ABCDEF',
+          assignmentId: 'assign-789',
+        },
+      };
+      const ac = new AbortController();
+      await port.send(final, ac.signal);
+
+      const body = JSON.parse(String(recordedCalls[0]?.init?.body));
+      assert.equal(body.class_code, 'ABCDEF');
+      assert.equal(body.assignment_id, 'assign-789');
+    });
+
+    it('throws non-recoverable CollectorError for NOT_OPEN and PAST_DUE responses with Vietnamese messages', async () => {
+      // NOT_OPEN test
+      const notOpenFetch: typeof fetch = async () => {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'NOT_OPEN',
+            message: 'Đề thi chưa đến giờ mở',
+          }),
+          { status: 200 }
+        );
+      };
+
+      const portNotOpen = createAppsScriptCollectorPort(BASE_URL, notOpenFetch);
+      const final1 = createSampleAttempt('att-not-open');
+      const ac1 = new AbortController();
+
+      await assert.rejects(
+        async () => {
+          await portNotOpen.send(final1, ac1.signal);
+        },
+        (err: any) => {
+          assert.equal(err.code, 'NOT_OPEN');
+          assert.equal(err.recoverable, false, 'NOT_OPEN must be non-recoverable');
+          assert.match(err.message, /Bài thi chưa đến giờ mở|Đề thi chưa đến giờ mở/i);
+          return true;
+        }
+      );
+
+      // PAST_DUE test
+      const pastDueFetch: typeof fetch = async () => {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'PAST_DUE',
+            message: 'Đã quá hạn nộp bài',
+          }),
+          { status: 200 }
+        );
+      };
+
+      const portPastDue = createAppsScriptCollectorPort(BASE_URL, pastDueFetch);
+      const final2 = createSampleAttempt('att-past-due');
+      const ac2 = new AbortController();
+
+      await assert.rejects(
+        async () => {
+          await portPastDue.send(final2, ac2.signal);
+        },
+        (err: any) => {
+          assert.equal(err.code, 'PAST_DUE');
+          assert.equal(err.recoverable, false, 'PAST_DUE must be non-recoverable');
+          assert.match(err.message, /Nộp sau hạn — giáo viên chưa nhận|Đã quá hạn/i);
           return true;
         }
       );

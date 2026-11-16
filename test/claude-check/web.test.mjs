@@ -9,7 +9,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { launchBrowser, sleep, startServer } from './harness.mjs';
 import {
-  SECRET, TARGETS, START_NAME, enterFromStart, onStartScreen, isVisible, loadExam, makeExam, near, openApp, pageProblems, pickOption, qI, qII, qIII, readReport,
+  SECRET, TARGETS, START_NAME, enterFromStart, onStartScreen, onRoleChooser, enterStudentArea, startFromCard, isVisible, loadExam, makeExam, near, openApp, pageProblems, pickOption, qI, qII, qIII, readReport,
   setName, setStatement, shortValue, submit, timerSeconds, typeShort, waitBoot, waitReport, waitSaved,
 } from './app.mjs';
 
@@ -30,45 +30,49 @@ for (const target of TARGETS) {
     });
     // Trưởng phòng 16/11/2026: tính năng MỚI chỉ làm trên bản build dist/; index.html gốc giữ nguyên tới khi chuyển Pages sang dist (V01).
     const runDist = (name, fn) => { if (target.name === 'dist') run(name, fn); };
+    const runRoot = (name, fn) => { if (target.name === 'root') run(name, fn); };
 
     // WEB-contract mục 16 (Trưởng phòng 16/11/2026): "học sinh vào web phải điền tên và chọn đề trước", không tự hiện một đề.
-    runDist('[app][student] màn vào thi: mở trang lần đầu thấy ô tên + danh sách đề, chưa hiện câu hỏi nào; thiếu tên hoặc chưa chọn đề thì không bắt đầu được', async (ctx) => {
+    // WEB-contract 19.1 (Trưởng phòng 16/11/2026: chọn vai Học sinh/Giáo viên trước; học sinh thấy đề dạng thẻ có mô tả).
+    runDist('[app][student] mở trang lần đầu: chọn vai → nhập tên → lưới thẻ đề → xem trước → làm bài; chưa hiện câu hỏi trước đó', async (ctx) => {
       const exams = readManifest();
       const page = await ctx.newPage();
       await page.goto(server.url + target.path);
       await waitBoot(page);
-      assert.equal(await onStartScreen(page), true, 'mở trang lần đầu (chưa có bài dở) phải hiện màn vào thi #startScreen');
-      const s = await page.eval(() => ({
-        cards: [...document.querySelectorAll('#examPane .question-card')].filter((c) => c.getClientRects().length > 0).length,
-        items: [...document.querySelectorAll('#startScreen .exam-list-item[data-exam-url]')].map((b) => b.getAttribute('data-exam-url')),
-        nameInput: !!document.querySelector('#startScreen input#startName'),
-        disabled: document.getElementById('btnStartExam')?.disabled,
-      }));
-      assert.equal(s.cards, 0, 'chưa nhập tên và chọn đề thì không được hiện câu hỏi của bất kỳ đề nào');
-      assert.equal(s.nameInput, true, 'màn vào thi phải có ô nhập tên #startName');
-      assert.deepEqual([...s.items].sort(), exams.map((e) => e.url).sort(), 'màn vào thi phải liệt kê đủ các đề trong public/exams/index.json');
-      assert.equal(s.disabled, true, 'chưa nhập tên, chưa chọn đề: nút #btnStartExam phải bị khóa');
-      const pick = exams[exams.length - 1];
-      await page.click(`#startScreen .exam-list-item[data-exam-url="${pick.url}"]`);
-      assert.equal(await page.eval(() => document.getElementById('btnStartExam').disabled), true, 'đã chọn đề nhưng chưa nhập tên: vẫn chưa được bắt đầu');
+      assert.equal(await onRoleChooser(page), true, 'mở trang lần đầu phải là màn chọn vai #roleChooser');
+      assert.equal(await page.eval(() => [...document.querySelectorAll('#examPane .question-card')].filter((c) => c.getClientRects().length > 0).length), 0, 'chưa chọn vai/đề thì không hiện câu hỏi');
+      await page.click('#btnRoleStudent');
+      await page.waitFor(() => !!document.querySelector('#studentNameGate input#startName'), 'lần đầu vào khu học sinh: cổng nhập tên #studentNameGate', 8000);
       await page.eval(() => { const e = document.getElementById('startName'); e.focus(); e.select(); });
       await page.send('Input.insertText', { text: '   ' });
-      assert.equal(await page.eval(() => document.getElementById('btnStartExam').disabled), true, 'tên chỉ có khoảng trắng không được tính là đã nhập tên');
-      await enterFromStart(page, { name: 'Lê Minh 12A1', url: pick.url });
+      await page.eval(() => document.getElementById('startName').dispatchEvent(new Event('input', { bubbles: true })));
+      assert.equal(await page.eval(() => document.getElementById('btnNameContinue').disabled), true, 'tên chỉ có khoảng trắng không được tính là đã nhập tên');
+      await enterStudentArea(page, { name: 'Lê Minh 12A1' });
+      const ids = await page.eval(() => [...document.querySelectorAll('#startScreen #practiceExams .exam-list-item[data-exam-id]')].map((b) => b.getAttribute('data-exam-id')));
+      assert.deepEqual([...ids].sort(), exams.map((e) => e.id).sort(), 'mục "Đề luyện tập" (#practiceExams) phải có đủ các đề trong public/exams/index.json');
+      const pick = exams[exams.length - 1];
+      await page.click(`#startScreen .exam-list-item[data-exam-id="${pick.id}"]`);
+      await page.waitFor((t) => { const p = document.getElementById('examPreview'); return !!p && getComputedStyle(p).display !== 'none' && p.innerText.includes(t); },
+        'bấm thẻ đề: #examPreview hiện đúng tiêu đề đề đó', 8000, pick.title);
+      assert.match(await page.eval(() => document.getElementById('examPreview').innerText), /\d+ câu · \d+ phút/, '#examPreview phải có "N câu · M phút"');
+      await page.click('#btnStartExam');
       await titleIs(page, pick);
-      assert.equal(await page.eval(() => document.getElementById('candidateName')?.value), 'Lê Minh 12A1', 'tên nhập ở màn vào thi phải là tên thí sinh của bài làm');
+      assert.equal(await page.eval(() => document.getElementById('candidateName')?.value || document.getElementById('candidateName')?.textContent), 'Lê Minh 12A1', 'tên nhập ở cổng tên phải là tên thí sinh của bài làm');
       assert.deepEqual(pageProblems(page), [], 'không lỗi JS hay request hỏng');
     });
 
-    runDist('[app][student] màn vào thi: nộp bài xong, mở lại trang bằng ?exam= đề khác thì tên đã nhập được điền sẵn', async (ctx) => {
+    runDist('[app][student] lần sau mở lại: nhớ vai và tên (không hỏi lại tên), ?exam= mở sẵn phần xem trước của đề đó', async (ctx) => {
       const exams = readManifest();
       const page = await openApp(ctx, server, target);
       await submit(page);
       const p2 = await ctx.newPage();
       await p2.goto(server.url + target.path + '?exam=' + encodeURIComponent(exams[0].id));
       await waitBoot(p2);
-      assert.equal(await onStartScreen(p2), true, 'bài trước đã nộp, mở đề khác bằng ?exam= phải qua màn vào thi');
-      assert.equal(await p2.eval(() => document.getElementById('startName')?.value), START_NAME, 'ô tên ở màn vào thi phải điền sẵn tên đã dùng lần trước');
+      assert.equal(await onRoleChooser(p2), false, 'đã chọn vai học sinh lần trước: không hỏi lại vai');
+      await p2.waitFor((t) => { const p = document.getElementById('examPreview'); return !!p && getComputedStyle(p).display !== 'none' && p.innerText.includes(t); },
+        '?exam=: mở sẵn #examPreview của đề đó', 10000, exams[0].title);
+      assert.equal(await p2.eval(() => { const g = document.getElementById('studentNameGate'); return !!g && getComputedStyle(g).display !== 'none'; }), false, 'đã có tên: không hiện lại cổng tên');
+      assert.ok(await p2.eval((n) => document.body.innerText.includes(n), START_NAME), 'tên đã dùng phải hiện trên trang học sinh (TopBar)');
     });
 
     run('[app][glue] khởi động: hiện đề mẫu, không lỗi JS, không request hỏng, chạy được dưới đường dẫn con /Cunata/', async (ctx) => {
@@ -386,7 +390,7 @@ for (const target of TARGETS) {
     const titleIs = (page, e) => page.waitFor((t, n) => (document.getElementById('examTitle')?.textContent ?? '').trim() === t && document.querySelectorAll('#examPane .question-card').length === n,
       `đề "${e.exam.title}" được nạp vào phòng thi (đúng tiêu đề, đủ ${e.exam.questions.length} câu)`, 10000, e.exam.title, e.exam.questions.length);
 
-    run('[app][student] chọn đề: nút "Chọn đề" mở danh sách đủ các đề trong public/exams/index.json, bấm một đề thì vào làm đề đó', async (ctx) => {
+    runRoot('[app][student] chọn đề: nút "Chọn đề" mở danh sách đủ các đề trong public/exams/index.json, bấm một đề thì vào làm đề đó', async (ctx) => {
       const exams = readManifest();
       const page = await openApp(ctx, server, target);
       await page.click('#btnOpenExamList');
@@ -411,8 +415,12 @@ for (const target of TARGETS) {
       const page = await openApp(ctx, server, target);
       const choose = async (e) => {
         await page.click('#btnOpenExamList');
-        await page.waitFor((u) => !!document.querySelector(`#examListModal .exam-list-item[data-exam-url="${u}"]`), 'danh sách đề hiện mục của đề cần chọn', 8000, e.url);
-        await page.click(`#examListModal .exam-list-item[data-exam-url="${e.url}"]`);
+        if (target.name === 'dist') {   // 19.1: nút này về trang học sinh, chọn lại bằng thẻ đề + #examPreview ("Làm tiếp")
+          await startFromCard(page, `#startScreen .exam-list-item[data-exam-url="${e.url}"]`);
+        } else {
+          await page.waitFor((u) => !!document.querySelector(`#examListModal .exam-list-item[data-exam-url="${u}"]`), 'danh sách đề hiện mục của đề cần chọn', 8000, e.url);
+          await page.click(`#examListModal .exam-list-item[data-exam-url="${e.url}"]`);
+        }
         await titleIs(page, e);
       };
       const answerFirst = async (e) => {
@@ -469,23 +477,6 @@ for (const target of TARGETS) {
       await submit(page);
       const r = await readReport(page);
       assert.ok(near(r.I, [3, 3]), `chọn đúng cả 12 câu Phần I theo optionId phải ra 3 / 3 dù đã trộn, thực tế "${r.raw.I}"`);
-    });
-
-    runDist('[app][student] chọn đề: mở thẳng bằng đường dẫn ?exam=<examId>', async (ctx) => {
-      const exams = readManifest();
-      const pick = exams[0];
-      const page = await ctx.newPage();
-      await page.goto(server.url + target.path + '?exam=' + encodeURIComponent(pick.id));
-      await waitBoot(page);
-      assert.equal(await onStartScreen(page), true, 'mở bằng ?exam=: vẫn phải qua màn vào thi để nhập tên');
-      const sel = await page.eval((u) => { const b = document.querySelector(`#startScreen .exam-list-item[data-exam-url="${u}"]`); return !!b && (b.getAttribute('aria-pressed') === 'true' || b.getAttribute('aria-selected') === 'true' || /selected/.test(b.className)); }, pick.url);
-      assert.equal(sel, true, 'mở bằng ?exam=: đề đó phải được chọn sẵn trên màn vào thi (aria-pressed="true" hoặc class selected)');
-      await page.eval(() => { const e = document.getElementById('startName'); e.focus(); e.select(); });
-      await page.send('Input.insertText', { text: 'Học sinh link' });
-      await page.eval(() => document.getElementById('startName').dispatchEvent(new Event('change', { bubbles: true })));
-      await page.waitFor(() => !document.getElementById('btnStartExam').disabled, 'đề đã chọn sẵn + nhập tên thì bấm được bắt đầu', 5000);
-      await page.click('#btnStartExam');
-      await titleIs(page, pick);
     });
 
     if (target.name === 'dist') {

@@ -31,7 +31,7 @@ function createMockElement(tag = 'div', id?: string, className?: string) {
   const children: any[] = [];
   const styleObj: Record<string, string> = {};
 
-  const el = {
+  const el: any = {
     tagName: tag.toUpperCase(),
     id: id || '',
     className: className || '',
@@ -40,6 +40,7 @@ function createMockElement(tag = 'div', id?: string, className?: string) {
     textContent: '',
     innerHTML: '',
     children,
+    parentNode: null,
     ownerDocument: null as any,
     appendChild(child: any) {
       children.push(child);
@@ -87,6 +88,23 @@ function createMockElement(tag = 'div', id?: string, className?: string) {
         h(...args);
       }
     },
+    setAttribute(name: string, val: string) {
+      el[name] = val;
+    },
+    getAttribute(name: string) {
+      return el[name] ?? null;
+    },
+    removeAttribute(name: string) {
+      delete el[name];
+    },
+    remove() {
+      if (el.parentNode && Array.isArray(el.parentNode.children)) {
+        const idx = el.parentNode.children.indexOf(el);
+        if (idx >= 0) el.parentNode.children.splice(idx, 1);
+      }
+    },
+    focus() {},
+    blur() {},
   };
 
   return el;
@@ -98,6 +116,14 @@ function createMockDocument() {
       const el = createMockElement(tag);
       el.ownerDocument = doc;
       return el;
+    },
+    createElementNS(_ns: string, tag: string) {
+      const el = createMockElement(tag);
+      el.ownerDocument = doc;
+      return el;
+    },
+    getElementById(id: string) {
+      return null;
     },
   };
   return doc;
@@ -146,9 +172,9 @@ describe('WEB-W4-GLUE — Integration & Lifecycle Hardening', () => {
       assert.deepEqual(parsed.params, {});
     }
 
-    // Invalid route defaults to exam
+    // Invalid route defaults to chooser
     const fallback = parseHash('#/unknown-route');
-    assert.equal(fallback.route, 'exam');
+    assert.equal(fallback.route, 'chooser');
 
     // Route with query parameters
     const stateWithQuery = parseHash('#/report?attemptId=att-123&mode=review');

@@ -31,35 +31,9 @@ const focusInfo = await page.eval((s) => {
     elParentDisplay: window.getComputedStyle(el.parentElement).display,
     cardDisplay: window.getComputedStyle(el.closest('.question-card')).display,
     examWrapperDisplay: window.getComputedStyle(document.getElementById('examWrapper')).display,
-    startScreenDisplay: document.getElementById('startScreen')?.style.display,
   };
 }, sel);
 console.log('Focus info:', focusInfo);
-
-const afterHideStartScreen = await page.eval((s) => {
-  const scr = document.getElementById('startScreen');
-  if (scr) scr.style.display = 'none';
-  const ew = document.getElementById('examWrapper');
-  if (ew) ew.style.display = '';
-  const el = document.querySelector(s);
-  el.focus();
-  el.select();
-  return {
-    startScreenDisplay: scr?.style.display,
-    examWrapperDisplay: window.getComputedStyle(ew).display,
-    activeElementTagName: document.activeElement?.tagName,
-    isEqual: document.activeElement === el,
-  };
-}, sel);
-console.log('After hide startScreen:', afterHideStartScreen);
-
-import { answer, assertScores } from '../codex-check/support.mjs';
-import { submit } from '../claude-check/app.mjs';
-await answer(page, exam, c.attempt.responses);
-await submit(page);
-console.log('Submitted successfully! Checking scores...');
-await assertScores(page, c.expected);
-console.log('ASSERT SCORES PASSED!');
 
 await ctx.close();
 await server.close();

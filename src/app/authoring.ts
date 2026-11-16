@@ -62,7 +62,7 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): Aut
     durationMinutes: 50,
     settings: {
       durationMinutes: 50,
-      maxAttempts: 0,
+      maxAttempts: null,
       releasePolicy: 'immediate',
       shuffleQuestions: false,
       shuffleOptions: false,
@@ -142,7 +142,7 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): Aut
     if (idEl) idEl.value = builderExamState.examId || '';
 
     const durEl = root.querySelector('#builderDuration') as HTMLInputElement | null;
-    if (durEl) durEl.value = String(builderExamState.durationMinutes || 50);
+    if (durEl) durEl.value = String(builderExamState.settings?.durationMinutes || builderExamState.durationMinutes || 50);
 
     // Summary calculation
     const summaryEl = root.querySelector('#builderScoreSummary') as HTMLElement | null;
@@ -217,7 +217,7 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): Aut
         }
 
         return `
-          <div class="builder-q-card" data-q-idx="${idx}" style="border: 2px solid var(--primary); background: #fdfefe; padding: 1rem; margin-bottom: 0.75rem; border-radius: 6px;">
+          <div class="builder-q-card" data-q-idx="${idx}" style="border: 2px solid var(--primary); background: var(--c-surface); padding: 1rem; margin-bottom: 0.75rem; border-radius: 6px;">
             <div class="builder-q-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span class="builder-q-badge ${badgeClass}">${kindText}</span>
@@ -238,7 +238,7 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): Aut
       }
 
       return `
-        <div class="builder-q-card" data-q-idx="${idx}" style="border: 1px solid var(--gray-300); background: #fff; padding: 0.75rem 1rem; margin-bottom: 0.75rem; border-radius: 6px;">
+        <div class="builder-q-card" data-q-idx="${idx}" style="border: 1px solid var(--gray-300); background: var(--c-surface); padding: 0.75rem 1rem; margin-bottom: 0.75rem; border-radius: 6px;">
           <div class="builder-q-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
               <span class="builder-q-badge ${badgeClass}">${kindText}</span>
@@ -443,7 +443,7 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): Aut
       const kindText = q.kind === 'I' ? 'Phần I' : (q.kind === 'II' ? 'Phần II' : 'Phần III');
 
       return `
-        <div class="builder-q-card" style="border: 1px solid var(--gray-300); background: #fff; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 6px;">
+        <div class="builder-q-card" style="border: 1px solid var(--gray-300); background: var(--c-surface); padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 6px;">
           <div class="builder-q-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
               <span class="builder-q-badge ${badgeClass}">${kindText}</span>
@@ -561,6 +561,9 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): Aut
     activeOnPublish = opts?.onPublish || null;
     if (exam && typeof exam === 'object') {
       builderExamState = JSON.parse(JSON.stringify(exam));
+      if (builderExamState.durationMinutes === undefined && builderExamState.settings?.durationMinutes !== undefined) {
+        builderExamState.durationMinutes = builderExamState.settings.durationMinutes;
+      }
     } else {
       builderExamState = {
         schemaVersion: 'web-exam-v1',

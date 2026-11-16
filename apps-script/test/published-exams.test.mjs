@@ -2,13 +2,23 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import { makeGas } from '../../test/claude-check/gas-fake.mjs';
+import { makeGas as baseGas } from '../../test/claude-check/gas-fake.mjs';
+import { createHash, randomUUID } from 'node:crypto';
+
+// Migrate the old shared-password harness to real per-teacher sessions (19.2).
+function makeGas(options) {
+  const g = baseGas(options);
+  const admin = g.post({ action: 'adminLogin', password: 'Admin-Cunata-2026' });
+  g.post({ action: 'adminCreateTeacher', token: admin.token, name: 'Teacher', username: 'teacher', password });
+  g.token = g.post({ action: 'teacherLogin', username: 'teacher', password }).token;
+  return g;
+}
 
 const password = 'MatKhau-GV-123';
 const exam = (extra = {}) => ({ schemaVersion: 'web-exam-v1', examId: 'exam-01', title: 'Đề thử',
   subject: 'Lý', grade: 12, settings: { durationMinutes: 50 },
   questions: [{ kind: 'III', questionVersionId: 'q1', answerKey: '-0,5' }], ...extra });
-const publish = (g, value) => g.post({ action: 'publishExam', password, exam: value });
+const publish = (g, value) => g.post({ action: 'publishExam', token: g.token, exam: value });
 
 test('reject malformed exams with INVALID_EXAM and a nonempty error list before writes', () => {
   const invalid = [null, [], {}, exam({ schemaVersion: 'future' }), exam({ examId: 42 }),
@@ -30,10 +40,10 @@ test('reject malformed exams with INVALID_EXAM and a nonempty error list before 
   }
 });
 
-test('an empty Script Property never authorizes teacher operations', () => {
-  const g = makeGas({ password: '' });
+test('legacy shared passwords never authorize teacher operations', () => {
+  const g = baseGas();
   for (const action of ['teacherLogin', 'publishExam', 'unpublishExam']) {
-    assert.equal(g.post({ action, password: '', exam: exam(), examId: 'exam-01' }).error, 'TEACHER_PASSWORD_NOT_SET');
+    assert.equal(g.post({ action, password, exam: exam(), examId: 'exam-01' }).error, 'UNAUTHORIZED');
   }
 });
 
@@ -47,7 +57,7 @@ test('metadata preserves apostrophes, numeric-looking text, whitespace and formu
     assert.deepEqual(g.get({ action: 'getExam', id: text }).exam, value);
     assert.equal(publish(g, { ...value, title: 'Bản mới' }).revision, 2);
     assert.equal(g.get({ action: 'listExams' }).exams.length, 1);
-    assert.equal(g.post({ action: 'unpublishExam', password, examId: text }).success, true);
+    assert.equal(g.post({ action: 'unpublishExam', token: g.token, examId: text }).success, true);
     assert.deepEqual(g.get({ action: 'listExams' }).exams, []);
   }
 });
@@ -90,7 +100,9 @@ function lockedGas(acquire = true) {
     }
     return sheet;
   };
-  const ctx = { SpreadsheetApp: { getActiveSpreadsheet: () => book, flush: () => assert.equal(held, true) },
+  const ctx = { CacheService: { getScriptCache: () => ({ get: key => g.cache.get(key)?.val ?? null }) },
+    Utilities: { DigestAlgorithm: { SHA_256: 'sha256' }, Charset: { UTF_8: 'utf8' }, getUuid: randomUUID, computeDigest: (_, text) => [...createHash('sha256').update(text).digest()] },
+    SpreadsheetApp: { getActiveSpreadsheet: () => book, flush: () => assert.equal(held, true) },
     PropertiesService: { getScriptProperties: () => ({ getProperty: () => password }) },
     LockService: { getScriptLock: () => ({ tryLock: () => { held = acquire; return acquire; },
       releaseLock: () => { assert.equal(held, true); held = false; releases++; } }) },
@@ -104,11 +116,11 @@ function lockedGas(acquire = true) {
 test('publish/unpublish writes hold ScriptLock; busy lock never writes or releases', () => {
   const g = lockedGas();
   assert.equal(publish(g, exam()).success, true);
-  assert.equal(g.post({ action: 'unpublishExam', password, examId: 'exam-01' }).success, true);
+  assert.equal(g.post({ action: 'unpublishExam', token: g.token, examId: 'exam-01' }).success, true);
   assert.equal(g.releases(), 2);
   const busy = lockedGas(false);
   assert.equal(publish(busy, exam()).error, 'SERVER_BUSY');
-  assert.equal(busy.post({ action: 'unpublishExam', password, examId: 'exam-01' }).error, 'SERVER_BUSY');
+  assert.equal(busy.post({ action: 'unpublishExam', token: busy.token, examId: 'exam-01' }).error, 'SERVER_BUSY');
   assert.equal(busy.releases(), 0);
   assert.equal(busy.sheets.has('DeThi'), false);
 });

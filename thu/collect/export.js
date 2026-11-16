@@ -138,6 +138,29 @@ export function buildWebResultPayload(final) {
     const durationSeconds = final.submittedAt !== null && typeof final.startedAt === 'number'
         ? Math.max(0, Math.round((final.submittedAt - final.startedAt) / 1000))
         : 0;
+    let classCode = final.class_code ??
+        final.classCode ??
+        final.metadata?.class_code ??
+        final.metadata?.classCode;
+    let assignmentId = final.assignment_id ??
+        final.assignmentId ??
+        final.metadata?.assignment_id ??
+        final.metadata?.assignmentId;
+    if (!classCode || !assignmentId) {
+        try {
+            if (typeof sessionStorage !== 'undefined') {
+                const stored = sessionStorage.getItem('cunata:active_assignment') || sessionStorage.getItem('cunata_active_assignment');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (!classCode && parsed?.classCode)
+                        classCode = parsed.classCode;
+                    if (!assignmentId && parsed?.assignmentId)
+                        assignmentId = parsed.assignmentId;
+                }
+            }
+        }
+        catch { }
+    }
     return {
         schemaVersion: 'web-result-v1',
         attemptId: final.attemptId,
@@ -152,6 +175,8 @@ export function buildWebResultPayload(final) {
         engineVersion: scoreDTO?.engineVersion ?? ENGINE_VERSION,
         scoreDTO: scoreDTO ?? null,
         responses: final.responses,
+        ...(classCode ? { class_code: String(classCode).trim().toUpperCase() } : {}),
+        ...(assignmentId ? { assignment_id: String(assignmentId).trim() } : {}),
     };
 }
 /**

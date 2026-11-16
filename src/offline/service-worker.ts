@@ -153,6 +153,13 @@ export async function executeActivate(options?: ActivateOptions): Promise<void> 
  * 2. Cache-first strategy for precached assets (shell, css, scripts, public samples).
  * 3. Network fallback, and cold-start offline fallback to cached shell (index.html) for navigation.
  */
+export function isMutablePublicMetadata(url: string): boolean {
+  try {
+    const pathname = new URL(url, 'https://cunata.invalid/').pathname;
+    return pathname.endsWith('/public/config.json') || pathname.endsWith('/public/exams/index.json');
+  } catch { return false; }
+}
+
 export async function executeFetch(
   request: Request | { url: string; method: string; mode?: string },
   options?: FetchOptions
@@ -168,7 +175,20 @@ export async function executeFetch(
     return fetchImpl(request as any);
   }
 
-  // 1. Check cache first
+  // Mutable public metadata must be revalidated on every request (§17.6).
+  const mutableMetadata = isMutablePublicMetadata(request.url);
+  if (mutableMetadata && fetchImpl) {
+    try {
+      const response = await fetchImpl(request as Request, { cache: 'no-store' });
+      if (response.ok && cachesImpl) {
+        try { const cache = await cachesImpl.open(cacheName); await cache.put(request as Request, response.clone()); } catch { /* Still serve the fresh response. */ }
+      }
+      // An HTTP error is a network response, not evidence that the device is offline.
+      return response;
+    } catch { /* Only an unavailable network falls back to the cached metadata. */ }
+  }
+
+  // 1. Check cache first for immutable assets, or offline metadata fallback.
   if (cachesImpl) {
     const cache = await cachesImpl.open(cacheName);
     const cachedResponse = (await cache.match(request as any)) || (await cache.match(request.url));
@@ -178,7 +198,7 @@ export async function executeFetch(
   }
 
   // 2. Not in cache: attempt network
-  if (fetchImpl) {
+  if (fetchImpl && !mutableMetadata) {
     try {
       const networkResponse = await fetchImpl(request as any);
       // Cache successful GET responses for same-origin static assets

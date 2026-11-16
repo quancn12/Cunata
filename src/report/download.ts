@@ -203,7 +203,7 @@ function renderBlock(b: Block, assetMap: Map<string, string>): string {
     const dataUri = assetMap.get(b.assetId);
     if (!dataUri) {
       // Missing asset placeholder: handles missing assets safely without external requests
-      return `<div class="block-asset-missing" data-asset-id="${escapeHtml(b.assetId)}" role="note" aria-label="Hình ảnh không khả dụng"><span class="asset-missing-icon" aria-hidden="true">&#9888;</span> <span class="asset-missing-label">Hình ảnh không khả dụng: <code>${escapeHtml(b.assetId)}</code> (tài nguyên không tồn tại trong đề)</span></div>`;
+      return `<div class="block-asset-missing" data-asset-id="${escapeHtml(b.assetId)}" role="note" aria-label="Hình ảnh không khả dụng"><span class="asset-missing-icon" aria-hidden="true">[!]</span> <span class="asset-missing-label">Hình ảnh không khả dụng: <code>${escapeHtml(b.assetId)}</code> (tài nguyên không tồn tại trong đề)</span></div>`;
     }
     const escapedAlt = escapeHtml(b.alt || "Hình ảnh câu hỏi");
     return `<figure class="block-image"><img src="${escapeHtml(dataUri)}" alt="${escapedAlt}" loading="lazy" />${b.alt ? `<figcaption class="image-caption">${escapedAlt}</figcaption>` : ""}</figure>`;
@@ -212,7 +212,7 @@ function renderBlock(b: Block, assetMap: Map<string, string>): string {
     const escapedSource = escapeHtml(b.source);
     const escapedFormat = escapeHtml(b.format);
     const verifiedBadge = b.verified
-      ? '<span class="math-verified-badge" title="Công thức đã kiểm định">&#10003;</span>'
+      ? '<span class="math-verified-badge" title="Công thức đã kiểm định">OK</span>'
       : "";
     return `<div class="block-math" data-format="${escapedFormat}" data-verified="${b.verified}"><span class="math-format-badge">${escapedFormat.toUpperCase()}</span>${verifiedBadge}<code class="math-source">${escapedSource}</code></div>`;
   }
@@ -388,7 +388,7 @@ export function renderReportHtml(
       // Pre-release: strictly NO keys, NO explanations, NO timed-reveal scripts
       releaseHtml = `
         <div class="unreleased-notice">
-          <span class="notice-icon" aria-hidden="true">&#128274;</span>
+          <span class="notice-icon" aria-hidden="true">[!]</span>
           <div class="notice-body">
             <strong>Đáp án và lời giải chi tiết chưa công bố</strong>
             <p>Đáp án và lời giải chưa công bố (chờ sau thời hạn nộp bài). Thí sinh vui lòng tải lại bản báo cáo mới sau thời điểm công bố để xem đáp án chuẩn.</p>
@@ -491,21 +491,21 @@ export function renderReportHtml(
   <title>${pageTitle}</title>
   <style>
     :root {
-      --bg: #f8fafc;
-      --card-bg: #ffffff;
-      --text: #0f172a;
-      --muted: #64748b;
-      --border: #e2e8f0;
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --success: #16a34a;
-      --warning: #d97706;
-      --danger: #dc2626;
-      --code-bg: #f1f5f9;
+      --bg: hsl(210, 40%, 98%);
+      --card-bg: white;
+      --text: hsl(222, 47%, 11%);
+      --muted: hsl(215, 16%, 47%);
+      --border: hsl(214, 32%, 91%);
+      --primary: hsl(221, 83%, 53%);
+      --primary-hover: hsl(224, 76%, 48%);
+      --success: hsl(142, 71%, 45%);
+      --warning: hsl(38, 92%, 50%);
+      --danger: hsl(0, 72%, 51%);
+      --code-bg: hsl(210, 40%, 96%);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: var(--font, system-ui, sans-serif);
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
@@ -521,7 +521,7 @@ export function renderReportHtml(
       border-radius: 8px;
       padding: 1.5rem;
       margin-bottom: 1.5rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px none;
     }
     h1.report-title {
       font-size: 1.5rem;
@@ -555,18 +555,18 @@ export function renderReportHtml(
       padding-top: 1.25rem;
     }
     .score-card {
-      background: #f1f5f9;
+      background: var(--code-bg);
       border-radius: 6px;
       padding: 0.75rem;
       text-align: center;
     }
     .score-card.total {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
+      background: hsl(214, 100%, 97%);
+      border: 1px solid hsl(214, 95%, 87%);
     }
     .score-card .label { font-size: 0.85rem; color: var(--muted); font-weight: 600; text-transform: uppercase; }
     .score-card .val { font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-top: 0.25rem; }
-    .score-card.total .val { color: #1d4ed8; font-size: 1.75rem; }
+    .score-card.total .val { color: var(--primary-hover); font-size: 1.75rem; }
     .actions-bar {
       margin-bottom: 1.5rem;
       display: flex;
@@ -577,16 +577,16 @@ export function renderReportHtml(
     }
     .print-instruction {
       font-size: 0.85rem;
-      color: #475569;
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
+      color: var(--muted);
+      background: var(--code-bg);
+      border: 1px solid var(--border);
       border-radius: 6px;
       padding: 0.5rem 0.75rem;
       flex: 1;
     }
     .btn-print {
       background: var(--primary);
-      color: #fff;
+      color: white;
       border: none;
       padding: 0.6rem 1.35rem;
       border-radius: 6px;
@@ -604,7 +604,7 @@ export function renderReportHtml(
       border-radius: 8px;
       padding: 1.25rem;
       margin-bottom: 1.25rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      box-shadow: 0 1px 3px none;
     }
     .question-header {
       display: flex;
@@ -618,7 +618,7 @@ export function renderReportHtml(
     }
     .q-title-group { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
     .q-index { font-weight: 700; color: var(--primary); }
-    .q-kind { background: #e2e8f0; color: #475569; font-size: 0.75rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 600; }
+    .q-kind { background: var(--border); color: var(--muted); font-size: 0.75rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 600; }
     .q-title { font-size: 1.05rem; font-weight: 600; }
     .q-score-group { display: flex; align-items: center; gap: 0.75rem; }
     .q-points { font-weight: 700; font-size: 0.95rem; }
@@ -630,20 +630,20 @@ export function renderReportHtml(
       border-radius: 9999px;
       text-transform: uppercase;
     }
-    .badge-full { background: #dcfce7; color: var(--success); }
-    .badge-partial { background: #fef3c7; color: var(--warning); }
-    .badge-wrong { background: #fee2e2; color: var(--danger); }
-    .badge-invalid { background: #f3e8ff; color: #9333ea; }
-    .badge-unanswered { background: #f1f5f9; color: var(--muted); }
+    .badge-full { background: hsl(141, 84%, 93%); color: var(--success); }
+    .badge-partial { background: hsl(48, 96%, 89%); color: var(--warning); }
+    .badge-wrong { background: hsl(0, 93%, 94%); color: var(--danger); }
+    .badge-invalid { background: hsl(270, 100%, 96%); color: hsl(271, 81%, 56%); }
+    .badge-unanswered { background: var(--code-bg); color: var(--muted); }
     .blocks-container { margin-bottom: 0.75rem; }
     .block-text { margin-bottom: 0.5rem; }
     .block-image { margin: 0.75rem 0; text-align: center; }
     .block-image img { max-width: 100%; height: auto; border-radius: 4px; border: 1px solid var(--border); }
     .image-caption { font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; font-style: italic; }
     .block-asset-missing {
-      background: #fff7ed;
-      border: 1px dashed #fdba74;
-      color: #c2410c;
+      background: hsl(34, 100%, 96%);
+      border: 1px dashed hsl(32, 98%, 73%);
+      color: hsl(18, 89%, 40%);
       padding: 0.6rem 0.85rem;
       border-radius: 6px;
       margin: 0.5rem 0;
@@ -654,11 +654,11 @@ export function renderReportHtml(
     }
     .asset-missing-icon { font-size: 1.1rem; }
     .block-math {
-      background: #f8fafc;
+      background: var(--bg);
       border: 1px dashed var(--border);
       padding: 0.6rem;
       border-radius: 4px;
-      font-family: Consolas, Monaco, "Courier New", monospace;
+      font-family: monospace;
       overflow-x: auto;
       margin: 0.5rem 0;
       display: flex;
@@ -666,45 +666,45 @@ export function renderReportHtml(
       gap: 0.5rem;
     }
     .math-format-badge {
-      background: #e2e8f0;
-      color: #334155;
+      background: var(--border);
+      color: var(--text);
       font-size: 0.7rem;
       font-weight: 700;
       padding: 0.15rem 0.35rem;
       border-radius: 3px;
       text-transform: uppercase;
     }
-    .math-verified-badge { color: #16a34a; font-weight: 700; }
-    .math-source { font-size: 0.95rem; color: #0f172a; }
+    .math-verified-badge { color: var(--success); font-weight: 700; }
+    .math-source { font-size: 0.95rem; color: var(--text); }
     .block-table { margin: 0.75rem 0; overflow-x: auto; }
     .block-table table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
     .block-table td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; }
     .student-response-box {
-      background: #f8fafc;
+      background: var(--bg);
       border-left: 3px solid var(--primary);
       padding: 0.6rem 0.75rem;
       border-radius: 0 4px 4px 0;
       margin-bottom: 0.75rem;
       font-size: 0.95rem;
     }
-    .raw-response { font-family: Consolas, Monaco, "Courier New", monospace; font-size: 1.05rem; }
+    .raw-response { font-family: monospace; font-size: 1.05rem; }
     .statement-response-list { margin-left: 1.25rem; margin-top: 0.35rem; }
     .answer-key-box {
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
+      background: hsl(138, 76%, 97%);
+      border: 1px solid hsl(141, 79%, 85%);
       border-radius: 6px;
       padding: 0.75rem;
       font-size: 0.95rem;
     }
-    .key-line { font-weight: 600; color: #15803d; margin-bottom: 0.4rem; }
-    .raw-key { font-family: Consolas, Monaco, "Courier New", monospace; }
+    .key-line { font-weight: 600; color: var(--success); margin-bottom: 0.4rem; }
+    .raw-key { font-family: monospace; }
     .statement-answer-list { margin-left: 1.25rem; margin-top: 0.35rem; }
-    .explanation-box { margin-top: 0.5rem; border-top: 1px dashed #bbf7d0; padding-top: 0.5rem; color: #166534; }
+    .explanation-box { margin-top: 0.5rem; border-top: 1px dashed hsl(141, 79%, 85%); padding-top: 0.5rem; color: var(--success); }
     .explanation-box h4 { font-size: 0.9rem; margin-bottom: 0.25rem; font-weight: 700; }
     .unreleased-notice {
-      background: #fffbeb;
-      border: 1px dashed #fde68a;
-      color: #92400e;
+      background: hsl(48, 100%, 96%);
+      border: 1px dashed hsl(48, 95%, 76%);
+      color: var(--warning);
       padding: 0.75rem 1rem;
       border-radius: 6px;
       font-size: 0.9rem;
@@ -732,16 +732,16 @@ export function renderReportHtml(
     .history-table-wrapper { overflow-x: auto; }
     .history-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     .history-table th, .history-table td { border: 1px solid var(--border); padding: 0.45rem 0.6rem; text-align: left; }
-    .history-table th { background: #f1f5f9; font-weight: 600; }
-    .history-table tr.current-attempt { background: #eff6ff; font-weight: 600; }
+    .history-table th { background: var(--code-bg); font-weight: 600; }
+    .history-table tr.current-attempt { background: hsl(214, 100%, 97%); font-weight: 600; }
     .sync-badge {
       font-size: 0.7rem;
       padding: 0.15rem 0.4rem;
       border-radius: 4px;
       font-weight: 600;
     }
-    .sync-confirmed { background: #dcfce7; color: #15803d; }
-    .sync-local { background: #e0f2fe; color: #0369a1; }
+    .sync-confirmed { background: hsl(141, 84%, 93%); color: var(--success); }
+    .sync-local { background: hsl(204, 94%, 94%); color: hsl(201, 96%, 32%); }
     .report-footer {
       margin-top: 2rem;
       padding-top: 1rem;
@@ -759,7 +759,7 @@ export function renderReportHtml(
       }
       *, *::before, *::after {
         background: transparent !important;
-        color: #000000 !important;
+        color: black !important;
         box-shadow: none !important;
         text-shadow: none !important;
         -webkit-print-color-adjust: exact !important;
@@ -768,11 +768,11 @@ export function renderReportHtml(
       html, body {
         margin: 0 !important;
         padding: 0 !important;
-        background: #ffffff !important;
-        color: #111827 !important;
+        background: white !important;
+        color: var(--text) !important;
         font-size: 10pt;
         line-height: 1.45;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-family: var(--font, system-ui, sans-serif);
       }
       .no-print, .actions-bar, .btn-print, .print-instruction {
         display: none !important;
@@ -780,7 +780,7 @@ export function renderReportHtml(
       }
       .container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
       header.report-header {
-        border-bottom: 2pt solid #000000 !important;
+        border-bottom: 2pt solid black !important;
         padding-bottom: 8pt !important;
         margin-bottom: 12pt !important;
         break-after: avoid;
@@ -795,14 +795,14 @@ export function renderReportHtml(
         text-transform: uppercase !important;
         letter-spacing: 0.05em !important;
         margin-bottom: 4pt !important;
-        color: #000000 !important;
+        color: black !important;
       }
       .meta-grid {
         display: grid !important;
         grid-template-columns: repeat(3, 1fr) !important;
         gap: 6pt !important;
         font-size: 8.5pt !important;
-        border: 1pt solid #d1d5db !important;
+        border: 1pt solid var(--border) !important;
         padding: 6pt !important;
         margin-bottom: 10pt !important;
         break-inside: avoid;
@@ -817,42 +817,42 @@ export function renderReportHtml(
         page-break-inside: avoid;
       }
       .score-card {
-        border: 1.5pt solid #1f2937 !important;
+        border: 1.5pt solid var(--text) !important;
         border-radius: 4pt !important;
         padding: 6pt !important;
         text-align: center !important;
-        background: #ffffff !important;
+        background: white !important;
         break-inside: avoid;
         page-break-inside: avoid;
       }
       .score-card.total {
-        border: 2pt solid #000000 !important;
-        background: #f9fafb !important;
+        border: 2pt solid black !important;
+        background: var(--bg) !important;
       }
       .score-card .val {
         font-size: 13pt !important;
         font-weight: 800 !important;
-        color: #000000 !important;
+        color: black !important;
       }
       .question-card {
-        border: 1pt solid #9ca3af !important;
+        border: 1pt solid var(--muted) !important;
         border-radius: 4pt !important;
         padding: 8pt !important;
         margin-bottom: 10pt !important;
         break-inside: avoid !important;
         page-break-inside: avoid !important;
-        background: #ffffff !important;
+        background: white !important;
         box-shadow: none !important;
       }
       .question-header {
-        border-bottom: 1pt solid #e5e7eb !important;
+        border-bottom: 1pt solid var(--border) !important;
         padding-bottom: 4pt !important;
         margin-bottom: 6pt !important;
         break-after: avoid;
         page-break-after: avoid;
       }
       .badge {
-        border: 1pt solid #000000 !important;
+        border: 1pt solid black !important;
         padding: 1pt 4pt !important;
         font-size: 7.5pt !important;
         font-weight: 700 !important;
@@ -861,31 +861,31 @@ export function renderReportHtml(
         text-transform: uppercase !important;
       }
       .student-response-box {
-        border-left: 2pt solid #4b5563 !important;
+        border-left: 2pt solid var(--muted) !important;
         padding: 4pt 6pt !important;
         margin: 4pt 0 !important;
-        background: #f9fafb !important;
+        background: var(--bg) !important;
         font-size: 8.5pt !important;
       }
       .answer-key-box {
-        border: 1.5pt solid #15803d !important;
+        border: 1.5pt solid var(--success) !important;
         border-radius: 3pt !important;
         padding: 4pt 6pt !important;
         margin-top: 6pt !important;
         font-size: 8.5pt !important;
-        background: #f0fdf4 !important;
+        background: hsl(138, 76%, 97%) !important;
         break-inside: avoid;
         page-break-inside: avoid;
       }
       .unreleased-notice {
-        border: 1pt dashed #d97706 !important;
+        border: 1pt dashed var(--warning) !important;
         border-radius: 3pt !important;
         padding: 4pt 6pt !important;
         margin-top: 6pt !important;
         font-style: italic !important;
         font-size: 8pt !important;
-        color: #92400e !important;
-        background: #fffbeb !important;
+        color: var(--warning) !important;
+        background: hsl(48, 100%, 96%) !important;
       }
       .block-table table, .history-table {
         width: 100% !important;
@@ -894,12 +894,12 @@ export function renderReportHtml(
         font-size: 8pt !important;
       }
       .block-table td, .history-table th, .history-table td {
-        border: 0.75pt solid #9ca3af !important;
+        border: 0.75pt solid var(--muted) !important;
         padding: 3pt 5pt !important;
       }
       tr { break-inside: avoid; page-break-inside: avoid; }
       img { max-width: 85% !important; height: auto !important; break-inside: avoid; page-break-inside: avoid; }
-      .report-footer { font-size: 7.5pt !important; border-top: 1pt solid #999 !important; margin-top: 10pt !important; }
+      .report-footer { font-size: 7.5pt !important; border-top: 1pt solid gray !important; margin-top: 10pt !important; }
     }
   </style>
 </head>
@@ -910,7 +910,7 @@ export function renderReportHtml(
         <strong>In hoặc lưu PDF:</strong> Nhấn "In báo cáo" (hoặc Ctrl+P), chọn "Lưu dưới dạng PDF" (Save as PDF) trong hộp thoại in trình duyệt.
       </div>
       <button type="button" class="btn-print" onclick="window.print()">
-        <span aria-hidden="true">&#128438;</span> In báo cáo
+        <span aria-hidden="true"></span> In báo cáo
       </button>
     </div>
     <header class="report-header">

@@ -129,7 +129,7 @@ function ensureStudentStyles(doc: Document): void {
   const styleEl = doc.createElement("style");
   styleEl.id = "cunata-student-styles";
   styleEl.textContent = `
-    .cunata-student-view { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0f172a; width: 100%; box-sizing: border-box; }
+    .cunata-student-view { font-family: var(--font); color: var(--c-text); width: 100%; box-sizing: border-box; }
     .cunata-student-view * { box-sizing: border-box; }
   `;
   if (doc.head) {
@@ -708,7 +708,7 @@ export function mount(
     selectEl.style.width = "100%";
     selectEl.style.padding = "0.35rem";
     selectEl.style.borderRadius = "6px";
-    selectEl.style.border = "1px solid #cbd5e1";
+    selectEl.style.border = "1px solid var(--c-border)";
 
     const defaultOpt = doc.createElement("option");
     defaultOpt.value = "";
@@ -1220,7 +1220,7 @@ export function mount(
 
         const quickLabel = doc.createElement("span");
         quickLabel.style.fontSize = "0.8125rem";
-        quickLabel.style.color = "#475569";
+        quickLabel.style.color = "var(--c-text-2)";
         quickLabel.style.fontWeight = "500";
         quickLabel.textContent = "Phím tắt:";
         quickKeysBar.appendChild(quickLabel);
@@ -1305,7 +1305,7 @@ export function mount(
     // No Exam Loaded View
     const emptyNotice = doc.createElement("div");
     emptyNotice.className = "section-banner";
-    emptyNotice.style.borderLeftColor = "#d97706";
+    emptyNotice.style.borderLeftColor = "var(--c-warning)";
 
     const emptyHead = doc.createElement("h2");
     emptyHead.textContent = "Chưa có đề thi nào được nạp";

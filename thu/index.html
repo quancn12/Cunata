@@ -5,68 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cunata — Nền Tảng Luyện Thi & Khảo Sát Năng Lực GDPT 2018</title>
   <link rel="stylesheet" href="./styles/style.css">
-  <style>
-    /* Bổ sung kiểu hiển thị công thức và định dạng hình học offline */
-    .math-expr {
-      font-family: "Cambria Math", "Latin Modern Math", KaTeX_Main, "Times New Roman", serif;
-      font-style: italic;
-    }
-    .math-expr sup { font-size: 0.75em; vertical-align: super; font-style: normal; }
-    .math-expr sub { font-size: 0.75em; vertical-align: sub; font-style: normal; }
-    .exam-figure {
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin: 1rem auto;
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--gray-200);
-      background: #fff;
-    }
-    .question-stem p {
-      margin-bottom: 0.75rem;
-    }
-    .review-detail-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      margin-top: 0.75rem;
-      background: var(--gray-50);
-      padding: 0.75rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.875rem;
-    }
-    @media (max-width: 640px) {
-      .review-detail-grid { grid-template-columns: 1fr; }
-    }
-    .text-success { color: var(--success); font-weight: 600; }
-    .text-danger { color: var(--danger); font-weight: 600; }
-    .text-muted { color: var(--gray-500); }
-    /* WCAG 2.5.5 touch target hardening & accessibility (QA-evidence.md) */
-    #btnSubmit {
-      min-height: 44px;
-      padding: 0.5rem 1rem;
-    }
-    @media (max-width: 480px) {
-      .quick-key-btn {
-        min-height: 44px;
-        min-width: 44px;
-      }
-    }
-    @media (forced-colors: active) {
-      .modal-content, .palette-card, .summary-card, .btn-submit, .btn-secondary {
-        border: 2px solid ButtonText !important;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="./ui/tokens.css">
+  <link rel="stylesheet" href="./ui/components.css">
+  <link rel="stylesheet" href="./styles/app.css">
 </head>
 <body>
 
   <!-- ================= Header & Thanh Trạng Thái ================= -->
-  <header class="app-header">
+  <header class="app-header" hidden>
     <div class="header-container">
       <div class="brand-section">
-        <span class="logo-badge">CUNATA GDPT 2018</span>
+        <span class="ui-brand">Cunata</span>
         <div class="exam-meta-title" id="examTitle" title="Đề Khảo Sát Năng Lực Môn Toán">Đang tải đề thi...</div>
       </div>
 
@@ -76,7 +25,7 @@
       </div>
 
       <div class="header-actions">
-        <button type="button" class="btn-secondary" id="btnOpenExamList" title="Chọn đề thi trong danh sách" style="margin-right: 0.5rem; font-size: 0.8125rem; padding: 0.4rem 0.6rem;">📋 Chọn đề</button>
+        <button type="button" class="btn-secondary" id="btnOpenExamList" title="Chọn đề thi trong danh sách"> Chọn đề</button>
         <div class="sync-status-badge" id="syncStatus">
           <span class="sync-dot"></span> <span id="syncText">Chưa lưu</span>
         </div>
@@ -92,31 +41,18 @@
   </header>
 
   <!-- ================= Giao Diện Làm Bài (Exam View) ================= -->
-  <!-- ================= Màn Vào Thi (Start Screen - WEB-contract §16) ================= -->
-  <div id="startScreen" class="start-screen" style="display: none; max-width: 760px; width: 95%; margin: 2rem auto; padding: 1.5rem; background: var(--card-bg, #fff); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); box-sizing: border-box;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
-      <h1 style="font-size: 1.375rem; font-weight: 700; margin: 0; color: var(--gray-900, #111827);">Phòng Luyện Thi Trực Tuyến GDPT 2018</h1>
-      <button type="button" id="btnTeacher" class="btn-secondary" style="font-size: 0.875rem; padding: 0.4rem 0.75rem;">👨‍🏫 Giáo viên</button>
-    </div>
+  <!-- ================= Màn Vào Thi (Start Screen - WEB-contract §19) ================= -->
+  <div id="startScreen" class="start-screen ui-page ui-stack" style="display: none;"></div>
 
-    <div style="margin-bottom: 1.25rem;">
-      <label for="startName" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--gray-700, #374151);">Họ và tên thí sinh <span style="color: var(--danger, #ef4444);">*</span></label>
-      <input type="text" id="startName" placeholder="Nhập họ và tên hoặc mã dự thi..." style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid var(--border-color, #d1d5db); border-radius: 6px; font-size: 1rem; box-sizing: border-box;" autocomplete="name" />
-    </div>
-
-    <div style="margin-bottom: 1.5rem;">
-      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--gray-700, #374151);">Chọn đề thi <span style="color: var(--danger, #ef4444);">*</span></label>
-      <div id="startExamListContainer" class="exam-list-container" style="max-height: 380px; overflow-y: auto; border: 1px solid var(--border-color, #e5e7eb); border-radius: 6px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
-        <div style="text-align: center; color: var(--gray-500, #6b7280); padding: 1rem;">Đang tải danh sách đề thi...</div>
-      </div>
-    </div>
-
-    <div style="display: flex; justify-content: flex-end;">
-      <button type="button" id="btnStartExam" class="btn-primary" disabled style="padding: 0.625rem 1.5rem; font-size: 1rem; font-weight: 600; border-radius: 6px; cursor: pointer;">Bắt đầu làm bài</button>
-    </div>
+  <!-- Authoring tools (ẩn trên màn làm bài học sinh nhưng có thể truy cập qua phím tắt / test Codex) -->
+  <div id="authoringTools" style="display: none;">
+    <button type="button" class="btn-secondary" id="btnLoadExam">📁 Nạp đề thi (JSON)</button>
+    <input type="file" id="examFileInput" accept=".json,application/json" style="display: none;" />
+    <button type="button" class="btn-secondary" id="btnOpenBuilder">🛠 Soạn đề thi mới</button>
+    <button type="button" class="btn-secondary" id="btnOpenBank">📚 Ngân hàng câu hỏi</button>
   </div>
 
-  <div class="main-wrapper" id="examWrapper">
+  <div class="main-wrapper" id="examWrapper" style="display: none;">
     <!-- Sidebar Bảng Điều Hướng (Palette) -->
     <aside class="palette-card" aria-label="Bảng điều hướng câu hỏi">
       <div class="palette-header">
@@ -142,23 +78,11 @@
           <span>Chưa làm</span>
         </div>
         <div class="legend-item">
-          <span class="swatch-flagged">★</span>
+          <span class="swatch-flagged"></span>
           <span>Đánh dấu</span>
         </div>
       </div>
 
-      <div class="palette-footer">
-        <button type="button" class="btn-secondary" id="btnLoadExam" style="font-size: 0.8125rem; padding: 0.5rem 0.75rem; width: 100%; text-align: center;">
-          📁 Nạp đề thi (JSON)
-        </button>
-        <input type="file" id="examFileInput" accept=".json,application/json" style="display: none;" />
-        <button type="button" class="btn-secondary" id="btnOpenBuilder" style="font-size: 0.8125rem; padding: 0.5rem 0.75rem; width: 100%; text-align: center; margin-top: 0.5rem; background: var(--primary-light); color: var(--primary); border-color: var(--primary-border); font-weight: 600;">
-          🛠 Soạn đề thi mới
-        </button>
-        <button type="button" class="btn-secondary" id="btnOpenBank" style="font-size: 0.8125rem; padding: 0.5rem 0.75rem; width: 100%; text-align: center; margin-top: 0.5rem;">
-          📚 Ngân hàng câu hỏi
-        </button>
-      </div>
     </aside>
 
     <!-- Khu Vực Hiển Thị Đề Thi (Exam Pane) -->
@@ -245,14 +169,14 @@
 
       <div class="max-attempts-notice" id="maxAttemptsNotice"></div>
 
-      <div id="attemptHistorySection" style="margin-top: 1.5rem; margin-bottom: 1.5rem; display: none;">
-        <h2 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--gray-800);">
+      <div id="attemptHistorySection" style="display: none;">
+        <h2>
           Lịch Sử Các Lượt Làm Bài Của Đề Thi
         </h2>
-        <div id="attemptHistoryTableContainer" style="overflow-x: auto;"></div>
+        <div id="attemptHistoryTableContainer"></div>
       </div>
 
-      <h2 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem; color: var(--gray-800);">
+      <h2>
         Chi Tiết Bài Làm & Lời Giải Từng Câu
       </h2>
       <div id="reviewQuestionsList">
@@ -263,15 +187,15 @@
 
     <!-- ================= Modal Chọn Đề Thi Công Khai ================= -->
   <div class="modal-overlay" id="examListModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="examListModalTitle">
-    <div class="modal-content" style="max-width: 640px; width: 90%;">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h2 id="examListModalTitle" style="font-size: 1.125rem; font-weight: 700; margin: 0;">Danh Sách Đề Thi Công Khai</h2>
-        <button type="button" class="btn-close" id="btnCloseExamList" aria-label="Đóng" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="examListModalTitle">Danh Sách Đề Thi Công Khai</h2>
+        <button type="button" class="btn-close" id="btnCloseExamList" aria-label="Đóng">&times;</button>
       </div>
       <div id="examListContainer" class="exam-list-container">
-        <div style="text-align: center; color: var(--gray-500); padding: 1rem;">Đang tải danh sách đề thi...</div>
+        <div>Đang tải danh sách đề thi...</div>
       </div>
-      <div class="modal-actions" style="margin-top: 1rem; display: flex; justify-content: flex-end;">
+      <div class="modal-actions">
         <button type="button" class="btn-secondary" id="btnCancelExamList">Đóng</button>
       </div>
     </div>
@@ -345,7 +269,7 @@
               <option value="after_deadline">Chỉ sau khi hết giờ (after_deadline)</option>
             </select>
           </div>
-          <div class="form-group checkbox-group" style="grid-column: span 2;">
+          <div class="form-group checkbox-group">
             <label><input type="checkbox" id="builderShuffleQuestions" /> Trộn thứ tự câu hỏi trong từng phần (Shuffle Questions)</label>
             <label><input type="checkbox" id="builderShuffleOptions" /> Trộn lựa chọn Phần I (Shuffle Options)</label>
           </div>
@@ -360,16 +284,16 @@
 
       <!-- Questions List -->
       <div class="builder-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
-          <h3 class="builder-section-title" style="margin-bottom: 0;">3. Danh Sách Câu Hỏi (<span id="builderQuestionCount">0</span> câu)</h3>
-          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <div>
+          <h3 class="builder-section-title">3. Danh Sách Câu Hỏi (<span id="builderQuestionCount">0</span> câu)</h3>
+          <div>
             <button type="button" class="btn-secondary" id="btnAddPartI">+ Câu Phần I</button>
             <button type="button" class="btn-secondary" id="btnAddPartII">+ Câu Phần II</button>
             <button type="button" class="btn-secondary" id="btnAddPartIII">+ Câu Phần III</button>
             <button type="button" class="btn-secondary" id="btnLoadSampleToBuilder">Nạp đề mẫu</button>
-            <button type="button" class="btn-secondary" id="btnImportExamJson">📥 Nạp đề từ file</button>
+            <button type="button" class="btn-secondary" id="btnImportExamJson"> Nạp đề từ file</button>
             <input type="file" id="builderFileInput" accept=".json,application/json" style="display: none;" />
-            <button type="button" class="btn-secondary" id="btnImportDocx">📄 Nhập từ DOCX</button>
+            <button type="button" class="btn-secondary" id="btnImportDocx"> Nhập từ DOCX</button>
             <input type="file" id="docxFileInput" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display: none;" />
           </div>
         </div>
@@ -379,12 +303,12 @@
       <div id="builderValidationErrors" class="builder-errors" style="display: none;"></div>
 
       <!-- Builder Actions -->
-      <div class="modal-actions" style="margin-top: 1.5rem;">
-        <span id="teacherPublishStatus" style="margin-right: auto; font-size: 0.875rem; font-weight: 600;"></span>
+      <div class="modal-actions">
+        <span id="teacherPublishStatus"></span>
         <button type="button" class="btn-primary" id="btnPublishExam" style="display: none;">Xuất bản lên web</button>
         <button type="button" class="btn-secondary" id="btnCancelBuilder">Đóng</button>
-        <button type="button" class="btn-secondary" id="btnExportExamJson">💾 Tải file JSON</button>
-        <button type="button" class="btn-submit" id="btnPublishToRunner">🚀 Nạp vào phòng thi ngay</button>
+        <button type="button" class="btn-secondary" id="btnExportExamJson"> Tải file JSON</button>
+        <button type="button" class="btn-submit" id="btnPublishToRunner"> Nạp vào phòng thi ngay</button>
       </div>
     </div>
   </div>
@@ -400,26 +324,26 @@
         <button type="button" class="btn-close" id="btnCloseBank" aria-label="Đóng">&times;</button>
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+      <div>
+        <div>
           <button type="button" class="btn-secondary bank-filter-btn active" data-filter="all">Tất cả (<span id="bankCountAll">0</span>)</button>
           <button type="button" class="btn-secondary bank-filter-btn" data-filter="I">Phần I (<span id="bankCountI">0</span>)</button>
           <button type="button" class="btn-secondary bank-filter-btn" data-filter="II">Phần II (<span id="bankCountII">0</span>)</button>
           <button type="button" class="btn-secondary bank-filter-btn" data-filter="III">Phần III (<span id="bankCountIII">0</span>)</button>
-          <input type="text" id="bankSearchInput" class="form-input" placeholder="🔍 Tìm kiếm câu hỏi..." style="padding: 0.35rem 0.5rem; font-size: 0.8125rem; width: 170px;" />
-          <select id="bankDifficultyFilter" class="form-input" style="padding: 0.35rem 0.5rem; font-size: 0.8125rem; width: auto;">
+          <input type="text" id="bankSearchInput" class="form-input" placeholder=" Tìm kiếm câu hỏi..." />
+          <select id="bankDifficultyFilter" class="form-input">
             <option value="all">Mọi mức độ</option>
             <option value="nhan_biet">Nhận biết</option>
             <option value="thong_hieu">Thông hiểu</option>
             <option value="van_dung">Vận dụng</option>
           </select>
-          <select id="bankGradeFilter" class="form-input" style="padding: 0.35rem 0.5rem; font-size: 0.8125rem; width: auto;">
+          <select id="bankGradeFilter" class="form-input">
             <option value="all">Mọi khối lớp</option>
             <option value="12">Lớp 12</option>
             <option value="11">Lớp 11</option>
             <option value="10">Lớp 10</option>
           </select>
-          <select id="bankSubjectFilter" class="form-input" style="padding: 0.35rem 0.5rem; font-size: 0.8125rem; width: auto;">
+          <select id="bankSubjectFilter" class="form-input">
             <option value="all">Mọi môn</option>
             <option value="Toán học">Toán học</option>
             <option value="Vật lí">Vật lí</option>
@@ -430,72 +354,33 @@
             <option value="Tin học">Tin học</option>
             <option value="Công nghệ">Công nghệ</option>
           </select>
-          <select id="bankTopicFilter" class="form-input" style="padding: 0.35rem 0.5rem; font-size: 0.8125rem; width: auto;">
+          <select id="bankTopicFilter" class="form-input">
             <option value="all">Mọi chủ đề / chương</option>
           </select>
-          <select id="bankLessonFilter" class="form-input" style="padding: 0.35rem 0.5rem; font-size: 0.8125rem; width: auto;">
+          <select id="bankLessonFilter" class="form-input">
             <option value="all">Mọi bài học</option>
           </select>
         </div>
-        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        <div>
           <button type="button" class="btn-secondary" id="btnSeedBankSample">Khôi phục câu mẫu</button>
-          <button type="button" class="btn-secondary" id="btnImportBankJson">📥 Nạp từ JSON</button>
+          <button type="button" class="btn-secondary" id="btnImportBankJson"> Nạp từ JSON</button>
           <input type="file" id="bankFileInput" accept=".json,application/json" style="display: none;" />
           <button type="button" class="btn-secondary" id="btnExportBankJson">Xuất ngân hàng (JSON)</button>
-          <button type="button" class="btn-secondary" id="btnClearBank" style="color: var(--danger);">🗑 Xóa toàn bộ</button>
+          <button type="button" class="btn-secondary" id="btnClearBank"> Xóa toàn bộ</button>
         </div>
       </div>
 
-      <div id="bankQuestionsContainer" class="builder-questions-list" style="max-height: 480px; overflow-y: auto;"></div>
+      <div id="bankQuestionsContainer" class="builder-questions-list"></div>
 
-      <div class="modal-actions" style="margin-top: 1.5rem;">
+      <div class="modal-actions">
         <button type="button" class="btn-secondary" id="btnCancelBank">Đóng</button>
       </div>
     </div>
   </div>
 
   <!-- ================= Modal Xem Trước & Hiệu Đính Nhập (Import Preview) ================= -->
-  <div class="modal-overlay" id="previewModal" style="display: none; z-index: 1100;" role="dialog" aria-modal="true" aria-label="Xem trước đề nhập"></div>
+  <div class="modal-overlay" id="previewModal" style="display: none;" role="dialog" aria-modal="true" aria-label="Xem trước đề nhập"></div>
 
-  <!-- ================= Modal Giáo Viên (Teacher Mode - WEB-contract §17) ================= -->
-  <div class="modal-overlay" id="teacherModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="teacherModalTitle">
-    <div class="modal-content" style="max-width: 680px; width: 92%;">
-      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h2 id="teacherModalTitle" style="font-size: 1.25rem; font-weight: 700; margin: 0;">Khu Vực Giáo Viên</h2>
-        <button type="button" class="btn-close" id="btnCloseTeacherModal" aria-label="Đóng" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
-      </div>
-
-      <!-- Login Section -->
-      <div id="teacherLogin" style="padding: 0.5rem 0;">
-        <div id="teacherLoginBody">
-          <div style="margin-bottom: 1rem;">
-            <label for="teacherPassword" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Mật khẩu giáo viên:</label>
-            <input type="password" id="teacherPassword" placeholder="Nhập mật khẩu giáo viên..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-color, #d1d5db); border-radius: 6px; box-sizing: border-box;" autocomplete="current-password" />
-          </div>
-          <div id="teacherLoginError" style="color: var(--danger, #ef4444); margin-bottom: 1rem; font-size: 0.875rem; min-height: 1.25rem;"></div>
-          <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-            <button type="button" class="btn-secondary" id="btnCancelTeacherLogin">Hủy</button>
-            <button type="button" class="btn-primary" id="btnTeacherLogin">Đăng nhập</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Teacher Panel -->
-      <div id="teacherPanel" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-          <h3 style="margin: 0; font-size: 1rem; font-weight: 600;">Quản lý kho đề thi</h3>
-          <button type="button" class="btn-primary" id="btnTeacherNewExam" style="font-size: 0.875rem; padding: 0.4rem 0.75rem;">+ Soạn đề mới</button>
-        </div>
-        <div id="teacherExamList" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
-          <!-- .teacher-exam-row items -->
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= Ứng Dụng Client Script (ES Module) ================= -->
-
-  <!-- Entrypoint for modular application -->
   <script type="module" src="./app/main.js"></script>
 </body>
 </html>

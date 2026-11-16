@@ -173,5 +173,133 @@ describe('WEB-FINAL-STUDENT-STORAGE: Storage Regressions', () => {
       'generation must remain 6'
     );
   });
+
+  it('FX26-storage regression: storage preserves candidateName exactly through draft, finalize and reload roundtrip with Unicode', async () => {
+    const adapter = new MemoryTransactionAdapter();
+    const port = createStoragePort(adapter);
+    const exam = createSampleExam('codex-no-endpoint', 'v1.0.0');
+    const customName = 'Codex trạng thái cục bộ';
+
+    // 1. Initial draft created with default or starting name
+    const initialDraft = createSampleAttempt(exam, 'attempt-fx26-01', 'Thí sinh tự do');
+    const createRes = await port.create(initialDraft);
+    assert.equal(createRes.ok, true);
+
+    // 2. Draft updated with new candidate name
+    const renamedDraft: AttemptRecord = {
+      ...initialDraft,
+      candidateName: customName,
+    };
+    const saveRes = await port.saveDraft(renamedDraft, 1);
+    assert.equal(saveRes.ok, true);
+    assert.equal(unwrap(saveRes).candidateName, customName);
+    assert.equal(unwrap(saveRes).revision, 2);
+
+    // 3. Verify load reflects updated name
+    const loadedDraft = unwrap(await port.load(initialDraft));
+    assert.ok(loadedDraft);
+    assert.equal(loadedDraft.candidateName, customName);
+
+    // 4. Finalize draft
+    const finalRecord: AttemptRecord = {
+      ...loadedDraft,
+      revision: 3,
+      phase: 'final',
+      submittedAt: 5000,
+      scoreDTO: { total: '0', maxTotal: '1/4', sections: { I: '0' } },
+    };
+    const finRes = await port.finalize(finalRecord, 2);
+    assert.equal(finRes.ok, true);
+    assert.equal(unwrap(finRes).candidateName, customName);
+    assert.equal(unwrap(finRes).phase, 'final');
+
+    // 5. Outbox record created in local_saved state
+    const outbox = unwrap(await port.getOutbox(initialDraft));
+    assert.ok(outbox);
+    assert.equal(outbox.state, 'local_saved');
+
+    // 6. Simulate reload by creating a new StoragePort on the same backing data
+    const reopenedPort = createStoragePort(new MemoryTransactionAdapter(adapter.getBackingData()));
+
+    // 7. Verify loaded record and listAttempts after reload preserve exact candidate name
+    const reloaded = unwrap(await reopenedPort.load(initialDraft));
+    assert.ok(reloaded);
+    assert.equal(reloaded.candidateName, customName, 'reload must preserve final candidate name in StoragePort.load');
+    assert.equal(reloaded.phase, 'final');
+
+    const listed = unwrap(await reopenedPort.listAttempts(exam.examId, exam.examVersionId));
+    assert.equal(listed.length, 1);
+    const firstListed = listed[0];
+    assert.ok(firstListed);
+    assert.equal(firstListed.candidateName, customName, 'reload must preserve final candidate name in StoragePort.listAttempts');
+  });
+
+  it('FX27-storage regression: draft reload preserves candidateName through rename and multiple answer revisions', async () => {
+    const adapter = new MemoryTransactionAdapter();
+    const port = createStoragePort(adapter);
+    const exam = createSampleExam('ck-exam-01', 'v1.0.0');
+    const initialName = 'Học sinh kiểm định';
+    const updatedName = 'Trần Bình 0456';
+
+    // 1. Initial attempt created with gate name
+    const initialDraft = createSampleAttempt(exam, 'attempt-fx27-01', initialName);
+    const createRes = await port.create(initialDraft);
+    assert.equal(createRes.ok, true);
+    assert.equal(unwrap(createRes).candidateName, initialName);
+
+    // 2. Candidate changes name in UI (#candidateName input event calls controller.rename / saveDraft)
+    const renamedDraft: AttemptRecord = {
+      ...initialDraft,
+      candidateName: updatedName,
+    };
+    const saveRenameRes = await port.saveDraft(renamedDraft, 1);
+    assert.equal(saveRenameRes.ok, true);
+    assert.equal(unwrap(saveRenameRes).candidateName, updatedName);
+    assert.equal(unwrap(saveRenameRes).revision, 2);
+
+    // 3. Candidate answers questions (multiple saveDraft calls with responses)
+    let currentRecord = unwrap(saveRenameRes);
+    for (let i = 0; i < 3; i++) {
+      const answeringDraft: AttemptRecord = {
+        ...currentRecord,
+        candidateName: currentRecord.candidateName, // preserves updated name
+      };
+      const ansRes = await port.saveDraft(answeringDraft, currentRecord.revision);
+      assert.equal(ansRes.ok, true);
+      currentRecord = unwrap(ansRes);
+      assert.equal(currentRecord.candidateName, updatedName);
+    }
+    assert.equal(currentRecord.revision, 5);
+
+    // 4. Simulate page reload by creating a new StoragePort on the same backing data
+    const reopenedPort = createStoragePort(new MemoryTransactionAdapter(adapter.getBackingData()));
+
+    // 5. Verify draft loaded after reload preserves exact updated candidateName
+    const reloadedDraft = unwrap(await reopenedPort.load(initialDraft));
+    assert.ok(reloadedDraft);
+    assert.equal(reloadedDraft.candidateName, updatedName, 'reloaded draft must preserve renamed candidateName');
+    assert.equal(reloadedDraft.revision, 5);
+    assert.equal(reloadedDraft.phase, 'draft');
+
+    // 6. Verify listAttempts also preserves updated candidateName
+    const listed = unwrap(await reopenedPort.listAttempts(exam.examId, exam.examVersionId));
+    assert.equal(listed.length, 1);
+    const first = listed[0];
+    assert.ok(first);
+    assert.equal(first.candidateName, updatedName, 'listAttempts must preserve renamed candidateName');
+
+    // 7. Verify deadline auto-submission on reloaded draft preserves candidateName
+    const deadlineFinal: AttemptRecord = {
+      ...reloadedDraft,
+      revision: reloadedDraft.revision + 1,
+      phase: 'final',
+      submittedAt: reloadedDraft.deadline + 1000,
+      scoreDTO: { total: '1/4', maxTotal: '1/4', sections: { I: '1/4' } },
+    };
+    const finRes = await reopenedPort.finalize(deadlineFinal, reloadedDraft.revision);
+    assert.equal(finRes.ok, true);
+    const finalized = unwrap(finRes);
+    assert.equal(finalized.candidateName, updatedName, 'deadline auto-submit must preserve renamed candidateName');
+  });
 });
 

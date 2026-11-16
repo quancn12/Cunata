@@ -106,6 +106,12 @@ function createMockElement(tag = 'div', id?: string, className?: string) {
     },
     focus() {},
     blur() {},
+    remove() {
+      if (el.parentNode && Array.isArray(el.parentNode.children)) {
+        const idx = el.parentNode.children.indexOf(el);
+        if (idx >= 0) el.parentNode.children.splice(idx, 1);
+      }
+    },
   };
 
   return el;
@@ -121,6 +127,11 @@ function createMockDocument() {
     head,
     body,
     createElement(tag: string) {
+      const el = createMockElement(tag);
+      el.ownerDocument = doc;
+      return el;
+    },
+    createElementNS(_ns: string, tag: string) {
       const el = createMockElement(tag);
       el.ownerDocument = doc;
       return el;
@@ -191,8 +202,8 @@ describe('WEB-FINAL-INTEGRATE — Full Application Integration & Lifecycle', () 
       assert.equal(parsed.route, r);
     }
 
-    // Invalid route defaults to exam
-    assert.equal(parseHash('#/unknown').route, 'exam');
+    // Invalid route defaults to chooser
+    assert.equal(parseHash('#/unknown').route, 'chooser');
 
     // Query parameters parsing and serialization
     const parsedWithQuery = parseHash('#/report?attemptId=att-123&mode=review');

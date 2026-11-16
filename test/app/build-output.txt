@@ -1,0 +1,6 @@
+[web-build] Starting build in staging: D:\Cunata\.dist-staging
+[web-build] Successfully promoted 312 files to D:\Cunata\dist
+[web-build] Build completed successfully.
+[web-build] BLOCKED admin integration: src/admin entrypoint is missing; admin.html is a shell only.
+
+RD_BUILD_EXIT=0

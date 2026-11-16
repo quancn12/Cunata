@@ -38,6 +38,7 @@ interface NodeFs {
 }
 
 interface NodePath {
+  dirname(p: string): string;
   resolve(...paths: string[]): string;
   join(...paths: string[]): string;
   relative(from: string, to: string): string;
@@ -260,6 +261,8 @@ export function prepareShellAndAssets(rootDir: string, stagingDir: string): void
     shellHtml = shellHtml.replace(/href=["']\.\.\/\.\.\/styles\/style\.css["']/g, 'href="./styles/style.css"');
     // Transform module script entry: ./main.js -> ./app/main.js
     shellHtml = shellHtml.replace(/src=["']\.\/main\.js["']/g, 'src="./app/main.js"');
+    shellHtml = shellHtml.replace(/href=["']\.\.\/ui\//g, 'href="./ui/');
+    shellHtml = shellHtml.replace(/href=["']\.\.\/\.\.\/styles\//g, 'href="./styles/');
     fs.writeFileSync(indexDestPath, shellHtml, 'utf8');
   }
 
@@ -269,6 +272,24 @@ export function prepareShellAndAssets(rootDir: string, stagingDir: string): void
   if (fs.existsSync(stylesSrcDir)) {
     copyDirectoryRecursive(stylesSrcDir, stylesDestDir);
   }
+
+  // CSS is not emitted by tsc. Preserve each area's stylesheet next to its modules.
+  for (const file of collectFiles(path.join(rootDir, 'src'))) {
+    if (!file.endsWith('.css')) continue;
+    const relative = path.relative(path.join(rootDir, 'src'), file);
+    const destination = path.join(stagingDir, relative);
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    fs.writeFileSync(destination, fs.readFileSync(file, 'utf8'), 'utf8');
+  }
+
+  const adminEntry = fs.existsSync(path.join(stagingDir, 'admin/main.js')) ? 'main' : 'index';
+  if (!fs.existsSync(path.join(stagingDir, `admin/${adminEntry}.js`))) {
+    console.warn('[web-build] BLOCKED admin integration: src/admin entrypoint is missing; admin.html is a shell only.');
+  }
+  fs.writeFileSync(path.join(stagingDir, 'admin.html'), `<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cunata — Quản trị</title><link rel="stylesheet" href="./ui/tokens.css"><link rel="stylesheet" href="./ui/components.css"></head>
+<body><main id="adminRoot"></main><script type="module" src="./admin/${adminEntry}.js"></script></body></html>`, 'utf8');
 
   // 3. Prepare public assets (sample exam, SVG, etc.)
   const publicSrcDir = path.join(rootDir, 'public');
@@ -322,7 +343,7 @@ function isCacheableRequest(requestUrl, method) {
   if (method && method.toUpperCase() !== 'GET') return false;
   const lower = requestUrl.toLowerCase();
   if (lower.startsWith('chrome-extension:') || lower.startsWith('file:') || lower.startsWith('data:') || lower.startsWith('blob:')) return false;
-  if (lower.includes('script.google.com') || lower.includes('macros.google.com') || lower.includes('appsscript')) return false;
+  if (lower.includes('script.google.com') || lower.includes('macros.google.com') || lower.includes('script.googleusercontent.com')) return false;
   return true;
 }
 
@@ -538,6 +559,20 @@ self.addEventListener('fetch', (event) => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     const cached = (await cache.match(req)) || (await cache.match(req.url));
+    const pathname = new URL(req.url).pathname;
+    const mutableMetadata = pathname.endsWith('/public/config.json') || pathname.endsWith('/public/exams/index.json');
+    if (mutableMetadata) {
+      try {
+        const fresh = await fetch(req, { cache: 'no-store' });
+        if (fresh && fresh.ok) {
+          try { await cache.put(req, fresh.clone()); } catch (_) {}
+        }
+        return fresh;
+      } catch (_) {
+        if (cached) return cached;
+        return new Response('Offline', { status: 503, statusText: 'Offline' });
+      }
+    }
     if (cached) return cached;
     try {
       const network = await fetch(req);

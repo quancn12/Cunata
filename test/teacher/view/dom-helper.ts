@@ -80,6 +80,16 @@ export class TestDOMNode {
     return child;
   }
 
+  append(...nodes: (TestDOMNode | string)[]): void {
+    for (const n of nodes) {
+      if (typeof n === "string") {
+        this.appendChild(new TestTextNode(n));
+      } else if (n) {
+        this.appendChild(n);
+      }
+    }
+  }
+
   removeChild<T extends TestDOMNode>(child: T): T {
     const idx = this.childNodes.indexOf(child);
     if (idx !== -1) {
@@ -202,6 +212,12 @@ export class TestDOMElement extends TestDOMNode {
     }
   }
 
+  remove(): void {
+    if (this.parentNode) {
+      this.parentNode.removeChild(this);
+    }
+  }
+
   dispatchEvent(event: TestDOMEvent): boolean {
     event.target = this;
     const list = this.listeners.get(event.type) || [];
@@ -226,25 +242,53 @@ export class TestDOMElement extends TestDOMNode {
   }
 
   querySelectorAll<T extends TestDOMElement>(selector: string): T[] {
-    const results: T[] = [];
+    const parts = selector.trim().split(/\s+/);
+    if (parts.length > 1) {
+      let currentSet: TestDOMElement[] = [this];
+      for (const part of parts) {
+        const nextSet: TestDOMElement[] = [];
+        for (const el of currentSet) {
+          nextSet.push(...el.querySelectorAll(part));
+        }
+        currentSet = nextSet;
+      }
+      return currentSet as unknown as T[];
+    }
 
     const matches = (el: TestDOMElement, sel: string): boolean => {
-      if (sel.startsWith("#")) return el.id === sel.slice(1);
-      if (sel.startsWith(".")) return el.classList.contains(sel.slice(1));
-      if (sel.includes("[") && sel.endsWith("]")) {
-        const [tag, attrPart] = sel.split("[");
-        if (tag && el.tagName !== tag.toUpperCase()) return false;
-        const attrExpr = attrPart!.slice(0, -1);
-        if (attrExpr.includes("=")) {
-          const [attrName, attrVal] = attrExpr.split("=");
-          const cleanVal = attrVal!.replace(/['"]/g, "");
-          return el.getAttribute(attrName!) === cleanVal;
-        }
-        return el.hasAttribute(attrExpr);
+      let s = sel;
+      let tag = "";
+      let cls = "";
+      let attr = "";
+      if (s.includes("[")) {
+        const idx = s.indexOf("[");
+        attr = s.slice(idx);
+        s = s.slice(0, idx);
       }
-      return el.tagName === sel.toUpperCase();
+      if (s.includes(".")) {
+        const idx = s.indexOf(".");
+        cls = s.slice(idx + 1);
+        tag = s.slice(0, idx);
+      } else if (s.startsWith("#")) {
+        return el.id === s.slice(1);
+      } else {
+        tag = s;
+      }
+
+      if (tag && el.tagName !== tag.toUpperCase()) return false;
+      if (cls && !el.classList.contains(cls)) return false;
+      if (attr) {
+        const clean = attr.slice(1, -1);
+        if (clean.includes("=")) {
+          const [aName, aVal] = clean.split("=");
+          return el.getAttribute(aName!) === aVal!.replace(/['"]/g, "");
+        }
+        return el.hasAttribute(clean);
+      }
+      return true;
     };
 
+    const results: T[] = [];
     const traverse = (node: TestDOMNode) => {
       for (const child of node.childNodes) {
         if (child instanceof TestDOMElement) {
@@ -271,6 +315,10 @@ export class TestDocument {
   }
 
   createElement(tagName: string): TestDOMElement {
+    return new TestDOMElement(tagName, this);
+  }
+
+  createElementNS(_ns: string, tagName: string): TestDOMElement {
     return new TestDOMElement(tagName, this);
   }
 

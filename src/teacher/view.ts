@@ -883,9 +883,9 @@ export function ensureTeacherViewStyles(doc: Document): void {
     .cunata-teacher-view { font-family: system-ui, sans-serif; padding: 1rem; }
     .cunata-btn { min-height: 44px; min-width: 44px; padding: 0.5rem 1rem; cursor: pointer; }
     .cunata-input, .cunata-select, .cunata-textarea { min-height: 44px; padding: 0.5rem; width: 100%; box-sizing: border-box; }
-    .cunata-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; }
-    .cunata-auth-badge { display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #d1fae5; color: #065f46; border-radius: 9999px; }
-    .cunata-d08-banner { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.875rem; color: #92400e; }
+    .cunata-card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; }
+    .cunata-auth-badge { display: inline-block; padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--c-surface-2); color: var(--c-success); border-radius: 9999px; }
+    .cunata-d08-banner { background: var(--c-surface-2); border-left: 4px solid var(--c-warning); padding: 0.75rem; margin-bottom: 1rem; font-size: 0.875rem; color: var(--c-warning); }
   `;
   if (doc.head) {
     doc.head.appendChild(style);
@@ -1355,7 +1355,7 @@ function renderEditMode(
   const secDesc = doc.createElement("p");
   secDesc.style.margin = "0 0 1rem 0";
   secDesc.style.fontSize = "0.875rem";
-  secDesc.style.color = "#4b5563";
+  secDesc.style.color = "var(--c-text-2)";
   secDesc.textContent =
     "Đề có thể bật/tắt độc lập từng phần. Điểm tối đa tính bằng số học phân số chính xác theo công thức chế độ tùy chỉnh GDPT 2018 (không ép tổng 10).";
   sectionCard.appendChild(secDesc);
@@ -1510,7 +1510,7 @@ function renderEditMode(
 
   if (filteredQuestions.length === 0) {
     const emptyMsg = doc.createElement("p");
-    emptyMsg.style.color = "#6b7280";
+    emptyMsg.style.color = "var(--c-text-2)";
     emptyMsg.style.fontStyle = "italic";
     emptyMsg.textContent = "Chưa có câu hỏi nào trong phần này. Hãy bấm các nút thêm câu ở trên.";
     qListEl.appendChild(emptyMsg);
@@ -1765,7 +1765,7 @@ function renderPartIEditor(
   cleanups: (() => void)[],
 ): void {
   const sectionFieldset = doc.createElement("fieldset");
-  sectionFieldset.style.border = "1px solid #e5e7eb";
+  sectionFieldset.style.border = "1px solid var(--c-border)";
   sectionFieldset.style.borderRadius = "0.375rem";
   sectionFieldset.style.padding = "1rem";
   sectionFieldset.style.marginBottom = "1rem";
@@ -1833,7 +1833,7 @@ function renderPartIIEditor(
   cleanups: (() => void)[],
 ): void {
   const sectionFieldset = doc.createElement("fieldset");
-  sectionFieldset.style.border = "1px solid #e5e7eb";
+  sectionFieldset.style.border = "1px solid var(--c-border)";
   sectionFieldset.style.borderRadius = "0.375rem";
   sectionFieldset.style.padding = "1rem";
   sectionFieldset.style.marginBottom = "1rem";
@@ -1976,7 +1976,7 @@ function renderPreviewMode(
   pHeader.appendChild(pTitle);
 
   const pMeta = doc.createElement("div");
-  pMeta.style.color = "#4b5563";
+  pMeta.style.color = "var(--c-text-2)";
   pMeta.style.fontSize = "0.9375rem";
   pMeta.textContent = `Môn: ${exam.subject} | Lớp: ${exam.grade} | Thời gian làm bài: ${exam.settings.durationMinutes} phút | Điểm tối đa: ${toFractionString(computedMax.maxTotal)} điểm`;
   pHeader.appendChild(pMeta);
@@ -2017,8 +2017,8 @@ function renderPreviewMode(
         optLine.style.padding = "0.375rem 0.5rem";
         optLine.style.borderRadius = "0.25rem";
         if (isCorrect) {
-          optLine.style.backgroundColor = "#ecfdf5";
-          optLine.style.border = "1px solid #a7f3d0";
+          optLine.style.backgroundColor = "var(--c-surface-2)";
+          optLine.style.border = "1px solid var(--c-success)";
         }
         optLine.textContent = `${opt.label || String.fromCharCode(65 + oIdx)}. ${opt.text}`;
         if (isCorrect) {
@@ -2042,8 +2042,8 @@ function renderPreviewMode(
         const stmtLine = doc.createElement("div");
         stmtLine.style.padding = "0.375rem 0.5rem";
         stmtLine.style.borderRadius = "0.25rem";
-        stmtLine.style.backgroundColor = "#f9fafb";
-        stmtLine.style.border = "1px solid #e5e7eb";
+        stmtLine.style.backgroundColor = "var(--c-surface-2)";
+        stmtLine.style.border = "1px solid var(--c-border)";
 
         stmtLine.textContent = `${stmt.label || String.fromCharCode(97 + sIdx)}) ${stmt.text}`;
         const ansTag = doc.createElement("span");
@@ -2051,11 +2051,11 @@ function renderPreviewMode(
         ansTag.style.marginLeft = "0.75rem";
         ansTag.textContent = stmt.answer ? "ĐÚNG" : "SAI";
         if (stmt.answer) {
-          ansTag.style.backgroundColor = "#dcfce7";
-          ansTag.style.color = "#166534";
+          ansTag.style.backgroundColor = "var(--c-surface-2)";
+          ansTag.style.color = "var(--c-success)";
         } else {
-          ansTag.style.backgroundColor = "#fee2e2";
-          ansTag.style.color = "#991b1b";
+          ansTag.style.backgroundColor = "var(--c-surface-2)";
+          ansTag.style.color = "var(--c-danger)";
         }
         stmtLine.appendChild(ansTag);
         stmtList.appendChild(stmtLine);
@@ -2065,8 +2065,8 @@ function renderPreviewMode(
       const qIII = q as Extract<WebQuestion, { kind: "III" }>;
       const keyLine = doc.createElement("div");
       keyLine.style.padding = "0.5rem";
-      keyLine.style.backgroundColor = "#f0fdf4";
-      keyLine.style.border = "1px solid #bbf7d0";
+      keyLine.style.backgroundColor = "var(--c-surface-2)";
+      keyLine.style.border = "1px solid var(--c-success)";
       keyLine.style.borderRadius = "0.25rem";
       keyLine.textContent = `Đáp án chuẩn (nguyên văn): [${qIII.answerKey}]`;
       qCard.appendChild(keyLine);
@@ -2076,7 +2076,7 @@ function renderPreviewMode(
       const expBox = doc.createElement("div");
       expBox.style.marginTop = "0.5rem";
       expBox.style.fontSize = "0.875rem";
-      expBox.style.color = "#4b5563";
+      expBox.style.color = "var(--c-text-2)";
       expBox.textContent = `Lời giải: ${q.explanation}`;
       qCard.appendChild(expBox);
     }
@@ -2098,13 +2098,13 @@ function renderPreviewMode(
 
   if (!isValid) {
     const warn = doc.createElement("p");
-    warn.style.color = "#dc2626";
+    warn.style.color = "var(--c-danger)";
     warn.style.fontWeight = "600";
     warn.textContent = "Đề thi còn một số lỗi chưa hoàn thiện. Vui lòng quay lại chế độ Chỉnh sửa để sửa trước khi xuất bản.";
     pubPanel.appendChild(warn);
   } else {
     const ready = doc.createElement("p");
-    ready.style.color = "#16a34a";
+    ready.style.color = "var(--c-success)";
     ready.style.fontWeight = "600";
     ready.textContent = "Đề thi đã đầy đủ thông tin hợp lệ và sẵn sàng xuất bản.";
     pubPanel.appendChild(ready);
@@ -2236,7 +2236,7 @@ function createScoreCard(
 
   const sEl = doc.createElement("div");
   sEl.style.fontSize = "0.75rem";
-  sEl.style.color = "#6b7280";
+  sEl.style.color = "var(--c-text-2)";
   sEl.textContent = subtitle;
   card.appendChild(sEl);
 

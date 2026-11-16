@@ -164,6 +164,8 @@ export interface WebResultV1 {
   readonly engineVersion: string;
   readonly scoreDTO: unknown | null;
   readonly responses: AttemptResponses;
+  readonly class_code?: string;
+  readonly assignment_id?: string;
 }
 
 /**
@@ -176,6 +178,30 @@ export function buildWebResultPayload(final: AttemptRecord): WebResultV1 {
     final.submittedAt !== null && typeof final.startedAt === 'number'
       ? Math.max(0, Math.round((final.submittedAt - final.startedAt) / 1000))
       : 0;
+
+  let classCode =
+    (final as any).class_code ??
+    (final as any).classCode ??
+    (final as any).metadata?.class_code ??
+    (final as any).metadata?.classCode;
+  let assignmentId =
+    (final as any).assignment_id ??
+    (final as any).assignmentId ??
+    (final as any).metadata?.assignment_id ??
+    (final as any).metadata?.assignmentId;
+
+  if (!classCode || !assignmentId) {
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        const stored = sessionStorage.getItem('cunata:active_assignment') || sessionStorage.getItem('cunata_active_assignment');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (!classCode && parsed?.classCode) classCode = parsed.classCode;
+          if (!assignmentId && parsed?.assignmentId) assignmentId = parsed.assignmentId;
+        }
+      }
+    } catch {}
+  }
 
   return {
     schemaVersion: 'web-result-v1',
@@ -191,6 +217,8 @@ export function buildWebResultPayload(final: AttemptRecord): WebResultV1 {
     engineVersion: (scoreDTO as any)?.engineVersion ?? ENGINE_VERSION,
     scoreDTO: scoreDTO ?? null,
     responses: final.responses,
+    ...(classCode ? { class_code: String(classCode).trim().toUpperCase() } : {}),
+    ...(assignmentId ? { assignment_id: String(assignmentId).trim() } : {}),
   };
 }
 

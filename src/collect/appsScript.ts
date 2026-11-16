@@ -12,6 +12,7 @@ export interface AppConfig {
 
 /**
  * Nạp cấu hình ứng dụng từ đường dẫn tương đối 'public/config.json'.
+ * Theo WEB-contract 17.6: luôn dùng cache: 'no-store' để không bị kẹt bản cũ trong service worker.
  * Nếu có lỗi mạng, mã HTTP lỗi, JSON hỏng hoặc thiếu trường -> trả về { appsScriptUrl: '' }.
  */
 export async function loadAppConfig(fetchImpl?: typeof fetch): Promise<AppConfig> {
@@ -20,7 +21,7 @@ export async function loadAppConfig(fetchImpl?: typeof fetch): Promise<AppConfig
     return { appsScriptUrl: '' };
   }
   try {
-    const res = await fetchFn('public/config.json');
+    const res = await fetchFn('public/config.json', { cache: 'no-store' });
     if (!res || !res.ok) {
       return { appsScriptUrl: '' };
     }
@@ -32,6 +33,141 @@ export async function loadAppConfig(fetchImpl?: typeof fetch): Promise<AppConfig
   } catch {
     return { appsScriptUrl: '' };
   }
+}
+
+/**
+ * Khóa lưu trữ token trong sessionStorage (WEB-contract mục 19.1 & 19.2).
+ * Tách biệt khóa riêng cho giáo viên và admin, xóa khi đăng xuất.
+ */
+export const TEACHER_TOKEN_STORAGE_KEY = 'cunata_teacher_token';
+export const ADMIN_TOKEN_STORAGE_KEY = 'cunata_admin_token';
+export const LEGACY_TEACHER_PW_STORAGE_KEY = 'cunata_teacher_pw';
+
+/** Lấy token giáo viên từ sessionStorage */
+export function getTeacherToken(): string | null {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      return sessionStorage.getItem(TEACHER_TOKEN_STORAGE_KEY);
+    }
+  } catch {}
+  return null;
+}
+
+/** Lưu token giáo viên vào sessionStorage */
+export function setTeacherToken(token: string): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem(TEACHER_TOKEN_STORAGE_KEY, token);
+    }
+  } catch {}
+}
+
+/** Xóa token giáo viên khỏi sessionStorage */
+export function clearTeacherToken(): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(TEACHER_TOKEN_STORAGE_KEY);
+      sessionStorage.removeItem(LEGACY_TEACHER_PW_STORAGE_KEY);
+    }
+  } catch {}
+}
+
+/** Lấy token admin từ sessionStorage */
+export function getAdminToken(): string | null {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      return sessionStorage.getItem(ADMIN_TOKEN_STORAGE_KEY);
+    }
+  } catch {}
+  return null;
+}
+
+/** Lưu token admin vào sessionStorage */
+export function setAdminToken(token: string): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, token);
+    }
+  } catch {}
+}
+
+/** Xóa token admin khỏi sessionStorage */
+export function clearAdminToken(): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+    }
+  } catch {}
+}
+
+/** Đăng xuất giáo viên (xóa token và mật khẩu tạm khỏi sessionStorage) */
+export function teacherLogout(): void {
+  clearTeacherToken();
+}
+
+/** Đăng xuất admin (xóa token khỏi sessionStorage) */
+export function adminLogout(): void {
+  clearAdminToken();
+}
+
+/**
+ * Bảng tra cứu thông báo lỗi người dùng bằng tiếng Việt thân thiện (WEB-contract 11 & 19.2).
+ */
+export const ERROR_MESSAGES_VI: Record<string, string> = {
+  UNAUTHORIZED: 'Sai tên đăng nhập hoặc mật khẩu',
+  FORBIDDEN: 'Bạn không có quyền thực hiện thao tác này',
+  NOT_OPEN: 'Bài thi chưa đến giờ mở',
+  PAST_DUE: 'Nộp sau hạn — giáo viên chưa nhận',
+  USERNAME_TAKEN: 'Tên đăng nhập đã được dùng',
+  NOT_FOUND: 'Không tìm thấy dữ liệu yêu cầu',
+  INVALID_USERNAME: 'Tên đăng nhập phải có 3–32 ký tự a-z0-9._-',
+  INVALID_PASSWORD: 'Mật khẩu cần ít nhất 8 ký tự',
+  INVALID_NAME: 'Cần nhập tên',
+  INVALID_DATES: 'Hạn nộp phải sau giờ mở, theo ISO 8601',
+  INVALID_EXAM: 'Cấu trúc đề thi không hợp lệ',
+  INVALID_ASSIGNMENT: 'Thiếu thông tin lớp hoặc bài giao',
+  INVALID_ACTIVE: 'Trạng thái hoạt động không hợp lệ',
+  ADMIN_PASSWORD_NOT_SET: 'Chưa đặt ADMIN_PASSWORD trong Script Properties',
+  TEACHER_PASSWORD_NOT_SET: 'Chưa đặt TEACHER_PASSWORD trong Script Properties',
+  NOT_CONFIGURED: 'Apps Script URL chưa được cấu hình',
+  PAYLOAD_CONFLICT: 'Xung đột dữ liệu kết quả bài thi',
+  SERVER_BUSY: 'Máy chủ đang bận, vui lòng thử lại sau',
+  NETWORK: 'Lỗi kết nối mạng, vui lòng kiểm tra đường truyền',
+  BAD_RESPONSE: 'Phản hồi từ máy chủ không đúng định dạng',
+  TIMEOUT: 'Hết thời gian chờ kết nối máy chủ Apps Script (15s)',
+  COLLECTOR_TIMEOUT: 'Yêu cầu bị hủy hoặc hết thời gian chờ',
+  COLLECTOR_NETWORK: 'Lỗi mạng khi kết nối máy chủ',
+  COLLECTOR_HTTP: 'Lỗi máy chủ khi xử lý yêu cầu',
+  COLLECTOR_DISABLED: 'Chức năng gửi máy chủ đang tạm tắt',
+  RECEIPT_INVALID: 'Biên nhận máy chủ không hợp lệ',
+};
+
+/**
+ * Ánh xạ mã lỗi thành thông điệp tiếng Việt rõ ràng, dễ hiểu cho người dùng.
+ */
+export function mapErrorToVietnamese(code: string, serverMessage?: string): string {
+  if (code === 'UNAUTHORIZED') {
+    return 'Sai tên đăng nhập hoặc mật khẩu';
+  }
+  if (code === 'PAST_DUE') {
+    return 'Nộp sau hạn — giáo viên chưa nhận';
+  }
+  if (code === 'NOT_OPEN') {
+    return 'Bài thi chưa đến giờ mở';
+  }
+  if (code === 'USERNAME_TAKEN') {
+    return 'Tên đăng nhập đã được dùng';
+  }
+  if (code === 'FORBIDDEN') {
+    if (serverMessage && /thuộc giáo viên khác|không có quyền/i.test(serverMessage)) {
+      return serverMessage.trim();
+    }
+    return 'Bạn không có quyền thực hiện thao tác này';
+  }
+  if (serverMessage && serverMessage.trim() && !/^[A-Z0-9_]+$/.test(serverMessage.trim())) {
+    return serverMessage.trim();
+  }
+  return ERROR_MESSAGES_VI[code] || serverMessage || 'Yêu cầu không thành công';
 }
 
 /**
@@ -56,16 +192,210 @@ export type AsResult<T> =
   | { ok: true; value: T }
   | { ok: false; code: string; message: string; details?: unknown };
 
+export interface TeacherLoginResult {
+  token: string;
+  name: string;
+  expiresAt?: string;
+}
+
+export interface AdminLoginResult {
+  token: string;
+  expiresAt?: string;
+}
+
+export interface TeacherAccountInfo {
+  username: string;
+  name: string;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface AdminStats {
+  teachers: number;
+  classes: number;
+  exams: number;
+  results: number;
+}
+
+export interface NewTeacherInput {
+  name: string;
+  username: string;
+  password: string;
+  token?: string;
+}
+
+export interface ResetPasswordInput {
+  username: string;
+  password: string;
+  token?: string;
+}
+
+export interface SetTeacherActiveInput {
+  username: string;
+  active: boolean;
+  token?: string;
+}
+
+export interface CreateClassInput {
+  name: string;
+  token?: string;
+}
+
+export interface CreateClassResult {
+  classId: string;
+  code: string;
+}
+
+export interface TeacherClassMeta {
+  classId: string;
+  code: string;
+  name: string;
+  createdAt: string;
+  studentCount: number;
+}
+
+export interface AssignExamInput {
+  classId: string;
+  examId: string;
+  openAt: string;
+  dueAt: string;
+  token?: string;
+}
+
+export interface AssignmentMeta {
+  assignmentId: string;
+  classId: string;
+  examId: string;
+  openAt: string;
+  dueAt: string;
+  createdAt: string;
+  title: string;
+  questionCount: number;
+  durationMinutes: number;
+  submissionCount?: number;
+}
+
+export interface ClassAssignmentMeta {
+  assignmentId: string;
+  examId: string;
+  title: string;
+  openAt: string;
+  dueAt: string;
+  questionCount: number;
+  durationMinutes: number;
+}
+
+export interface ClassInfo {
+  class: {
+    code: string;
+    name: string;
+    teacherName: string;
+  };
+  assignments: ClassAssignmentMeta[];
+}
+
+export interface ClassResultItem {
+  attempt_id?: string;
+  attemptId?: string;
+  candidate_display?: string;
+  candidateName?: string;
+  started_at?: string;
+  submitted_at?: string;
+  duration_seconds?: number;
+  total?: string;
+  maxTotal?: string;
+  sections?: Record<string, { score: string; max: string }>;
+  class_code?: string;
+  assignment_id?: string;
+  [key: string]: unknown;
+}
+
 /**
- * Giao diện client giao tiếp với Google Apps Script.
+ * Giao diện client giao tiếp với Google Apps Script (WEB-contract mục 18.1 & 19.2).
  */
 export interface AppsScriptClient {
   readonly configured: boolean;
+
+  // Exams (public GET)
   listExams(): Promise<AsResult<PublishedExamMeta[]>>;
   getExam(id: string): Promise<AsResult<unknown>>;
+
+  // Class (public student GET)
+  getClass(code: string): Promise<AsResult<ClassInfo>>;
+
+  // Teacher Auth & Publishing
   teacherLogin(password: string): Promise<AsResult<true>>;
-  publishExam(password: string, exam: unknown): Promise<AsResult<{ examId: string; revision: number }>>;
-  unpublishExam(password: string, examId: string): Promise<AsResult<true>>;
+  teacherLogin(username: string, password: string): Promise<AsResult<TeacherLoginResult>>;
+  teacherLogin(arg1: string, arg2?: string): Promise<AsResult<any>>;
+
+  publishExam(tokenOrPassword: string, exam: unknown): Promise<AsResult<{ examId: string; revision: number }>>;
+  unpublishExam(tokenOrPassword: string, examId: string): Promise<AsResult<true>>;
+
+  // Teacher Classes & Assignments
+  createClass(name: string): Promise<AsResult<CreateClassResult>>;
+  createClass(token: string, name: string): Promise<AsResult<CreateClassResult>>;
+  createClass(tokenOrName: string | CreateClassInput, name?: string): Promise<AsResult<CreateClassResult>>;
+
+  listMyClasses(token?: string): Promise<AsResult<TeacherClassMeta[]>>;
+
+  assignExam(classId: string, examId: string, openAt: string, dueAt: string): Promise<AsResult<{ assignmentId: string }>>;
+  assignExam(token: string, classId: string, examId: string, openAt: string, dueAt: string): Promise<AsResult<{ assignmentId: string }>>;
+  assignExam(
+    tokenOrOpts: string | AssignExamInput,
+    classId?: string,
+    examId?: string,
+    openAt?: string,
+    dueAt?: string
+  ): Promise<AsResult<{ assignmentId: string }>>;
+
+  listAssignments(classId: string): Promise<AsResult<AssignmentMeta[]>>;
+  listAssignments(token: string, classId: string): Promise<AsResult<AssignmentMeta[]>>;
+  listAssignments(tokenOrClassId: string, classId?: string): Promise<AsResult<AssignmentMeta[]>>;
+
+  listResults(classId: string, assignmentId?: string): Promise<AsResult<ClassResultItem[]>>;
+  listResults(token: string, classId: string, assignmentId?: string): Promise<AsResult<ClassResultItem[]>>;
+  listResults(
+    tokenOrClassId: string,
+    classIdOrAssignmentId?: string,
+    assignmentId?: string
+  ): Promise<AsResult<ClassResultItem[]>>;
+
+  // Admin Actions
+  adminLogin(password: string): Promise<AsResult<AdminLoginResult>>;
+
+  adminCreateTeacher(teacher: NewTeacherInput): Promise<AsResult<true>>;
+  adminCreateTeacher(token: string, teacher: NewTeacherInput): Promise<AsResult<true>>;
+  adminCreateTeacher(token: string, name: string, username: string, password: string): Promise<AsResult<true>>;
+  adminCreateTeacher(
+    tokenOrTeacher: string | NewTeacherInput,
+    teacherOrName?: NewTeacherInput | string,
+    username?: string,
+    password?: string
+  ): Promise<AsResult<true>>;
+
+  adminListTeachers(token?: string): Promise<AsResult<TeacherAccountInfo[]>>;
+
+  adminResetPassword(username: string, password: string): Promise<AsResult<true>>;
+  adminResetPassword(token: string, username: string, password: string): Promise<AsResult<true>>;
+  adminResetPassword(
+    tokenOrOpts: string | ResetPasswordInput,
+    username?: string,
+    password?: string
+  ): Promise<AsResult<true>>;
+
+  adminSetTeacherActive(username: string, active: boolean): Promise<AsResult<true>>;
+  adminSetTeacherActive(token: string, username: string, active: boolean): Promise<AsResult<true>>;
+  adminSetTeacherActive(
+    tokenOrOpts: string | SetTeacherActiveInput,
+    username?: string | boolean,
+    active?: boolean
+  ): Promise<AsResult<true>>;
+
+  adminStats(token?: string): Promise<AsResult<AdminStats>>;
+
+  // Logout helpers
+  teacherLogout(): void;
+  adminLogout(): void;
 }
 
 /**
@@ -114,13 +444,13 @@ async function executeAppsScriptRequest<T>(
         return {
           ok: false,
           code: 'NETWORK',
-          message: 'Hết thời gian chờ kết nối máy chủ Apps Script (15s)',
+          message: mapErrorToVietnamese('TIMEOUT', 'Hết thời gian chờ kết nối máy chủ Apps Script (15s)'),
         };
       }
       return {
         ok: false,
         code: 'NETWORK',
-        message: `Lỗi kết nối mạng: ${err?.message || String(err)}`,
+        message: mapErrorToVietnamese('NETWORK', `Lỗi kết nối mạng: ${err?.message || String(err)}`),
       };
     }
 
@@ -150,7 +480,7 @@ async function executeAppsScriptRequest<T>(
       return {
         ok: false,
         code: 'BAD_RESPONSE',
-        message: 'Phản hồi từ máy chủ không phải JSON hợp lệ',
+        message: mapErrorToVietnamese('BAD_RESPONSE'),
       };
     }
 
@@ -158,13 +488,14 @@ async function executeAppsScriptRequest<T>(
       return {
         ok: false,
         code: 'BAD_RESPONSE',
-        message: 'Phản hồi từ máy chủ không đúng định dạng',
+        message: mapErrorToVietnamese('BAD_RESPONSE'),
       };
     }
 
     if (parsed.success === false) {
       const code = typeof parsed.error === 'string' && parsed.error ? parsed.error : 'SERVER_ERROR';
-      const message = typeof parsed.message === 'string' && parsed.message ? parsed.message : 'Yêu cầu không thành công';
+      const rawMessage = typeof parsed.message === 'string' ? parsed.message : '';
+      const message = mapErrorToVietnamese(code, rawMessage);
       const details = parsed.errors !== undefined ? parsed.errors : parsed.details;
       return {
         ok: false,
@@ -178,7 +509,7 @@ async function executeAppsScriptRequest<T>(
       return {
         ok: false,
         code: 'BAD_RESPONSE',
-        message: 'Phản hồi thiếu trường success hợp lệ',
+        message: mapErrorToVietnamese('BAD_RESPONSE', 'Phản hồi thiếu trường success hợp lệ'),
       };
     }
 
@@ -191,8 +522,8 @@ async function executeAppsScriptRequest<T>(
 /**
  * Khởi tạo client giao tiếp với Apps Script.
  * - url rỗng: configured = false, mọi hàm trả NOT_CONFIGURED ngay, không gọi fetch.
- * - GET: đọc danh sách / đọc chi tiết đề.
- * - POST: text/plain;charset=utf-8, mật khẩu trong body, redirect: 'follow', timeout: 15s.
+ * - GET: đọc danh sách / đọc chi tiết đề / tra cứu lớp học theo mã.
+ * - POST: text/plain;charset=utf-8, token/mật khẩu trong body, redirect: 'follow', timeout: 15s.
  */
 export function createAppsScriptClient(
   url: string,
@@ -206,7 +537,7 @@ export function createAppsScriptClient(
     const notConfiguredResult = <T>(): AsResult<T> => ({
       ok: false,
       code: 'NOT_CONFIGURED',
-      message: 'Apps Script URL chưa được cấu hình',
+      message: mapErrorToVietnamese('NOT_CONFIGURED'),
     });
 
     return {
@@ -217,14 +548,79 @@ export function createAppsScriptClient(
       async getExam(_id: string): Promise<AsResult<unknown>> {
         return notConfiguredResult();
       },
-      async teacherLogin(_password: string): Promise<AsResult<true>> {
+      async getClass(_code: string): Promise<AsResult<ClassInfo>> {
         return notConfiguredResult();
       },
-      async publishExam(_password: string, _exam: unknown): Promise<AsResult<{ examId: string; revision: number }>> {
+      async teacherLogin(_arg1: string, _arg2?: string): Promise<AsResult<any>> {
         return notConfiguredResult();
       },
-      async unpublishExam(_password: string, _examId: string): Promise<AsResult<true>> {
+      async publishExam(_tokenOrPassword: string, _exam: unknown): Promise<AsResult<{ examId: string; revision: number }>> {
         return notConfiguredResult();
+      },
+      async unpublishExam(_tokenOrPassword: string, _examId: string): Promise<AsResult<true>> {
+        return notConfiguredResult();
+      },
+      async createClass(_tokenOrName: string | CreateClassInput, _name?: string): Promise<AsResult<CreateClassResult>> {
+        return notConfiguredResult();
+      },
+      async listMyClasses(_token?: string): Promise<AsResult<TeacherClassMeta[]>> {
+        return notConfiguredResult();
+      },
+      async assignExam(
+        _tokenOrOpts: string | AssignExamInput,
+        _classId?: string,
+        _examId?: string,
+        _openAt?: string,
+        _dueAt?: string
+      ): Promise<AsResult<{ assignmentId: string }>> {
+        return notConfiguredResult();
+      },
+      async listAssignments(_tokenOrClassId: string, _classId?: string): Promise<AsResult<AssignmentMeta[]>> {
+        return notConfiguredResult();
+      },
+      async listResults(
+        _tokenOrClassId: string,
+        _classIdOrAssignmentId?: string,
+        _assignmentId?: string
+      ): Promise<AsResult<ClassResultItem[]>> {
+        return notConfiguredResult();
+      },
+      async adminLogin(_password: string): Promise<AsResult<AdminLoginResult>> {
+        return notConfiguredResult();
+      },
+      async adminCreateTeacher(
+        _tokenOrTeacher: string | NewTeacherInput,
+        _teacherOrName?: NewTeacherInput | string,
+        _username?: string,
+        _password?: string
+      ): Promise<AsResult<true>> {
+        return notConfiguredResult();
+      },
+      async adminListTeachers(_token?: string): Promise<AsResult<TeacherAccountInfo[]>> {
+        return notConfiguredResult();
+      },
+      async adminResetPassword(
+        _tokenOrOpts: string | ResetPasswordInput,
+        _username?: string,
+        _password?: string
+      ): Promise<AsResult<true>> {
+        return notConfiguredResult();
+      },
+      async adminSetTeacherActive(
+        _tokenOrOpts: string | SetTeacherActiveInput,
+        _username?: string | boolean,
+        _active?: boolean
+      ): Promise<AsResult<true>> {
+        return notConfiguredResult();
+      },
+      async adminStats(_token?: string): Promise<AsResult<AdminStats>> {
+        return notConfiguredResult();
+      },
+      teacherLogout(): void {
+        clearTeacherToken();
+      },
+      adminLogout(): void {
+        clearAdminToken();
       },
     };
   }
@@ -236,7 +632,7 @@ export function createAppsScriptClient(
       const getUrl = buildGetUrl(trimmedUrl, { action: 'listExams' });
       return executeAppsScriptRequest(
         getUrl,
-        { method: 'GET', redirect: 'follow' },
+        { method: 'GET', redirect: 'follow', cache: 'no-store' },
         fetchFn,
         (data) => {
           const rawList = Array.isArray(data.exams) ? data.exams : [];
@@ -258,41 +654,127 @@ export function createAppsScriptClient(
 
     async getExam(id: string): Promise<AsResult<unknown>> {
       const getUrl = buildGetUrl(trimmedUrl, { action: 'getExam', id });
-      return executeAppsScriptRequest(
+      const asRes = await executeAppsScriptRequest(
         getUrl,
-        { method: 'GET', redirect: 'follow' },
+        { method: 'GET', redirect: 'follow', cache: 'no-store' },
         fetchFn,
         (data) => ({
           ok: true,
           value: data.exam !== undefined ? data.exam : data,
         })
       );
+      if (asRes.ok) {
+        return asRes;
+      }
+      // If Apps Script returns NOT_FOUND, fallback to static shared exams in public/exams/index.json
+      try {
+        const manifestRes = await fetchFn('public/exams/index.json', { cache: 'no-store' });
+        if (manifestRes && manifestRes.ok) {
+          const manifest = await manifestRes.json();
+          const exams = Array.isArray(manifest?.exams) ? manifest.exams : [];
+          const matched = exams.find((e: any) => e.id === id);
+          if (matched && matched.url) {
+            const examRes = await fetchFn(matched.url, { cache: 'no-store' });
+            if (examRes && examRes.ok) {
+              const examData = await examRes.json();
+              return { ok: true, value: examData };
+            }
+          }
+        }
+      } catch {}
+      return asRes;
     },
 
-    async teacherLogin(password: string): Promise<AsResult<true>> {
+    async getClass(code: string): Promise<AsResult<ClassInfo>> {
+      const getUrl = buildGetUrl(trimmedUrl, { action: 'getClass', code: String(code || '').trim() });
+      return executeAppsScriptRequest(
+        getUrl,
+        { method: 'GET', redirect: 'follow', cache: 'no-store' },
+        fetchFn,
+        (data) => {
+          const cls = data.class && typeof data.class === 'object' ? data.class : {};
+          const rawAssignments = Array.isArray(data.assignments) ? data.assignments : [];
+          const assignments: ClassAssignmentMeta[] = rawAssignments.map((a: any) => ({
+            assignmentId: String(a.assignmentId ?? ''),
+            examId: String(a.examId ?? ''),
+            title: String(a.title ?? ''),
+            openAt: String(a.openAt ?? ''),
+            dueAt: String(a.dueAt ?? ''),
+            questionCount: typeof a.questionCount === 'number' ? a.questionCount : Number(a.questionCount) || 0,
+            durationMinutes: typeof a.durationMinutes === 'number' ? a.durationMinutes : Number(a.durationMinutes) || 0,
+          }));
+          return {
+            ok: true,
+            value: {
+              class: {
+                code: String(cls.code ?? ''),
+                name: String(cls.name ?? ''),
+                teacherName: String(cls.teacherName ?? ''),
+              },
+              assignments,
+            },
+          };
+        }
+      );
+    },
+
+    async teacherLogin(arg1: string, arg2?: string): Promise<AsResult<any>> {
+      // Legacy 1-arg call: teacherLogin(password)
+      if (arg2 === undefined) {
+        return executeAppsScriptRequest(
+          trimmedUrl,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'teacherLogin', password: arg1 }),
+            redirect: 'follow',
+          },
+          fetchFn,
+          () => {
+            try {
+              if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.setItem(LEGACY_TEACHER_PW_STORAGE_KEY, arg1);
+              }
+            } catch {}
+            return { ok: true, value: true };
+          }
+        );
+      }
+
+      // New 2-arg call: teacherLogin(username, password)
       return executeAppsScriptRequest(
         trimmedUrl,
         {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'teacherLogin', password }),
+          body: JSON.stringify({ action: 'teacherLogin', username: arg1, password: arg2 }),
           redirect: 'follow',
         },
         fetchFn,
-        () => ({ ok: true, value: true })
+        (data) => {
+          const token = String(data.token ?? '');
+          setTeacherToken(token);
+          const result: TeacherLoginResult = {
+            token,
+            name: String(data.name ?? ''),
+            ...(data.expiresAt ? { expiresAt: String(data.expiresAt) } : {}),
+          };
+          return { ok: true, value: result };
+        }
       );
     },
 
     async publishExam(
-      password: string,
+      tokenOrPassword: string,
       exam: unknown
     ): Promise<AsResult<{ examId: string; revision: number }>> {
+      const tok = (tokenOrPassword || getTeacherToken() || '').trim();
       return executeAppsScriptRequest(
         trimmedUrl,
         {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'publishExam', password, exam }),
+          body: JSON.stringify({ action: 'publishExam', token: tok, password: tok, exam }),
           redirect: 'follow',
         },
         fetchFn,
@@ -306,18 +788,432 @@ export function createAppsScriptClient(
       );
     },
 
-    async unpublishExam(password: string, examId: string): Promise<AsResult<true>> {
+    async unpublishExam(tokenOrPassword: string, examId: string): Promise<AsResult<true>> {
+      const tok = (tokenOrPassword || getTeacherToken() || '').trim();
       return executeAppsScriptRequest(
         trimmedUrl,
         {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'unpublishExam', password, examId }),
+          body: JSON.stringify({ action: 'unpublishExam', token: tok, password: tok, examId }),
           redirect: 'follow',
         },
         fetchFn,
         () => ({ ok: true, value: true })
       );
+    },
+
+    async createClass(
+      tokenOrName: string | CreateClassInput,
+      nameArg?: string
+    ): Promise<AsResult<CreateClassResult>> {
+      let token = '';
+      let name = '';
+      if (typeof tokenOrName === 'string') {
+        if (typeof nameArg === 'string') {
+          token = tokenOrName;
+          name = nameArg;
+        } else {
+          token = getTeacherToken() || '';
+          name = tokenOrName;
+        }
+      } else if (typeof tokenOrName === 'object' && tokenOrName !== null) {
+        token = tokenOrName.token || getTeacherToken() || '';
+        name = tokenOrName.name;
+      }
+      if (!token) token = getTeacherToken() || '';
+
+      return executeAppsScriptRequest(
+        trimmedUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'createClass', token, name }),
+          redirect: 'follow',
+        },
+        fetchFn,
+        (data) => ({
+          ok: true,
+          value: {
+            classId: String(data.classId ?? ''),
+            code: String(data.code ?? ''),
+          },
+        })
+      );
+    },
+
+    async listMyClasses(token?: string): Promise<AsResult<TeacherClassMeta[]>> {
+      const tok = (token || getTeacherToken() || '').trim();
+      return executeAppsScriptRequest(
+        trimmedUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'listMyClasses', token: tok }),
+          redirect: 'follow',
+        },
+        fetchFn,
+        (data) => {
+          const raw = Array.isArray(data.classes) ? data.classes : [];
+          const classes: TeacherClassMeta[] = raw.map((c: any) => ({
+            classId: String(c.classId ?? ''),
+            code: String(c.code ?? ''),
+            name: String(c.name ?? ''),
+            createdAt: String(c.createdAt ?? ''),
+            studentCount: typeof c.studentCount === 'number' ? c.studentCount : Number(c.studentCount) || 0,
+          }));
+          return { ok: true, value: classes };
+        }
+      );
+    },
+
+    async assignExam(
+      tokenOrOpts: string | AssignExamInput,
+      classIdArg?: string,
+      examIdArg?: string,
+      openAtArg?: string,
+      dueAtArg?: string
+    ): Promise<AsResult<{ assignmentId: string }>> {
+      let token = '';
+      let classId = '';
+      let examId = '';
+      let openAt = '';
+      let dueAt = '';
+
+      if (typeof tokenOrOpts === 'string') {
+        if (classIdArg && examIdArg && openAtArg && dueAtArg) {
+          token = tokenOrOpts;
+          classId = classIdArg;
+          examId = examIdArg;
+          openAt = openAtArg;
+          dueAt = dueAtArg;
+        } else if (classIdArg && examIdArg && openAtArg && !dueAtArg) {
+          token = getTeacherToken() || '';
+          classId = tokenOrOpts;
+          examId = classIdArg;
+          openAt = examIdArg;
+          dueAt = openAtArg;
+        }
+      } else if (typeof tokenOrOpts === 'object' && tokenOrOpts !== null) {
+        token = tokenOrOpts.token || getTeacherToken() || '';
+        classId = tokenOrOpts.classId;
+        examId = tokenOrOpts.examId;
+        openAt = tokenOrOpts.openAt;
+        dueAt = tokenOrOpts.dueAt;
+      }
+      if (!token) token = getTeacherToken() || '';
+
+      return executeAppsScriptRequest(
+        trimmedUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'assignExam', token, classId, examId, openAt, dueAt }),
+          redirect: 'follow',
+        },
+        fetchFn,
+        (data) => ({
+          ok: true,
+          value: {
+            assignmentId: String(data.assignmentId ?? ''),
+          },
+        })
+      );
+    },
+
+    async listAssignments(tokenOrClassId: string, classIdArg?: string): Promise<AsResult<AssignmentMeta[]>> {
+      let token = '';
+      let classId = '';
+      if (classIdArg !== undefined) {
+        token = tokenOrClassId;
+        classId = classIdArg;
+      } else {
+        token = getTeacherToken() || '';
+        classId = tokenOrClassId;
+      }
+      if (!token) token = getTeacherToken() || '';
+
+      return executeAppsScriptRequest(
+        trimmedUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'listAssignments', token, classId }),
+          redirect: 'follow',
+        },
+        fetchFn,
+        (data) => {
+          const raw = Array.isArray(data.assignments) ? data.assignments : [];
+          const assignments: AssignmentMeta[] = raw.map((a: any) => ({
+            assignmentId: String(a.assignmentId ?? ''),
+            classId: String(a.classId ?? classId),
+            examId: String(a.examId ?? ''),
+            openAt: String(a.openAt ?? ''),
+            dueAt: String(a.dueAt ?? ''),
+            createdAt: String(a.createdAt ?? ''),
+            title: String(a.title ?? ''),
+            questionCount: typeof a.questionCount === 'number' ? a.questionCount : Number(a.questionCount) || 0,
+            durationMinutes: typeof a.durationMinutes === 'number' ? a.durationMinutes : Number(a.durationMinutes) || 0,
+            ...(a.submissionCount !== undefined ? { submissionCount: Number(a.submissionCount) || 0 } : {}),
+          }));
+          return { ok: true, value: assignments };
+        }
+      );
+    },
+
+    async listResults(
+      tokenOrClassId: string,
+      classIdOrAssignmentId?: string,
+      assignmentIdArg?: string
+    ): Promise<AsResult<ClassResultItem[]>> {
+      let token = '';
+      let classId = '';
+      let assignmentId: string | undefined = undefined;
+
+      if (assignmentIdArg !== undefined) {
+        token = tokenOrClassId;
+        classId = classIdOrAssignmentId || '';
+        assignmentId = assignmentIdArg;
+      } else if (classIdOrAssignmentId !== undefined) {
+        if (tokenOrClassId.length >= 32) {
+          token = tokenOrClassId;
+          classId = classIdOrAssignmentId;
+        } else {
+          token = getTeacherToken() || '';
+          classId = tokenOrClassId;
+          assignmentId = classIdOrAssignmentId;
+        }
+      } else {
+        token = getTeacherToken() || '';
+        classId = tokenOrClassId;
+      }
+      if (!token) token = getTeacherToken() || '';
+
+      const body: Record<string, unknown> = {
+        action: 'listResults',
+        token,
+        classId,
+        ...(assignmentId ? { assignmentId } : {}),
+      };
+
+      return executeAppsScriptRequest(
+        trimmedUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(body),
+          redirect: 'follow',
+        },
+        fetchFn,
+        (data) => {
+          const results = Array.isArray(data.results) ? data.results : [];
+          return { ok: true, value: results };
+        }
+      );
+    },
+
+    async adminLogin(password: string): Promise<AsResult<AdminLoginResult>> {
+      return executeAppsScriptRequest(
+        trimmedUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'adminLogin', password }),
+          redirect: 'follow',
+        },
+        fetchFn,
+        (data) => {
+          const token = String(data.token ?? '');
+          setAdminToken(token);
+          return {
+            ok: true,
+            value: {
+              token,
+              ...(data.expiresAt ? { expiresAt: String(data.expiresAt) } : {}),
+            },
+          };
+        }
+      );
+    },
+
+    async adminCreateTeacher(
+      tokenOrTeacher: string | NewTeacherInput,
+      teacherOrName?: NewTeacherInput | string,
+      usernameArg?: string,
+      passwordArg?: string
+    ): Promise<AsResult<true>> {
+      let token = '';
+      let name = '';
+      let username = '';
+      let password = '';
+
+      if (typeof tokenOrTeacher === 'string') {
+        if (typeof teacherOrName === 'object' && teacherOrName !== null) {
+          token = tokenOrTeacher;
+          name = teacherOrName.name;
+          username = teacherOrName.username;
+          password = teacherOrName.password;
+        } else if (typeof teacherOrName === 'string') {
+          token = tokenOrTeacher;
+          name = teacherOrName;
+          username = usernameArg ?? '';
+          password = passwordArg ?? '';
+        }
+      } else if (typeof tokenOrTeacher === 'object' && tokenOrTeacher !== null) {
+        token = tokenOrTeacher.token || getAdminToken() || '';
+        name = tokenOrTeacher.name;
+        username = tokenOrTeacher.username;
+        password = tokenOrTeacher.password;
+      }
+      if (!token) token = getAdminToken() || '';
+
+      return executeAppsScriptRequest(
+        trimmedUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'adminCreateTeacher', token, name, username, password }),
+          redirect: 'follow',
+        },
+        fetchFn,
+        () => ({ ok: true, value: true })
+      );
+    },
+
+    async adminListTeachers(token?: string): Promise<AsResult<TeacherAccountInfo[]>> {
+      const tok = (token || getAdminToken() || '').trim();
+      return executeAppsScriptRequest(
+        trimmedUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'adminListTeachers', token: tok }),
+          redirect: 'follow',
+        },
+        fetchFn,
+        (data) => {
+          const raw = Array.isArray(data.teachers) ? data.teachers : [];
+          const teachers: TeacherAccountInfo[] = raw.map((t: any) => ({
+            username: String(t.username ?? ''),
+            name: String(t.name ?? ''),
+            active: t.active === true,
+            createdAt: String(t.createdAt ?? ''),
+          }));
+          return { ok: true, value: teachers };
+        }
+      );
+    },
+
+    async adminResetPassword(
+      tokenOrOpts: string | ResetPasswordInput,
+      usernameArg?: string,
+      passwordArg?: string
+    ): Promise<AsResult<true>> {
+      let token = '';
+      let username = '';
+      let password = '';
+
+      if (typeof tokenOrOpts === 'string') {
+        if (typeof usernameArg === 'string' && typeof passwordArg === 'string') {
+          token = tokenOrOpts;
+          username = usernameArg;
+          password = passwordArg;
+        } else if (typeof usernameArg === 'string' && !passwordArg) {
+          token = getAdminToken() || '';
+          username = tokenOrOpts;
+          password = usernameArg;
+        }
+      } else if (typeof tokenOrOpts === 'object' && tokenOrOpts !== null) {
+        token = tokenOrOpts.token || getAdminToken() || '';
+        username = tokenOrOpts.username;
+        password = tokenOrOpts.password;
+      }
+      if (!token) token = getAdminToken() || '';
+
+      return executeAppsScriptRequest(
+        trimmedUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'adminResetPassword', token, username, password }),
+          redirect: 'follow',
+        },
+        fetchFn,
+        () => ({ ok: true, value: true })
+      );
+    },
+
+    async adminSetTeacherActive(
+      tokenOrOpts: string | SetTeacherActiveInput,
+      usernameArg?: string | boolean,
+      activeArg?: boolean
+    ): Promise<AsResult<true>> {
+      let token = '';
+      let username = '';
+      let active = true;
+
+      if (typeof tokenOrOpts === 'string') {
+        if (typeof usernameArg === 'string' && typeof activeArg === 'boolean') {
+          token = tokenOrOpts;
+          username = usernameArg;
+          active = activeArg;
+        } else if (typeof usernameArg === 'boolean') {
+          token = getAdminToken() || '';
+          username = tokenOrOpts;
+          active = usernameArg;
+        }
+      } else if (typeof tokenOrOpts === 'object' && tokenOrOpts !== null) {
+        token = tokenOrOpts.token || getAdminToken() || '';
+        username = tokenOrOpts.username;
+        active = tokenOrOpts.active;
+      }
+      if (!token) token = getAdminToken() || '';
+
+      return executeAppsScriptRequest(
+        trimmedUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'adminSetTeacherActive', token, username, active }),
+          redirect: 'follow',
+        },
+        fetchFn,
+        () => ({ ok: true, value: true })
+      );
+    },
+
+    async adminStats(token?: string): Promise<AsResult<AdminStats>> {
+      const tok = (token || getAdminToken() || '').trim();
+      return executeAppsScriptRequest(
+        trimmedUrl,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'adminStats', token: tok }),
+          redirect: 'follow',
+        },
+        fetchFn,
+        (data) => {
+          const stats = data.stats && typeof data.stats === 'object' ? data.stats : {};
+          return {
+            ok: true,
+            value: {
+              teachers: typeof stats.teachers === 'number' ? stats.teachers : Number(stats.teachers) || 0,
+              classes: typeof stats.classes === 'number' ? stats.classes : Number(stats.classes) || 0,
+              exams: typeof stats.exams === 'number' ? stats.exams : Number(stats.exams) || 0,
+              results: typeof stats.results === 'number' ? stats.results : Number(stats.results) || 0,
+            },
+          };
+        }
+      );
+    },
+
+    teacherLogout(): void {
+      clearTeacherToken();
+    },
+
+    adminLogout(): void {
+      clearAdminToken();
     },
   };
 }
@@ -326,6 +1222,7 @@ export function createAppsScriptClient(
  * Khởi tạo CollectorPort nộp kết quả bài thi tới Apps Script, tương thích với Outbox hiện có.
  * - url rỗng: configured = false, ném lỗi NOT_CONFIGURED ngay khi send được gọi mà không gọi fetch.
  * - POST text/plain;charset=utf-8, payload chuẩn buildWebResultPayload kèm các trường bắt buộc của Code.js.
+ * - Thêm class_code và assignment_id khi có (WEB-contract mục 19.2).
  * - Khi server trả success: true (NEWLY_RECORDED hoặc ALREADY_RECORDED), trả về receipt hợp lệ
  *   khớp với validateReceipt trong outbox state machine.
  */
@@ -347,7 +1244,7 @@ export function createAppsScriptCollectorPort(
         const err = new CollectorError(
           'NOT_CONFIGURED',
           'endpointUrl',
-          'Apps Script URL chưa được cấu hình',
+          mapErrorToVietnamese('NOT_CONFIGURED'),
           false
         );
         (err as any).notConfigured = true;
@@ -359,7 +1256,7 @@ export function createAppsScriptCollectorPort(
         throw new CollectorError(
           'COLLECTOR_TIMEOUT',
           'signal',
-          'Yêu cầu gửi kết quả bị hủy hoặc hết thời gian chờ',
+          mapErrorToVietnamese('COLLECTOR_TIMEOUT'),
           true
         );
       }
@@ -368,6 +1265,32 @@ export function createAppsScriptCollectorPort(
       const scoreDTO = (basePayload.scoreDTO ?? resolveScoreDTO(final)) as Record<string, unknown> | null;
       const payloadHash = computePayloadHash(final);
       const durationSeconds = basePayload.durationSeconds;
+
+      let classCode =
+        (final as any).class_code ??
+        (final as any).classCode ??
+        (final as any).metadata?.class_code ??
+        (final as any).metadata?.classCode ??
+        basePayload.class_code;
+      let assignmentId =
+        (final as any).assignment_id ??
+        (final as any).assignmentId ??
+        (final as any).metadata?.assignment_id ??
+        (final as any).metadata?.assignmentId ??
+        basePayload.assignment_id;
+
+      if (!classCode || !assignmentId) {
+        try {
+          if (typeof sessionStorage !== 'undefined') {
+            const stored = sessionStorage.getItem('cunata:active_assignment') || sessionStorage.getItem('cunata_active_assignment');
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              if (!classCode && parsed?.classCode) classCode = parsed.classCode;
+              if (!assignmentId && parsed?.assignmentId) assignmentId = parsed.assignmentId;
+            }
+          }
+        } catch {}
+      }
 
       const payload = {
         action: 'submitResult',
@@ -387,6 +1310,8 @@ export function createAppsScriptCollectorPort(
         maxTotal: scoreDTO?.maxTotal ?? '0',
         max_total: scoreDTO?.maxTotal ?? '0',
         sections: scoreDTO?.sections ?? {},
+        ...(classCode ? { class_code: String(classCode).trim().toUpperCase() } : {}),
+        ...(assignmentId ? { assignment_id: String(assignmentId).trim() } : {}),
       };
 
       let response: Response;
@@ -410,14 +1335,14 @@ export function createAppsScriptCollectorPort(
           throw new CollectorError(
             'COLLECTOR_TIMEOUT',
             'transport',
-            'Yêu cầu gửi kết quả bị hủy hoặc hết thời gian chờ',
+            mapErrorToVietnamese('COLLECTOR_TIMEOUT'),
             true
           );
         }
         throw new CollectorError(
           'COLLECTOR_NETWORK',
           'transport',
-          `Lỗi mạng khi gửi kết quả: ${err?.message || String(err)}`,
+          mapErrorToVietnamese('COLLECTOR_NETWORK', `Lỗi mạng khi gửi kết quả: ${err?.message || String(err)}`),
           true
         );
       }
@@ -462,7 +1387,7 @@ export function createAppsScriptCollectorPort(
         throw new CollectorError(
           'BAD_RESPONSE',
           'response',
-          'Phản hồi từ máy chủ không phải JSON hợp lệ',
+          mapErrorToVietnamese('BAD_RESPONSE'),
           false
         );
       }
@@ -471,7 +1396,7 @@ export function createAppsScriptCollectorPort(
         throw new CollectorError(
           'BAD_RESPONSE',
           'response',
-          'Phản hồi từ máy chủ không đúng định dạng',
+          mapErrorToVietnamese('BAD_RESPONSE'),
           false
         );
       }
@@ -480,7 +1405,7 @@ export function createAppsScriptCollectorPort(
         throw new CollectorError(
           'COLLECTOR_HTTP',
           'response',
-          String(raw.message || 'Máy chủ bận, thử lại sau'),
+          mapErrorToVietnamese('SERVER_BUSY', raw.message),
           true,
           503
         );
@@ -490,9 +1415,27 @@ export function createAppsScriptCollectorPort(
         throw new CollectorError(
           'PAYLOAD_CONFLICT',
           'response',
-          String(raw.message || 'Xung đột dữ liệu kết quả'),
+          mapErrorToVietnamese('PAYLOAD_CONFLICT', raw.message),
           false,
           409
+        );
+      }
+
+      if (raw.error === 'NOT_OPEN') {
+        throw new CollectorError(
+          'NOT_OPEN',
+          'response',
+          mapErrorToVietnamese('NOT_OPEN', raw.message),
+          false
+        );
+      }
+
+      if (raw.error === 'PAST_DUE') {
+        throw new CollectorError(
+          'PAST_DUE',
+          'response',
+          mapErrorToVietnamese('PAST_DUE', raw.message),
+          false
         );
       }
 
@@ -500,7 +1443,7 @@ export function createAppsScriptCollectorPort(
         throw new CollectorError(
           'COLLECTOR_HTTP',
           'response',
-          String(raw.message || 'Lỗi máy chủ'),
+          mapErrorToVietnamese('SERVER_ERROR', raw.message || 'Lỗi máy chủ'),
           true,
           typeof raw.status === 'number' ? raw.status : 500
         );
@@ -509,11 +1452,12 @@ export function createAppsScriptCollectorPort(
       if (raw.success === false) {
         const is4xx = typeof raw.status === 'number' && raw.status >= 400 && raw.status < 500;
         const errCode = typeof raw.error === 'string' && raw.error ? raw.error : 'COLLECTOR_HTTP';
+        const mappedMessage = mapErrorToVietnamese(errCode, raw.message);
         throw new CollectorError(
           errCode,
           'response',
-          String(raw.message || 'Lỗi từ máy chủ Apps Script'),
-          !is4xx,
+          mappedMessage,
+          !is4xx && errCode !== 'NOT_OPEN' && errCode !== 'PAST_DUE' && errCode !== 'PAYLOAD_CONFLICT',
           typeof raw.status === 'number' ? raw.status : undefined
         );
       }

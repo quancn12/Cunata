@@ -14,6 +14,7 @@ const FOCUSABLE_SELECTOR = [
 /**
  * Returns all currently visible and focusable elements inside a container.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function getFocusableElements(container: HTMLElement): HTMLElement[] {
   const elements = Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
   return elements.filter((el) => {
@@ -29,6 +30,7 @@ export function getFocusableElements(container: HTMLElement): HTMLElement[] {
 /**
  * Traps Tab and Shift+Tab focus navigation within the modal container.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function trapFocus(container: HTMLElement, event: KeyboardEvent): void {
   if (event.key !== 'Tab') return;
 
@@ -63,6 +65,7 @@ export function trapFocus(container: HTMLElement, event: KeyboardEvent): void {
  * Opens a modal dialog with accessibility semantics, focus trap, and guaranteed
  * focus return to the originating element when dismissed.
  */
+/** @deprecated Use components.ts for new screens; retained for existing callers. */
 export function openModal(
   dialogEl: HTMLElement,
   options: ModalOptions = {}

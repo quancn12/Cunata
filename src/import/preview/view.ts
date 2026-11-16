@@ -1126,9 +1126,13 @@ export function mount(
           const opt = doc.createElement("option");
           opt.value = k;
           opt.textContent = `Phần ${k}`;
-          if (k === kind) opt.selected = true;
+          if (k === kind) {
+            opt.selected = true;
+            selKind.value = k;
+          }
           selKind.appendChild(opt);
         }
+        if (!selKind.value) selKind.value = kind;
         grpKind.appendChild(selKind);
         grid1.appendChild(grpKind);
 
@@ -1159,9 +1163,13 @@ export function mount(
           const opt = doc.createElement("option");
           opt.value = String(g);
           opt.textContent = `Lớp ${g}`;
-          if (g === q.grade) opt.selected = true;
+          if (g === q.grade) {
+            opt.selected = true;
+            selGrade.value = String(g);
+          }
           selGrade.appendChild(opt);
         }
+        if (!selGrade.value) selGrade.value = String(q.grade ?? 12);
         grpGrade.appendChild(selGrade);
         grid1.appendChild(grpGrade);
 
@@ -1178,9 +1186,13 @@ export function mount(
           const opt = doc.createElement("option");
           opt.value = d;
           opt.textContent = d;
-          if (d === q.difficulty) opt.selected = true;
+          if (d === q.difficulty) {
+            opt.selected = true;
+            selDiff.value = d;
+          }
           selDiff.appendChild(opt);
         }
+        if (!selDiff.value) selDiff.value = q.difficulty ?? "Thông hiểu";
         grpDiff.appendChild(selDiff);
         grid1.appendChild(grpDiff);
 
@@ -1221,10 +1233,10 @@ export function mount(
         btnSaveForm.textContent = "Lưu thay đổi";
         attachListener(btnSaveForm, "click", () => {
           const patch: Record<string, unknown> = {
-            kind: selKind.value as Section,
+            kind: (selKind.value || kind) as Section,
             subject: inpSubj.value,
-            grade: Number(selGrade.value) as 10 | 11 | 12,
-            difficulty: selDiff.value as "Nhận biết" | "Thông hiểu" | "Vận dụng",
+            grade: Number(selGrade.value || q.grade || 12) as 10 | 11 | 12,
+            difficulty: (selDiff.value || q.difficulty || "Thông hiểu") as "Nhận biết" | "Thông hiểu" | "Vận dụng",
             content: txtContent.value,
             explanation: txtExp.value,
           };
