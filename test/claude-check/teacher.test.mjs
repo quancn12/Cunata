@@ -13,7 +13,8 @@ after(async () => { await browser?.close(); });
 const PW = 'MatKhau-GV-123';
 const shown = (page, id) => page.eval((i) => { const e = document.getElementById(i); return !!e && getComputedStyle(e).display !== 'none' && e.getClientRects().length > 0; }, id);
 
-for (const target of TARGETS) {
+// Trưởng phòng 16/11/2026: tính năng mới chỉ làm trên bản build dist/.
+for (const target of TARGETS.filter((t) => t.name === 'dist')) {
   describe(`${target.name} — ${target.label}`, { concurrency: 2 }, () => {
     const run = (name, fn, { gasOpts, noConfig } = {}) => test(`${target.name}: ${name}`, { timeout: 150000 }, async () => {
       const gas = noConfig ? null : await startGasServer(gasOpts);

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 
+// FEAT-appsscript: mocks select KetQua by name per WEB-contract 17.3; regression assertions unchanged.
 const appsScriptPath = path.resolve('apps-script/Code.js');
 const code = fs.readFileSync(appsScriptPath, 'utf8');
 
@@ -176,7 +177,7 @@ describe('Apps Script Collector — CWE-1236 Formula Injection & Idempotency', (
       const sandbox: Record<string, any> = {
         SpreadsheetApp: {
           getActiveSpreadsheet: () => ({
-            getActiveSheet: () => mockSheet
+            getSheetByName: (name: string) => { assert.equal(name, 'KetQua'); return mockSheet; }
           }),
           flush: () => {}
         },
@@ -466,7 +467,7 @@ describe('Apps Script Collector — CWE-1236 Formula Injection & Idempotency', (
 
       const sandbox: Record<string, any> = {
         SpreadsheetApp: {
-          getActiveSpreadsheet: () => ({ getActiveSheet: () => mockSheet }),
+          getActiveSpreadsheet: () => ({ getSheetByName: (name: string) => { assert.equal(name, 'KetQua'); return mockSheet; } }),
           flush: () => {}
         },
         LockService: { getScriptLock: () => mockLock },
@@ -536,7 +537,7 @@ describe('Apps Script Collector — CWE-1236 Formula Injection & Idempotency', (
       };
       const sandbox: Record<string, any> = {
         SpreadsheetApp: {
-          getActiveSpreadsheet: () => ({ getActiveSheet: () => mockSheet }),
+          getActiveSpreadsheet: () => ({ getSheetByName: (name: string) => { assert.equal(name, 'KetQua'); return mockSheet; } }),
           flush: () => {}
         },
         LockService: { getScriptLock: () => mockLock },

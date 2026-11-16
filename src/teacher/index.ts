@@ -1429,3 +1429,20 @@ export function resolveDraftCollisions(
     exam: deepFreeze(deepClone(updatedExam)),
   });
 }
+
+export {
+  mountTeacherPortal,
+  getStoredTeacherPassword,
+  setStoredTeacherPassword,
+  clearStoredTeacherPassword,
+  TEACHER_SESSION_PW_KEY,
+} from "./portal.ts";
+export type {
+  TeacherPortalDeps,
+  TeacherPortalController,
+  AppsScriptClient,
+  AsResult,
+  PublishedExamMeta,
+  TeacherExamEntry,
+} from "./portal.ts";
+

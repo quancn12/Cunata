@@ -256,12 +256,64 @@ function formatRecordRow(data) {
         sanitizedRawJson
     ];
 }
-/**
- * Xử lý yêu cầu HTTP POST gửi kết quả bài làm về hệ thống
- *
- * @param {GoogleAppsScript.Events.DoPost} e Sự kiện POST của Web App
- * @returns {GoogleAppsScript.Content.TextOutput} Phản hồi JSON
- */
+// Force literal text, including numeric strings and leading apostrophes.
+// Keep the existing result collector's encoding separate for compatibility.
+function examTextCell(value) {
+    return "'" + String(value);
+}
+function jsonOutput(value) {
+    return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
+}
+function validatePublishedExam(exam) {
+    var errors = [];
+    var nonempty = function (value) { return typeof value === 'string' && value.trim().length > 0; };
+    if (!exam || typeof exam !== 'object' || Array.isArray(exam)) return ['Thiếu dữ liệu đề thi'];
+    if (exam.schemaVersion !== 'web-exam-v1') errors.push('schemaVersion phải là web-exam-v1');
+    if (!nonempty(exam.examId)) errors.push('Thiếu mã đề thi (examId)');
+    if (!nonempty(exam.title)) errors.push('Thiếu tiêu đề đề thi');
+    if (!Array.isArray(exam.questions) || exam.questions.length === 0) {
+        errors.push('Đề thi không có câu hỏi nào');
+        return errors;
+    }
+    if (exam.questions.length > 1000) errors.push('Đề thi có quá 1000 câu');
+    var questionIds = new Set();
+    exam.questions.forEach(function (q, index) {
+        var label = 'Câu ' + (index + 1) + ': ';
+        if (!q || typeof q !== 'object' || Array.isArray(q)) {
+            errors.push(label + 'dữ liệu không hợp lệ');
+            return;
+        }
+        if (!nonempty(q.questionVersionId) || questionIds.has(q.questionVersionId)) errors.push(label + 'questionVersionId thiếu hoặc trùng');
+        questionIds.add(q.questionVersionId);
+        if (q.kind === 'I') {
+            if (!Array.isArray(q.options) || q.options.length !== 4) {
+                errors.push(label + 'Phần I phải có đúng 4 phương án');
+                return;
+            }
+            var optionIds = new Set();
+            q.options.forEach(function (option) {
+                if (!option || !nonempty(option.optionId) || optionIds.has(option.optionId)) errors.push(label + 'optionId thiếu hoặc trùng');
+                else optionIds.add(option.optionId);
+            });
+            if (!nonempty(q.correctOptionId) || !optionIds.has(q.correctOptionId)) errors.push(label + 'correctOptionId không thuộc phương án');
+        } else if (q.kind === 'II') {
+            if (!Array.isArray(q.statements) || q.statements.length !== 4) {
+                errors.push(label + 'Phần II phải có đúng 4 ý');
+                return;
+            }
+            var statementIds = new Set();
+            q.statements.forEach(function (statement) {
+                if (!statement || !nonempty(statement.statementId) || statementIds.has(statement.statementId)) errors.push(label + 'statementId thiếu hoặc trùng');
+                else statementIds.add(statement.statementId);
+                if (!statement || typeof statement.answer !== 'boolean') errors.push(label + 'ý thiếu đáp án boolean');
+            });
+        } else if (q.kind === 'III') {
+            if (typeof q.answerKey !== 'string' || q.answerKey.length < 1 || q.answerKey.length > 4 || /[^0-9,-]/.test(q.answerKey)) errors.push(label + 'answerKey phải là chuỗi 1–4 ký tự 0-9,-');
+        } else errors.push(label + 'phần phải là I, II hoặc III');
+    });
+    return errors;
+}
+/** Xử lý HTTP POST: kết quả bài làm và thao tác giáo viên. */
 function doPost(e) {
     var _a, _b, _c, _d, _e;
     try {
@@ -287,7 +339,7 @@ function doPost(e) {
         if (action === 'teacherLogin') {
             var propService = PropertiesService.getScriptProperties();
             var teacherPw = propService ? propService.getProperty('TEACHER_PASSWORD') : null;
-            if (teacherPw === null || teacherPw === undefined) {
+            if (teacherPw === null || teacherPw === undefined || teacherPw === '') {
                 return ContentService.createTextOutput(JSON.stringify({
                     success: false,
                     error: 'TEACHER_PASSWORD_NOT_SET',
@@ -311,7 +363,7 @@ function doPost(e) {
         if (action === 'publishExam') {
             var propService = PropertiesService.getScriptProperties();
             var teacherPw = propService ? propService.getProperty('TEACHER_PASSWORD') : null;
-            if (teacherPw === null || teacherPw === undefined) {
+            if (teacherPw === null || teacherPw === undefined || teacherPw === '') {
                 return ContentService.createTextOutput(JSON.stringify({
                     success: false,
                     error: 'TEACHER_PASSWORD_NOT_SET',
@@ -328,80 +380,12 @@ function doPost(e) {
             }
 
             var exam = payload.exam;
-            if (!exam || typeof exam !== 'object') {
-                return ContentService.createTextOutput(JSON.stringify({
-                    success: false,
-                    error: 'INVALID_EXAM',
-                    message: 'Thiếu dữ liệu đề thi'
-                })).setMimeType(ContentService.MimeType.JSON);
-            }
-
-            var pubExamId = String(exam.examId || exam.id || '').trim();
-            if (!pubExamId) {
-                return ContentService.createTextOutput(JSON.stringify({
-                    success: false,
-                    error: 'INVALID_EXAM',
-                    message: 'Thiếu mã đề thi (examId)'
-                })).setMimeType(ContentService.MimeType.JSON);
-            }
-
-            var validationErrors = [];
-            if (!exam.title || !String(exam.title).trim()) {
-                validationErrors.push('Thiếu tiêu đề đề thi');
-            }
-            if (!Array.isArray(exam.questions) || exam.questions.length === 0) {
-                validationErrors.push('Đề thi không có câu hỏi nào');
-            } else {
-                for (var qi = 0; qi < exam.questions.length; qi++) {
-                    var q = exam.questions[qi];
-                    if (!q || typeof q !== 'object') {
-                        validationErrors.push('Câu ' + (qi + 1) + ': dữ liệu không hợp lệ');
-                        continue;
-                    }
-                    var qKind = q.kind || q.type;
-                    if (qKind === 'I') {
-                        if (!Array.isArray(q.options) || q.options.length !== 4) {
-                            validationErrors.push('Câu ' + (qi + 1) + ' (Phần I): phải có đúng 4 phương án');
-                        } else {
-                            var hasCorrect = false;
-                            for (var oi = 0; oi < q.options.length; oi++) {
-                                if (q.options[oi] && q.options[oi].optionId === q.correctOptionId) {
-                                    hasCorrect = true;
-                                    break;
-                                }
-                            }
-                            if (!hasCorrect) {
-                                validationErrors.push('Câu ' + (qi + 1) + ' (Phần I): đáp án Phần I không thuộc phương án');
-                            }
-                        }
-                    } else if (qKind === 'II') {
-                        if (!Array.isArray(q.statements) || q.statements.length !== 4) {
-                            validationErrors.push('Câu ' + (qi + 1) + ' (Phần II): phải có đúng 4 ý');
-                        } else {
-                            for (var si = 0; si < q.statements.length; si++) {
-                                var st = q.statements[si];
-                                if (!st || typeof st.answer !== 'boolean') {
-                                    validationErrors.push('Câu ' + (qi + 1) + ' (Phần II) ý ' + (si + 1) + ': thiếu đáp án');
-                                }
-                            }
-                        }
-                    } else if (qKind === 'III') {
-                        var ak = q.answerKey !== undefined && q.answerKey !== null ? String(q.answerKey) : '';
-                        if (ak.length === 0 || ak.length > 4 || !/^[0-9,-]{1,4}$/.test(ak)) {
-                            validationErrors.push('Câu ' + (qi + 1) + ' (Phần III): đáp án Phần III quá 4 ký tự hoặc rỗng hoặc chứa ký tự không hợp lệ');
-                        }
-                    }
-                }
-            }
-
+            var validationErrors = validatePublishedExam(exam);
             if (validationErrors.length > 0) {
-                return ContentService.createTextOutput(JSON.stringify({
-                    success: false,
-                    error: 'INVALID_EXAM',
-                    message: 'Đề thi không hợp lệ: ' + validationErrors.join('; '),
-                    errors: validationErrors
-                })).setMimeType(ContentService.MimeType.JSON);
+                return jsonOutput({ success: false, error: 'INVALID_EXAM',
+                    message: 'Đề thi không hợp lệ', errors: validationErrors });
             }
+            var pubExamId = exam.examId;
 
             // Ghi vào sheet DeThi với Lock
             var publishLock = LockService.getScriptLock();
@@ -429,7 +413,7 @@ function doPost(e) {
                 var currentRevision = 0;
                 var lastRow = sheet.getLastRow();
                 for (var r = 2; r <= lastRow; r++) {
-                    var cellVal = String(sheet.getRange(r, 1, 1, 1).getValue()).trim();
+                    var cellVal = String(sheet.getRange(r, 1, 1, 1).getValue());
                     if (cellVal === pubExamId) {
                         existingRow = r;
                         currentRevision = Number(sheet.getRange(r, 8, 1, 1).getValue()) || 1;
@@ -440,10 +424,9 @@ function doPost(e) {
                 var revision = existingRow > 0 ? currentRevision + 1 : 1;
                 var title = String(exam.title || '');
                 var subject = String(exam.subject || '');
-                var grade = Number(exam.grade) || 12;
-                var durationMinutes = (exam.settings && exam.settings.durationMinutes !== undefined)
-                    ? Number(exam.settings.durationMinutes)
-                    : (Number(exam.durationMinutes) || 50);
+                var grade = typeof exam.grade === 'number' && Number.isFinite(exam.grade) ? exam.grade : '';
+                var rawDuration = exam.settings ? exam.settings.durationMinutes : exam.durationMinutes;
+                var durationMinutes = typeof rawDuration === 'number' && Number.isFinite(rawDuration) ? rawDuration : '';
                 var questionCount = exam.questions.length;
                 var group = String(exam.group || (exam.settings && exam.settings.group) || 'Đề giáo viên xuất bản');
                 var updatedAt = new Date().toISOString();
@@ -451,28 +434,38 @@ function doPost(e) {
                 // Chunk exam JSON <= 40000 chars per cell
                 var fullJson = JSON.stringify(exam);
                 var chunks = [];
-                var CHUNK_SIZE = 40000;
-                for (var k = 0; k < fullJson.length; k += CHUNK_SIZE) {
-                    var chunk = fullJson.slice(k, k + CHUNK_SIZE);
-                    chunks.push(sanitizeSheetCell(chunk));
+                var CHUNK_SIZE = 39999; // Reserve one character for the text prefix.
+                for (var k = 0; k < fullJson.length;) {
+                    var chunkEnd = Math.min(k + CHUNK_SIZE, fullJson.length);
+                    // Keep a Unicode surrogate pair together across the Sheets boundary.
+                    var lastCode = fullJson.charCodeAt(chunkEnd - 1);
+                    if (chunkEnd < fullJson.length && lastCode >= 0xD800 && lastCode <= 0xDBFF) chunkEnd--;
+                    var chunk = fullJson.slice(k, chunkEnd);
+                    chunks.push(examTextCell(chunk));
+                    k = chunkEnd;
                 }
 
                 var rowData = [
-                    sanitizeSheetCell(pubExamId),
-                    sanitizeSheetCell(title),
-                    sanitizeSheetCell(subject),
+                    examTextCell(pubExamId),
+                    examTextCell(title),
+                    examTextCell(subject),
                     grade,
                     durationMinutes,
                     questionCount,
-                    sanitizeSheetCell(group),
+                    examTextCell(group),
                     revision,
                     updatedAt
                 ].concat(chunks);
 
-                if (existingRow > 0) {
-                    sheet.deleteRow(existingRow);
+                // One range write; pad stale chunks when the replacement is shorter.
+                var width = Math.max(rowData.length, sheet.getLastColumn());
+                while (rowData.length < width) rowData.push('');
+                if (typeof sheet.getMaxColumns === 'function' && width > sheet.getMaxColumns()) {
+                    sheet.insertColumnsAfter(sheet.getMaxColumns(), width - sheet.getMaxColumns());
                 }
-                sheet.appendRow(rowData);
+                var targetRow = existingRow > 0 ? existingRow : sheet.getLastRow() + 1;
+                sheet.getRange(targetRow, 1, 1, width).setValues([rowData]);
+                SpreadsheetApp.flush();
 
                 return ContentService.createTextOutput(JSON.stringify({
                     success: true,
@@ -488,7 +481,7 @@ function doPost(e) {
         if (action === 'unpublishExam') {
             var propService = PropertiesService.getScriptProperties();
             var teacherPw = propService ? propService.getProperty('TEACHER_PASSWORD') : null;
-            if (teacherPw === null || teacherPw === undefined) {
+            if (teacherPw === null || teacherPw === undefined || teacherPw === '') {
                 return ContentService.createTextOutput(JSON.stringify({
                     success: false,
                     error: 'TEACHER_PASSWORD_NOT_SET',
@@ -504,7 +497,7 @@ function doPost(e) {
                 })).setMimeType(ContentService.MimeType.JSON);
             }
 
-            var unpublishId = String(payload.examId || payload.id || '').trim();
+            var unpublishId = String(payload.examId || '');
             if (!unpublishId) {
                 return ContentService.createTextOutput(JSON.stringify({
                     success: false,
@@ -529,7 +522,7 @@ function doPost(e) {
                 if (sheet && sheet.getLastRow() > 1) {
                     var lastRow = sheet.getLastRow();
                     for (var r = 2; r <= lastRow; r++) {
-                        var cellVal = String(sheet.getRange(r, 1, 1, 1).getValue()).trim();
+                        var cellVal = String(sheet.getRange(r, 1, 1, 1).getValue());
                         if (cellVal === unpublishId) {
                             sheet.deleteRow(r);
                             break;
@@ -926,7 +919,7 @@ function doPost(e) {
                     return ContentService.createTextOutput(JSON.stringify({
                         success: false,
                         error: 'STORAGE_READ_ERROR',
-                        message: 'Lỗi khi đọc bản ghi cũ để xác thực tính toàn vẹn: ' + (readError.message || String(readError))
+                        message: 'Không thể đọc bản ghi cũ để xác thực tính toàn vẹn'
                     })).setMimeType(ContentService.MimeType.JSON);
                 }
                 if (conflict) {
@@ -964,7 +957,7 @@ function doPost(e) {
         return ContentService.createTextOutput(JSON.stringify({
             success: false,
             error: 'SERVER_ERROR',
-            message: err.message || String(err)
+            message: 'Không thể xử lý yêu cầu, vui lòng thử lại sau'
         })).setMimeType(ContentService.MimeType.JSON);
     }
 }
@@ -972,117 +965,123 @@ function doPost(e) {
  * Xử lý yêu cầu HTTP GET để kiểm tra trạng thái hoạt động (Healthcheck)
  */
 function doGet(e) {
-    var params = (e && e.parameter) ? e.parameter : {};
-    var action = params.action ? String(params.action).trim() : '';
+    try {
+        var params = (e && e.parameter) ? e.parameter : {};
+        var action = params.action ? String(params.action) : '';
 
-    if (action === 'listExams') {
-        var ss = SpreadsheetApp.getActiveSpreadsheet();
-        var sheet = ss.getSheetByName('DeThi');
-        if (!sheet || sheet.getLastRow() <= 1) {
+        if (action === 'listExams') {
+            var ss = SpreadsheetApp.getActiveSpreadsheet();
+            var sheet = ss.getSheetByName('DeThi');
+            if (!sheet || sheet.getLastRow() <= 1) {
+                return ContentService.createTextOutput(JSON.stringify({
+                    success: true,
+                    exams: []
+                })).setMimeType(ContentService.MimeType.JSON);
+            }
+            var lastRow = sheet.getLastRow();
+            var exams = [];
+            for (var r = 2; r <= lastRow; r++) {
+                var rowVals = sheet.getRange(r, 1, 1, 9).getValues()[0];
+                var id = String(rowVals[0] !== undefined && rowVals[0] !== null ? rowVals[0] : '');
+                if (!id) continue;
+                var title = String(rowVals[1] !== undefined && rowVals[1] !== null ? rowVals[1] : '');
+                var subject = String(rowVals[2] !== undefined && rowVals[2] !== null ? rowVals[2] : '');
+                var grade = rowVals[3] === '' ? null : Number(rowVals[3]);
+                var durationMinutes = rowVals[4] === '' ? null : Number(rowVals[4]);
+                var questionCount = Number(rowVals[5]) || 0;
+                var group = String(rowVals[6] !== undefined && rowVals[6] !== null ? rowVals[6] : 'Đề giáo viên xuất bản');
+                var revision = Number(rowVals[7]) || 1;
+                var updatedAt = String(rowVals[8] !== undefined && rowVals[8] !== null ? rowVals[8] : '');
+                exams.push({
+                    id: id,
+                    title: title,
+                    subject: subject,
+                    grade: grade,
+                    durationMinutes: durationMinutes,
+                    questionCount: questionCount,
+                    group: group,
+                    revision: revision,
+                    updatedAt: updatedAt
+                });
+            }
             return ContentService.createTextOutput(JSON.stringify({
                 success: true,
-                exams: []
+                exams: exams
             })).setMimeType(ContentService.MimeType.JSON);
         }
-        var lastRow = sheet.getLastRow();
-        var exams = [];
-        for (var r = 2; r <= lastRow; r++) {
-            var rowVals = sheet.getRange(r, 1, 1, 9).getValues()[0];
-            var id = String(rowVals[0] !== undefined && rowVals[0] !== null ? rowVals[0] : '').trim();
-            if (!id) continue;
-            var title = String(rowVals[1] !== undefined && rowVals[1] !== null ? rowVals[1] : '').trim();
-            var subject = String(rowVals[2] !== undefined && rowVals[2] !== null ? rowVals[2] : '').trim();
-            var grade = Number(rowVals[3]) || 12;
-            var durationMinutes = Number(rowVals[4]) || 50;
-            var questionCount = Number(rowVals[5]) || 0;
-            var group = String(rowVals[6] !== undefined && rowVals[6] !== null ? rowVals[6] : 'Đề giáo viên xuất bản').trim();
-            var revision = Number(rowVals[7]) || 1;
-            var updatedAt = String(rowVals[8] !== undefined && rowVals[8] !== null ? rowVals[8] : '').trim();
-            exams.push({
-                id: id,
-                title: title,
-                subject: subject,
-                grade: grade,
-                durationMinutes: durationMinutes,
-                questionCount: questionCount,
-                group: group,
-                revision: revision,
-                updatedAt: updatedAt
-            });
-        }
-        return ContentService.createTextOutput(JSON.stringify({
-            success: true,
-            exams: exams
-        })).setMimeType(ContentService.MimeType.JSON);
-    }
 
-    if (action === 'getExam') {
-        var examId = params.id ? String(params.id).trim() : '';
-        if (!examId) {
-            return ContentService.createTextOutput(JSON.stringify({
-                success: false,
-                error: 'NOT_FOUND',
-                message: 'Không tìm thấy đề thi'
-            })).setMimeType(ContentService.MimeType.JSON);
-        }
-        var ss = SpreadsheetApp.getActiveSpreadsheet();
-        var sheet = ss.getSheetByName('DeThi');
-        if (!sheet || sheet.getLastRow() <= 1) {
-            return ContentService.createTextOutput(JSON.stringify({
-                success: false,
-                error: 'NOT_FOUND',
-                message: 'Không tìm thấy đề thi'
-            })).setMimeType(ContentService.MimeType.JSON);
-        }
-        var lastRow = sheet.getLastRow();
-        var foundRow = -1;
-        for (var r = 2; r <= lastRow; r++) {
-            var cellVal = String(sheet.getRange(r, 1, 1, 1).getValue()).trim();
-            if (cellVal === examId) {
-                foundRow = r;
-                break;
+        if (action === 'getExam') {
+            var examId = params.id ? String(params.id) : '';
+            if (!examId) {
+                return ContentService.createTextOutput(JSON.stringify({
+                    success: false,
+                    error: 'NOT_FOUND',
+                    message: 'Không tìm thấy đề thi'
+                })).setMimeType(ContentService.MimeType.JSON);
             }
-        }
-        if (foundRow < 0) {
-            return ContentService.createTextOutput(JSON.stringify({
-                success: false,
-                error: 'NOT_FOUND',
-                message: 'Không tìm thấy đề thi'
-            })).setMimeType(ContentService.MimeType.JSON);
-        }
-        var lastCol = sheet.getLastColumn();
-        var chunks = [];
-        if (lastCol >= 10) {
-            var chunkVals = sheet.getRange(foundRow, 10, 1, lastCol - 9).getValues()[0];
-            for (var c = 0; c < chunkVals.length; c++) {
-                var val = chunkVals[c];
-                if (val !== undefined && val !== null && val !== '') {
-                    chunks.push(String(val));
+            var ss = SpreadsheetApp.getActiveSpreadsheet();
+            var sheet = ss.getSheetByName('DeThi');
+            if (!sheet || sheet.getLastRow() <= 1) {
+                return ContentService.createTextOutput(JSON.stringify({
+                    success: false,
+                    error: 'NOT_FOUND',
+                    message: 'Không tìm thấy đề thi'
+                })).setMimeType(ContentService.MimeType.JSON);
+            }
+            var lastRow = sheet.getLastRow();
+            var foundRow = -1;
+            for (var r = 2; r <= lastRow; r++) {
+                var cellVal = String(sheet.getRange(r, 1, 1, 1).getValue());
+                if (cellVal === examId) {
+                    foundRow = r;
+                    break;
                 }
             }
+            if (foundRow < 0) {
+                return ContentService.createTextOutput(JSON.stringify({
+                    success: false,
+                    error: 'NOT_FOUND',
+                    message: 'Không tìm thấy đề thi'
+                })).setMimeType(ContentService.MimeType.JSON);
+            }
+            var lastCol = sheet.getLastColumn();
+            var chunks = [];
+            if (lastCol >= 10) {
+                var chunkVals = sheet.getRange(foundRow, 10, 1, lastCol - 9).getValues()[0];
+                for (var c = 0; c < chunkVals.length; c++) {
+                    var val = chunkVals[c];
+                    if (val !== undefined && val !== null && val !== '') {
+                        chunks.push(String(val));
+                    }
+                }
+            }
+            var joinedJson = chunks.join('');
+            try {
+                var examObj = JSON.parse(joinedJson);
+                return ContentService.createTextOutput(JSON.stringify({
+                    success: true,
+                    exam: examObj
+                })).setMimeType(ContentService.MimeType.JSON);
+            } catch (parseErr) {
+                return ContentService.createTextOutput(JSON.stringify({
+                    success: false,
+                    error: 'CORRUPTED_EXAM_DATA',
+                    message: 'Dữ liệu đề thi bị hỏng'
+                })).setMimeType(ContentService.MimeType.JSON);
+            }
         }
-        var joinedJson = chunks.join('');
-        try {
-            var examObj = JSON.parse(joinedJson);
-            return ContentService.createTextOutput(JSON.stringify({
-                success: true,
-                exam: examObj
-            })).setMimeType(ContentService.MimeType.JSON);
-        } catch (parseErr) {
-            return ContentService.createTextOutput(JSON.stringify({
-                success: false,
-                error: 'CORRUPTED_EXAM_DATA',
-                message: 'Dữ liệu đề thi bị hỏng'
-            })).setMimeType(ContentService.MimeType.JSON);
-        }
-    }
 
-    return ContentService.createTextOutput(JSON.stringify({
-        service: 'Cunata Results Collector (Google Apps Script)',
-        status: 'HEALTHY',
-        version: '1.0.0',
-        time: new Date().toISOString()
-    })).setMimeType(ContentService.MimeType.JSON);
+        return ContentService.createTextOutput(JSON.stringify({
+            success: true,
+            service: 'Cunata Results Collector (Google Apps Script)',
+            status: 'HEALTHY',
+            version: '1.0.0',
+            time: new Date().toISOString()
+        })).setMimeType(ContentService.MimeType.JSON);
+    } catch (err) {
+        return jsonOutput({ success: false, error: 'SERVER_ERROR',
+            message: 'Không thể đọc dữ liệu, vui lòng thử lại sau' });
+    }
 }
 // Xuất khẩu cho môi trường Node.js testing nếu có
 if (typeof module !== 'undefined' && module.exports) {

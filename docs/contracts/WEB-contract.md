@@ -403,3 +403,44 @@ Kiểm định: `test/claude-check/appsscript.test.mjs` (chạy Code.js thật t
 ### 17.5 Mã Apps Script phải dán được vào trình soạn của Google
 Trình soạn Apps Script kiểm cú pháp bằng bộ phân tích riêng và báo `ParseError: Unexpected token ILLEGAL` với BigInt literal (`0n`) — Trưởng phòng đã gặp lỗi này ngày 16/11/2026. `apps-script/Code.js` chỉ dùng cú pháp ES2019: viết `BigInt(0)` thay cho `0n`; không dùng `??`, `?.`. Dùng `BigInt(...)` như hàm vẫn được (runtime V8).
 - **Bổ sung 17.1 (16/11/2026):** Trưởng phòng đã triển khai Apps Script. URL thật nằm ở `ops/prod_config.json` và CHỈ được ghi vào `public/config.json` của bản công khai lúc đẩy GitHub (`ops/publish.py`). `public/config.json` trong repo luôn để rỗng: mọi test, worker và kiểm định chạy cục bộ không bao giờ gọi Google Sheet thật (không ghi kết quả thử vào bảng của Trưởng phòng). Test cần Apps Script dùng máy chủ giả lập (`test/claude-check/gas-server.mjs`).
+
+## 18. Tính năng mới chỉ làm trên bản build `dist/` (Trưởng phòng chốt 16/11/2026)
+
+- Màn vào thi (mục 16), trang giáo viên và gửi kết quả qua Apps Script (mục 17) **chỉ làm trên bản build** (`src/**` → `dist/`). `index.html` gốc không thêm tính năng; chỉ được sửa nếu làm hỏng các ca kiểm định hiện có của nó.
+- Khi bản build qua toàn bộ kiểm định và Codex duyệt: chuyển GitHub Pages sang `dist/` (quyết định V01), rồi bỏ `index.html` một file.
+
+### 18.1 Ranh giới module để làm song song (bắt buộc dùng đúng các chữ ký này)
+
+```ts
+// src/collect/appsScript.ts — vùng collect
+export interface AppConfig { appsScriptUrl: string }               // '' = chưa cấu hình
+export async function loadAppConfig(fetchImpl?: typeof fetch): Promise<AppConfig>;   // đọc 'public/config.json' tương đối; lỗi/thiếu → { appsScriptUrl: '' }
+export interface PublishedExamMeta { id: string; title: string; subject: string; grade: number | null; durationMinutes: number | null;
+  questionCount: number; group: string; revision: number; updatedAt: string }
+export type AsResult<T> = { ok: true; value: T } | { ok: false; code: string; message: string; details?: unknown };
+export interface AppsScriptClient {
+  readonly configured: boolean;                                    // false khi url rỗng: MỌI hàm trả ngay { ok:false, code:'NOT_CONFIGURED' }, không gọi mạng
+  listExams(): Promise<AsResult<PublishedExamMeta[]>>;
+  getExam(id: string): Promise<AsResult<unknown>>;                  // JSON đề thô; nơi gọi tự kiểm bằng parseExam
+  teacherLogin(password: string): Promise<AsResult<true>>;
+  publishExam(password: string, exam: unknown): Promise<AsResult<{ examId: string; revision: number }>>;
+  unpublishExam(password: string, examId: string): Promise<AsResult<true>>;
+}
+export function createAppsScriptClient(url: string, fetchImpl?: typeof fetch): AppsScriptClient;   // GET đọc; POST text/plain; theo redirect; timeout 15 s
+export function createAppsScriptCollectorPort(url: string, fetchImpl?: typeof fetch): CollectorPort; // nộp kết quả, dùng với outbox hiện có
+
+// src/teacher/portal.ts — vùng teacher
+export interface TeacherPortalDeps {
+  client: AppsScriptClient;
+  listAllExams(): Promise<Array<{ id: string; title: string; source: 'static' | 'teacher'; load(): Promise<unknown> }>>;
+  openBuilder(exam: unknown | null, opts: { onPublish(exam: unknown): Promise<AsResult<{ examId: string; revision: number }>> }): void;
+}
+export function mountTeacherPortal(root: HTMLElement, deps: TeacherPortalDeps): { open(): void; close(): void };
+// dựng #teacherLogin (#teacherPassword, #btnTeacherLogin, #teacherLoginError, chữ "chưa cấu hình" khi !client.configured)
+// và #teacherPanel (.teacher-exam-row[data-exam-id], .btn-teacher-edit, .btn-teacher-unpublish, #btnTeacherNewExam); mật khẩu chỉ giữ trong sessionStorage.
+
+// src/app/** — vùng app (khung): màn vào thi #startScreen, gộp danh sách đề (tĩnh ∪ listExams, trùng id thì bản giáo viên thắng),
+// nút #btnTeacher + mở thẳng ?teacher gọi mountTeacherPortal(...).open(), openBuilder(...) dùng trình soạn hiện có và thêm nút #btnPublishExam
+// + vùng #teacherPublishStatus, nối outbox với createAppsScriptCollectorPort và hiện trạng thái trong #syncText ("Đang gửi…", "Đã gửi",
+// "Chưa gửi được — sẽ thử lại", "Đã lưu cục bộ" khi chưa cấu hình).
+```

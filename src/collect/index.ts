@@ -30,6 +30,17 @@ import {
   type HttpTransportOptions,
 } from './transport.ts';
 
+import {
+  loadAppConfig,
+  createAppsScriptClient,
+  createAppsScriptCollectorPort,
+  type AppConfig,
+  type PublishedExamMeta,
+  type AsResult,
+  type AppsScriptClient,
+  type AppsScriptCollectorPort,
+} from './appsScript.ts';
+
 export type {
   AttemptKey,
   AttemptRecord,
@@ -43,6 +54,11 @@ export type {
   DrainDeps,
   WebResultV1,
   HttpTransportOptions,
+  AppConfig,
+  PublishedExamMeta,
+  AsResult,
+  AppsScriptClient,
+  AppsScriptCollectorPort,
 };
 
 export {
@@ -57,6 +73,9 @@ export {
   CSV_HEADERS,
   HttpCollectorTransport,
   createHttpTransport,
+  loadAppConfig,
+  createAppsScriptClient,
+  createAppsScriptCollectorPort,
 };
 
 export const COLLECTOR_MAX_TOTAL_ATTEMPTS = 5;

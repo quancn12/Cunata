@@ -28,9 +28,11 @@ for (const target of TARGETS) {
       const ctx = await browser.newContext();
       try { await fn(ctx); } finally { await ctx.close(); }
     });
+    // Trưởng phòng 16/11/2026: tính năng MỚI chỉ làm trên bản build dist/; index.html gốc giữ nguyên tới khi chuyển Pages sang dist (V01).
+    const runDist = (name, fn) => { if (target.name === 'dist') run(name, fn); };
 
     // WEB-contract mục 16 (Trưởng phòng 16/11/2026): "học sinh vào web phải điền tên và chọn đề trước", không tự hiện một đề.
-    run('[app][student] màn vào thi: mở trang lần đầu thấy ô tên + danh sách đề, chưa hiện câu hỏi nào; thiếu tên hoặc chưa chọn đề thì không bắt đầu được', async (ctx) => {
+    runDist('[app][student] màn vào thi: mở trang lần đầu thấy ô tên + danh sách đề, chưa hiện câu hỏi nào; thiếu tên hoặc chưa chọn đề thì không bắt đầu được', async (ctx) => {
       const exams = readManifest();
       const page = await ctx.newPage();
       await page.goto(server.url + target.path);
@@ -58,7 +60,7 @@ for (const target of TARGETS) {
       assert.deepEqual(pageProblems(page), [], 'không lỗi JS hay request hỏng');
     });
 
-    run('[app][student] màn vào thi: nộp bài xong, mở lại trang bằng ?exam= đề khác thì tên đã nhập được điền sẵn', async (ctx) => {
+    runDist('[app][student] màn vào thi: nộp bài xong, mở lại trang bằng ?exam= đề khác thì tên đã nhập được điền sẵn', async (ctx) => {
       const exams = readManifest();
       const page = await openApp(ctx, server, target);
       await submit(page);
@@ -469,7 +471,7 @@ for (const target of TARGETS) {
       assert.ok(near(r.I, [3, 3]), `chọn đúng cả 12 câu Phần I theo optionId phải ra 3 / 3 dù đã trộn, thực tế "${r.raw.I}"`);
     });
 
-    run('[app][student] chọn đề: mở thẳng bằng đường dẫn ?exam=<examId>', async (ctx) => {
+    runDist('[app][student] chọn đề: mở thẳng bằng đường dẫn ?exam=<examId>', async (ctx) => {
       const exams = readManifest();
       const pick = exams[0];
       const page = await ctx.newPage();
