@@ -714,9 +714,9 @@
       "kind": "III",
       "questionVersionId": "ly12-de18-iii-02",
       "title": "Câu 24 (Phần III - Trả lời ngắn)",
-      "content": "Một lượng khí xác định có quá trình biến đổi trạng thái cho bởi đồ thị như hình vẽ. Biết nhiệt độ ở trạng thái (1) là 50°C . Nhiệt độ ở trạng thái (2) bằng bao nhiêu độ C (làm tròn kết quả đến chữ số hàng đơn vị)?",
+      "content": "Một lượng khí xác định biến đổi trạng thái đẳng áp từ trạng thái (1) sang trạng thái (2), trong đó thể tích của khí tăng gấp ba ($V_2 = 3V_1$). Biết nhiệt độ ở trạng thái (1) là 50°C. Nhiệt độ ở trạng thái (2) bằng bao nhiêu độ C (làm tròn kết quả đến chữ số hàng đơn vị)?",
       "answerKey": "696",
-      "explanation": "Quá trình đẳng áp: $\\frac{V_1}{T_1} = \\frac{V_2}{T_2} ⇒ 2/(50 + 273) = \\frac{6}{T_2} ⇒ T_2 = 969$ K $= 696$°C.\nTrả lời ngắn: 696."
+      "explanation": "Quá trình đẳng áp: $\frac{V_1}{T_1} = \frac{V_2}{T_2} ⇒ T_2 = T_1 · \frac{V_2}{V_1} = (50 + 273) · 3 = 969$ K $= 696$°C.\nTrả lời ngắn: 696. (Đã đính chính so với đề gốc: đề gốc thiếu đồ thị, dữ kiện thể tích được ghi bằng lời.)"
     },
     {
       "kind": "III",

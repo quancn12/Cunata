@@ -389,7 +389,7 @@
           "label": "a",
           "text": "Chất rắn B có nhiệt độ nóng chảy xác định.",
           "answer": true,
-          "explanation": "Đúng. Dựa vào đồ thị, đường nung nóng của chất B có một đoạn nằm ngang tại nhiệt độ nóng chảy $t_nc$, chứng tỏ trong suốt quá trình nóng chảy nhiệt độ của B không đổi. Do đó, B là chất rắn kết tinh và có nhiệt độ nóng chảy xác định."
+          "explanation": "Đúng. Dựa vào đồ thị, đường nung nóng của chất B có một đoạn nằm ngang tại nhiệt độ nóng chảy $t_{nc}$, chứng tỏ trong suốt quá trình nóng chảy nhiệt độ của B không đổi. Do đó, B là chất rắn kết tinh và có nhiệt độ nóng chảy xác định."
         },
         {
           "statementId": "ly12-de12-ii-03-b",
@@ -410,7 +410,7 @@
           "label": "d",
           "text": "Chất rắn B không có cấu trúc tinh thể.",
           "answer": false,
-          "explanation": "Sai. Vì trên đồ thị, đường nung nóng của chất B có đoạn nằm ngang ứng với nhiệt độ nóng chảy xác định $t_nc$, nên B là chất rắn kết tinh. Chất rắn kết tinh có cấu trúc tinh thể."
+          "explanation": "Sai. Vì trên đồ thị, đường nung nóng của chất B có đoạn nằm ngang ứng với nhiệt độ nóng chảy xác định $t_{nc}$, nên B là chất rắn kết tinh. Chất rắn kết tinh có cấu trúc tinh thể."
         }
       ]
     },

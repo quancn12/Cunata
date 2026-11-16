@@ -105,3 +105,21 @@ test('[glue] Apps Script: nộp kết quả vẫn chạy như cũ, ghi vào tran
   const sheet1 = g.sheets.get('Sheet1');
   assert.ok(!sheet1 || sheet1.getLastRow() === 0, 'không ghi gì vào trang tính mặc định Sheet1');
 });
+
+// Trình soạn Apps Script kiểm cú pháp bằng bộ phân tích riêng, KHÔNG nhận một số cú pháp mới dù runtime V8 chạy được
+// (Trưởng phòng gặp "ParseError: Unexpected token ILLEGAL" ở BigInt literal `0n`, 16/11/2026).
+test('[glue] Apps Script: mã dán được vào trình soạn Apps Script — không BigInt literal (0n), không ?? và không ?.', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { PROJECT_ROOT } = await import('./harness.mjs');
+  const src = readFileSync(join(PROJECT_ROOT, 'apps-script', 'Code.js'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')                       // bỏ chú thích
+    .replace(/'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"|`(?:\\.|[^`\\])*`/g, '""');        // bỏ chuỗi
+  const bad = [];
+  src.split('\n').forEach((l, i) => {
+    if (/(?<![\w.$])\d+n\b/.test(l)) bad.push(`dòng ~${i + 1}: BigInt literal (dùng BigInt(0) thay cho 0n): ${l.trim().slice(0, 80)}`);
+    if (/\?\?/.test(l)) bad.push(`dòng ~${i + 1}: toán tử ?? : ${l.trim().slice(0, 80)}`);
+    if (/\?\.(?=[\w$[(])/.test(l)) bad.push(`dòng ~${i + 1}: toán tử ?. : ${l.trim().slice(0, 80)}`);
+  });
+  assert.deepEqual(bad.slice(0, 15), [], 'apps-script/Code.js phải dán được vào trình soạn Apps Script (WEB-contract mục 17.5)');
+});

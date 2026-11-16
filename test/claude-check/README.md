@@ -39,3 +39,4 @@ node --test --test-name-pattern="^dist" test/claude-check/web.test.mjs   # chỉ
 | Báo cáo | `#btnDownloadReportHtml`, `#btnRestart`, `#reviewQuestionsList` |
 | Chọn đề | `#btnOpenExamList` → hộp thoại `#examListModal` chứa `button.exam-list-item[data-exam-url]`; dữ liệu từ `public/exams/index.json`; liên kết thẳng `?exam=<examId>` (WEB-contract mục 15) |
 | Màn vào thi | `#startScreen` gồm `input#startName`, `button.exam-list-item[data-exam-url]` (đề chọn: `aria-pressed="true"`), `#btnStartExam` (khóa tới khi có tên + đề) — WEB-contract mục 16 |
+| Giáo viên / Apps Script | `#btnTeacher`, `#teacherLogin` (`input#teacherPassword`, `#btnTeacherLogin`, `#teacherLoginError`), `#teacherPanel` (`.teacher-exam-row[data-exam-id]` có `.btn-teacher-edit`), `#btnPublishExam`, `#teacherPublishStatus`; mục đề có `data-exam-id`; cấu hình `public/config.json` — WEB-contract mục 17. Apps Script được thử bằng `gas-fake.mjs`/`gas-server.mjs` chạy chính `apps-script/Code.js` |

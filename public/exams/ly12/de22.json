@@ -357,7 +357,8 @@
       "kind": "I",
       "questionVersionId": "ly12-de22-i-11",
       "title": "Câu 11 (Phần I)",
-      "content": "Hình vẽ là đồ thị biểu diễn sự thay đổi áp suất p theo thể tích V của một khối khí lí tưởng khi nhiệt độ không đổi (đường đẳng nhiệt). Gọi $S_1$ và $S_2$ lần lượt là diện tích của hình chữ nhật OAND và của hình chữ nhật OBMC . Liên hệ đúng là",
+      "content": "Hình vẽ là đồ thị biểu diễn sự thay đổi áp suất p theo thể tích V của một khối khí lí tưởng khi nhiệt độ không đổi (đường đẳng nhiệt). Gọi $S_1$ và $S_2$ lần lượt là diện tích của hình chữ nhật OAND và của hình chữ nhật OBMC . Liên hệ đúng là\n\n![Hình vẽ đồ thị p theo V đường đẳng nhiệt](public/exams/ly12/de22/c11-dang-nhiet.svg)",
+      "image": "public/exams/ly12/de22/c11-dang-nhiet.svg",
       "options": [
         {
           "optionId": "ly12-de22-i-11-a",
@@ -381,7 +382,7 @@
         }
       ],
       "correctOptionId": "ly12-de22-i-11-a",
-      "explanation": "$p_N · V_N = p_M · V_M ⇒ OD · OA = OB · OC ⇒ S_OAND = S_OBMC$. Đáp án A."
+      "explanation": "$p_N · V_N = p_M · V_M ⇒ OA · OD = OB · OC ⇒ S_1 = S_2$. Đáp án A."
     },
     {
       "kind": "I",
