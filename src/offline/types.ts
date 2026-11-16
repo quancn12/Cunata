@@ -66,6 +66,9 @@ export const DEFAULT_PRECACHE_ENTRIES: readonly PrecacheManifestItem[] = Object.
   // Application Scripts (emitted under dist/)
   { url: 'app/main.js', critical: false, category: 'script' },
   { url: 'app/routes.js', critical: false, category: 'script' },
+  { url: 'app/exam-list.js', critical: false, category: 'script' },
+  { url: 'app/authoring.js', critical: false, category: 'script' },
+  { url: 'app/legacy.js', critical: false, category: 'script' },
   { url: 'ui/index.js', critical: false, category: 'script' },
   { url: 'student/index.js', critical: false, category: 'script' },
   { url: 'student/view.js', critical: false, category: 'script' },
@@ -73,10 +76,12 @@ export const DEFAULT_PRECACHE_ENTRIES: readonly PrecacheManifestItem[] = Object.
   { url: 'report/index.js', critical: false, category: 'script' },
   { url: 'report/view.js', critical: false, category: 'script' },
   { url: 'teacher/index.js', critical: false, category: 'script' },
+  { url: 'teacher/portal.js', critical: false, category: 'script' },
   { url: 'teacher/view.js', critical: false, category: 'script' },
   { url: 'bank/index.js', critical: false, category: 'script' },
   { url: 'bank/view.js', critical: false, category: 'script' },
   { url: 'collect/index.js', critical: false, category: 'script' },
+  { url: 'collect/appsScript.js', critical: false, category: 'script' },
   { url: 'schema/index.js', critical: false, category: 'script' },
   { url: 'domain/index.js', critical: false, category: 'script' },
   { url: 'offline/index.js', critical: false, category: 'script' },
@@ -170,31 +175,34 @@ export function isCacheableRequest(requestUrl: string, method = 'GET'): boolean 
   // Exclude collector endpoints (Google Apps Script, Macros, Collector endpoints)
   if (
     lower.includes('script.google.com') ||
+    lower.includes('script.googleusercontent.com') ||
     lower.includes('macros.google.com') ||
-    lower.includes('google.com/macros') ||
-    lower.includes('appsscript')
+    lower.includes('google.com/macros')
   ) {
     return false;
   }
 
+  const cleanPath = (lower.split('?')[0] ?? '').split('#')[0] ?? '';
+
   // Distinguish static application files from dynamic data/collector endpoints
   const isStaticFile =
-    lower.endsWith('.js') ||
-    lower.endsWith('.css') ||
-    lower.endsWith('.svg') ||
-    lower.endsWith('.png') ||
-    lower.endsWith('.jpg') ||
-    lower.endsWith('.jpeg') ||
-    lower.endsWith('.webp') ||
-    lower.endsWith('.json') ||
-    lower.endsWith('.html') ||
-    lower.endsWith('/');
+    cleanPath.endsWith('.js') ||
+    cleanPath.endsWith('.css') ||
+    cleanPath.endsWith('.svg') ||
+    cleanPath.endsWith('.png') ||
+    cleanPath.endsWith('.jpg') ||
+    cleanPath.endsWith('.jpeg') ||
+    cleanPath.endsWith('.webp') ||
+    cleanPath.endsWith('.json') ||
+    cleanPath.endsWith('.html') ||
+    cleanPath.endsWith('/');
 
   // If not a static file, reject collector, outbox, receipt, or attempt data paths
   if (!isStaticFile) {
     if (
       lower.includes('/collect') ||
       lower.includes('/collector') ||
+      lower.includes('appsscript') ||
       lower.includes('outbox') ||
       lower.includes('receipt')
     ) {

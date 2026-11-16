@@ -1,0 +1,795 @@
+{
+  "schemaVersion": "web-exam-v1",
+  "examId": "ly12-hang-tuan-de-15",
+  "examVersionId": "v1.0.0",
+  "title": "Vật lí 12 — Đề số 15 hàng tuần",
+  "subject": "Vật lí",
+  "grade": 12,
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  },
+  "assets": [
+    {
+      "assetId": "ly12-de15-p02-1",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de15/p02-1.png",
+      "alt": "Hình minh họa"
+    },
+    {
+      "assetId": "ly12-de15-p02-2",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de15/p02-2.png",
+      "alt": "Hình minh họa"
+    },
+    {
+      "assetId": "ly12-de15-p02-3",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de15/p02-3.png",
+      "alt": "Hình minh họa"
+    },
+    {
+      "assetId": "ly12-de15-p03-1",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de15/p03-1.png",
+      "alt": "Đồ thị"
+    },
+    {
+      "assetId": "ly12-de15-p03-2",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de15/p03-2.png",
+      "alt": "Hình minh họa"
+    },
+    {
+      "assetId": "ly12-de15-p03-3",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de15/p03-3.png",
+      "alt": "Hình minh họa"
+    }
+  ],
+  "questions": [
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-01",
+      "title": "Câu 1 (Phần I)",
+      "content": "Gọi M là khối lượng mol, $N_A$ là số Avogadro, m là khối lượng của một khối chất nào đó. Biểu thức xác định số phân tử (hay nguyên tử) chứa trong khối lượng m của chất đó là:",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-01-a",
+          "label": "A",
+          "text": "$N = MmN_A$"
+        },
+        {
+          "optionId": "ly12-de15-i-01-b",
+          "label": "B",
+          "text": "$N = \\frac{M}{m}N_A$"
+        },
+        {
+          "optionId": "ly12-de15-i-01-c",
+          "label": "C",
+          "text": "$N = \\frac{m}{M}N_A$"
+        },
+        {
+          "optionId": "ly12-de15-i-01-d",
+          "label": "D",
+          "text": "$N = \\frac{1}{Mm}N_A$"
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-01-c",
+      "explanation": "$N = nN_A = \\frac{m}{M}N_A$. Chọn C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-02",
+      "title": "Câu 2 (Phần I)",
+      "content": "Chất rắn không có đặc điểm?",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-02-a",
+          "label": "A",
+          "text": "Chất vô định hình không có nhiệt độ nóng chảy xác định"
+        },
+        {
+          "optionId": "ly12-de15-i-02-b",
+          "label": "B",
+          "text": "Chất rắn kết tinh có nhiệt độ nóng chảy xác định"
+        },
+        {
+          "optionId": "ly12-de15-i-02-c",
+          "label": "C",
+          "text": "Thể tích của tất cả các chất rắn đều tăng khi nóng chảy"
+        },
+        {
+          "optionId": "ly12-de15-i-02-d",
+          "label": "D",
+          "text": "Với mỗi cấu trúc tinh thể, nhiệt độ nóng chảy phụ thuộc vào áp suất bên ngoài"
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-02-c",
+      "explanation": "Đáp án C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-03",
+      "title": "Câu 3 (Phần I)",
+      "content": "Khí giãn nở khí đẳng nhiệt thì",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-03-a",
+          "label": "A",
+          "text": "Số phân tử khí trong một đơn vị thể tích tăng."
+        },
+        {
+          "optionId": "ly12-de15-i-03-b",
+          "label": "B",
+          "text": "Áp suất khí tăng lên."
+        },
+        {
+          "optionId": "ly12-de15-i-03-c",
+          "label": "C",
+          "text": "Số phân tử khí trong một đơn vị thể tích giảm."
+        },
+        {
+          "optionId": "ly12-de15-i-03-d",
+          "label": "D",
+          "text": "Khối lượng riêng của khí tăng lên."
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-03-c",
+      "explanation": "Khí giãn nở thì thể tích $V$ tăng $⇒ μ = \\frac{N}{V}$ giảm. Chọn C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-04",
+      "title": "Câu 4 (Phần I)",
+      "content": "Khi nước đá ở 0°C tan thành nước ở 0°C thì",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-04-a",
+          "label": "A",
+          "text": "động năng trung bình của các phân tử tăng nhưng thế năng của các phân tử không đổi."
+        },
+        {
+          "optionId": "ly12-de15-i-04-b",
+          "label": "B",
+          "text": "động năng trung bình của các phân tử không đổi và thế năng của các phân tử tăng lên."
+        },
+        {
+          "optionId": "ly12-de15-i-04-c",
+          "label": "C",
+          "text": "cả động năng trung bình và thế năng của các phân tử đều tăng."
+        },
+        {
+          "optionId": "ly12-de15-i-04-d",
+          "label": "D",
+          "text": "cả động năng trung bình và thế năng của các phân tử giảm đi."
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-04-b",
+      "explanation": "Đáp án B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-05",
+      "title": "Câu 5 (Phần I)",
+      "content": "Đặc điểm nào sau đây là đặc điểm của thể lỏng?",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-05-a",
+          "label": "A",
+          "text": "Khoảng cách giữa các phân tử rất lớn so với kích thước của chúng."
+        },
+        {
+          "optionId": "ly12-de15-i-05-b",
+          "label": "B",
+          "text": "Lực tương tác phân tử yếu hơn lực tương tác phân tử ở thể rắn."
+        },
+        {
+          "optionId": "ly12-de15-i-05-c",
+          "label": "C",
+          "text": "Không có thể tích và hình dạng riêng xác định."
+        },
+        {
+          "optionId": "ly12-de15-i-05-d",
+          "label": "D",
+          "text": "Các phân tử dao động xung quanh vị trí cân bằng xác định."
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-05-b",
+      "explanation": "Đáp án B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-06",
+      "title": "Câu 6 (Phần I)",
+      "content": "Câu nào sau đây nói về sự truyền nhiệt giữa hai vật là không đúng?",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-06-a",
+          "label": "A",
+          "text": "Nhiệt truyền từ vật có nhiệt năng lớn hơn sang vật có nhiệt năng nhỏ hơn."
+        },
+        {
+          "optionId": "ly12-de15-i-06-b",
+          "label": "B",
+          "text": "Nhiệt truyền từ vật có nhiệt độ cao hơn sang vật có nhiệt độ thấp hơn."
+        },
+        {
+          "optionId": "ly12-de15-i-06-c",
+          "label": "C",
+          "text": "Nhiệt lượng do vật này thu vào bằng nhiệt lượng do vật kia tỏa ra."
+        },
+        {
+          "optionId": "ly12-de15-i-06-d",
+          "label": "D",
+          "text": "Sự truyền nhiệt giữa hai vật dừng lại khi nhiệt độ hai vật bằng nhau."
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-06-a",
+      "explanation": "Đáp án A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-07",
+      "title": "Câu 7 (Phần I)",
+      "content": "Khi khối khí giãn nở trong xilanh làm pittông chuyển động. Nghĩa là:",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-07-a",
+          "label": "A",
+          "text": "khí đã truyền năng lượng cho pittông dưới dạng công"
+        },
+        {
+          "optionId": "ly12-de15-i-07-b",
+          "label": "B",
+          "text": "khí đã truyền năng lượng cho pittông dưới dạng nhiệt"
+        },
+        {
+          "optionId": "ly12-de15-i-07-c",
+          "label": "C",
+          "text": "pittông đã nhận năng lượng dưới dạng nhiệt"
+        },
+        {
+          "optionId": "ly12-de15-i-07-d",
+          "label": "D",
+          "text": "khối khí đã nhận công"
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-07-a",
+      "explanation": "Đáp án A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-08",
+      "title": "Câu 8 (Phần I)",
+      "content": "Hãy tìm ý không đúng với mô hình động học phân tử trong các ý sau:",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-08-a",
+          "label": "A",
+          "text": "Các chất được cấu tạo từ các hạt riêng biệt là phân tử."
+        },
+        {
+          "optionId": "ly12-de15-i-08-b",
+          "label": "B",
+          "text": "Các phân tử chuyển động không ngừng."
+        },
+        {
+          "optionId": "ly12-de15-i-08-c",
+          "label": "C",
+          "text": "Tốc độ chuyển động của các phân tử cấu tạo nên vật càng lớn thì thể tích của vật càng lớn."
+        },
+        {
+          "optionId": "ly12-de15-i-08-d",
+          "label": "D",
+          "text": "Giữa các phân tử có lực tương tác gọi là lực liên kết phân tử."
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-08-c",
+      "explanation": "Tốc độ chuyển động của các phân tử cấu tạo nên vật càng lớn thì thể tích của vật càng cao. Chọn C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-09",
+      "title": "Câu 9 (Phần I)",
+      "content": "Tính nhiệt lượng tỏa ra khi 1 miếng sắt có khối lượng 2 kg ở nhiệt độ 500°C hạ xuống còn 40°C. Biết nhiệt dung riêng của sắt là 478 J/(kg·K).",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-09-a",
+          "label": "A",
+          "text": "219880 J"
+        },
+        {
+          "optionId": "ly12-de15-i-09-b",
+          "label": "B",
+          "text": "439760 J"
+        },
+        {
+          "optionId": "ly12-de15-i-09-c",
+          "label": "C",
+          "text": "879520 J"
+        },
+        {
+          "optionId": "ly12-de15-i-09-d",
+          "label": "D",
+          "text": "109940 J"
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-09-b",
+      "explanation": "$Q = mcΔt = 2 · 478 · (500 - 40) = 439760$ J. Chọn B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-10",
+      "title": "Câu 10 (Phần I)",
+      "content": "Nếu khí giãn nở đẩy pit tông bởi công 80 J làm nội năng khí giảm 30 J thì chất khí trong xi lanh nhận nhiệt hay tỏa nhiệt một lượng bao nhiêu?",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-10-a",
+          "label": "A",
+          "text": "Nhận nhiệt lượng 110 J ."
+        },
+        {
+          "optionId": "ly12-de15-i-10-b",
+          "label": "B",
+          "text": "Nhận nhiệt lượng 50 J ."
+        },
+        {
+          "optionId": "ly12-de15-i-10-c",
+          "label": "C",
+          "text": "Tỏa nhiệt lượng 50 J ."
+        },
+        {
+          "optionId": "ly12-de15-i-10-d",
+          "label": "D",
+          "text": "Tỏa nhiệt lượng 110 J ."
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-10-b",
+      "explanation": "$ΔU = Q + A ⇒ -30 = Q - 80 ⇒ Q = 50$ J. Chọn B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-11",
+      "title": "Câu 11 (Phần I)",
+      "content": "Khi đun nóng khí trong bình kín thêm 20°C thì áp suất khí tăng thêm 1/20 áp suất ban đầu. Nhiệt độ ban đầu của khí là",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-11-a",
+          "label": "A",
+          "text": "300 K ."
+        },
+        {
+          "optionId": "ly12-de15-i-11-b",
+          "label": "B",
+          "text": "400 K ."
+        },
+        {
+          "optionId": "ly12-de15-i-11-c",
+          "label": "C",
+          "text": "120 K ."
+        },
+        {
+          "optionId": "ly12-de15-i-11-d",
+          "label": "D",
+          "text": "152 K ."
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-11-b",
+      "explanation": "Đẳng tích: $p/T =$ const $⇒ \\frac{p}{T} = \\frac{21p/20}{T+20} ⇒ T = 400$ K. Chọn B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-12",
+      "title": "Câu 12 (Phần I)",
+      "content": "Một lượng khí lí tưởng có thể tích 6 lít và áp suất 0,8 atm được nén đẳng nhiệt để áp suất tăng thêm 0,4 atm. Thể tích của khí sau khi nén là",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-12-a",
+          "label": "A",
+          "text": "0,75 lít"
+        },
+        {
+          "optionId": "ly12-de15-i-12-b",
+          "label": "B",
+          "text": "4 lít"
+        },
+        {
+          "optionId": "ly12-de15-i-12-c",
+          "label": "C",
+          "text": "0,9 lít"
+        },
+        {
+          "optionId": "ly12-de15-i-12-d",
+          "label": "D",
+          "text": "1,2 lít"
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-12-b",
+      "explanation": "$p_1 V_1 = p_2 V_2 ⇒ 6 · 0,8 = V · (0,8 + 0,4) ⇒ V = 4$ lít. Chọn B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-13",
+      "title": "Câu 13 (Phần I)",
+      "content": "Một khối khí lí tưởng bị giam trong ống thủy tinh hở một đầu bởi một cột thủy ngân có chiều dài 5 cm . Khi ống nằm ngang thì chiều dài cột không khí trong ống là 12 cm . Biết áp suất khí quyển là 750 mmHg , coi nhiệt độ trong ống không đổi. Khi ống đặt thẳng đứng miệng ống ở trên thì chiều dài cột không khí trong ống là",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-13-a",
+          "label": "A",
+          "text": "112,5 mm ."
+        },
+        {
+          "optionId": "ly12-de15-i-13-b",
+          "label": "B",
+          "text": "111,5 mm ."
+        },
+        {
+          "optionId": "ly12-de15-i-13-c",
+          "label": "C",
+          "text": "113,5 mm ."
+        },
+        {
+          "optionId": "ly12-de15-i-13-d",
+          "label": "D",
+          "text": "110,5 mm ."
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-13-a",
+      "explanation": "$p_1 V_1 = p_2 V_2 ⇒ 75 · 12 = (75 + 5) · l_2 ⇒ 75 · 12 = 80 · l_2 ⇒ l_2 = 11,25$ cm = 112,5 mm. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-14",
+      "title": "Câu 14 (Phần I)",
+      "content": "Để xác định được nhiệt độ trong lò nung, người ta đưa một miếng kim loại nặng 150 g vào trong lò và nung nó trong một thời gian đủ dài. Sau đó, lấy miếng kim loại từ lò thả nhanh vào một bình cách nhiệt có chứa 200 g nước ở 20°C . Khi cân bằng nhiệt, nhiệt độ của nước là 80°C . Biết nhiệt dung riêng của kim loại là 500 J/(kg·K) và của nước là 4200 J/(kg·K) . Nhiệt độ trong lò nung là",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-14-a",
+          "label": "A",
+          "text": "372°C ."
+        },
+        {
+          "optionId": "ly12-de15-i-14-b",
+          "label": "B",
+          "text": "672°C ."
+        },
+        {
+          "optionId": "ly12-de15-i-14-c",
+          "label": "C",
+          "text": "752°C ."
+        },
+        {
+          "optionId": "ly12-de15-i-14-d",
+          "label": "D",
+          "text": "492°C ."
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-14-c",
+      "explanation": "$m_kl c_kl (t_kl - t) = m_n c_n (t - t_n) ⇒ 0,15 · 500 · (t - 80) = 0,2 · 4200 · (80 - 20) ⇒ t = 752$°C. Chọn C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-15",
+      "title": "Câu 15 (Phần I)",
+      "content": "Khi ô tô bắt đầu khởi động thì áp suất lốp của bốn lốp được thể hiện trên hình H1 , nhiệt độ trong các lốp lúc đầu là như nhau. Sau khi chạy được một đoạn đường thì áp suất lốp được thể hiện trên hình H2. Lúc này, nhiệt độ của khí trong lốp nào là nhỏ nhất?\n\n![Hình minh họa](public/exams/ly12/de15/p02-1.png)",
+      "image": "public/exams/ly12/de15/p02-1.png",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-15-a",
+          "label": "A",
+          "text": "Lốp trước bên trái."
+        },
+        {
+          "optionId": "ly12-de15-i-15-b",
+          "label": "B",
+          "text": "Lốp trước bên phải."
+        },
+        {
+          "optionId": "ly12-de15-i-15-c",
+          "label": "C",
+          "text": "Lốp sau bên trái."
+        },
+        {
+          "optionId": "ly12-de15-i-15-d",
+          "label": "D",
+          "text": "Lốp sau bên phải."
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-15-c",
+      "explanation": "Đẳng tích $⇒ \\frac{p_0}{T_0} = \\frac{p}{T} ⇒ T = \\frac{p}{p_0} · T_0 ⇒ T_0$ bằng nhau nên $\\frac{p}{p_0}$ càng nhỏ thì $T$ càng nhỏ.\nLốp trước bên trái có: $\\frac{260}{244} ≈ 1,066$.\nLốp trước bên phải có: $\\frac{264}{244} ≈ 1,082$.\nLốp sau bên trái có: $\\frac{268}{252} ≈ 1,063$.\nLốp sau bên phải có: $\\frac{264}{248} ≈ 1,065$.\nVậy lốp sau bên trái có $\\frac{p}{p_0}$ nhỏ nhất. Chọn C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-16",
+      "title": "Câu 16 (Phần I)",
+      "content": "Một ống thuỷ tinh được cắm lộn ngược vào một chậu chứa thuỷ ngân, bên trong ống chứa 40 cm³ không khí và một cột thuỷ ngân cao 8 cm so với mực thuỷ ngân trong chậu (Hình a). Người ta ấn sâu ống thủy tinh vào thuỷ ngân cho tới khi mực thuỷ ngân ở bên trong và bên ngoài ống bằng nhau (Hình b). Biết áp suất khí quyển là 75 cmHg . Thể tích của không khí còn lại bên trong ống thử tình là:\n\n![Hình minh họa](public/exams/ly12/de15/p02-2.png)",
+      "image": "public/exams/ly12/de15/p02-2.png",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-16-a",
+          "label": "A",
+          "text": "25,7 cm³"
+        },
+        {
+          "optionId": "ly12-de15-i-16-b",
+          "label": "B",
+          "text": "15,7 cm³"
+        },
+        {
+          "optionId": "ly12-de15-i-16-c",
+          "label": "C",
+          "text": "45,7 cm³"
+        },
+        {
+          "optionId": "ly12-de15-i-16-d",
+          "label": "D",
+          "text": "35,7 cm³"
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-16-d",
+      "explanation": "Hình a có áp suất tại 2 điểm M và N trên mặt phẳng nằm ngang bằng nhau:\n$p_M = p_N ⇒ p_1 + h = p_0 ⇒ p_1 = p_0 - h = 75 - 8 = 67$ cmHg.\nTương tự hình b có $p_2 = p_0 = 75$ cmHg.\nĐẳng nhiệt $⇒ p_1 V_1 = p_2 V_2 ⇒ 67 · 40 = 75 · V_2 ⇒ V_2 ≈ 35,7$ cm³. Chọn D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-17",
+      "title": "Câu 17 (Phần I)",
+      "content": "Như minh họa ở hình bên, một ống thủy tinh dài 80 cm đặt nằm ngang, cột thủy ngân dài 25 cm bịt kín một cột không khí dài 40 cm . Bây giờ từ từ xoay ống theo phương thẳng đứng, đầu hở hướng xuống. Biết áp suất khí quyển là 76 cmHg và nhiệt độ cột không khí không đổi. Lúc này, cột khí trong ống có chiều dài là\n\n![Hình minh họa](public/exams/ly12/de15/p02-3.png)\n\nChú ý: Ở bài này khi ống thẳng đứng đầu hở hướng xuống thì có thủy ngân tràn ra ngoài (Nếu không tràn ra ngoài thì kết quả sẽ được 59,6 cm + 25 cm > 80 cm là vô lí)",
+      "image": "public/exams/ly12/de15/p02-3.png",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-17-a",
+          "label": "A",
+          "text": "60,8 cm ."
+        },
+        {
+          "optionId": "ly12-de15-i-17-b",
+          "label": "B",
+          "text": "57,2 cm ."
+        },
+        {
+          "optionId": "ly12-de15-i-17-c",
+          "label": "C",
+          "text": "22,8 cm ."
+        },
+        {
+          "optionId": "ly12-de15-i-17-d",
+          "label": "D",
+          "text": "59,6 cm ."
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-17-b",
+      "explanation": "$p_1 V_1 = p_2 V_2 ⇒ 76 · 40 = (76 - h)(80 - h) ⇒ h ≈ 22,8$ cm.\nLúc sau cột khí trong ống có chiều dài là $80 - 22,8 = 57,2$ cm. Chọn B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de15-i-18",
+      "title": "Câu 18 (Phần I)",
+      "content": "Bình A có thể tích V ở áp suất $p_1$ . Bình B có thể tích 3 V ở áp suất $p_2$ . Nhiệt độ 2 bình như nhau và cho 2 bình thông nhau bằng một ống nhỏ, biết khí trong 2 bình không tác dụng hóa học với nhau. Áp suất khí trong 2 bình khi cân bằng là bao nhiêu",
+      "options": [
+        {
+          "optionId": "ly12-de15-i-18-a",
+          "label": "A",
+          "text": "$(p_1 + 3p_2) / 4$ ."
+        },
+        {
+          "optionId": "ly12-de15-i-18-b",
+          "label": "B",
+          "text": "$p_1 + p_2$ ."
+        },
+        {
+          "optionId": "ly12-de15-i-18-c",
+          "label": "C",
+          "text": "$(p_1 + 3p_2) / 2$ ."
+        },
+        {
+          "optionId": "ly12-de15-i-18-d",
+          "label": "D",
+          "text": "$(3p_1 + p_2) / 4$ ."
+        }
+      ],
+      "correctOptionId": "ly12-de15-i-18-a",
+      "explanation": "Theo định luật Boyle có: $p_1 V = p_1'(V + 3V) ⇒ p_1' = \\frac{p_1}{4}$; $p_2 · 3V = p_2'(V + 3V) ⇒ p_2' = \\frac{3p_2}{4}$.\nTheo định luật Dalton có: $p' = p_1' + p_2' = \\frac{p_1 + 3p_2}{4}$. Chọn A."
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de15-ii-01",
+      "title": "Câu 19 (Phần II - Đúng / Sai)",
+      "content": "Các phát biểu sau đây là đúng hay sai?",
+      "statements": [
+        {
+          "statementId": "ly12-de15-ii-01-a",
+          "label": "a",
+          "text": "Chuyển động Brown của các hạt lơ lửng trong chất lỏng là chuyển đông nhiệt.",
+          "answer": false,
+          "explanation": "Sai. Chuyển động của các phân tử chất lỏng mới là chuyển động nhiệt."
+        },
+        {
+          "statementId": "ly12-de15-ii-01-b",
+          "label": "b",
+          "text": "Nhiệt độ của một vật càng cao thì động năng trung bình của các phân tử trong vật càng lớn.",
+          "answer": true,
+          "explanation": "Đúng."
+        },
+        {
+          "statementId": "ly12-de15-ii-01-c",
+          "label": "c",
+          "text": "Tổng động năng của tất cả các phân tử trong một vật được gọi là nội năng của vật.",
+          "answer": false,
+          "explanation": "Sai. Thiếu tổng thế năng của các phân tử."
+        },
+        {
+          "statementId": "ly12-de15-ii-01-d",
+          "label": "d",
+          "text": "Chỉ thực hiện công mới làm thay đổi nội năng của vật.",
+          "answer": false,
+          "explanation": "Sai. Truyền nhiệt cũng làm thay đổi nội năng của vật."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de15-ii-02",
+      "title": "Câu 20 (Phần II - Đúng / Sai)",
+      "content": "Một lượng khí nhất định chuyển từ trạng thái 1 sang trạng thái 2 với liên hệ áp suất p và một phần thể tích V như biểu diễn trên đồ thị hình bên. Đây là quá trình\n\n![Hình minh họa](public/exams/ly12/de15/p03-1.png)",
+      "image": "public/exams/ly12/de15/p03-1.png",
+      "statements": [
+        {
+          "statementId": "ly12-de15-ii-02-a",
+          "label": "a",
+          "text": "khối lượng riêng không đổi.",
+          "answer": false,
+          "explanation": "$p, V$ thay đổi $⇒ D = \\frac{m}{V}$ thay đổi $⇒$ a) Sai; c) Sai; d) Sai."
+        },
+        {
+          "statementId": "ly12-de15-ii-02-b",
+          "label": "b",
+          "text": "nhiệt độ không đổi.",
+          "answer": true,
+          "explanation": "Đúng. Nhiệt độ không đổi thì $pV$ là hằng số $⇒ p = C · \\frac{1}{V}$ là đường thẳng kéo dài đi qua gốc tọa độ $⇒$ b) Đúng."
+        },
+        {
+          "statementId": "ly12-de15-ii-02-c",
+          "label": "c",
+          "text": "áp suất không đổi.",
+          "answer": false,
+          "explanation": "Sai. Áp suất thay đổi theo đồ thị."
+        },
+        {
+          "statementId": "ly12-de15-ii-02-d",
+          "label": "d",
+          "text": "thể tích không đổi.",
+          "answer": false,
+          "explanation": "Sai. Thể tích thay đổi."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de15-ii-03",
+      "title": "Câu 21 (Phần II - Đúng / Sai)",
+      "content": "Một bình có dung tích 140 cm³ chứa không khí ở nhiệt độ 147°C nối với một ống nằm ngang chứa đầy thủy ngân, đầu kia thông với khí quyển. Không khí trong bình được làm lạnh đến 27°C, coi dung tích bình không đổi và khối lượng riêng của thuỷ ngân là 13,6 g/cm³.\n\n![Hình minh họa](public/exams/ly12/de15/p03-2.png)",
+      "image": "public/exams/ly12/de15/p03-2.png",
+      "statements": [
+        {
+          "statementId": "ly12-de15-ii-03-a",
+          "label": "a",
+          "text": "Ban đầu, cột thuỷ ngân trong ống nằm ngang cân bằng. Áp suất trong bình bằng với áp suất khí quyển.",
+          "answer": true,
+          "explanation": "Đúng. Ban đầu, cột thuỷ ngân trong ống nằm ngang cân bằng nên áp suất trong bình bằng với áp suất khí quyển."
+        },
+        {
+          "statementId": "ly12-de15-ii-03-b",
+          "label": "b",
+          "text": "Khi giảm nhiệt độ của không khí trong bình làm cho thuỷ ngân bị đẩy vào chiếm một phần thể tích bình chứa",
+          "answer": true,
+          "explanation": "Đúng. Khi nhiệt độ $T$ giảm thì thể tích $V$ giảm (thủy ngân bị đẩy vào chiếm một phần thể tích bình chứa)."
+        },
+        {
+          "statementId": "ly12-de15-ii-03-c",
+          "label": "c",
+          "text": "Thể tích của khí sau khi thuỷ ngân chảy vào bình là 100 cm³",
+          "answer": true,
+          "explanation": "Đúng. Quá trình đẳng áp: $T_1 = 147 + 273 = 420$ K, $T_2 = 27 + 273 = 300$ K; $\\frac{V}{T} = const ⇒ \\frac{140}{420} = \\frac{V_2}{300} ⇒ V_2 = 100$ cm³."
+        },
+        {
+          "statementId": "ly12-de15-ii-03-d",
+          "label": "d",
+          "text": "Khối lượng thuỷ ngân chảy vào bình là 1360 gam",
+          "answer": false,
+          "explanation": "Sai. $ΔV = V_1 - V_2 = 140 - 100 = 40$ cm³ $⇒ m = D · ΔV = 13,6 · 40 = 544$ g $≠ 1360$ g."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de15-ii-04",
+      "title": "Câu 22 (Phần II - Đúng / Sai)",
+      "content": "Như trong hình, một chiếc ghế nâng hạ bằng khí thông qua chuyển động lên xuống của xilanh nối với mặt ghế, thanh nén khí cố định trên đế bịt kín một lượng khí lí tưởng trong xilanh. Bỏ qua ma sát giữa thanh nén và xilanh. Tổng khối lượng của mặt ghế và xilanh là 6 kg , tiết diện của thanh nén là 30 cm² . Một học sinh nặng 24 kg ngồi lên ghế (hai chân để lơ lửng không chạm mặt sàn) thì ghế hạ xuống 12 cm khi ổn định. Coi nhiệt độ của khí trong xilanh không đổi, áp suất khí quyển là $10^5$ Pa và $g = 10$ m/s² .\n\n![Hình minh họa](public/exams/ly12/de15/p03-3.png)",
+      "image": "public/exams/ly12/de15/p03-3.png",
+      "statements": [
+        {
+          "statementId": "ly12-de15-ii-04-a",
+          "label": "a",
+          "text": "Quá trình ghế hạ xuống, khí trong xilanh thực hiện công và nhận nhiệt lượng.",
+          "answer": false,
+          "explanation": "Sai. Khí trong xilanh nhận công và tỏa nhiệt."
+        },
+        {
+          "statementId": "ly12-de15-ii-04-b",
+          "label": "b",
+          "text": "Khi ghế để trống, áp suất của khí trong xilanh là 1,2.10⁵ Pa .",
+          "answer": true,
+          "explanation": "Đúng. $p_b = p_0 + \\frac{m_gx g}{S} = 10^5 + \\frac{6 · 10}{30 · 10^-4} = 1,2 · 10^5$ Pa."
+        },
+        {
+          "statementId": "ly12-de15-ii-04-c",
+          "label": "c",
+          "text": "Khi học sinh ngồi trên ghế, áp suất của khí trong xilanh là 2.10⁵ Pa .",
+          "answer": true,
+          "explanation": "Đúng. $p_c = p_0 + \\frac{(m_gx + m_hs)g}{S} = 10^5 + \\frac{(6 + 24) · 10}{30 · 10^-4} = 2 · 10^5$ Pa."
+        },
+        {
+          "statementId": "ly12-de15-ii-04-d",
+          "label": "d",
+          "text": "Khi ghế để trống, cột khí trong xilanh dài là 20 cm .",
+          "answer": false,
+          "explanation": "Sai. Đẳng nhiệt: $p_b · Sl_b = p_c · S(l_b - 12) ⇒ 1,2 · 10^5 · l_b = 2 · 10^5 · (l_b - 12) ⇒ l_b = 30$ cm $≠ 20$ cm."
+        }
+      ]
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de15-iii-01",
+      "title": "Câu 23 (Phần III - Trả lời ngắn)",
+      "content": "Một vật được làm lạnh từ 25°C xuống 5°C. Nhiệt độ của vật theo thang Kelvin giảm đi bao nhiêu kelvin?",
+      "answerKey": "20",
+      "explanation": "$ΔT(K) = Δt(°C) = 25 - 5 = 20$ K. Trả lời ngắn: 20."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de15-iii-02",
+      "title": "Câu 24 (Phần III - Trả lời ngắn)",
+      "content": "Một bình kín có dung tích không đổi chứa khí. Khi nhiệt độ của khí trong bình là 27°C thì áp suất khí trong bình là 2 atm . Phải nung nóng khí trong bình đến nhiệt độ bằng bao nhiêu độ C để áp suất khí là 2,2 atm (làm tròn kết quả đến chữ số hàng đơn vị)?",
+      "answerKey": "57",
+      "explanation": "Đẳng tích: $\\frac{p}{T} = const ⇒ \\frac{2}{27 + 273} = \\frac{2,2}{T_2} ⇒ T_2 = 330$ K $⇒ t_2 = 330 - 273 = 57$°C. Trả lời ngắn: 57."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de15-iii-03",
+      "title": "Câu 25 (Phần III - Trả lời ngắn)",
+      "content": "Tỉ số khối lượng của hai vật A và B là 3/4 . Sau khi chúng hấp thụ một nhiệt lượng như nhau, tỉ số nhiệt độ tăng thêm của hai vật A và B là 2 . Tỉ số nhiệt dung riêng của A và B bằng bao nhiêu (làm tròn kết quả đến chữ số hàng phần mười)?",
+      "answerKey": "0,7",
+      "explanation": "$Q = mcΔt ⇒ \\frac{Q_A}{Q_B} = \\frac{m_A}{m_B} · \\frac{c_A}{c_B} · \\frac{Δt_A}{Δt_B} ⇒ 1 = \\frac{3}{4} · \\frac{c_A}{c_B} · 2 ⇒ \\frac{c_A}{c_B} = \\frac{2}{3} ≈ 0,7$. Trả lời ngắn: 0,7."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de15-iii-04",
+      "title": "Câu 26 (Phần III - Trả lời ngắn)",
+      "content": "Trong quá trình đẳng tích, khi nhiệt độ khối khí tăng thêm 20°C thì áp suất tăng thêm 1/40 lần lượng áp suất ban đầu. Nhiệt độ ban đầu của khối khí bằng bao nhiêu K?",
+      "answerKey": "800",
+      "explanation": "Đẳng tích: $\\frac{p}{T} = const ⇒ \\frac{p}{T} = \\frac{1,025p}{T + 20} ⇒ T = 800$ K. Trả lời ngắn: 800."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de15-iii-05",
+      "title": "Câu 27 (Phần III - Trả lời ngắn)",
+      "content": "Cần cho tối thiểu bao nhiêu gam nước đá ở -10°C vào 0,5kg nước ở 20°C để thu được nước ở 0°C ? Cho biết nhiệt dung riêng của nước đá là 2100 J/kgK, nhiệt nóng chảy riêng của nước đá là $3,34 · 10^5$ J/kg, nhiệt dung riêng của nước là 4200 J/kgK (làm tròn kết quả đến chữ số hàng đơn vị)?",
+      "answerKey": "118",
+      "explanation": "$m_d c_d Δt_d + m_d λ = m_n c_n Δt_n ⇒ m_d · 2100 · 10 + m_d · 3,34 · 10^5 = 0,5 · 4200 · 20 ⇒ m_d ≈ 0,118$ kg = 118 g. Trả lời ngắn: 118."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de15-iii-06",
+      "title": "Câu 28 (Phần III - Trả lời ngắn)",
+      "content": "Trong một bình nhiệt lượng kế ban đầu có chứa $m_0 = 400$g nước ở nhiệt độ $t_0 = 25$°C . Người ta đổ thêm một khối lượng nước $m_1$ ở nhiệt độ $t_x$ vào bình, khi cân bằng nhiệt, nhiệt độ của nước là $t_1 = 20$°C . Cho thêm một cục nước đá khối lượng $m_2$ ở nhiệt độ $t_2 = -10$°C vào bình thì cuối cùng trong bình có $M = 700$g nước ở nhiệt độ $t_3 = 5$°C . Biết nhiệt dung riêng của nước là $c_1 = 4200$ J/kgK , nhiệt dung riêng của nước đá $c_2 = 2100$ J/kgK , nhiệt nóng chảy riêng của nước đá là $λ = 336000$ J/kg . Bỏ qua sự trao đổi nhiệt của các chất trong bình với nhiệt lượng kế và môi trường. Giá trị của $t_x$ bằng bao nhiêu độ C ?",
+      "answerKey": "10",
+      "explanation": "Khi đổ thêm $m_1$ nước ở $t_x$ vào bình thì: $m_0 c_1 (t_0 - t_1) = m_1 c_1 (t_1 - t_x) ⇒ 0,4 · (25 - 20) = m_1 (20 - t_x)$ (*)\nCho thêm một cục nước đá khối lượng $m_2$ ở nhiệt độ $t_2 = -10$°C vào bình thì: $(m_0 + m_1) c_1 (t_1 - t_3) = m_2 (-c_2 t_2 + λ + c_1 t_3) ⇒ (0,4 + m_1) · 4200 · (20 - 5) = m_2 (2100 · 10 + 336000 + 4200 · 5) ⇒ 63000 m_1 - 378000 m_2 = -25200$.\nKết hợp $M = m_0 + m_1 + m_2 ⇒ 0,7 = 0,4 + m_1 + m_2 ⇒ m_1 + m_2 = 0,3$ kg, ta có hệ phương trình giải ra $m_1 = 0,2$ kg và $m_2 = 0,1$ kg.\nThay lại vào (*): $t_x = 10$°C. Trả lời ngắn: 10."
+    }
+  ]
+}

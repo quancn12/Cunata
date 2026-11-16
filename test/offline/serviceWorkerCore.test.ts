@@ -282,12 +282,16 @@ describe('Service Worker Core: Strict Exclusion of Collector & Private Reports',
     assert.strictEqual(isCacheableRequest('http://localhost:8000/public/q01-bbt.svg', 'GET'), true);
     assert.strictEqual(isCacheableRequest('/Cunata/app/main.js', 'GET'), true);
     assert.strictEqual(isCacheableRequest('/Cunata/collect/index.js', 'GET'), true, 'Static JS script is cacheable');
+    assert.strictEqual(isCacheableRequest('/Cunata/collect/appsScript.js', 'GET'), true, 'collect/appsScript.js static script must be cacheable');
+    assert.strictEqual(isCacheableRequest('/Cunata/app/exam-list.js?v=1', 'GET'), true, 'Script with query params must be cacheable');
 
     // Forbidden collector endpoints
     assert.strictEqual(isCacheableRequest('https://script.google.com/macros/s/AKfycbx/exec', 'GET'), false);
+    assert.strictEqual(isCacheableRequest('https://script.googleusercontent.com/macros/echo', 'GET'), false);
     assert.strictEqual(isCacheableRequest('https://macros.google.com/collector', 'GET'), false);
     assert.strictEqual(isCacheableRequest('http://localhost:8000/collect/send', 'GET'), false);
     assert.strictEqual(isCacheableRequest('http://localhost:8000/collector/outbox', 'GET'), false);
+    assert.strictEqual(isCacheableRequest('http://localhost:8000/appsscript?action=listExams', 'GET'), false);
 
     // Forbidden private reports & user exam snapshots
     assert.strictEqual(isCacheableRequest('http://localhost:8000/report/download', 'GET'), false);
