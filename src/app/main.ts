@@ -990,6 +990,9 @@ export async function bootstrap(
     if (timerIntervalId) clearInterval(timerIntervalId);
     updateTimerDisplay();
     timerIntervalId = setInterval(updateTimerDisplay, 1000);
+    if (timerIntervalId && typeof (timerIntervalId as any).unref === 'function') {
+      (timerIntervalId as any).unref();
+    }
   };
 
   // Submit and Scoring
@@ -1006,9 +1009,21 @@ export async function bootstrap(
     // Flush all active short-answer inputs from DOM to ensure responses are up-to-date
     if (root) {
       root.querySelectorAll('.short-answer-container').forEach((container: any) => {
-        const card = container.closest('.question-card');
+        let card: any = null;
+        if (typeof container.closest === 'function') {
+          card = container.closest('.question-card');
+        } else {
+          let curr = container.parentNode;
+          while (curr) {
+            if (curr.classList && typeof curr.classList.contains === 'function' && curr.classList.contains('question-card')) {
+              card = curr;
+              break;
+            }
+            curr = curr.parentNode;
+          }
+        }
         const qid = card?.id?.replace('qcard-', '');
-        const inp = container.querySelector('.short-answer-input') as HTMLInputElement | null;
+        const inp = container.querySelector ? (container.querySelector('.short-answer-input') as HTMLInputElement | null) : null;
         if (qid && inp && typeof inp.value === 'string') {
           responses[qid] = inp.value;
         }
@@ -1614,9 +1629,21 @@ export async function bootstrap(
     // Flush active inputs before prompting submit
     if (root) {
       root.querySelectorAll('.short-answer-container').forEach((container: any) => {
-        const card = container.closest('.question-card');
+        let card: any = null;
+        if (typeof container.closest === 'function') {
+          card = container.closest('.question-card');
+        } else {
+          let curr = container.parentNode;
+          while (curr) {
+            if (curr.classList && typeof curr.classList.contains === 'function' && curr.classList.contains('question-card')) {
+              card = curr;
+              break;
+            }
+            curr = curr.parentNode;
+          }
+        }
         const qid = card?.id?.replace('qcard-', '');
-        const inp = container.querySelector('.short-answer-input') as HTMLInputElement | null;
+        const inp = container.querySelector ? (container.querySelector('.short-answer-input') as HTMLInputElement | null) : null;
         if (qid && inp && typeof inp.value === 'string') {
           responses[qid] = inp.value;
         }
