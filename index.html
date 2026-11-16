@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cunata — Nền Tảng Luyện Thi & Khảo Sát Năng Lực GDPT 2018</title>
   <link rel="stylesheet" href="styles/style.css">
+  <link rel="modulepreload" href="./dist/import/docx/index.js">
+  <link rel="modulepreload" href="./dist/import/preview/view.js">
   <style>
     /* Bổ sung kiểu hiển thị công thức và định dạng hình học offline */
     .math-expr {
@@ -5085,7 +5087,32 @@
     let builderModalLastFocus = null;
     let bankModalLastFocus = null;
 
+    let docxModPromise = null;
+    let prevModPromise = null;
+    function preloadDocxModules() {
+      if (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:') return;
+      if (!docxModPromise) {
+        docxModPromise = import('./dist/import/docx/index.js').catch(() => {
+          docxModPromise = null;
+          return null;
+        });
+      }
+      if (!prevModPromise) {
+        prevModPromise = import('./dist/import/preview/view.js').catch(() => {
+          prevModPromise = null;
+          return null;
+        });
+      }
+    }
+
+    try {
+      if (typeof window !== 'undefined' && window.location && window.location.protocol !== 'file:') {
+        setTimeout(preloadDocxModules, 100);
+      }
+    } catch {}
+
     function openBuilderModal() {
+      preloadDocxModules();
       const modal = document.getElementById('builderModal');
       builderModalLastFocus = document.activeElement;
       if (modal) modal.style.display = 'flex';
@@ -5446,7 +5473,9 @@
     const docxFileInput = document.getElementById('docxFileInput');
     if (docxFileInput) {
       if (btnImportDocx) {
+        btnImportDocx.addEventListener('mouseenter', preloadDocxModules, { once: true });
         btnImportDocx.addEventListener('click', () => {
+          preloadDocxModules();
           docxFileInput.value = '';
           docxFileInput.click();
         });
@@ -5455,8 +5484,14 @@
         const file = e.target && e.target.files && e.target.files[0];
         if (!file) return;
         try {
-          const docxMod = await import('./dist/import/docx/index.js');
-          const prevMod = await import('./dist/import/preview/view.js');
+          preloadDocxModules();
+          const [docxMod, prevMod] = await Promise.all([
+            docxModPromise || import('./dist/import/docx/index.js'),
+            prevModPromise || import('./dist/import/preview/view.js'),
+          ]);
+          if (!docxMod || !prevMod) {
+            throw new Error('Không thể nạp module xử lý DOCX');
+          }
           const res = await docxMod.importDocx(file, new AbortController().signal);
           if (!res.ok) {
             if (typeof alert === 'function') alert('Lỗi phân tích DOCX: ' + (res.error?.message || 'Không rõ nguyên nhân'));
@@ -5493,6 +5528,8 @@
         } catch (err) {
           console.error('Lỗi nạp DOCX:', err);
           if (typeof alert === 'function') alert('Lỗi nạp file DOCX: ' + (err && err.message ? err.message : String(err)));
+        } finally {
+          docxFileInput.value = '';
         }
       });
     }
