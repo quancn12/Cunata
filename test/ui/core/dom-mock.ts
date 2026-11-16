@@ -287,6 +287,26 @@ export class MockElement extends MockNode {
       if (sel === 'select:not([disabled])') return el.tagName === 'SELECT' && !el.disabled;
       if (sel === 'textarea:not([disabled])') return el.tagName === 'TEXTAREA' && !el.disabled;
       if (sel === '[tabindex]:not([tabindex="-1"])') return el.hasAttribute('tabindex') && el.getAttribute('tabindex') !== '-1';
+      if (sel.includes('[')) {
+        const attrMatches = Array.from(sel.matchAll(/\[([a-zA-Z0-9_-]+)(?:="([^"]*)")?\]/g));
+        if (attrMatches.length > 0) {
+          for (const m of attrMatches) {
+            const attrName = m[1];
+            const attrVal = m[2];
+            if (!attrName) continue;
+            if (attrVal !== undefined) {
+              if (el.getAttribute(attrName) !== attrVal && el.id !== attrVal) {
+                return false;
+              }
+            } else {
+              if (!el.hasAttribute(attrName)) {
+                return false;
+              }
+            }
+          }
+          return true;
+        }
+      }
       return el.tagName === sel.toUpperCase();
     };
 

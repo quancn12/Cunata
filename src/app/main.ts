@@ -341,11 +341,14 @@ function ensureShellStructure(root: HTMLElement): void {
   timerBox.textContent = '50:00';
   const btnSubmit = createEl('button', 'btnSubmit', 'btn-submit');
   btnSubmit.textContent = 'Nộp bài';
+  const examFileInput = createEl('input', 'examFileInput') as HTMLInputElement;
+  examFileInput.type = 'file';
   header.appendChild(title);
   header.appendChild(candInput);
   header.appendChild(syncStatus);
   header.appendChild(timerBox);
   header.appendChild(btnSubmit);
+  header.appendChild(examFileInput);
 
   const examWrapper = createEl('div', 'examWrapper', 'main-wrapper');
   const paletteProgress = createEl('div', 'paletteProgress');
@@ -357,7 +360,19 @@ function ensureShellStructure(root: HTMLElement): void {
 
   const reportWrapper = createEl('div', 'reportWrapper', 'report-wrapper');
   reportWrapper.style.display = 'none';
+  const reportSubtitle = createEl('div', 'reportSubtitle');
+  const summaryGrid = createEl('div', undefined, 'summary-cards-grid');
+  const scorePartI = createEl('div', 'scorePartI');
+  const scorePartII = createEl('div', 'scorePartII');
+  const scorePartIII = createEl('div', 'scorePartIII');
+  const scoreTotal = createEl('div', 'scoreTotal');
   const reportView = createEl('div', 'reportView', 'report-container');
+  summaryGrid.appendChild(scorePartI);
+  summaryGrid.appendChild(scorePartII);
+  summaryGrid.appendChild(scorePartIII);
+  summaryGrid.appendChild(scoreTotal);
+  reportWrapper.appendChild(reportSubtitle);
+  reportWrapper.appendChild(summaryGrid);
   reportWrapper.appendChild(reportView);
 
   const submitModal = createEl('div', 'submitModal', 'modal-overlay');
@@ -725,8 +740,8 @@ export async function bootstrap(
 
       if (reportWrapper && typeof reportWrapper.prepend === 'function') {
         reportWrapper.prepend(errBanner);
-      } else if (reportWrapper && reportWrapper.firstChild) {
-        reportWrapper.insertBefore(errBanner, reportWrapper.firstChild);
+      } else if (reportWrapper && typeof (reportWrapper as any).insertBefore === 'function' && reportWrapper.firstChild) {
+        (reportWrapper as any).insertBefore(errBanner, reportWrapper.firstChild);
       } else if (reportWrapper) {
         reportWrapper.appendChild(errBanner);
       } else if (typeof root.prepend === 'function') {
@@ -1732,9 +1747,9 @@ export async function bootstrap(
       : '0';
     if (percentTotal) percentTotal.textContent = `Tỷ lệ: ${pct}%`;
 
-    // Render #reportView for fullIntegration unit tests only if scoreTotal is missing from DOM
+    // Render #reportView for shells where reportView was created empty (e.g. unit test shell)
     const reportView = root.querySelector('#reportView') as HTMLElement | null;
-    if (reportView && !scoreTotal) {
+    if (reportView && (!reportView.innerHTML || reportView.innerHTML.length < 50)) {
       reportView.innerHTML = `
         <div class="report-summary-box">
           <h2>Kết Quả Bài Thi</h2>

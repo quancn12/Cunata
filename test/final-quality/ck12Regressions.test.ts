@@ -5,6 +5,8 @@ import type { AttemptRecord, WebExam } from '../../src/schema/types.ts';
 import { openStorage, MemoryTransactionAdapter } from '../../src/storage/index.ts';
 import { bootstrap } from '../../src/app/main.ts';
 import { createMockDocument, MockElement, MockEvent } from '../ui/core/dom-mock.ts';
+import { toDomainExam } from '../../src/student/index.ts';
+import { scoreAttempt, scoreResultToDTO } from '../../src/domain/index.ts';
 
 const SAMPLE_EXAM: WebExam = {
   schemaVersion: 'web-exam-v1',
@@ -112,6 +114,27 @@ function createMockLocalStorage() {
   };
 }
 
+function createMockWindow() {
+  const listeners = new Map<string, Set<Function>>();
+  return {
+    location: { hash: '' },
+    addEventListener(event: string, fn: Function) {
+      if (!listeners.has(event)) listeners.set(event, new Set());
+      listeners.get(event)!.add(fn);
+    },
+    removeEventListener(event: string, fn: Function) {
+      listeners.get(event)?.delete(fn);
+    },
+    dispatchEvent(event: any) {
+      const set = listeners.get(event.type);
+      if (set) {
+        for (const fn of set) fn(event);
+      }
+      return true;
+    },
+  };
+}
+
 class MockFileReader {
   public onload: ((e: any) => void) | null = null;
   public result: string | null = null;
@@ -128,7 +151,8 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
   it('CK12-F01: Durable StoragePort final record cannot be mutated by corrupted localStorage mirror', async () => {
     const mockStorage = createMockLocalStorage();
     (globalThis as any).localStorage = mockStorage;
-    (globalThis as any).window = globalThis;
+    const mockWin = createMockWindow();
+    (globalThis as any).window = mockWin;
     if (typeof URL.createObjectURL !== 'function') {
       URL.createObjectURL = () => 'blob:mock-url';
       URL.revokeObjectURL = () => {};
@@ -166,25 +190,22 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       deadline: Date.now() + 2940000,
       phase: 'final',
       submittedAt: Date.now() - 1000,
-      scoreDTO: {
-        attemptId,
-        examVersionId: SAMPLE_EXAM.examVersionId,
-        ruleSetId: 'custom-v1',
-        inputPolicyId: 'sa-charset-v1',
-        total: '1/4',
-        maxTotal: '1/2',
-        sections: {
-          I: { score: '1/4', max: '1/2' },
-          II: { score: '0', max: '0' },
-          III: { score: '0', max: '0' },
-        },
-        questionScores: [
-          { questionVersionId: 'q01', score: '1/4', max: '1/4' },
-          { questionVersionId: 'q02', score: '0', max: '1/4' },
-        ],
-      },
+      scoreDTO: null,
     };
-    await storage.create(finalRecord);
+    const domainExam = toDomainExam(SAMPLE_EXAM);
+    const calculatedScore = scoreAttempt(domainExam, finalRecord.responses);
+    const validDTO = scoreResultToDTO(calculatedScore);
+    const fullFinalRecord = { ...finalRecord, scoreDTO: validDTO };
+
+    const draftRecord: AttemptRecord = {
+      ...fullFinalRecord,
+      revision: 1,
+      phase: 'draft',
+      submittedAt: null,
+      scoreDTO: null,
+    };
+    await storage.create(draftRecord);
+    await storage.finalize(fullFinalRecord, 1);
 
     const doc = createMockDocument();
     const root = doc.createElement('div') as unknown as HTMLElement;
@@ -219,7 +240,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
     mockStorage.setItem(finalKey, corruptPayload);
 
     // Emit storage event
-    window.dispatchEvent(new MockEvent('storage', { key: finalKey, newValue: corruptPayload }));
+    mockWin.dispatchEvent(new MockEvent('storage', { key: finalKey, newValue: corruptPayload }) as any);
 
     // Verify DOM still has original score and candidate name
     assert.ok(scoreTotal?.textContent?.includes('0,25 / 0,50'));
@@ -247,7 +268,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
   it('CK12-F02: When IDB open fails, openStorage returns STORAGE_UNAVAILABLE and UI shows honest non-saved status through submit and reload', async () => {
     const mockStorage = createMockLocalStorage();
     (globalThis as any).localStorage = mockStorage;
-    (globalThis as any).window = globalThis;
+    (globalThis as any).window = createMockWindow();
 
     const failingAdapter = {
       isAvailable: async () => false,
@@ -284,16 +305,16 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
     // Answer question 1
     const optCard = root.querySelector('[data-qid="q01"][data-option-id="opt-1a"]');
     assert.ok(optCard, 'Option card opt-1a must exist');
-    optCard.dispatchEvent(new MockEvent('click'));
+    (optCard as any).dispatchEvent(new MockEvent('click'));
 
     // Submit exam
     const btnSubmit = root.querySelector('#btnSubmit');
     assert.ok(btnSubmit);
-    btnSubmit.dispatchEvent(new MockEvent('click'));
+    (btnSubmit as any).dispatchEvent(new MockEvent('click'));
 
     const btnConfirmSubmit = root.querySelector('#btnConfirmSubmit');
     assert.ok(btnConfirmSubmit);
-    await btnConfirmSubmit.dispatchEvent(new MockEvent('click'));
+    await (btnConfirmSubmit as any).dispatchEvent(new MockEvent('click'));
 
     // After submit: durable finalize failed because IDB is unavailable
     // syncText must remain 'Chưa lưu'!
@@ -336,7 +357,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
   it('CK12-F03: In-progress attempt with responses prompts confirmation before switching exam', async () => {
     const mockStorage = createMockLocalStorage();
     (globalThis as any).localStorage = mockStorage;
-    (globalThis as any).window = globalThis;
+    (globalThis as any).window = createMockWindow();
     (globalThis as any).FileReader = MockFileReader;
 
     const doc = createMockDocument();
@@ -361,7 +382,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
     // Answer question 1
     const optCard = root.querySelector('[data-qid="q01"][data-option-id="opt-1a"]');
     assert.ok(optCard);
-    optCard.dispatchEvent(new MockEvent('click'));
+    (optCard as any).dispatchEvent(new MockEvent('click'));
 
     // User attempts to switch exam via file upload, but CANCELS confirmation
     confirmReturnValue = false;
@@ -400,7 +421,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
   it('CK13-F03: Tampered scoreDTO triggers SCORE_MISMATCH integrity error in UI instead of normal report', async () => {
     const mockStorage = createMockLocalStorage();
     (globalThis as any).localStorage = mockStorage;
-    (globalThis as any).window = globalThis;
+    (globalThis as any).window = createMockWindow();
 
     const adapter = new MemoryTransactionAdapter();
     const storageRes = await openStorage({ adapter, approveD03: true });
@@ -435,26 +456,26 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       deadline: Date.now() + 2940000,
       phase: 'final',
       submittedAt: Date.now() - 1000,
-      // Tampered: total is '0' instead of recomputed '1/4'
-      scoreDTO: {
-        attemptId,
-        examVersionId: SAMPLE_EXAM.examVersionId,
-        ruleSetId: 'custom-v1',
-        inputPolicyId: 'sa-charset-v1',
-        total: '0',
-        maxTotal: '1/2',
-        sections: {
-          I: { score: '0', max: '1/2' },
-          II: { score: '0', max: '0' },
-          III: { score: '0', max: '0' },
-        },
-        questionScores: [
-          { questionVersionId: 'q01', score: '0', max: '1/4' },
-          { questionVersionId: 'q02', score: '0', max: '1/4' },
-        ],
-      },
+      scoreDTO: null,
     };
-    await storage.create(tamperedRecord);
+    const domainExam = toDomainExam(SAMPLE_EXAM);
+    const calculatedScore = scoreAttempt(domainExam, tamperedRecord.responses);
+    const validDTO = scoreResultToDTO(calculatedScore);
+    const tamperedDTO = {
+      ...(validDTO as Record<string, unknown>),
+      total: '0', // Tampered: total is '0' instead of recomputed '1/4'
+    };
+    const fullTamperedRecord = { ...tamperedRecord, scoreDTO: tamperedDTO };
+
+    const draftRecord: AttemptRecord = {
+      ...fullTamperedRecord,
+      revision: 1,
+      phase: 'draft',
+      submittedAt: null,
+      scoreDTO: null,
+    };
+    await storage.create(draftRecord);
+    await storage.finalize(fullTamperedRecord, 1);
 
     const doc = createMockDocument();
     const root = doc.createElement('div') as unknown as HTMLElement;
