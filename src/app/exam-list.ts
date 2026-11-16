@@ -4,7 +4,10 @@
  */
 
 import type { WebExam } from '../schema/index.ts';
+import { parseExam } from '../schema/index.ts';
 import { validateExamVersion } from '../domain/index.ts';
+import type { AppsScriptClient } from '../collect/appsScript.ts';
+import { createAppsScriptClient } from '../collect/appsScript.ts';
 
 export interface ManifestEntry {
   readonly id: string;
@@ -38,6 +41,7 @@ export interface ExamListOptions {
   readonly onSelectExam: (exam: WebExam) => void;
   readonly hasUnsavedProgress?: () => boolean;
   readonly appsScriptUrl?: string;
+  readonly client?: AppsScriptClient;
 }
 
 export function escapeHtml(str: string): string {
@@ -49,7 +53,10 @@ export function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
-export async function fetchAndMergeExams(appsScriptUrl?: string): Promise<{ exams: MergedExamEntry[]; error?: string; teacherError?: string }> {
+export async function fetchAndMergeExams(
+  appsScriptUrl?: string,
+  client?: AppsScriptClient
+): Promise<{ exams: MergedExamEntry[]; error?: string; teacherError?: string }> {
   let staticExams: MergedExamEntry[] = [];
   let teacherExams: MergedExamEntry[] = [];
   let mainError: string | undefined;
@@ -79,24 +86,21 @@ export async function fetchAndMergeExams(appsScriptUrl?: string): Promise<{ exam
     mainError = err?.message || String(err);
   }
 
-  if (appsScriptUrl && appsScriptUrl.trim()) {
+  const asClient = client || (appsScriptUrl && appsScriptUrl.trim() ? createAppsScriptClient(appsScriptUrl) : null);
+  if (asClient && asClient.configured) {
     try {
-      const separator = appsScriptUrl.includes('?') ? '&' : '?';
-      const res = await fetch(appsScriptUrl + separator + 'action=listExams');
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.success && Array.isArray(data.exams)) {
-          teacherExams = data.exams.map((e: any) => ({
-            id: String(e.id || ''),
-            title: String(e.title || ''),
-            subject: String(e.subject || ''),
-            grade: Number(e.grade) || 12,
-            durationMinutes: Number(e.durationMinutes) || 50,
-            questionCount: Number(e.questionCount) || 0,
-            group: String(e.group || 'Đề giáo viên xuất bản'),
-            source: 'teacher' as const,
-          }));
-        }
+      const res = await asClient.listExams();
+      if (res.ok && Array.isArray(res.value)) {
+        teacherExams = res.value.map((e: any) => ({
+          id: String(e.id || ''),
+          title: String(e.title || ''),
+          subject: String(e.subject || ''),
+          grade: Number(e.grade) || 12,
+          durationMinutes: Number(e.durationMinutes) || 50,
+          questionCount: Number(e.questionCount) || 0,
+          group: String(e.group || 'Đề giáo viên xuất bản'),
+          source: 'teacher' as const,
+        }));
       } else {
         teacherError = 'chưa tải được đề của giáo viên';
       }
@@ -134,29 +138,31 @@ export async function fetchAndMergeExams(appsScriptUrl?: string): Promise<{ exam
   return { exams: merged, error: mainError, teacherError };
 }
 
-export async function fetchExamData(entry: MergedExamEntry, appsScriptUrl?: string): Promise<WebExam> {
-  if (entry.source === 'teacher' && appsScriptUrl) {
-    const separator = appsScriptUrl.includes('?') ? '&' : '?';
-    const res = await fetch(appsScriptUrl + separator + 'action=getExam&id=' + encodeURIComponent(entry.id));
-    if (!res.ok) throw new Error(`HTTP ${res.status}: Không thể tải đề từ Apps Script`);
-    const data = await res.json();
-    if (!data || !data.success || !data.exam) {
-      throw new Error(data?.message || 'Không tìm thấy đề thi trên máy chủ');
+export async function fetchExamData(
+  entry: MergedExamEntry,
+  appsScriptUrl?: string,
+  client?: AppsScriptClient
+): Promise<WebExam> {
+  const asClient = client || (appsScriptUrl && appsScriptUrl.trim() ? createAppsScriptClient(appsScriptUrl) : null);
+  if (entry.source === 'teacher' && asClient) {
+    const res = await asClient.getExam(entry.id);
+    if (!res.ok) {
+      throw new Error(res.message || 'Không tìm thấy đề thi trên máy chủ');
     }
-    const v = validateExamVersion(data.exam);
+    const v = parseExam(res.value);
     if (!v.ok) {
-      throw new Error('Dữ liệu đề thi không hợp lệ: ' + v.issues.map((i: any) => i.code + ': ' + i.message).join('; '));
+      throw new Error('Dữ liệu đề thi không hợp lệ: ' + v.issues.map((i: any) => `${i.code}: ${i.message}`).join('; '));
     }
-    return data.exam as WebExam;
+    return v.value;
   } else if (entry.url) {
     const res = await fetch(entry.url);
     if (!res.ok) throw new Error(`HTTP ${res.status}: Không thể tải file đề thi`);
     const data = await res.json();
-    const v = validateExamVersion(data);
+    const v = parseExam(data);
     if (!v.ok) {
-      throw new Error('Dữ liệu đề thi không hợp lệ: ' + v.issues.map((i: any) => i.code + ': ' + i.message).join('; '));
+      throw new Error('Dữ liệu đề thi không hợp lệ: ' + v.issues.map((i: any) => `${i.code}: ${i.message}`).join('; '));
     }
-    return data as WebExam;
+    return v.value;
   }
   throw new Error('Đề thi không có nguồn hợp lệ');
 }
@@ -262,7 +268,7 @@ export function initExamList(root: HTMLElement, options: ExamListOptions): () =>
     }
 
     try {
-      const examData = await fetchExamData(entry, options.appsScriptUrl);
+      const examData = await fetchExamData(entry, options.appsScriptUrl, options.client);
       options.onSelectExam(examData);
       closeModal();
     } catch (err: any) {
@@ -282,7 +288,7 @@ export function initExamList(root: HTMLElement, options: ExamListOptions): () =>
     }
 
     try {
-      const { exams, error, teacherError } = await fetchAndMergeExams(options.appsScriptUrl);
+      const { exams, error, teacherError } = await fetchAndMergeExams(options.appsScriptUrl, options.client);
       if (error && exams.length === 0) {
         if (container) {
           container.innerHTML = `<div style="color: var(--danger); padding: 1rem; text-align: center;">Lỗi tải danh sách đề thi: ${escapeHtml(error)}</div>`;
@@ -352,6 +358,7 @@ export function initExamList(root: HTMLElement, options: ExamListOptions): () =>
 export interface StartScreenOptions {
   readonly onStartExam: (exam: WebExam, candidateName: string) => void;
   readonly appsScriptUrl?: string;
+  readonly client?: AppsScriptClient;
   readonly initialExamId?: string | null;
   readonly onOpenTeacher?: () => void;
 }
@@ -392,7 +399,7 @@ export function initStartScreen(root: HTMLElement, options: StartScreenOptions):
     if (!startExamListContainer) return;
     startExamListContainer.innerHTML = '<div style="text-align: center; color: var(--gray-500, #6b7280); padding: 1rem;">Đang tải danh sách đề thi...</div>';
     try {
-      const { exams, error, teacherError } = await fetchAndMergeExams(options.appsScriptUrl);
+      const { exams, error, teacherError } = await fetchAndMergeExams(options.appsScriptUrl, options.client);
       loadedExams = exams;
       if (error && exams.length === 0) {
         startExamListContainer.innerHTML = `<div style="color: var(--danger, #ef4444); padding: 1rem; text-align: center;">Lỗi tải danh sách đề thi: ${escapeHtml(error)}</div>`;
@@ -474,7 +481,7 @@ export function initStartScreen(root: HTMLElement, options: StartScreenOptions):
       btnStartExam.textContent = 'Đang nạp đề...';
     }
     try {
-      const examData = await fetchExamData(selectedEntry, options.appsScriptUrl);
+      const examData = await fetchExamData(selectedEntry, options.appsScriptUrl, options.client);
       if (startScreen) startScreen.style.display = 'none';
       options.onStartExam(examData, name);
     } catch (err: any) {

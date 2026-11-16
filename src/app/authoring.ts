@@ -4,6 +4,7 @@
  */
 
 import type { WebExam, WebQuestion } from '../schema/index.ts';
+import type { AsResult } from '../collect/appsScript.ts';
 import {
   validateExamVersion,
   toFractionString,
@@ -24,6 +25,16 @@ export interface AuthoringOptions {
   readonly onPublishedToWeb?: (exam: WebExam) => void;
 }
 
+export interface AuthoringController {
+  openBuilder(
+    exam: unknown | null,
+    opts?: {
+      onPublish?: (exam: unknown) => Promise<AsResult<{ examId: string; revision: number }>>;
+    }
+  ): void;
+  dispose(): void;
+}
+
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -33,8 +44,10 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
-export function initAuthoring(root: HTMLElement, options: AuthoringOptions): () => void {
+export function initAuthoring(root: HTMLElement, options: AuthoringOptions): AuthoringController & (() => void) {
   const doc = root.ownerDocument || document;
+
+  let activeOnPublish: ((exam: unknown) => Promise<AsResult<{ examId: string; revision: number }>>) | null = null;
 
   // Builder draft state
   let builderExamState: any = {
@@ -528,11 +541,109 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): () 
   const btnPublishExam = root.querySelector('#btnPublishExam') as HTMLButtonElement | null;
   const teacherPublishStatus = root.querySelector('#teacherPublishStatus') as HTMLElement | null;
 
+  const titleEl = root.querySelector('#builderExamTitle') as HTMLInputElement | null;
+  if (titleEl) {
+    const onTitleChange = () => {
+      if (titleEl.value.trim()) {
+        builderExamState.title = titleEl.value.trim();
+      }
+    };
+    titleEl.addEventListener('input', onTitleChange);
+    titleEl.addEventListener('change', onTitleChange);
+  }
+
+  const openAuthoringBuilder = (
+    exam: unknown | null,
+    opts?: {
+      onPublish?: (exam: unknown) => Promise<AsResult<{ examId: string; revision: number }>>;
+    }
+  ) => {
+    activeOnPublish = opts?.onPublish || null;
+    if (exam && typeof exam === 'object') {
+      builderExamState = JSON.parse(JSON.stringify(exam));
+    } else {
+      builderExamState = {
+        schemaVersion: 'web-exam-v1',
+        examId: 'exam-' + (options.idGen ? options.idGen() : Date.now().toString(36)),
+        examVersionId: 'v1.0.0',
+        ruleSetId: 'custom-v1',
+        inputPolicyId: 'sa-charset-v1',
+        title: 'Đề thi mới',
+        subject: 'Toán học',
+        grade: 12,
+        durationMinutes: 50,
+        settings: {
+          durationMinutes: 50,
+          maxAttempts: null,
+          releasePolicy: 'immediate',
+          shuffleQuestions: false,
+          shuffleOptions: false,
+        },
+        assets: [],
+        questions: [],
+      };
+    }
+    editingQuestionIdx = -1;
+    if (titleEl) titleEl.value = builderExamState.title || '';
+    const idEl = root.querySelector('#builderExamId') as HTMLInputElement | null;
+    if (idEl) idEl.value = builderExamState.examId || '';
+    const durEl = root.querySelector('#builderDuration') as HTMLInputElement | null;
+    if (durEl) durEl.value = String(builderExamState.settings?.durationMinutes || builderExamState.durationMinutes || 50);
+    if (teacherPublishStatus) teacherPublishStatus.textContent = '';
+    if (btnPublishExam) btnPublishExam.style.display = 'inline-block';
+    renderBuilderForm();
+    openBuilder();
+  };
+
+  (root as any).__cunata_loadBuilderExam = openAuthoringBuilder;
+
   if (btnPublishExam) {
     btnPublishExam.addEventListener('click', async () => {
       try {
-        const draft = exportDraft();
-        if (!draft) return;
+        syncInputsToState();
+        if (editingQuestionIdx >= 0) {
+          if (teacherPublishStatus) {
+            teacherPublishStatus.textContent = 'ND-01: Có câu hỏi đang sửa dở. Hãy bấm Lưu hoặc Hủy chỉnh sửa trước khi xuất bản!';
+          }
+          return;
+        }
+
+        const val = validateExamVersion(builderExamState);
+        if (!val.ok) {
+          const issuesMsg = val.issues.map((i: any) => `${i.code}: ${i.message}`).join(', ');
+          if (teacherPublishStatus) {
+            teacherPublishStatus.textContent = 'Lỗi INVALID_EXAM: ' + issuesMsg;
+          }
+          return;
+        }
+
+        const draft = JSON.parse(JSON.stringify(builderExamState));
+        if (teacherPublishStatus) teacherPublishStatus.textContent = 'Đang xuất bản...';
+
+        if (activeOnPublish) {
+          const res = await activeOnPublish(draft);
+          if (res.ok) {
+            if (teacherPublishStatus) {
+              teacherPublishStatus.textContent = 'Đã xuất bản (revision ' + (res.value.revision || 1) + ')';
+            }
+            if (options.onPublishedToWeb) {
+              options.onPublishedToWeb(draft);
+            }
+          } else {
+            let errMsg = res.message || res.code || 'Lỗi xuất bản';
+            if (res.code === 'INVALID_EXAM' && (res as any).details) {
+              const details = (res as any).details;
+              if (Array.isArray(details)) {
+                errMsg += ': ' + details.map((d: any) => typeof d === 'string' ? d : `${d.code}: ${d.message}`).join('; ');
+              } else if (typeof details === 'object') {
+                errMsg += ': ' + JSON.stringify(details);
+              }
+            }
+            if (teacherPublishStatus) teacherPublishStatus.textContent = 'Lỗi xuất bản: ' + errMsg;
+          }
+          return;
+        }
+
         const appsScriptUrl = options.getAppsScriptUrl ? options.getAppsScriptUrl() : '';
         const password = options.getTeacherPassword ? options.getTeacherPassword() : null;
         if (!appsScriptUrl || !password) {
@@ -540,7 +651,6 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): () 
           return;
         }
 
-        if (teacherPublishStatus) teacherPublishStatus.textContent = 'Đang xuất bản...';
         const res = await fetch(appsScriptUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -557,37 +667,17 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): () 
             options.onPublishedToWeb(draft);
           }
         } else {
-          if (teacherPublishStatus) teacherPublishStatus.textContent = 'Lỗi xuất bản: ' + (data?.message || data?.error || 'Không hợp lệ');
+          let errDetail = data?.message || data?.error || 'Không hợp lệ';
+          if (data?.errors && Array.isArray(data.errors)) {
+            errDetail += ': ' + data.errors.join('; ');
+          }
+          if (teacherPublishStatus) teacherPublishStatus.textContent = 'Lỗi xuất bản: ' + errDetail;
         }
       } catch (err: any) {
         if (teacherPublishStatus) teacherPublishStatus.textContent = 'Lỗi xuất bản: ' + (err?.message || String(err));
       }
     });
   }
-
-  const titleEl = root.querySelector('#builderExamTitle') as HTMLInputElement | null;
-  if (titleEl) {
-    const onTitleChange = () => {
-      if (titleEl.value.trim()) {
-        builderExamState.title = titleEl.value.trim();
-      }
-    };
-    titleEl.addEventListener('input', onTitleChange);
-    titleEl.addEventListener('change', onTitleChange);
-  }
-
-  (root as any).__cunata_loadBuilderExam = (exam: WebExam) => {
-    builderExamState = JSON.parse(JSON.stringify(exam));
-    editingQuestionIdx = -1;
-    if (titleEl) titleEl.value = exam.title || '';
-    const idEl = root.querySelector('#builderExamId') as HTMLInputElement | null;
-    if (idEl) idEl.value = exam.examId || '';
-    const durEl = root.querySelector('#builderDuration') as HTMLInputElement | null;
-    if (durEl) durEl.value = String(exam.settings?.durationMinutes || (exam as any).durationMinutes || 50);
-    if (teacherPublishStatus) teacherPublishStatus.textContent = '';
-    if (btnPublishExam) btnPublishExam.style.display = 'inline-block';
-    openBuilder();
-  };
 
   if (btnPublishToRunner) {
     btnPublishToRunner.addEventListener('click', () => {
@@ -794,7 +884,14 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): () 
     docxInput.value = '';
   });
 
-  return () => {
+  const dispose = () => {
     // Teardown
   };
+
+  const ctrl: AuthoringController & (() => void) = Object.assign(dispose, {
+    openBuilder: openAuthoringBuilder,
+    dispose,
+  });
+
+  return ctrl;
 }
