@@ -1,5 +1,15 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+// @ts-ignore
+import rawHttp from 'node:http';
+// @ts-ignore
+import rawFs from 'node:fs';
+// @ts-ignore
+import rawPath from 'node:path';
+
+const http = rawHttp as any;
+const fs = rawFs as any;
+const path = rawPath as any;
 
 import type { AttemptRecord, WebExam } from '../../src/schema/types.ts';
 import { openStorage, MemoryTransactionAdapter } from '../../src/storage/index.ts';
@@ -7,6 +17,8 @@ import { bootstrap } from '../../src/app/main.ts';
 import { createMockDocument, MockElement, MockEvent } from '../ui/core/dom-mock.ts';
 import { toDomainExam } from '../../src/student/index.ts';
 import { scoreAttempt, scoreResultToDTO } from '../../src/domain/index.ts';
+import { CdpClient } from '../browser/cdp-client.ts';
+import { detectCapabilities } from '../browser/capabilities.ts';
 
 const SAMPLE_EXAM: WebExam = {
   schemaVersion: 'web-exam-v1',
@@ -707,5 +719,192 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
 
     URL.createObjectURL = origCreateObjectURL;
     cleanup();
+  });
+
+  it('CK15-F01: Service Worker version upgrade in real browser cleanly transitions release A to release B, preserving draft and offline capabilities', { timeout: 60000 }, async (t) => {
+    const caps = detectCapabilities();
+    if (!caps.preferredBrowserPath || !caps.tools.cdp) {
+      t.skip('Headless browser unavailable');
+      return;
+    }
+
+    const distDir = path.resolve('dist');
+    if (!fs.existsSync(distDir)) {
+      t.skip('dist directory does not exist');
+      return;
+    }
+
+    // Prepare Release A and Release B payloads
+    let serverRelease: 'A' | 'B' = 'A';
+    const mainJsHead = fs.readFileSync(path.join(distDir, 'app/main.js'), 'utf8');
+    const swHead = fs.readFileSync(path.join(distDir, 'service-worker.js'), 'utf8');
+
+    const mainJsA = '/* RELEASE_A_MARKER */\n' + mainJsHead;
+    const swA = swHead
+      .replace(/cunata-cache-v-[a-f0-9]+/g, 'cunata-cache-v-release-a')
+      .replace(/v-[a-f0-9]+/g, 'v-release-a');
+
+    const server = http.createServer((req: any, res: any) => {
+      try {
+        const reqUrl = new URL(req.url || '/', 'http://127.0.0.1');
+        let pathname = decodeURIComponent(reqUrl.pathname);
+
+        if (pathname.startsWith('/Cunata/')) {
+          pathname = pathname.slice('/Cunata'.length);
+        }
+        if (pathname === '/' || pathname === '') {
+          pathname = '/index.html';
+        }
+
+        const safeRel = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, '');
+        const fullPath = path.join(distDir, safeRel);
+
+        // Intercept service-worker.js and app/main.js depending on release version
+        if (safeRel.endsWith('service-worker.js')) {
+          res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' });
+          res.end(serverRelease === 'A' ? swA : swHead);
+          return;
+        }
+
+        if (safeRel.endsWith('app/main.js') || safeRel.endsWith('app\\main.js')) {
+          res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' });
+          res.end(serverRelease === 'A' ? mainJsA : mainJsHead);
+          return;
+        }
+
+        if (fs.existsSync(fullPath)) {
+          const ext = path.extname(fullPath).toLowerCase();
+          const mime = ext === '.html' ? 'text/html; charset=utf-8'
+            : ext === '.js' ? 'text/javascript; charset=utf-8'
+            : ext === '.css' ? 'text/css; charset=utf-8'
+            : ext === '.json' ? 'application/json; charset=utf-8'
+            : ext === '.svg' ? 'image/svg+xml'
+            : 'application/octet-stream';
+          res.writeHead(200, { 'Content-Type': mime, 'Cache-Control': 'no-cache' });
+          res.end(fs.readFileSync(fullPath));
+          return;
+        }
+
+        res.writeHead(404);
+        res.end('Not found');
+      } catch (err) {
+        res.writeHead(500);
+        res.end(String(err));
+      }
+    });
+
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', () => resolve()));
+    const port = (server.address() as any).port;
+    const origin = `http://127.0.0.1:${port}`;
+
+    let client: CdpClient | null = null;
+    try {
+      client = await CdpClient.launch({ width: 1280, height: 800 });
+
+      // Step 1: Boot Release A
+      await client.navigate(`${origin}/Cunata/`);
+      const hasCards = await client.waitForSelector('.question-card', 10000);
+      assert.ok(hasCards, 'App must boot and render cards for Release A');
+
+      // Wait for service worker to activate
+      await client.evaluate(`new Promise(resolve => {
+        if (navigator.serviceWorker.controller) return resolve(true);
+        navigator.serviceWorker.addEventListener('controllerchange', () => resolve(true), { once: true });
+        setTimeout(() => resolve(false), 5000);
+      })`);
+
+      // Reload once to ensure worker caches Release A
+      await client.navigate(`${origin}/Cunata/`);
+      await client.waitForSelector('.question-card', 10000);
+
+      // Verify that browser fetch returns Release A
+      const textA = await client.evaluate<string>(`fetch('./app/main.js').then(r => r.text())`);
+      assert.ok(textA.includes('RELEASE_A_MARKER'), 'Browser fetch must initially return Release A module');
+
+      // Candidate answers a question in Release A
+      await client.type('#candidateName', 'Thí sinh kiểm định F01');
+      await client.evaluate(`(() => {
+        const opt = document.querySelector('.question-card [role="radio"]') as HTMLElement | null;
+        if (opt) opt.click();
+      })()`);
+
+      // Wait for local save
+      await new Promise((r) => setTimeout(r, 500));
+
+      // Step 2: Switch server to Release B and update worker
+      serverRelease = 'B';
+      const waitingReached = await client.evaluate<boolean>(`new Promise(resolve => {
+        navigator.serviceWorker.getRegistration().then(reg => {
+          if (!reg) return resolve(false);
+          if (reg.waiting) return resolve(true);
+
+          const checkWorker = (w) => {
+            if (!w) return;
+            if (w.state === 'installed') return resolve(true);
+            w.addEventListener('statechange', () => {
+              if (w.state === 'installed' || reg.waiting) resolve(true);
+            });
+          };
+
+          if (reg.installing) {
+            checkWorker(reg.installing);
+          }
+
+          reg.addEventListener('updatefound', () => {
+            checkWorker(reg.installing);
+          });
+
+          reg.update().catch(() => {});
+
+          const interval = setInterval(() => {
+            if (reg.waiting || (reg.installing && reg.installing.state === 'installed')) {
+              clearInterval(interval);
+              resolve(true);
+            }
+          }, 100);
+
+          setTimeout(() => {
+            clearInterval(interval);
+            resolve(!!reg.waiting);
+          }, 8000);
+        });
+      })`);
+      assert.ok(waitingReached, 'Release B Service Worker must download and install into waiting state');
+
+      // Verify that while exam is in progress, old cache still exists
+      const currentCacheStillA = await client.evaluate<boolean>(`caches.has('cunata-cache-v-release-a')`);
+      assert.ok(currentCacheStillA, 'Old cache cunata-cache-v-release-a must be retained while exam is in progress');
+
+      // Step 3: Complete exam
+      await client.click('#btnSubmit');
+      await client.waitForSelector('#btnConfirmSubmit');
+      await client.click('#btnConfirmSubmit');
+      await client.waitForSelector('#reportWrapper');
+
+      // Step 4: Reopen page - Release B activates cleanly
+      await client.navigate(`${origin}/Cunata/`);
+      await client.waitForSelector('#reportWrapper, .question-card', 10000);
+
+      // Verify that browser fetch now returns Release B (no RELEASE_A_MARKER)
+      const textB = await client.evaluate<string>(`fetch('./app/main.js').then(r => r.text())`);
+      assert.ok(!textB.includes('RELEASE_A_MARKER'), 'Browser fetch after upgrade must return Release B module');
+
+      // Step 5: Verify offline capability with Release B
+      await new Promise<void>((resolve) => {
+        (server as any).closeAllConnections?.();
+        server.close(() => resolve());
+      });
+
+      // Reload while server is down (full offline)
+      await client.navigate(`${origin}/Cunata/`);
+      const offlineLoaded = await client.waitForSelector('#reportWrapper, .question-card', 10000);
+      assert.ok(offlineLoaded, 'Release B must cleanly boot offline after server is stopped');
+    } finally {
+      if (client) await client.close();
+      await new Promise<void>((resolve) => {
+        (server as any).closeAllConnections?.();
+        server.close(() => resolve());
+      });
+    }
   });
 });

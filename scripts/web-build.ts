@@ -19,6 +19,8 @@ import rawPath from 'node:path';
 import { spawnSync } from 'node:child_process';
 // @ts-ignore
 import { pathToFileURL } from 'node:url';
+// @ts-ignore
+import crypto from 'node:crypto';
 
 interface DirEntry {
   name: string;
@@ -115,6 +117,30 @@ export function collectFiles(dir: string, ext?: string): string[] {
     }
   }
   return results;
+}
+
+/**
+ * Computes deterministic SHA-256 content digest across all build assets (excluding service-worker.js).
+ */
+export function computeBuildDigest(targetDir: string): string {
+  const allFiles = collectFiles(targetDir);
+  const fileEntries = allFiles
+    .map((fullPath) => ({
+      fullPath,
+      relPath: path.relative(targetDir, fullPath).replace(/\\/g, '/'),
+    }))
+    .filter((entry) => entry.relPath !== 'service-worker.js')
+    .sort((a, b) => (a.relPath < b.relPath ? -1 : a.relPath > b.relPath ? 1 : 0));
+
+  const hash = crypto.createHash('sha256');
+  for (const entry of fileEntries) {
+    hash.update(entry.relPath);
+    hash.update('\0');
+    const content = (rawFs as any).readFileSync(entry.fullPath);
+    hash.update(content);
+    hash.update('\0');
+  }
+  return hash.digest('hex').slice(0, 16);
 }
 
 /**
@@ -251,22 +277,42 @@ export function prepareShellAndAssets(rootDir: string, stagingDir: string): void
     copyDirectoryRecursive(publicSrcDir, publicDestDir);
   }
 
-  // 4. Prepare Service Worker
+  // 4. Compute deterministic build digest and prepare versioned Service Worker
+  const buildDigest = computeBuildDigest(stagingDir);
+  const cacheVersion = 'v-' + buildDigest;
+  const cacheName = 'cunata-cache-' + cacheVersion;
   const swDestPath = path.join(stagingDir, 'service-worker.js');
   const swContent = `// Cunata Web Native Service Worker
-const CACHE_NAME = 'cunata-cache-v1';
+// Build Digest: ${buildDigest}
+const BUILD_VERSION = '${cacheVersion}';
 const CACHE_NAME_PREFIX = 'cunata-cache-';
+const CACHE_NAME = '${cacheName}';
 const DEFAULT_PRECACHE_ENTRIES = [
   { url: 'index.html', critical: true },
   { url: './', critical: true },
   { url: 'styles/style.css', critical: true },
   { url: 'public/sample-exam.json', critical: true },
   { url: 'public/q01-bbt.svg', critical: true },
+  { url: 'public/exams/index.json', critical: false },
   { url: 'public/exams/toan-full.json', critical: false },
   { url: 'public/exams/ly-part-I.json', critical: false },
   { url: 'public/exams/hoa-repeating.json', critical: false },
   { url: 'app/main.js', critical: false },
   { url: 'app/routes.js', critical: false },
+  { url: 'ui/index.js', critical: false },
+  { url: 'student/index.js', critical: false },
+  { url: 'student/view.js', critical: false },
+  { url: 'storage/index.js', critical: false },
+  { url: 'report/index.js', critical: false },
+  { url: 'report/view.js', critical: false },
+  { url: 'teacher/index.js', critical: false },
+  { url: 'teacher/view.js', critical: false },
+  { url: 'bank/index.js', critical: false },
+  { url: 'bank/view.js', critical: false },
+  { url: 'collect/index.js', critical: false },
+  { url: 'schema/index.js', critical: false },
+  { url: 'domain/index.js', critical: false },
+  { url: 'offline/index.js', critical: false },
 ];
 function resolveScopeUrl(scopeBase, relativePath) {
   const cleanBase = scopeBase.endsWith('/') ? scopeBase : (scopeBase + '/');
@@ -280,6 +326,8 @@ function isCacheableRequest(requestUrl, method) {
   if (lower.includes('script.google.com') || lower.includes('macros.google.com') || lower.includes('appsscript')) return false;
   return true;
 }
+let isAttemptActive = false;
+
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
@@ -300,15 +348,64 @@ self.addEventListener('install', (event) => {
     }
   })());
 });
+
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
     for (const k of keys) {
-      if (k.startsWith(CACHE_NAME_PREFIX) && k !== CACHE_NAME) await caches.delete(k);
+      if (k.startsWith(CACHE_NAME_PREFIX) && k !== CACHE_NAME) {
+        await caches.delete(k);
+      }
     }
-    if (self.clients && self.clients.claim) await self.clients.claim();
+    if (self.clients && self.clients.claim) {
+      await self.clients.claim();
+    }
   })());
 });
+
+self.addEventListener('message', (event) => {
+  const data = event.data;
+  if (!data || typeof data !== 'object') return;
+  if (data.type === 'SET_ATTEMPT_ACTIVE') {
+    isAttemptActive = Boolean(data.active);
+    if (event.source && typeof event.source.postMessage === 'function') {
+      event.source.postMessage({ type: 'ATTEMPT_STATUS_ACK', active: isAttemptActive });
+    }
+  } else if (data.type === 'SKIP_WAITING') {
+    if (isAttemptActive) {
+      if (event.source && typeof event.source.postMessage === 'function') {
+        event.source.postMessage({ type: 'UPDATE_DEFERRED_REPORT', active: true });
+      }
+    } else {
+      self.skipWaiting();
+    }
+  } else if (data.type === 'CHECK_OFFLINE_READY') {
+    event.waitUntil((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const reqUrls = data.requiredUrls || DEFAULT_PRECACHE_ENTRIES.filter((i) => i.critical).map((i) => i.url);
+      const missingUrls = [];
+      let cachedCount = 0;
+      for (const u of reqUrls) {
+        const match = (await cache.match(u)) || (await cache.match(resolveScopeUrl((self.registration && self.registration.scope) || '/', u)));
+        if (match) {
+          cachedCount++;
+        } else {
+          missingUrls.push(u);
+        }
+      }
+      if (event.source && typeof event.source.postMessage === 'function') {
+        event.source.postMessage({
+          type: 'OFFLINE_READY_REPORT',
+          ready: missingUrls.length === 0,
+          cachedCount,
+          totalCount: reqUrls.length,
+          missingUrls,
+        });
+      }
+    })());
+  }
+});
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (!isCacheableRequest(req.url, req.method)) return;

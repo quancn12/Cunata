@@ -270,7 +270,13 @@ export function createServiceWorkerManager(
       }
 
       try {
-        const cache = await cachesImpl.open(CACHE_NAME);
+        let activeCacheName = (config as any)?.cacheName ?? CACHE_NAME;
+        if (!(config as any)?.cacheName && cachesImpl) {
+          const keys = await cachesImpl.keys();
+          const found = keys.find((k) => k.startsWith(CACHE_NAME_PREFIX));
+          if (found) activeCacheName = found;
+        }
+        const cache = await cachesImpl.open(activeCacheName);
         const missing: string[] = [];
         let count = 0;
 

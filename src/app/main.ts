@@ -586,6 +586,26 @@ export async function bootstrap(
   let deadline = startedAt + durationMin * 60 * 1000;
   let timerIntervalId: any = null;
   let controller: StudentController | null = null;
+  let swRegistration: any = null;
+
+  const notifyWorkerAttemptState = (active: boolean) => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'SET_ATTEMPT_ACTIVE',
+          active,
+        });
+      }
+    } catch (_) {}
+  };
+
+  const activateWaitingWorker = () => {
+    try {
+      if (swRegistration?.waiting) {
+        swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+    } catch (_) {}
+  };
 
   const showStorageUnavailableWarning = () => {
     let banner = root.querySelector('#storageWarningBanner') as HTMLElement | null;
@@ -770,6 +790,8 @@ export async function bootstrap(
 
   const adoptFinalRecord = (record: AttemptRecord, isDurable = true) => {
     isSubmitted = true;
+    notifyWorkerAttemptState(false);
+    activateWaitingWorker();
     if (timerIntervalId) clearInterval(timerIntervalId);
 
     if (record.submittedAt) {
@@ -1332,6 +1354,8 @@ export async function bootstrap(
     }
 
     isSubmitted = true;
+    notifyWorkerAttemptState(false);
+    activateWaitingWorker();
     if (timerIntervalId) clearInterval(timerIntervalId);
 
     // Compute score via domain scoreLegacyAttempt (uses scoreAttempt single truth)
@@ -1689,6 +1713,7 @@ export async function bootstrap(
       attemptId = 'attempt-' + now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
       responses = Object.create(null);
       isSubmitted = false;
+      notifyWorkerAttemptState(true);
       scoredResult = null;
       startedAt = now();
       submittedAt = null;
@@ -2329,7 +2354,35 @@ export async function bootstrap(
     typeof window !== 'undefined' &&
     window.location.protocol !== 'file:'
   ) {
-    navigator.serviceWorker.register('./service-worker.js', { scope: './' }).catch(() => {});
+    navigator.serviceWorker
+      .register('./service-worker.js', { scope: './' })
+      .then((reg) => {
+        swRegistration = reg;
+        notifyWorkerAttemptState(!isSubmitted);
+
+        reg.addEventListener('updatefound', () => {
+          const installingWorker = reg.installing;
+          if (!installingWorker) return;
+          installingWorker.addEventListener('statechange', () => {
+            if (installingWorker.state === 'installed') {
+              if (reg.waiting) {
+                if (isSubmitted) {
+                  activateWaitingWorker();
+                }
+              }
+            }
+          });
+        });
+
+        if (reg.waiting && isSubmitted) {
+          activateWaitingWorker();
+        }
+      })
+      .catch(() => {});
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      notifyWorkerAttemptState(!isSubmitted);
+    });
   }
 
   // Return clean disposal function
