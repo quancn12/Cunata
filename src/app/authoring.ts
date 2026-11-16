@@ -583,7 +583,7 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): () 
     const idEl = root.querySelector('#builderExamId') as HTMLInputElement | null;
     if (idEl) idEl.value = exam.examId || '';
     const durEl = root.querySelector('#builderDuration') as HTMLInputElement | null;
-    if (durEl) durEl.value = String(exam.settings?.durationMinutes || exam.durationMinutes || 50);
+    if (durEl) durEl.value = String(exam.settings?.durationMinutes || (exam as any).durationMinutes || 50);
     if (teacherPublishStatus) teacherPublishStatus.textContent = '';
     if (btnPublishExam) btnPublishExam.style.display = 'inline-block';
     openBuilder();

@@ -31,7 +31,7 @@ import {
   scoreLegacyAttempt,
   type LegacyScoredResult,
 } from './legacy.ts';
-import { initExamList } from './exam-list.ts';
+import { initExamList, initStartScreen, initTeacherModal } from './exam-list.ts';
 import { initAuthoring } from './authoring.ts';
 
 function formatDisplayScore(val: string): string {
@@ -560,6 +560,7 @@ export async function bootstrap(
   const examFileInput = root.querySelector('#examFileInput') as HTMLInputElement | null;
 
   // Student State
+  let appsScriptUrl = '';
   let currentExam: WebExam = options?.initialExam ?? DEFAULT_SAMPLE_EXAM;
   if (typeof localStorage !== 'undefined' && !options?.initialExam) {
     try {
@@ -1518,8 +1519,67 @@ export async function bootstrap(
       }
     }
 
-    if (syncText) {
-      syncText.textContent = submitOk ? 'Đã nộp & lưu cục bộ' : 'Chưa lưu';
+    if (appsScriptUrl && appsScriptUrl.trim()) {
+      if (syncText) syncText.textContent = 'Đang gửi...';
+      const toRatStr = (val: any) => {
+        if (typeof val === 'string') return val;
+        if (!val) return '0';
+        if (typeof val === 'object') {
+          const num = val.num !== undefined ? val.num : val.n;
+          const den = val.den !== undefined ? val.den : (val.d !== undefined ? val.d : 1);
+          return (den === 1 || den === 1n || den === '1') ? String(num) : String(num) + '/' + String(den);
+        }
+        return String(val);
+      };
+      const scoreDTO = scoreResultToDTO(scoreAttempt(domainExam, domResponses));
+      const asPayload = {
+        action: 'submitResult',
+        attempt_id: attemptId,
+        exam_id: currentExam.examId,
+        exam_version_id: currentExam.examVersionId,
+        candidate_display: candidateName,
+        started_at: new Date(startedAt).toISOString(),
+        submitted_at: new Date(submittedAt || now()).toISOString(),
+        duration_seconds: Math.max(0, Math.round(((submittedAt || now()) - startedAt) / 1000)),
+        policy_version: currentExam.ruleSetId || 'custom-v1',
+        sections: {
+          I: { score: toRatStr((scoreDTO as any).sections.I.score), max: toRatStr((scoreDTO as any).sections.I.max) },
+          II: { score: toRatStr((scoreDTO as any).sections.II.score), max: toRatStr((scoreDTO as any).sections.II.max) },
+          III: { score: toRatStr((scoreDTO as any).sections.III.score), max: toRatStr((scoreDTO as any).sections.III.max) }
+        },
+        total: toRatStr((scoreDTO as any).total),
+        maxTotal: toRatStr((scoreDTO as any).maxTotal),
+        raw_answers_json: responses,
+      };
+
+      const sendToGas = async (retry = 0) => {
+        const MAX_RETRIES = 5;
+        try {
+          const res = await fetch(appsScriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(asPayload),
+          });
+          const data = await res.json();
+          if (data && data.success) {
+            if (syncText) syncText.textContent = 'Đã gửi';
+            return;
+          }
+        } catch (_) {}
+        if (syncText) syncText.textContent = 'Chưa gửi được — sẽ thử lại';
+        if (retry < MAX_RETRIES) {
+          const delays = [1000, 2000, 4000, 8000, 16000];
+          const delay = delays[retry] || 5000;
+          setTimeout(() => {
+            sendToGas(retry + 1);
+          }, delay);
+        }
+      };
+      sendToGas();
+    } else {
+      if (syncText) {
+        syncText.textContent = submitOk ? 'Đã lưu cục bộ' : 'Chưa lưu';
+      }
     }
     if (!submitOk) {
       showStorageUnavailableWarning();
@@ -2108,7 +2168,9 @@ export async function bootstrap(
   const applyRoute = (state: RouteState) => {
     switch (state.route) {
       case 'exam':
-        if (examWrapper) examWrapper.style.display = '';
+        const startScr = root.querySelector('#startScreen') as HTMLElement | null;
+        const isStartActive = startScr && startScr.style.display !== 'none';
+        if (examWrapper) examWrapper.style.display = isStartActive ? 'none' : '';
         if (reportWrapper) reportWrapper.style.display = 'none';
         if (builderModal) builderModal.style.display = 'none';
         if (bankModal) bankModal.style.display = 'none';
@@ -2290,17 +2352,127 @@ export async function bootstrap(
     reader.readAsText(file);
   };
 
+  // 1. Fetch appsScriptUrl configuration if available
+  try {
+    const cfgRes = await fetch('public/config.json');
+    if (cfgRes.ok) {
+      const cfg = await cfgRes.json();
+      if (cfg && typeof cfg.appsScriptUrl === 'string') {
+        appsScriptUrl = cfg.appsScriptUrl.trim();
+      }
+    }
+  } catch (_) {}
+
+  const urlParams = (typeof window !== 'undefined' && window.location && window.location.search)
+    ? new URLSearchParams(window.location.search)
+    : new URLSearchParams();
+  const queryExamId = urlParams.get('exam');
+  const isTeacherQuery = urlParams.has('teacher');
+
+  let shouldShowStartScreen = false;
+  if (!options?.initialExam) {
+    if (queryExamId) {
+      let hasDraft = false;
+      let hasFinal = false;
+      try {
+        const draftPrefix = 'cunata:attempt:' + encodeURIComponent(queryExamId) + ':';
+        const finalPrefix = 'cunata:final:' + encodeURIComponent(queryExamId) + ':';
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith(draftPrefix)) {
+            const raw = localStorage.getItem(k);
+            if (raw) {
+              const item = JSON.parse(raw);
+              if (item && item.submitted !== true && item.phase !== 'final') hasDraft = true;
+            }
+          }
+          if (k && k.startsWith(finalPrefix)) hasFinal = true;
+        }
+      } catch (_) {}
+      shouldShowStartScreen = !(hasDraft && !hasFinal);
+    } else {
+      let hasSnapshot = false;
+      let hasDraftOrFinal = false;
+      try {
+        const snapRaw = localStorage.getItem('cunata:active_exam_snapshot');
+        if (snapRaw) {
+          const snap = JSON.parse(snapRaw);
+          if (snap && snap.examId) {
+            hasSnapshot = true;
+            const draftPrefix = 'cunata:attempt:' + encodeURIComponent(snap.examId) + ':';
+            const finalPrefix = 'cunata:final:' + encodeURIComponent(snap.examId) + ':';
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k && (k.startsWith(draftPrefix) || k.startsWith(finalPrefix))) {
+                hasDraftOrFinal = true;
+                break;
+              }
+            }
+          }
+        }
+      } catch (_) {}
+      shouldShowStartScreen = !(hasSnapshot && hasDraftOrFinal);
+    }
+  }
+  const startScreen = root.querySelector('#startScreen') as HTMLElement | null;
+
+  // Teacher modal controller
+  const teacherCtrl = initTeacherModal(root, {
+    appsScriptUrl,
+    onEditExam: (examData) => {
+      (root as any).__cunata_loadBuilderExam?.(examData);
+    },
+    onNewExam: () => {
+      if (builderModal) builderModal.style.display = 'flex';
+      const btnPub = root.querySelector('#btnPublishExam') as HTMLElement | null;
+      if (btnPub) btnPub.style.display = 'inline-block';
+    },
+  });
+
+  // Start screen controller
+  let startCtrl: any = null;
+  if (startScreen) {
+    startCtrl = initStartScreen(root, {
+      appsScriptUrl,
+      initialExamId: queryExamId,
+      onOpenTeacher: () => teacherCtrl.openModal(),
+      onStartExam: async (exam, name) => {
+        candidateName = name;
+        if (candidateInput) candidateInput.value = candidateName;
+        if (examWrapper) examWrapper.style.display = '';
+        await loadOrResumeExam(exam, true);
+      },
+    });
+  }
+
   // Connect Exam List Modal (§15) and Teacher Authoring Modal
   initExamList(root, {
     onSelectExam: (exam) => switchExam(exam, true),
     hasUnsavedProgress: hasInProgressAttempt,
+    appsScriptUrl,
   });
 
   initAuthoring(root, {
     getExam: () => currentExam,
     onPublish: (exam) => switchExam(exam, true),
     idGen,
+    getAppsScriptUrl: () => appsScriptUrl,
+    getTeacherPassword: () => {
+      try {
+        return sessionStorage.getItem('cunata_teacher_pw');
+      } catch (_) {
+        return null;
+      }
+    },
+    onPublishedToWeb: () => {
+      teacherCtrl.refreshList();
+      if (startCtrl) startCtrl.refreshList();
+    },
   });
+
+  if (isTeacherQuery) {
+    teacherCtrl.openModal();
+  }
 
   // Candidate Name Input Listener
   const onCandidateNameInput = async (e: any) => {
@@ -2366,7 +2538,15 @@ export async function bootstrap(
   }
 
   // Initial load or resume
-  await loadOrResumeExam(currentExam, false);
+  if (shouldShowStartScreen) {
+    if (startScreen) startScreen.style.display = 'block';
+    if (examWrapper) examWrapper.style.display = 'none';
+    if (reportWrapper) reportWrapper.style.display = 'none';
+    if (examPane) examPane.innerHTML = '';
+  } else {
+    if (startScreen) startScreen.style.display = 'none';
+    await loadOrResumeExam(currentExam, false);
+  }
 
   // Register Native Service Worker in real browser HTTP environment
   if (

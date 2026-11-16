@@ -348,3 +348,383 @@ export function initExamList(root: HTMLElement, options: ExamListOptions): () =>
     }
   };
 }
+
+export interface StartScreenOptions {
+  readonly onStartExam: (exam: WebExam, candidateName: string) => void;
+  readonly appsScriptUrl?: string;
+  readonly initialExamId?: string | null;
+  readonly onOpenTeacher?: () => void;
+}
+
+export interface StartScreenController {
+  readonly refreshList: () => Promise<void>;
+  readonly selectExamId: (id: string) => void;
+  readonly dispose: () => void;
+}
+
+export function initStartScreen(root: HTMLElement, options: StartScreenOptions): StartScreenController {
+  const startScreen = root.querySelector('#startScreen') as HTMLElement | null;
+  const startNameInput = root.querySelector('#startName') as HTMLInputElement | null;
+  const startExamListContainer = root.querySelector('#startExamListContainer') as HTMLElement | null;
+  const btnStartExam = root.querySelector('#btnStartExam') as HTMLButtonElement | null;
+  const btnTeacher = root.querySelector('#btnTeacher') as HTMLButtonElement | null;
+
+  let loadedExams: MergedExamEntry[] = [];
+  let selectedEntry: MergedExamEntry | null = null;
+
+  if (startNameInput && typeof localStorage !== 'undefined') {
+    try {
+      const saved = localStorage.getItem('cunata:candidate_name') || localStorage.getItem('cunata:last_candidate_name');
+      if (saved && !startNameInput.value) {
+        startNameInput.value = saved;
+      }
+    } catch (_) {}
+  }
+
+  const updateBtnStartExam = () => {
+    if (!btnStartExam) return;
+    const hasName = !!(startNameInput && startNameInput.value.trim().length > 0);
+    const hasSelected = !!selectedEntry;
+    btnStartExam.disabled = !(hasName && hasSelected);
+  };
+
+  const loadAndRenderList = async () => {
+    if (!startExamListContainer) return;
+    startExamListContainer.innerHTML = '<div style="text-align: center; color: var(--gray-500, #6b7280); padding: 1rem;">Đang tải danh sách đề thi...</div>';
+    try {
+      const { exams, error, teacherError } = await fetchAndMergeExams(options.appsScriptUrl);
+      loadedExams = exams;
+      if (error && exams.length === 0) {
+        startExamListContainer.innerHTML = `<div style="color: var(--danger, #ef4444); padding: 1rem; text-align: center;">Lỗi tải danh sách đề thi: ${escapeHtml(error)}</div>`;
+        return;
+      }
+      if (exams.length === 0) {
+        startExamListContainer.innerHTML = '<div style="text-align: center; color: var(--gray-500, #6b7280); padding: 1rem;">Hiện chưa có đề thi nào trong danh sách.</div>';
+        return;
+      }
+
+      let noticeHtml = '';
+      if (teacherError) {
+        noticeHtml = `<div style="padding: 0.5rem; margin-bottom: 0.5rem; background: #fffbeb; color: #b45309; border-radius: 4px; font-size: 0.8125rem;">Lưu ý: ${escapeHtml(teacherError)}</div>`;
+      }
+
+      const targetId = options.initialExamId || (selectedEntry ? selectedEntry.id : null);
+      startExamListContainer.innerHTML = noticeHtml + renderExamItemsHtml(exams, targetId || undefined);
+
+      const items = startExamListContainer.querySelectorAll('.exam-list-item');
+      items.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-exam-id');
+          const entry = loadedExams.find((e) => e.id === id);
+          if (entry) {
+            selectedEntry = entry;
+            items.forEach((b) => {
+              b.setAttribute('aria-pressed', 'false');
+              b.classList.remove('selected');
+            });
+            btn.setAttribute('aria-pressed', 'true');
+            btn.classList.add('selected');
+            updateBtnStartExam();
+          }
+        });
+      });
+
+      if (targetId) {
+        const match = exams.find((e) => e.id === targetId || e.url === targetId);
+        if (match) {
+          selectedEntry = match;
+          const targetBtn = startExamListContainer.querySelector(`.exam-list-item[data-exam-id="${targetId}"]`) as HTMLElement | null;
+          if (targetBtn) {
+            targetBtn.setAttribute('aria-pressed', 'true');
+            targetBtn.classList.add('selected');
+          }
+        }
+      }
+      updateBtnStartExam();
+    } catch (err: any) {
+      if (startExamListContainer) {
+        startExamListContainer.innerHTML = `<div style="color: var(--danger, #ef4444); padding: 1rem; text-align: center;">Lỗi tải danh sách đề thi: ${escapeHtml(err?.message || String(err))}</div>`;
+      }
+    }
+  };
+
+  const onNameInput = () => updateBtnStartExam();
+  if (startNameInput) {
+    startNameInput.addEventListener('input', onNameInput);
+    startNameInput.addEventListener('change', onNameInput);
+    startNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && btnStartExam && !btnStartExam.disabled) {
+        e.preventDefault();
+        btnStartExam.click();
+      }
+    });
+  }
+
+  const onStartClick = async () => {
+    if (!selectedEntry || !startNameInput) return;
+    const name = startNameInput.value.trim();
+    if (!name) return;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('cunata:candidate_name', name);
+      } catch (_) {}
+    }
+    if (btnStartExam) {
+      btnStartExam.disabled = true;
+      btnStartExam.textContent = 'Đang nạp đề...';
+    }
+    try {
+      const examData = await fetchExamData(selectedEntry, options.appsScriptUrl);
+      if (startScreen) startScreen.style.display = 'none';
+      options.onStartExam(examData, name);
+    } catch (err: any) {
+      alert('Lỗi nạp đề thi: ' + (err?.message || String(err)));
+    } finally {
+      if (btnStartExam) {
+        btnStartExam.disabled = false;
+        btnStartExam.textContent = 'Bắt đầu làm bài';
+      }
+    }
+  };
+  if (btnStartExam) btnStartExam.addEventListener('click', onStartClick);
+
+  const onTeacherClick = () => {
+    options.onOpenTeacher?.();
+  };
+  if (btnTeacher) btnTeacher.addEventListener('click', onTeacherClick);
+
+  loadAndRenderList();
+
+  return {
+    refreshList: loadAndRenderList,
+    selectExamId: (id: string) => {
+      if (!startExamListContainer) return;
+      const match = loadedExams.find((e) => e.id === id || e.url === id);
+      if (match) {
+        selectedEntry = match;
+        const items = startExamListContainer.querySelectorAll('.exam-list-item');
+        items.forEach((b) => {
+          if (b.getAttribute('data-exam-id') === id) {
+            b.setAttribute('aria-pressed', 'true');
+            b.classList.add('selected');
+          } else {
+            b.setAttribute('aria-pressed', 'false');
+            b.classList.remove('selected');
+          }
+        });
+        updateBtnStartExam();
+      }
+    },
+    dispose: () => {
+      if (startNameInput) {
+        startNameInput.removeEventListener('input', onNameInput);
+        startNameInput.removeEventListener('change', onNameInput);
+      }
+      if (btnStartExam) btnStartExam.removeEventListener('click', onStartClick);
+      if (btnTeacher) btnTeacher.removeEventListener('click', onTeacherClick);
+    },
+  };
+}
+
+export interface TeacherModalOptions {
+  readonly appsScriptUrl?: string;
+  readonly onEditExam: (exam: WebExam) => void;
+  readonly onNewExam?: () => void;
+}
+
+export interface TeacherModalController {
+  readonly openModal: () => void;
+  readonly closeModal: () => void;
+  readonly refreshList: () => Promise<void>;
+  readonly dispose: () => void;
+}
+
+export function initTeacherModal(root: HTMLElement, options: TeacherModalOptions): TeacherModalController {
+  const teacherModal = root.querySelector('#teacherModal') as HTMLElement | null;
+  const teacherLogin = root.querySelector('#teacherLogin') as HTMLElement | null;
+  const teacherPassword = root.querySelector('#teacherPassword') as HTMLInputElement | null;
+  const btnTeacherLogin = root.querySelector('#btnTeacherLogin') as HTMLButtonElement | null;
+  const teacherLoginError = root.querySelector('#teacherLoginError') as HTMLElement | null;
+  const btnCancelTeacherLogin = root.querySelector('#btnCancelTeacherLogin') as HTMLButtonElement | null;
+  const btnCloseTeacherModal = root.querySelector('#btnCloseTeacherModal') as HTMLButtonElement | null;
+  const teacherPanel = root.querySelector('#teacherPanel') as HTMLElement | null;
+  const btnTeacherNewExam = root.querySelector('#btnTeacherNewExam') as HTMLButtonElement | null;
+  const teacherExamList = root.querySelector('#teacherExamList') as HTMLElement | null;
+
+  const closeModal = () => {
+    if (teacherModal) teacherModal.style.display = 'none';
+  };
+
+  const renderTeacherPanelList = async () => {
+    if (!teacherExamList) return;
+    teacherExamList.innerHTML = '<div style="text-align: center; color: var(--gray-500, #6b7280); padding: 1rem;">Đang tải danh sách đề thi...</div>';
+    try {
+      const { exams } = await fetchAndMergeExams(options.appsScriptUrl);
+      if (exams.length === 0) {
+        teacherExamList.innerHTML = '<div style="text-align: center; color: var(--gray-500, #6b7280); padding: 1rem;">Chưa có đề thi nào.</div>';
+        return;
+      }
+      let html = '';
+      for (const e of exams) {
+        const isTeacher = e.source === 'teacher';
+        html += `
+          <div class="teacher-exam-row" data-exam-id="${escapeHtml(e.id)}" style="display: flex; justify-content: space-between; align-items: center; padding: 0.625rem 0.75rem; border: 1px solid var(--border-color, #e5e7eb); border-radius: 6px; background: var(--card-bg, #fff); gap: 0.5rem;">
+            <div style="flex: 1; min-width: 0;">
+              <strong style="font-size: 0.9375rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--gray-900, #111827);">${escapeHtml(e.title)}</strong>
+              <span style="font-size: 0.8125rem; color: var(--gray-500, #6b7280);">${e.questionCount} câu · ${e.durationMinutes} phút · ${isTeacher ? '<span style="color: var(--primary, #2563eb); font-weight: 600;">Đã xuất bản</span>' : 'Đề tĩnh'}</span>
+            </div>
+            <div style="display: flex; gap: 0.375rem; flex-shrink: 0;">
+              <button type="button" class="btn-secondary btn-teacher-edit" style="font-size: 0.8125rem; padding: 0.3rem 0.6rem;">Sửa</button>
+              ${isTeacher ? '<button type="button" class="btn-secondary btn-teacher-unpublish" style="font-size: 0.8125rem; padding: 0.3rem 0.6rem; color: var(--danger, #ef4444); border-color: #fca5a5;">Gỡ xuất bản</button>' : ''}
+            </div>
+          </div>
+        `;
+      }
+      teacherExamList.innerHTML = html;
+
+      const rows = teacherExamList.querySelectorAll('.teacher-exam-row');
+      rows.forEach((row) => {
+        const id = row.getAttribute('data-exam-id');
+        const entry = exams.find((e) => e.id === id);
+        if (!entry) return;
+
+        const btnEdit = row.querySelector('.btn-teacher-edit') as HTMLButtonElement | null;
+        if (btnEdit) {
+          btnEdit.addEventListener('click', async () => {
+            try {
+              btnEdit.disabled = true;
+              const examData = await fetchExamData(entry, options.appsScriptUrl);
+              closeModal();
+              options.onEditExam(examData);
+            } catch (err: any) {
+              alert('Lỗi nạp đề thi để sửa: ' + (err?.message || String(err)));
+            } finally {
+              btnEdit.disabled = false;
+            }
+          });
+        }
+
+        const btnUnpub = row.querySelector('.btn-teacher-unpublish') as HTMLButtonElement | null;
+        if (btnUnpub) {
+          btnUnpub.addEventListener('click', async () => {
+            const ok = confirm(`Gỡ xuất bản đề "${entry.title}"?`);
+            if (!ok) return;
+            try {
+              btnUnpub.disabled = true;
+              let pw = '';
+              try { pw = sessionStorage.getItem('cunata_teacher_pw') || ''; } catch (_) {}
+              const res = await fetch(options.appsScriptUrl!, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: 'unpublishExam', password: pw, examId: entry.id }),
+              });
+              const data = await res.json();
+              if (data && data.success) {
+                renderTeacherPanelList();
+              } else {
+                alert('Lỗi gỡ xuất bản: ' + (data?.message || data?.error || 'Không xác định'));
+              }
+            } catch (err: any) {
+              alert('Lỗi kết nối máy chủ: ' + (err?.message || String(err)));
+            } finally {
+              btnUnpub.disabled = false;
+            }
+          });
+        }
+      });
+    } catch (err: any) {
+      if (teacherExamList) {
+        teacherExamList.innerHTML = `<div style="color: var(--danger, #ef4444); padding: 1rem; text-align: center;">Lỗi tải danh sách đề: ${escapeHtml(err?.message || String(err))}</div>`;
+      }
+    }
+  };
+
+  const openModal = () => {
+    if (teacherModal) teacherModal.style.display = 'flex';
+    if (!options.appsScriptUrl || !options.appsScriptUrl.trim()) {
+      if (teacherLogin) {
+        teacherLogin.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: var(--gray-700, #374151);"><p style="font-weight: 600; font-size: 1.05rem; margin-bottom: 0.5rem;">Chức năng máy chủ Google Apps Script chưa cấu hình.</p><p style="font-size: 0.875rem; color: var(--gray-500, #6b7280); margin: 0;">Vui lòng thiết lập appsScriptUrl trong public/config.json để kích hoạt kho đề và tính năng giáo viên.</p></div>';
+        teacherLogin.style.display = 'block';
+      }
+      if (teacherPanel) teacherPanel.style.display = 'none';
+      return;
+    }
+
+    let savedPw = '';
+    try { savedPw = sessionStorage.getItem('cunata_teacher_pw') || ''; } catch (_) {}
+    if (savedPw) {
+      if (teacherLogin) teacherLogin.style.display = 'none';
+      if (teacherPanel) teacherPanel.style.display = 'block';
+      renderTeacherPanelList();
+    } else {
+      if (teacherLogin) teacherLogin.style.display = 'block';
+      if (teacherPanel) teacherPanel.style.display = 'none';
+      if (teacherPassword) {
+        teacherPassword.value = '';
+        teacherPassword.focus();
+      }
+      if (teacherLoginError) teacherLoginError.textContent = '';
+    }
+  };
+
+  const onLoginClick = async () => {
+    const pw = teacherPassword?.value || '';
+    if (!pw) {
+      if (teacherLoginError) teacherLoginError.textContent = 'Vui lòng nhập mật khẩu giáo viên';
+      return;
+    }
+    if (teacherLoginError) teacherLoginError.textContent = 'Đang kiểm tra mật khẩu...';
+    try {
+      const res = await fetch(options.appsScriptUrl!, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'teacherLogin', password: pw }),
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        try {
+          sessionStorage.setItem('cunata_teacher_pw', pw);
+        } catch (_) {}
+        if (teacherLogin) teacherLogin.style.display = 'none';
+        if (teacherPanel) teacherPanel.style.display = 'block';
+        if (teacherLoginError) teacherLoginError.textContent = '';
+        renderTeacherPanelList();
+      } else {
+        if (teacherLoginError) teacherLoginError.textContent = data?.message || 'Mật khẩu giáo viên không chính xác';
+      }
+    } catch (err: any) {
+      if (teacherLoginError) teacherLoginError.textContent = 'Lỗi kết nối máy chủ: ' + (err?.message || String(err));
+    }
+  };
+
+  if (btnTeacherLogin) btnTeacherLogin.addEventListener('click', onLoginClick);
+  if (teacherPassword) {
+    teacherPassword.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        onLoginClick();
+      }
+    });
+  }
+
+  if (btnTeacherNewExam) {
+    btnTeacherNewExam.addEventListener('click', () => {
+      closeModal();
+      if (options.onNewExam) options.onNewExam();
+    });
+  }
+
+  if (btnCloseTeacherModal) btnCloseTeacherModal.addEventListener('click', closeModal);
+  if (btnCancelTeacherLogin) btnCancelTeacherLogin.addEventListener('click', closeModal);
+
+  return {
+    openModal,
+    closeModal,
+    refreshList: renderTeacherPanelList,
+    dispose: () => {
+      if (btnTeacherLogin) btnTeacherLogin.removeEventListener('click', onLoginClick);
+      if (btnCloseTeacherModal) btnCloseTeacherModal.removeEventListener('click', closeModal);
+      if (btnCancelTeacherLogin) btnCancelTeacherLogin.removeEventListener('click', closeModal);
+    },
+  };
+}
