@@ -18,7 +18,29 @@ import {
   drainOutbox,
   validateReceipt,
   CollectorError,
+  type AsResult,
 } from '../../src/collect/index.ts';
+
+function assertAsOk<T>(res: AsResult<T>): T {
+  assert.equal(res.ok, true, !res.ok ? res.message : '');
+  if (!res.ok) throw new Error('Expected AsResult ok: true');
+  return res.value;
+}
+
+function assertAsErr<T>(res: AsResult<T>, expectedCode?: string): { code: string; message: string; details?: unknown } {
+  assert.equal(res.ok, false, res.ok ? 'Expected AsResult ok: false' : '');
+  if (res.ok) throw new Error('Expected AsResult ok: false');
+  if (expectedCode) {
+    assert.equal(res.code, expectedCode);
+  }
+  return res;
+}
+
+function assertResultOk<T>(res: Result<T>): T {
+  assert.equal(res.ok, true, !res.ok ? (res as any).error?.message : '');
+  if (!res.ok) throw new Error('Expected Result ok: true');
+  return res.value;
+}
 
 function createDummyExam(): WebExam {
   return {
@@ -42,7 +64,7 @@ function createDummyExam(): WebExam {
         kind: 'I',
         questionVersionId: 'q-01',
         title: 'Câu 1',
-        text: 'Nội dung câu 1',
+        content: 'Nội dung câu 1',
         options: [
           { optionId: 'opt-a', text: 'A' },
           { optionId: 'opt-b', text: 'B' },
@@ -222,24 +244,19 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
         assert.equal(client.configured, false);
 
         const rList = await client.listExams();
-        assert.equal(rList.ok, false);
-        assert.equal(rList.code, 'NOT_CONFIGURED');
+        assertAsErr(rList, 'NOT_CONFIGURED');
 
         const rGet = await client.getExam('some-id');
-        assert.equal(rGet.ok, false);
-        assert.equal(rGet.code, 'NOT_CONFIGURED');
+        assertAsErr(rGet, 'NOT_CONFIGURED');
 
         const rLogin = await client.teacherLogin('pass');
-        assert.equal(rLogin.ok, false);
-        assert.equal(rLogin.code, 'NOT_CONFIGURED');
+        assertAsErr(rLogin, 'NOT_CONFIGURED');
 
         const rPub = await client.publishExam('pass', {});
-        assert.equal(rPub.ok, false);
-        assert.equal(rPub.code, 'NOT_CONFIGURED');
+        assertAsErr(rPub, 'NOT_CONFIGURED');
 
         const rUnpub = await client.unpublishExam('pass', 'some-id');
-        assert.equal(rUnpub.ok, false);
-        assert.equal(rUnpub.code, 'NOT_CONFIGURED');
+        assertAsErr(rUnpub, 'NOT_CONFIGURED');
 
         assert.equal(fetchCalled, false, 'Fetch must never be called when unconfigured');
       }
@@ -278,11 +295,11 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
       assert.equal(client.configured, true);
 
       const res = await client.listExams();
-      assert.equal(res.ok, true);
-      assert.equal(res.value.length, 1);
-      assert.equal(res.value[0]?.id, 'exam-gv-01');
-      assert.equal(res.value[0]?.title, 'Đề kiểm tra 15 phút');
-      assert.equal(res.value[0]?.revision, 1);
+      const list = assertAsOk(res);
+      assert.equal(list.length, 1);
+      assert.equal(list[0]?.id, 'exam-gv-01');
+      assert.equal(list[0]?.title, 'Đề kiểm tra 15 phút');
+      assert.equal(list[0]?.revision, 1);
 
       assert.equal(recordedCalls.length, 1);
       assert.equal(recordedCalls[0]?.url, `${BASE_URL}?action=listExams`);
@@ -312,8 +329,8 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
 
       const client = createAppsScriptClient(BASE_URL, fakeFetch);
       const res = await client.getExam('exam-sample-01');
-      assert.equal(res.ok, true);
-      assert.deepEqual(res.value, dummyExam);
+      const examVal = assertAsOk(res);
+      assert.deepEqual(examVal, dummyExam);
 
       assert.equal(recordedCalls[0]?.url, `${BASE_URL}?action=getExam&id=exam-sample-01`);
       assert.equal(recordedCalls[0]?.init?.method, 'GET');
@@ -328,9 +345,8 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
 
       const client = createAppsScriptClient(BASE_URL, fakeFetch);
       const res = await client.getExam('non-existent');
-      assert.equal(res.ok, false);
-      assert.equal(res.code, 'NOT_FOUND');
-      assert.equal(res.message, 'Không tìm thấy đề');
+      const err = assertAsErr(res, 'NOT_FOUND');
+      assert.equal(err.message, 'Không tìm thấy đề');
     });
 
     it('teacherLogin performs POST with text/plain, password in body, never in URL', async () => {
@@ -351,8 +367,8 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
 
       // Successful login
       const okRes = await client.teacherLogin(PW);
-      assert.equal(okRes.ok, true);
-      assert.equal(okRes.value, true);
+      const val = assertAsOk(okRes);
+      assert.equal(val, true);
 
       assert.equal(recordedCalls.length, 1);
       assert.equal(recordedCalls[0]?.init?.method, 'POST');
@@ -365,8 +381,7 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
 
       // Failed login
       const failRes = await client.teacherLogin('wrong-password');
-      assert.equal(failRes.ok, false);
-      assert.equal(failRes.code, 'UNAUTHORIZED');
+      assertAsErr(failRes, 'UNAUTHORIZED');
       assert.ok(!JSON.stringify(failRes).includes('wrong-password'), 'Password must not be in error object');
     });
 
@@ -382,9 +397,8 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
 
       const client = createAppsScriptClient(BASE_URL, fakeFetch);
       const res = await client.publishExam('mypass', exam);
-
-      assert.equal(res.ok, true);
-      assert.deepEqual(res.value, { examId: 'exam-sample-01', revision: 3 });
+      const val = assertAsOk(res);
+      assert.deepEqual(val, { examId: 'exam-sample-01', revision: 3 });
 
       assert.equal(recordedCalls[0]?.init?.method, 'POST');
       const body = JSON.parse(String(recordedCalls[0]?.init?.body));
@@ -408,9 +422,8 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
 
       const client = createAppsScriptClient(BASE_URL, fakeFetch);
       const res = await client.publishExam('mypass', {});
-      assert.equal(res.ok, false);
-      assert.equal(res.code, 'INVALID_EXAM');
-      assert.deepEqual(res.details, ['Câu 1 thiếu đáp án']);
+      const err = assertAsErr(res, 'INVALID_EXAM');
+      assert.deepEqual(err.details, ['Câu 1 thiếu đáp án']);
     });
 
     it('unpublishExam sends POST text/plain with examId and returns true', async () => {
@@ -422,9 +435,8 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
 
       const client = createAppsScriptClient(BASE_URL, fakeFetch);
       const res = await client.unpublishExam('mypass', 'exam-sample-01');
-
-      assert.equal(res.ok, true);
-      assert.equal(res.value, true);
+      const val = assertAsOk(res);
+      assert.equal(val, true);
       const body = JSON.parse(String(recordedCalls[0]?.init?.body));
       assert.equal(body.action, 'unpublishExam');
       assert.equal(body.examId, 'exam-sample-01');
@@ -440,9 +452,8 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
       };
       const client = createAppsScriptClient(BASE_URL, fakeFetch);
       const res = await client.listExams();
-      assert.equal(res.ok, false);
-      assert.equal(res.code, 'NETWORK');
-      assert.match(res.message, /kết nối mạng/i);
+      const err = assertAsErr(res, 'NETWORK');
+      assert.match(err.message, /kết nối mạng/i);
     });
 
     it('maps timeout / abort to NETWORK', async () => {
@@ -453,38 +464,33 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
       };
       const client = createAppsScriptClient(BASE_URL, fakeFetch);
       const res = await client.getExam('ex-1');
-      assert.equal(res.ok, false);
-      assert.equal(res.code, 'NETWORK');
+      assertAsErr(res, 'NETWORK');
     });
 
     it('maps HTTP errors to HTTP_<status>', async () => {
       const fakeFetch500: typeof fetch = async () => new Response('Internal error', { status: 500, statusText: 'Internal Server Error' });
       const client500 = createAppsScriptClient(BASE_URL, fakeFetch500);
       const res500 = await client500.listExams();
-      assert.equal(res500.ok, false);
-      assert.equal(res500.code, 'HTTP_500');
+      assertAsErr(res500, 'HTTP_500');
 
       const fakeFetch404: typeof fetch = async () => new Response('Not found', { status: 404, statusText: 'Not Found' });
       const client404 = createAppsScriptClient(BASE_URL, fakeFetch404);
       const res404 = await client404.listExams();
-      assert.equal(res404.ok, false);
-      assert.equal(res404.code, 'HTTP_404');
+      assertAsErr(res404, 'HTTP_404');
     });
 
     it('maps non-JSON or HTML response to BAD_RESPONSE', async () => {
       const fakeFetch: typeof fetch = async () => new Response('<html><body>Error</body></html>', { status: 200 });
       const client = createAppsScriptClient(BASE_URL, fakeFetch);
       const res = await client.listExams();
-      assert.equal(res.ok, false);
-      assert.equal(res.code, 'BAD_RESPONSE');
+      assertAsErr(res, 'BAD_RESPONSE');
     });
 
     it('maps responses missing success boolean to BAD_RESPONSE', async () => {
       const fakeFetch: typeof fetch = async () => new Response(JSON.stringify({ exams: [] }), { status: 200 });
       const client = createAppsScriptClient(BASE_URL, fakeFetch);
       const res = await client.listExams();
-      assert.equal(res.ok, false);
-      assert.equal(res.code, 'BAD_RESPONSE');
+      assertAsErr(res, 'BAD_RESPONSE');
     });
   });
 
@@ -575,8 +581,8 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
       };
 
       const valRes = validateReceipt(rawReceipt, expectedOutbox);
-      assert.equal(valRes.ok, true, 'Returned receipt must be accepted by validateReceipt');
-      assert.equal(valRes.value.status, 'recorded');
+      const validReceipt = assertResultOk(valRes);
+      assert.equal(validReceipt.status, 'recorded');
     });
 
     it('maps ALREADY_RECORDED to receipt status already_recorded', async () => {
@@ -616,8 +622,8 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
       };
 
       const valRes = validateReceipt(rawReceipt, expectedOutbox);
-      assert.equal(valRes.ok, true);
-      assert.equal(valRes.value.status, 'already_recorded');
+      const validReceipt = assertResultOk(valRes);
+      assert.equal(validReceipt.status, 'already_recorded');
     });
 
     it('integrates seamlessly with drainOutbox state machine: transitions from queued to server_confirmed', async () => {
@@ -627,8 +633,8 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
 
       // Enqueue into outbox
       const enqRes = await enqueue(final, storage, BASE_URL);
-      assert.equal(enqRes.ok, true);
-      assert.equal(enqRes.value.state, 'queued');
+      const enqRecord = assertResultOk(enqRes);
+      assert.equal(enqRecord.state, 'queued');
 
       const fakeFetch: typeof fetch = async () => {
         return new Response(
@@ -647,12 +653,13 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
       const key: AttemptKey = { examId: final.examId, examVersionId: final.examVersionId, attemptId: final.attemptId };
 
       const drainRes = await drainOutbox(key, { storage, transport, now: () => 1700000000000 });
-      assert.equal(drainRes.ok, true);
-      assert.equal(drainRes.value.state, 'server_confirmed');
-      assert.equal(drainRes.value.receipt?.status, 'recorded');
-      assert.equal(drainRes.value.receipt?.attemptId, 'att-gas-integrate');
+      const confirmedRecord = assertResultOk(drainRes);
+      assert.equal(confirmedRecord.state, 'server_confirmed');
+      assert.equal(confirmedRecord.receipt?.status, 'recorded');
+      assert.equal(confirmedRecord.receipt?.attemptId, 'att-gas-integrate');
 
-      const durable = (await storage.getOutbox(key)).value!;
+      const durableRes = await storage.getOutbox(key);
+      const durable = assertResultOk(durableRes)!;
       assert.equal(durable.state, 'server_confirmed');
     });
 

@@ -112,6 +112,15 @@ interface PortalElements {
   newExamBtn: HTMLElement | null;
 }
 
+function clearElementChildren(el: HTMLElement): void {
+  el.textContent = '';
+  while (el.childNodes && el.childNodes.length > 0) {
+    const first = el.childNodes[0];
+    if (!first) break;
+    el.removeChild(first);
+  }
+}
+
 function ensurePortalElements(root: HTMLElement): PortalElements {
   const doc = root.ownerDocument || (typeof document !== 'undefined' ? document : null);
   if (!doc) {
@@ -156,7 +165,7 @@ function ensurePortalElements(root: HTMLElement): PortalElements {
     title.style.margin = '0';
     title.textContent = 'Khu Vực Giáo Viên';
 
-    const closeBtn = doc.createElement('button');
+    const closeBtn = doc.createElement('button') as HTMLButtonElement;
     closeBtn.type = 'button';
     closeBtn.className = 'btn-close';
     closeBtn.id = 'btnCloseTeacherModal';
@@ -165,7 +174,7 @@ function ensurePortalElements(root: HTMLElement): PortalElements {
     closeBtn.style.border = 'none';
     closeBtn.style.fontSize = '1.5rem';
     closeBtn.style.cursor = 'pointer';
-    closeBtn.innerHTML = '&times;';
+    closeBtn.textContent = '×';
 
     header.appendChild(title);
     header.appendChild(closeBtn);
@@ -194,7 +203,7 @@ function ensurePortalElements(root: HTMLElement): PortalElements {
     panelTitle.style.fontWeight = '600';
     panelTitle.textContent = 'Quản lý kho đề thi';
 
-    const newBtn = doc.createElement('button');
+    const newBtn = doc.createElement('button') as HTMLButtonElement;
     newBtn.type = 'button';
     newBtn.className = 'btn-primary';
     newBtn.id = 'btnTeacherNewExam';
@@ -262,12 +271,17 @@ function ensurePortalElements(root: HTMLElement): PortalElements {
 
   let newExamBtn = panelSection.querySelector('#btnTeacherNewExam') as HTMLElement | null;
   if (!newExamBtn) {
-    newExamBtn = doc.createElement('button');
-    newExamBtn.type = 'button';
-    newExamBtn.className = 'btn-primary';
-    newExamBtn.id = 'btnTeacherNewExam';
-    newExamBtn.textContent = '+ Soạn đề mới';
-    panelSection.insertBefore(newExamBtn, examListContainer);
+    const btn = doc.createElement('button') as HTMLButtonElement;
+    btn.type = 'button';
+    btn.className = 'btn-primary';
+    btn.id = 'btnTeacherNewExam';
+    btn.textContent = '+ Soạn đề mới';
+    if (typeof (panelSection as any).insertBefore === 'function') {
+      panelSection.insertBefore(btn, examListContainer);
+    } else {
+      panelSection.appendChild(btn);
+    }
+    newExamBtn = btn;
   }
 
   const closeBtn = modal.querySelector('#btnCloseTeacherModal') as HTMLElement | null;
@@ -282,16 +296,33 @@ function ensurePortalElements(root: HTMLElement): PortalElements {
   };
 }
 
-function renderUnconfiguredNotice(loginSection: HTMLElement): void {
-  loginSection.innerHTML = `
-    <div class="teacher-unconfigured-notice" style="padding: 1.5rem; text-align: center; color: var(--gray-700, #374151);">
-      <p style="font-weight: 600; font-size: 1.05rem; margin-bottom: 0.5rem;">Chức năng máy chủ Google Apps Script chưa cấu hình.</p>
-      <p style="font-size: 0.875rem; color: var(--gray-500, #6b7280); margin: 0;">Vui lòng thiết lập appsScriptUrl trong public/config.json để kích hoạt kho đề và tính năng giáo viên.</p>
-    </div>
-  `;
+function renderUnconfiguredNotice(loginSection: HTMLElement, doc: Document): void {
+  clearElementChildren(loginSection);
+
+  const container = doc.createElement('div');
+  container.className = 'teacher-unconfigured-notice';
+  container.style.padding = '1.5rem';
+  container.style.textAlign = 'center';
+  container.style.color = 'var(--gray-700, #374151)';
+
+  const titleP = doc.createElement('p');
+  titleP.style.fontWeight = '600';
+  titleP.style.fontSize = '1.05rem';
+  titleP.style.marginBottom = '0.5rem';
+  titleP.textContent = 'Chức năng máy chủ Google Apps Script chưa cấu hình.';
+
+  const descP = doc.createElement('p');
+  descP.style.fontSize = '0.875rem';
+  descP.style.color = 'var(--gray-500, #6b7280)';
+  descP.style.margin = '0';
+  descP.textContent = 'Vui lòng thiết lập appsScriptUrl trong public/config.json để kích hoạt kho đề và tính năng giáo viên.';
+
+  container.appendChild(titleP);
+  container.appendChild(descP);
+  loginSection.appendChild(container);
 }
 
-function renderLoginForm(loginSection: HTMLElement): {
+function renderLoginForm(loginSection: HTMLElement, doc: Document): {
   pwInput: HTMLInputElement;
   loginBtn: HTMLButtonElement;
   loginError: HTMLElement;
@@ -303,23 +334,65 @@ function renderLoginForm(loginSection: HTMLElement): {
   let cancelBtn = loginSection.querySelector('#btnCancelTeacherLogin') as HTMLButtonElement | null;
 
   if (!pwInput || !loginBtn || !loginError) {
-    loginSection.innerHTML = `
-      <div id="teacherLoginBody">
-        <div style="margin-bottom: 1rem;">
-          <label for="teacherPassword" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Mật khẩu giáo viên:</label>
-          <input type="password" id="teacherPassword" placeholder="Nhập mật khẩu giáo viên..." style="width: 100%; padding: 0.625rem; border: 1px solid var(--border-color, #d1d5db); border-radius: 6px; box-sizing: border-box;" autocomplete="current-password" />
-        </div>
-        <div id="teacherLoginError" style="color: var(--danger, #ef4444); margin-bottom: 1rem; font-size: 0.875rem; min-height: 1.25rem;"></div>
-        <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
-          <button type="button" class="btn-secondary" id="btnCancelTeacherLogin">Hủy</button>
-          <button type="button" class="btn-primary" id="btnTeacherLogin">Đăng nhập</button>
-        </div>
-      </div>
-    `;
-    pwInput = loginSection.querySelector('#teacherPassword') as HTMLInputElement;
-    loginBtn = loginSection.querySelector('#btnTeacherLogin') as HTMLButtonElement;
-    loginError = loginSection.querySelector('#teacherLoginError') as HTMLElement;
-    cancelBtn = loginSection.querySelector('#btnCancelTeacherLogin') as HTMLButtonElement | null;
+    clearElementChildren(loginSection);
+
+    const body = doc.createElement('div');
+    body.id = 'teacherLoginBody';
+
+    const fieldGroup = doc.createElement('div');
+    fieldGroup.style.marginBottom = '1rem';
+
+    const label = doc.createElement('label');
+    label.setAttribute('for', 'teacherPassword');
+    label.style.display = 'block';
+    label.style.fontWeight = '600';
+    label.style.marginBottom = '0.5rem';
+    label.textContent = 'Mật khẩu giáo viên:';
+    fieldGroup.appendChild(label);
+
+    const input = doc.createElement('input') as HTMLInputElement;
+    input.type = 'password';
+    input.id = 'teacherPassword';
+    input.placeholder = 'Nhập mật khẩu giáo viên...';
+    input.style.width = '100%';
+    input.style.padding = '0.625rem';
+    input.style.border = '1px solid var(--border-color, #d1d5db)';
+    input.style.borderRadius = '6px';
+    input.style.boxSizing = 'border-box';
+    input.setAttribute('autocomplete', 'current-password');
+    fieldGroup.appendChild(input);
+    body.appendChild(fieldGroup);
+
+    loginError = doc.createElement('div');
+    loginError.id = 'teacherLoginError';
+    loginError.style.color = 'var(--danger, #ef4444)';
+    loginError.style.marginBottom = '1rem';
+    loginError.style.fontSize = '0.875rem';
+    loginError.style.minHeight = '1.25rem';
+    body.appendChild(loginError);
+
+    const btnGroup = doc.createElement('div');
+    btnGroup.style.display = 'flex';
+    btnGroup.style.justifyContent = 'flex-end';
+    btnGroup.style.gap = '0.5rem';
+
+    cancelBtn = doc.createElement('button') as HTMLButtonElement;
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-secondary';
+    cancelBtn.id = 'btnCancelTeacherLogin';
+    cancelBtn.textContent = 'Hủy';
+    btnGroup.appendChild(cancelBtn);
+
+    loginBtn = doc.createElement('button') as HTMLButtonElement;
+    loginBtn.type = 'button';
+    loginBtn.className = 'btn-primary';
+    loginBtn.id = 'btnTeacherLogin';
+    loginBtn.textContent = 'Đăng nhập';
+    btnGroup.appendChild(loginBtn);
+
+    body.appendChild(btnGroup);
+    loginSection.appendChild(body);
+    pwInput = input;
   }
 
   return { pwInput, loginBtn, loginError, cancelBtn };
@@ -359,11 +432,18 @@ export function mountTeacherPortal(
 
   // Refresh exam list inside #teacherPanel
   const refreshList = async (): Promise<void> => {
-    elems.examListContainer.innerHTML =
-      '<div style="text-align: center; color: var(--gray-500, #6b7280); padding: 1rem;">Đang tải danh sách đề thi...</div>';
+    clearElementChildren(elems.examListContainer);
+    const loadingDiv = doc.createElement('div');
+    loadingDiv.style.textAlign = 'center';
+    loadingDiv.style.color = 'var(--gray-500, #6b7280)';
+    loadingDiv.style.padding = '1rem';
+    loadingDiv.textContent = 'Đang tải danh sách đề thi...';
+    elems.examListContainer.appendChild(loadingDiv);
+
     try {
       const exams = await deps.listAllExams();
-      elems.examListContainer.innerHTML = '';
+      clearElementChildren(elems.examListContainer);
+
       if (exams.length === 0) {
         const emptyDiv = doc.createElement('div');
         emptyDiv.style.textAlign = 'center';
@@ -427,7 +507,7 @@ export function mountTeacherPortal(
         actionsDiv.style.gap = '0.375rem';
         actionsDiv.style.flexShrink = '0';
 
-        const btnEdit = doc.createElement('button');
+        const btnEdit = doc.createElement('button') as HTMLButtonElement;
         btnEdit.type = 'button';
         btnEdit.className = 'btn-secondary btn-teacher-edit';
         btnEdit.style.fontSize = '0.8125rem';
@@ -451,7 +531,7 @@ export function mountTeacherPortal(
         actionsDiv.appendChild(btnEdit);
 
         if (isTeacher) {
-          const btnUnpub = doc.createElement('button');
+          const btnUnpub = doc.createElement('button') as HTMLButtonElement;
           btnUnpub.type = 'button';
           btnUnpub.className = 'btn-secondary btn-teacher-unpublish';
           btnUnpub.style.fontSize = '0.8125rem';
@@ -491,7 +571,13 @@ export function mountTeacherPortal(
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      elems.examListContainer.innerHTML = `<div style="color: var(--danger, #ef4444); padding: 1rem; text-align: center;">Lỗi tải danh sách đề: ${msg}</div>`;
+      clearElementChildren(elems.examListContainer);
+      const errDiv = doc.createElement('div');
+      errDiv.style.color = 'var(--danger, #ef4444)';
+      errDiv.style.padding = '1rem';
+      errDiv.style.textAlign = 'center';
+      errDiv.textContent = 'Lỗi tải danh sách đề: ' + msg;
+      elems.examListContainer.appendChild(errDiv);
     }
   };
 
@@ -515,7 +601,7 @@ export function mountTeacherPortal(
     elems.modal.style.display = 'flex';
 
     if (!deps.client.configured) {
-      renderUnconfiguredNotice(elems.loginSection);
+      renderUnconfiguredNotice(elems.loginSection, doc);
       elems.loginSection.style.display = 'block';
       elems.panelSection.style.display = 'none';
       if (elems.closeBtn && typeof elems.closeBtn.focus === 'function') {
@@ -540,7 +626,7 @@ export function mountTeacherPortal(
     // Not logged in: show login form
     elems.loginSection.style.display = 'block';
     elems.panelSection.style.display = 'none';
-    const { pwInput, loginBtn, loginError, cancelBtn } = renderLoginForm(elems.loginSection);
+    const { pwInput, loginBtn, loginError, cancelBtn } = renderLoginForm(elems.loginSection, doc);
     pwInput.value = '';
     loginError.textContent = '';
 
@@ -628,6 +714,7 @@ export function mountTeacherPortal(
     }
   };
 
+  elems.modal.addEventListener('keydown', handleKeyDown as EventListener);
   if (typeof doc.addEventListener === 'function') {
     doc.addEventListener('keydown', handleKeyDown as EventListener);
   }
@@ -642,6 +729,7 @@ export function mountTeacherPortal(
 
   const dispose = (): void => {
     closeModal();
+    elems.modal.removeEventListener('keydown', handleKeyDown as EventListener);
     if (typeof doc.removeEventListener === 'function') {
       doc.removeEventListener('keydown', handleKeyDown as EventListener);
     }
