@@ -5,7 +5,7 @@
 
 import type { StoragePort, StorageTransactionAdapter } from '../storage/index.ts';
 import { openStorage } from '../storage/index.ts';
-import type { WebExam, AttemptKey, AttemptRecord, WebQuestion } from '../schema/index.ts';
+import type { WebExam, AttemptKey, AttemptRecord, WebQuestion, WebError } from '../schema/index.ts';
 import { parseExam } from '../schema/index.ts';
 import type { StudentController } from '../student/index.ts';
 import { startAttempt, resumeAttempt, toDomainExam } from '../student/index.ts';
@@ -559,7 +559,9 @@ export async function bootstrap(
       banner = (root.ownerDocument || document).createElement('div');
       banner.id = 'storageWarningBanner';
       banner.className = 'storage-warning-banner';
-      banner.setAttribute('role', 'alert');
+      if (typeof banner.setAttribute === 'function') {
+        banner.setAttribute('role', 'alert');
+      }
       banner.style.cssText = 'background: #fef2f2; border: 1px solid #f87171; color: #991b1b; padding: 0.5rem 1rem; margin: 0.5rem auto; border-radius: 6px; display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; max-width: 960px;';
 
       const msgSpan = (root.ownerDocument || document).createElement('span');
@@ -594,24 +596,28 @@ export async function bootstrap(
       };
       banner.appendChild(btnExport);
 
-      if (examWrapper && examWrapper.parentNode) {
+      if (examWrapper && examWrapper.parentNode && typeof (examWrapper.parentNode as any).insertBefore === 'function') {
         examWrapper.parentNode.insertBefore(banner, examWrapper);
-      } else {
+      } else if (typeof root.prepend === 'function') {
         root.prepend(banner);
+      } else if (typeof root.appendChild === 'function') {
+        root.appendChild(banner);
       }
     }
   };
 
   if (!isStorageAvailable) {
     if (syncStatus) {
-      syncStatus.classList.add('status-failed', 'status-local-error');
+      if (syncStatus.classList && typeof syncStatus.classList.add === 'function') {
+        syncStatus.classList.add('status-failed', 'status-local-error');
+      }
       syncStatus.title = 'Lưu trữ không khả dụng: STORAGE_UNAVAILABLE';
     }
     if (syncText) {
       syncText.textContent = 'Chưa lưu';
     }
     showStorageUnavailableWarning();
-    if (announcer) {
+    if (announcer && typeof announcer.announce === 'function') {
       announcer.announce('Lưu trữ không khả dụng: STORAGE_UNAVAILABLE', 'assertive');
     }
   }
@@ -619,7 +625,122 @@ export async function bootstrap(
   let activeReportModel: ReportModel | null = null;
   let showReport: (record?: AttemptRecord, repModel?: ReportModel) => void;
 
-  const adoptFinalRecord = (record: AttemptRecord) => {
+  const showIntegrityError = (err: WebError, record?: AttemptRecord | any) => {
+    if (examWrapper) examWrapper.style.display = 'none';
+    if (reportWrapper) reportWrapper.style.display = '';
+    if (btnSubmit) btnSubmit.style.display = 'none';
+    if (candidateInput) candidateInput.disabled = true;
+
+    router.navigate('report');
+
+    if (announcer && typeof announcer.announce === 'function') {
+      announcer.announce(`Lỗi toàn vẹn dữ liệu: ${err.code} - ${err.message}`, 'assertive');
+    }
+
+    if (syncStatus) {
+      if (syncStatus.classList && typeof syncStatus.classList.add === 'function') {
+        syncStatus.classList.add('status-failed');
+      }
+      syncStatus.title = `Lỗi toàn vẹn dữ liệu: ${err.code}`;
+    }
+    if (syncText) {
+      syncText.textContent = `Lỗi: ${err.code}`;
+    }
+
+    const summaryGrid = root.querySelector('.summary-cards-grid') as HTMLElement | null;
+    if (summaryGrid) summaryGrid.style.display = 'none';
+
+    const reportActionsBar = root.querySelector('.report-actions-bar') as HTMLElement | null;
+    if (reportActionsBar) reportActionsBar.style.display = 'none';
+
+    const reviewQuestionsList = root.querySelector('#reviewQuestionsList') as HTMLElement | null;
+    if (reviewQuestionsList) reviewQuestionsList.style.display = 'none';
+
+    const reportSubtitle = root.querySelector('#reportSubtitle') as HTMLElement | null;
+    if (reportSubtitle) {
+      reportSubtitle.textContent = `Lỗi toàn vẹn dữ liệu: ${err.code}`;
+      reportSubtitle.style.color = 'var(--danger, #ef4444)';
+    }
+
+    const reportView = root.querySelector('#reportView') as HTMLElement | null;
+    if (reportView) {
+      reportView.innerHTML = `
+        <div class="integrity-error-box" role="alert" style="background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 1rem; border-radius: 6px; margin: 1rem 0;">
+          <h2>Lỗi toàn vẹn dữ liệu: ${escapeHtml(err.code)}</h2>
+          <p>${escapeHtml(err.message)}</p>
+          <p>Mã lỗi: <code>${escapeHtml(err.code)}</code></p>
+        </div>
+      `;
+    }
+
+    let errBanner = root.querySelector('#integrityErrorBanner') as HTMLElement | null;
+    if (!errBanner) {
+      errBanner = (root.ownerDocument || document).createElement('div');
+      errBanner.id = 'integrityErrorBanner';
+      errBanner.className = 'integrity-error-banner';
+      if (typeof errBanner.setAttribute === 'function') {
+        errBanner.setAttribute('role', 'alert');
+      }
+      errBanner.style.cssText = 'background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 1rem 1.5rem; margin: 1rem auto; border-radius: 8px; max-width: 960px;';
+
+      const errHeader = (root.ownerDocument || document).createElement('h2');
+      errHeader.style.cssText = 'margin: 0 0 0.5rem 0; font-size: 1.125rem; font-weight: 700;';
+      errHeader.textContent = `Lỗi toàn vẹn dữ liệu: ${err.code}`;
+      errBanner.appendChild(errHeader);
+
+      const errMsg = (root.ownerDocument || document).createElement('p');
+      errMsg.id = 'integrityErrorMessage';
+      errMsg.style.cssText = 'margin: 0 0 1rem 0; font-size: 0.875rem;';
+      errMsg.textContent = err.message;
+      errBanner.appendChild(errMsg);
+
+      const btnGroup = (root.ownerDocument || document).createElement('div');
+      btnGroup.style.cssText = 'display: flex; gap: 0.5rem; align-items: center;';
+
+      const btnExport = (root.ownerDocument || document).createElement('button');
+      btnExport.type = 'button';
+      btnExport.id = 'btnExportQuarantine';
+      btnExport.className = 'btn-secondary';
+      btnExport.style.cssText = 'font-size: 0.8125rem; padding: 0.4rem 0.8rem; cursor: pointer;';
+      btnExport.textContent = 'Tải bản ghi bị cách ly (Quarantine / Phục hồi)';
+      btnExport.onclick = () => {
+        const payload = record ?? {
+          examId: currentExam?.examId,
+          examVersionId: currentExam?.examVersionId,
+          attemptId,
+          candidateName,
+          responses,
+          quarantineError: err,
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = (root.ownerDocument || document).createElement('a');
+        a.href = url;
+        a.download = `quarantine-attempt-${attemptId}.json`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      };
+      btnGroup.appendChild(btnExport);
+      errBanner.appendChild(btnGroup);
+
+      if (reportWrapper && typeof reportWrapper.prepend === 'function') {
+        reportWrapper.prepend(errBanner);
+      } else if (reportWrapper && reportWrapper.firstChild) {
+        reportWrapper.insertBefore(errBanner, reportWrapper.firstChild);
+      } else if (reportWrapper) {
+        reportWrapper.appendChild(errBanner);
+      } else if (typeof root.prepend === 'function') {
+        root.prepend(errBanner);
+      } else {
+        root.appendChild(errBanner);
+      }
+    } else {
+      const errMsg = errBanner.querySelector('#integrityErrorMessage');
+      if (errMsg) errMsg.textContent = err.message;
+    }
+  };
+
+  const adoptFinalRecord = (record: AttemptRecord, isDurable = true) => {
     isSubmitted = true;
     if (timerIntervalId) clearInterval(timerIntervalId);
 
@@ -635,15 +756,24 @@ export async function bootstrap(
     if (record.responses) {
       responses = fromDomainResponses(record.responses);
     }
-    scoredResult = scoreLegacyAttempt(currentExam, responses);
 
     const repRes = buildReport(record, now());
-    if (repRes.ok) {
-      activeReportModel = repRes.value;
+    if (!repRes.ok) {
+      activeReportModel = null;
+      scoredResult = null;
+      showIntegrityError(repRes.error, record);
+      return;
     }
 
+    activeReportModel = repRes.value;
+    scoredResult = scoreLegacyAttempt(currentExam, responses);
+
+    const isReallyDurable = isDurable && isStorageAvailable && !(record as any).degradedRescueMirror;
     if (syncText) {
-      syncText.textContent = 'Đã nộp & lưu cục bộ';
+      syncText.textContent = isReallyDurable ? 'Đã nộp & lưu cục bộ' : 'Chưa lưu';
+    }
+    if (!isReallyDurable) {
+      showStorageUnavailableWarning();
     }
 
     if (typeof showReport === 'function') {
@@ -1239,9 +1369,13 @@ export async function bootstrap(
 
     if (finalRecord) {
       const repRes = buildReport(finalRecord, now());
-      if (repRes.ok) {
-        activeReportModel = repRes.value;
+      if (!repRes.ok) {
+        activeReportModel = null;
+        scoredResult = null;
+        showIntegrityError(repRes.error, finalRecord);
+        return;
       }
+      activeReportModel = repRes.value;
     }
 
     // 2. Mirror final to localStorage
@@ -1275,6 +1409,9 @@ export async function bootstrap(
     if (syncText) {
       syncText.textContent = submitOk ? 'Đã nộp & lưu cục bộ' : 'Chưa lưu';
     }
+    if (!submitOk) {
+      showStorageUnavailableWarning();
+    }
 
     showReport(finalRecord ?? undefined, activeReportModel ?? undefined);
   };
@@ -1296,6 +1433,7 @@ export async function bootstrap(
     }
 
     let resumedRecord: any = null;
+    let isDurableRecord = false;
 
     if (!forceNew) {
       let foundAttemptId: string | null = null;
@@ -1318,7 +1456,7 @@ export async function bootstrap(
         }
       }
 
-      if (!foundAttemptId && storage) {
+      if (!foundAttemptId && storage && isStorageAvailable) {
         try {
           const listRes = await storage.listAttempts(examId, version);
           if (listRes.ok && listRes.value.length > 0) {
@@ -1327,17 +1465,19 @@ export async function bootstrap(
             if (first) {
               foundAttemptId = first.attemptId;
               resumedRecord = first;
+              isDurableRecord = true;
             }
           }
         } catch (_) {}
       }
 
       if (foundAttemptId && !resumedRecord) {
-        if (storage) {
+        if (storage && isStorageAvailable) {
           try {
             const loadRes = await storage.load({ examId, examVersionId: version, attemptId: foundAttemptId });
             if (loadRes.ok && loadRes.value) {
               resumedRecord = loadRes.value;
+              isDurableRecord = true;
             }
           } catch (_) {}
         }
@@ -1348,6 +1488,7 @@ export async function bootstrap(
           if (raw) {
             try {
               resumedRecord = JSON.parse(raw);
+              isDurableRecord = false;
             } catch (_) {}
           }
         }
@@ -1410,11 +1551,44 @@ export async function bootstrap(
       scoredResult = scoreLegacyAttempt(currentExam, responses);
 
       if (isSubmitted) {
+        const isDurableFinal = isDurableRecord && isStorageAvailable && !resumedRecord.degradedRescueMirror;
+        if (!isDurableFinal) {
+          showStorageUnavailableWarning();
+        }
+
         if (resumedRecord && resumedRecord.phase === 'final' && Array.isArray(resumedRecord.responses?.responses)) {
-          adoptFinalRecord(resumedRecord);
+          adoptFinalRecord(resumedRecord, isDurableFinal);
           return;
         }
-        if (syncText) syncText.textContent = 'Đã nộp & lưu cục bộ';
+
+        if (resumedRecord && resumedRecord.scoreDTO) {
+          const mockFinal: AttemptRecord = {
+            schemaVersion: 'web-attempt-v1',
+            examId,
+            examVersionId: version,
+            attemptId,
+            revision: 2,
+            candidateName,
+            examSnapshot: currentExam,
+            presentationOrder: presentationOrder || createPresentationOrder(toDomainExam(currentExam), currentExam.settings, attemptId),
+            responses: toDomainResponses(currentExam, attemptId, responses),
+            startedAt,
+            deadline,
+            phase: 'final',
+            submittedAt: resumedRecord.submittedAt || now(),
+            scoreDTO: resumedRecord.scoreDTO,
+          };
+          const repRes = buildReport(mockFinal, now());
+          if (!repRes.ok) {
+            activeReportModel = null;
+            scoredResult = null;
+            showIntegrityError(repRes.error, mockFinal);
+            return;
+          }
+          activeReportModel = repRes.value;
+        }
+
+        if (syncText) syncText.textContent = isDurableFinal ? 'Đã nộp & lưu cục bộ' : 'Chưa lưu';
         showReport();
         return;
       } else {
@@ -1471,7 +1645,7 @@ export async function bootstrap(
     if (btnSubmit) btnSubmit.style.display = '';
     if (syncText) {
       if (isSubmitted) {
-        syncText.textContent = 'Đã nộp & lưu cục bộ';
+        syncText.textContent = isStorageAvailable ? 'Đã nộp & lưu cục bộ' : 'Chưa lưu';
       } else if (!isStorageAvailable) {
         syncText.textContent = 'Chưa lưu';
       }
@@ -1485,6 +1659,17 @@ export async function bootstrap(
 
   // Show Report View
   showReport = (record?: AttemptRecord, repModel?: ReportModel) => {
+    const errBanner = root.querySelector('#integrityErrorBanner') as HTMLElement | null;
+    if (errBanner) {
+      errBanner.remove();
+    }
+    const summaryGrid = root.querySelector('.summary-cards-grid') as HTMLElement | null;
+    if (summaryGrid) summaryGrid.style.display = '';
+    const reportActionsBar = root.querySelector('.report-actions-bar') as HTMLElement | null;
+    if (reportActionsBar) reportActionsBar.style.display = '';
+    const reviewQuestionsList = root.querySelector('#reviewQuestionsList') as HTMLElement | null;
+    if (reviewQuestionsList) reviewQuestionsList.style.display = '';
+
     if (examWrapper) examWrapper.style.display = 'none';
     if (reportWrapper) reportWrapper.style.display = '';
     if (btnSubmit) btnSubmit.style.display = 'none';
@@ -1497,6 +1682,16 @@ export async function bootstrap(
     router.navigate('report');
 
     if (record) {
+      if (record.phase === 'final') {
+        const repRes = buildReport(record, now());
+        if (!repRes.ok) {
+          activeReportModel = null;
+          scoredResult = null;
+          showIntegrityError(repRes.error, record);
+          return;
+        }
+        activeReportModel = repRes.value;
+      }
       if (record.candidateName) candidateName = record.candidateName;
       if (record.examSnapshot) currentExam = record.examSnapshot;
       if (record.responses) responses = fromDomainResponses(record.responses);
