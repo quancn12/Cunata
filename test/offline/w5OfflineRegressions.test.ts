@@ -12,11 +12,32 @@ import {
   type OfflineStatus,
   type ServiceWorkerOutboundMessage,
   CACHE_NAME,
+  DEFAULT_PRECACHE_ENTRIES,
+  isCacheableRequest,
 } from '../../src/offline/index.ts';
 
 import { MockCacheStorage, createMockClientEnvironment } from './testHelpers.ts';
 
 describe('WEB-FINAL-STUDENT-STORAGE: Offline Regressions', () => {
+  it('ensures static application scripts with collector/appsScript in path remain cacheable in isCacheableRequest', () => {
+    // Application module scripts must be cacheable
+    assert.equal(isCacheableRequest('/Cunata/collect/appsScript.js', 'GET'), true);
+    assert.equal(isCacheableRequest('./collect/appsScript.js', 'GET'), true);
+    assert.equal(isCacheableRequest('http://127.0.0.1:8000/Cunata/collect/appsScript.js', 'GET'), true);
+    assert.equal(isCacheableRequest('/Cunata/collect/index.js', 'GET'), true);
+
+    // Collector API network endpoints must be strictly non-cacheable
+    assert.equal(isCacheableRequest('https://script.google.com/macros/s/xyz/exec', 'GET'), false);
+    assert.equal(isCacheableRequest('https://macros.google.com/collector', 'GET'), false);
+    assert.equal(isCacheableRequest('http://127.0.0.1:8000/Cunata/collect/send', 'GET'), false);
+    assert.equal(isCacheableRequest('http://127.0.0.1:8000/appsscript?action=listExams', 'GET'), false);
+
+    // Precache manifest must include core index and appsScript modules
+    const urls = DEFAULT_PRECACHE_ENTRIES.map((entry) => entry.url);
+    assert.ok(urls.includes('public/exams/index.json'), 'public/exams/index.json must be in precache entries');
+    assert.ok(urls.includes('collect/appsScript.js'), 'collect/appsScript.js must be in precache entries');
+  });
+
   it('correctly handles CHECK_OFFLINE_READY outbound message narrowing for both complete and incomplete cache', async () => {
     const caches = new MockCacheStorage();
     const cache = await caches.open(CACHE_NAME);

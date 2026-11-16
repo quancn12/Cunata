@@ -335,4 +335,99 @@ describe('WEB-FINAL-STUDENT-STORAGE: Student Regressions', () => {
     assert.equal(dto.total, '21/2');
     assert.equal(dto.maxTotal, '21/2');
   });
+
+  it('verifies StudentController scores oracle golden-20-10-4 Part III responses deterministically', async () => {
+    const adapter = new MemoryTransactionAdapter();
+    const storage = createStoragePort(adapter);
+    let currentTime = 1000;
+    const now = () => currentTime;
+    let idCounter = 1;
+    const id = () => `att-oracle-${idCounter++}`;
+
+    const exam20104: WebExam = {
+      schemaVersion: 'web-exam-v1',
+      examId: 'exam:golden-20-10-4',
+      examVersionId: 'version:golden-20-10-4',
+      ruleSetId: 'custom-v1',
+      inputPolicyId: 'sa-charset-v1',
+      title: 'Đề Oracle golden-20-10-4',
+      subject: 'Toán học',
+      grade: 12,
+      settings: {
+        durationMinutes: 50,
+        maxAttempts: null,
+        releasePolicy: 'immediate',
+        shuffleQuestions: false,
+        shuffleOptions: false,
+      },
+      questions: [
+        // 20 questions Part I (correctOptionId is opt-0)
+        ...Array.from({ length: 20 }, (_, i) => ({
+          kind: 'I' as const,
+          questionVersionId: `golden-20-10-4:I:${i}`,
+          title: `Câu I.${i + 1}`,
+          options: [0, 1, 2, 3].map((optIdx) => ({
+            optionId: `golden-20-10-4:I:${i}:option:${optIdx}`,
+            text: `Phương án ${optIdx}`,
+          })),
+          correctOptionId: `golden-20-10-4:I:${i}:option:0`,
+        })),
+        // 10 questions Part II (all 4 statements true)
+        ...Array.from({ length: 10 }, (_, i) => ({
+          kind: 'II' as const,
+          questionVersionId: `golden-20-10-4:II:${i}`,
+          title: `Câu II.${i + 1}`,
+          statements: [0, 1, 2, 3].map((stIdx) => ({
+            statementId: `golden-20-10-4:II:${i}:statement:${stIdx}`,
+            text: `Mệnh đề ${stIdx}`,
+            answer: true,
+          })),
+        })),
+        // 4 questions Part III
+        { kind: 'III' as const, questionVersionId: 'golden-20-10-4:III:0', title: 'Câu III.1', answerKey: '1,5' },
+        { kind: 'III' as const, questionVersionId: 'golden-20-10-4:III:1', title: 'Câu III.2', answerKey: '-0,5' },
+        { kind: 'III' as const, questionVersionId: 'golden-20-10-4:III:2', title: 'Câu III.3', answerKey: '0' },
+        { kind: 'III' as const, questionVersionId: 'golden-20-10-4:III:3', title: 'Câu III.4', answerKey: '1,50' },
+      ],
+      assets: [],
+    };
+
+    // Sub-case 1: Full Part III answers (all 4 correct)
+    {
+      const startRes = await startAttempt(exam20104, 'Thí sinh Full III', { storage, now, id });
+      assert.equal(startRes.ok, true);
+      if (!startRes.ok) return;
+      const ctrl = startRes.value;
+
+      await ctrl.answer({ kind: 'III', questionVersionId: 'golden-20-10-4:III:0', raw: '1,5' });
+      await ctrl.answer({ kind: 'III', questionVersionId: 'golden-20-10-4:III:1', raw: '-0,5' });
+      await ctrl.answer({ kind: 'III', questionVersionId: 'golden-20-10-4:III:2', raw: '0' });
+      await ctrl.answer({ kind: 'III', questionVersionId: 'golden-20-10-4:III:3', raw: '1,50' });
+
+      const subRes = await ctrl.submit('manual');
+      assert.equal(subRes.ok, true);
+      const dto = ctrl.getSnapshot().scoreDTO as any;
+      // N1=20 (max 5), N2=10 (max 10) -> BASE=15 >= 10 -> POINT_III = 0.25
+      // 4 correct * 0.25 = 1 / 1
+      assert.equal(dto.sections.III.score, '1');
+      assert.equal(dto.sections.III.max, '1');
+    }
+
+    // Sub-case 2: Single Part III answer (only III:0 correct, others unanswered)
+    {
+      const startRes = await startAttempt(exam20104, 'Thí sinh One III', { storage, now, id });
+      assert.equal(startRes.ok, true);
+      if (!startRes.ok) return;
+      const ctrl = startRes.value;
+
+      await ctrl.answer({ kind: 'III', questionVersionId: 'golden-20-10-4:III:0', raw: '1,5' });
+
+      const subRes = await ctrl.submit('manual');
+      assert.equal(subRes.ok, true);
+      const dto = ctrl.getSnapshot().scoreDTO as any;
+      // 1 correct * 0.25 = 1/4 / 1
+      assert.equal(dto.sections.III.score, '1/4');
+      assert.equal(dto.sections.III.max, '1');
+    }
+  });
 });

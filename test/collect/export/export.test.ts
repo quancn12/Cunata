@@ -322,6 +322,33 @@ describe('M4 Export: CSV Generation & RFC 4180 Invariants', () => {
     assert.equal(safeParsed[0].questionVersionId, "'@q-03");
   });
 
+  it('protects candidate nicknames starting with =, +, -, @ in CSV while preserving raw in JSON', () => {
+    for (const prefix of ['=', '+', '-', '@']) {
+      const name = `${prefix}SUM(1,1)`;
+      const final = createSampleFinal(`att-prefix-${prefix.charCodeAt(0)}`, {
+        candidateName: name,
+        responses: {
+          attemptId: `att-prefix-${prefix.charCodeAt(0)}`,
+          examVersionId: 'v1.0.0',
+          responses: [{ kind: 'III', questionVersionId: 'ck-iii-01', raw: '-0,5' }],
+        },
+      });
+
+      // 1. JSON preserves exact raw nickname and raw negative answer
+      const jsonStr = serializeResultsJson([final]);
+      assert.ok(jsonStr.includes(JSON.stringify(name)), `JSON must preserve original nickname ${name}`);
+      assert.ok(jsonStr.includes('"-0,5"'), 'JSON must preserve raw negative short answer');
+
+      // 2. CSV neutralizes formula prefix with single apostrophe
+      const csvStr = serializeResultsCsv([final]);
+      const parsed = parseCsvRfc4180(csvStr);
+      assert.equal(parsed.length, 2);
+      const cells = parsed.flat();
+      assert.ok(cells.includes(`'${name}`), `CSV must use apostrophe prefix for dangerous nickname ${name}`);
+      assert.ok(!cells.some(c => /^[\s\u0000-\u001f]*[=+@-]/u.test(c)), 'CSV cells must not start with executable spreadsheet triggers');
+    }
+  });
+
   it('independent CSV parser accurately parses exported CSV round-trip', () => {
     const final1 = createSampleFinal('att-01', { candidateName: 'Thí sinh 1' });
     const final2 = createSampleFinal('att-02', {
