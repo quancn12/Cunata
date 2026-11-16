@@ -60,6 +60,7 @@ export const DEFAULT_PRECACHE_ENTRIES: readonly PrecacheManifestItem[] = Object.
   // Core Samples and Fixtures
   { url: 'public/sample-exam.json', critical: true, category: 'sample' },
   { url: 'public/q01-bbt.svg', critical: true, category: 'asset' },
+  { url: 'public/exams/index.json', critical: false, category: 'sample' },
   { url: 'public/exams/toan-full.json', critical: false, category: 'sample' },
   { url: 'public/exams/ly-part-I.json', critical: false, category: 'sample' },
   { url: 'public/exams/hoa-repeating.json', critical: false, category: 'sample' },
