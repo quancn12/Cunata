@@ -172,6 +172,24 @@ describe('WEB-W2-UI-POLISH: Accessible Dialogs, Double-Click Guards & Focus Rest
       assert.notStrictEqual(submitBtn, null);
     });
 
+    it('escapes and preserves literal text when candidateName contains hostile HTML or script tags', () => {
+      const doc = createMockDocument();
+      const evilName = '<img src=x onerror="window.__xss=1">An';
+      const dialog = createSubmitConfirmDialog({
+        title: 'Xác nhận nộp bài',
+        totalQuestions: 10,
+        answeredCount: 10,
+        unansweredCount: 0,
+        candidateName: evilName,
+        onConfirmSubmit: () => {},
+        document: doc as unknown as Document,
+      });
+
+      const candEl = dialog.element.querySelector('.cunata-dialog-candidate-info');
+      assert.notStrictEqual(candEl, null);
+      assert.strictEqual(candEl?.textContent, `Thí sinh: ${evilName}`);
+    });
+
     it('displays completion confirmation when all questions are answered', () => {
       const doc = createMockDocument();
 

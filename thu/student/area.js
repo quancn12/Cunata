@@ -115,7 +115,7 @@ export function mountStudentArea(container, options = {}) {
     let isDisposed = false;
     container.textContent = '';
     container.classList.add('student-area-root', 'ui-page', 'ui-stack');
-    // Inject student typography patch strictly adhering to tokens.css thang 12/14/16/20/24/32px
+    // Inject student typography and layout patch strictly adhering to tokens.css
     if (doc && doc.head && !doc.getElementById('cunata-student-typography')) {
         const styleEl = doc.createElement('style');
         styleEl.id = 'cunata-student-typography';
@@ -128,8 +128,149 @@ export function mountStudentArea(container, options = {}) {
       .statement-label { font-size: var(--fs-md) !important; }
       .tf-btn { font-size: var(--fs-xs) !important; }
       .quick-keys-bar span { font-size: var(--fs-xs) !important; }
+
+      #examWrapper[style*="display: none"], .cunata-student-view .main-wrapper[style*="display: none"] {
+        display: none !important;
+      }
+
+      @media (min-width: 1024px) {
+        #examWrapper:not([style*="display: none"]), .cunata-student-view .main-wrapper:not([style*="display: none"]) {
+          display: grid !important;
+          grid-template-columns: 1fr 280px !important;
+          gap: var(--sp-4, 16px) !important;
+          align-items: start !important;
+        }
+        #examPane, #examWrapper #examPane {
+          order: 1 !important;
+        }
+        .palette-card, #examWrapper .palette-card {
+          order: 2 !important;
+          position: sticky !important;
+          top: 5rem !important;
+          display: block !important;
+        }
+        #btnPalette {
+          display: none !important;
+        }
+      }
+
+      @media (max-width: 1023px) {
+        #examWrapper:not([style*="display: none"]), .cunata-student-view .main-wrapper:not([style*="display: none"]) {
+          display: block !important;
+          grid-template-columns: 1fr !important;
+        }
+        #examPane, #examWrapper #examPane {
+          width: 100% !important;
+          order: 1 !important;
+        }
+        .palette-card, #examWrapper .palette-card {
+          display: none !important;
+          order: 2 !important;
+        }
+        .palette-card.is-open, #examWrapper .palette-card.is-open {
+          display: block !important;
+          position: fixed !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          top: auto !important;
+          width: 100% !important;
+          max-height: 75vh !important;
+          overflow-y: auto !important;
+          z-index: 1000 !important;
+          border-radius: var(--r-lg, 16px) var(--r-lg, 16px) 0 0 !important;
+          box-shadow: var(--shadow-2) !important;
+          background: var(--c-surface) !important;
+          border: 1px solid var(--c-border) !important;
+          padding: var(--sp-4, 16px) var(--sp-4, 16px) var(--sp-6, 32px) var(--sp-4, 16px) !important;
+        }
+        .header-actions {
+          flex-wrap: wrap !important;
+          gap: var(--sp-2, 8px) !important;
+        }
+        #btnOpenExamList, #btnSubmit {
+          white-space: nowrap !important;
+          height: var(--target, 44px) !important;
+          min-height: var(--target, 44px) !important;
+          max-height: var(--target, 44px) !important;
+          padding: 0 var(--sp-3, 12px) !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          font-size: var(--fs-xs, 12px) !important;
+          line-height: 20px !important;
+        }
+        .sync-status-badge {
+          flex-shrink: 0 !important;
+          white-space: nowrap !important;
+          height: var(--target, 44px) !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          padding: 0 var(--sp-2, 8px) !important;
+        }
+        #timerBox {
+          white-space: nowrap !important;
+          height: var(--target, 44px) !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          line-height: 20px !important;
+        }
+        #btnPalette {
+          white-space: nowrap !important;
+          height: var(--target, 44px) !important;
+          min-height: var(--target, 44px) !important;
+          max-height: var(--target, 44px) !important;
+          padding: 0 var(--sp-2, 8px) !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 4px !important;
+          font-size: var(--fs-xs, 12px) !important;
+          line-height: 20px !important;
+        }
+        #btnPalette * {
+          font-size: var(--fs-xs, 12px) !important;
+        }
+      }
     `;
         doc.head.appendChild(styleEl);
+    }
+    function ensurePaletteToggle() {
+        if (!doc || doc.getElementById('btnPalette'))
+            return;
+        const headerActions = doc.querySelector('.header-actions');
+        if (!headerActions)
+            return;
+        const btn = doc.createElement('button');
+        btn.type = 'button';
+        btn.id = 'btnPalette';
+        btn.className = 'btn-secondary btn-palette';
+        btn.setAttribute('aria-label', 'Bảng số câu');
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Số câu</span>';
+        btn.addEventListener('click', () => {
+            const pal = doc.querySelector('.palette-card');
+            if (pal)
+                pal.classList.toggle('is-open');
+        });
+        const submitBtn = doc.getElementById('btnSubmit');
+        if (submitBtn) {
+            headerActions.insertBefore(btn, submitBtn);
+        }
+        else {
+            headerActions.appendChild(btn);
+        }
+    }
+    ensurePaletteToggle();
+    if (doc) {
+        doc.addEventListener('click', (ev) => {
+            const target = ev.target;
+            if (target && target.closest('.palette-btn')) {
+                const pal = doc.querySelector('.palette-card');
+                if (pal && pal.classList.contains('is-open')) {
+                    pal.classList.remove('is-open');
+                }
+            }
+        });
     }
     // ================= 1. Cổng nhập tên (#studentNameGate) =================
     const nameGateCard = Card(undefined, doc);
@@ -295,10 +436,14 @@ export function mountStudentArea(container, options = {}) {
     const practiceDesc = doc.createElement('p');
     practiceDesc.className = 'student-section-desc';
     practiceDesc.textContent = 'Kho đề khảo sát và rèn luyện năng lực theo cấu trúc đề thi GDPT 2018.';
+    const practiceNotice = doc.createElement('div');
+    practiceNotice.id = 'practiceNotice';
+    practiceNotice.className = 'ui-alert ui-alert--warning';
+    practiceNotice.style.display = 'none';
     const practiceGrid = doc.createElement('div');
     practiceGrid.id = 'practiceExams';
     practiceGrid.className = 'ui-exam-grid practice-exams-grid';
-    appendChildren(practiceWrapper, practiceTitle, practiceDesc, practiceGrid);
+    appendChildren(practiceWrapper, practiceTitle, practiceDesc, practiceNotice, practiceGrid);
     mainArea.appendChild(practiceWrapper);
     // ================= 3. Hộp thoại xem trước đề (#examPreview) =================
     const examPreviewModal = doc.createElement('div');
@@ -353,68 +498,18 @@ export function mountStudentArea(container, options = {}) {
     examPreviewModal.appendChild(previewCard);
     container.appendChild(examPreviewModal);
     // ================= Helper logic & rendering =================
-    function handleCandidateNameEvent(e) {
-        const target = ((e && e.target) || (this && this.id ? this : null));
-        if (target && target.id === 'candidateName' && 'value' in target) {
-            const val = String(target.value || '').trim();
-            if (val) {
-                candidateName = val;
-                try {
-                    localStorage.setItem(STORAGE_NAME_KEY, val);
-                    localStorage.setItem('cunata:candidate_name', val);
-                    localStorage.setItem('cunata:last_candidate_name', val);
-                }
-                catch { }
-            }
-        }
-    }
-    function handleFocusIn(e) {
-        const target = (e && e.target);
-        if (target && target.id === 'candidateName') {
-            ensureCandidateInputEditable();
-        }
-    }
-    function ensureCandidateInputEditable() {
-        const candidateNameInputs = doc.querySelectorAll('#candidateName');
-        candidateNameInputs.forEach((inp) => {
-            inp.readOnly = false;
-            inp.removeAttribute('readonly');
-            try {
-                Object.defineProperty(inp, 'readOnly', {
-                    get() { return false; },
-                    set(_v) { },
-                    configurable: true,
-                });
-            }
-            catch { }
-            try {
-                inp.removeEventListener('input', handleCandidateNameEvent);
-                inp.addEventListener('input', handleCandidateNameEvent);
-                inp.removeEventListener('change', handleCandidateNameEvent);
-                inp.addEventListener('change', handleCandidateNameEvent);
-            }
-            catch { }
-        });
-    }
     function syncNameState() {
         const hasName = candidateName.trim().length > 0;
         nameGateCard.style.display = hasName ? 'none' : '';
         mainArea.style.display = hasName ? '' : 'none';
         greetingName.textContent = candidateName;
-        ensureCandidateInputEditable();
         const candidateNameInputs = doc.querySelectorAll('#candidateName');
         candidateNameInputs.forEach((inp) => {
-            if (candidateName && (!inp.value || inp.value === 'Thí sinh tự do')) {
+            if (candidateName) {
                 inp.value = candidateName;
             }
-            else if (inp.value && inp.value !== candidateName && inp.value !== 'Thí sinh tự do') {
-                candidateName = inp.value;
-                try {
-                    localStorage.setItem(STORAGE_NAME_KEY, candidateName);
-                    localStorage.setItem('cunata:candidate_name', candidateName);
-                }
-                catch { }
-            }
+            inp.readOnly = true;
+            inp.setAttribute('readonly', 'readonly');
         });
         // Update TopBar person display
         const topBarPerson = doc.querySelector('.ui-topbar-person');
@@ -423,9 +518,6 @@ export function mountStudentArea(container, options = {}) {
             topBarPerson.setAttribute('title', candidateName);
         }
     }
-    doc.addEventListener('input', handleCandidateNameEvent, true);
-    doc.addEventListener('change', handleCandidateNameEvent, true);
-    doc.addEventListener('focusin', handleFocusIn, true);
     function getEffectiveStatus(examId, openAt, dueAt) {
         const attempt = getLocalAttemptInfo(examId);
         const now = nowFn();
@@ -506,12 +598,41 @@ export function mountStudentArea(container, options = {}) {
     }
     async function handleStartOrResumeExam(exam) {
         closePreview();
+        ensurePaletteToggle();
         if (!candidateName.trim()) {
             syncNameState();
             return;
         }
-        const eff = getEffectiveStatus(exam.id);
+        const eff = getEffectiveStatus(exam.id, exam.openAt, exam.dueAt);
         if (eff.status === 'submitted') {
+            // Set active assignment metadata if any so report retains schedule context
+            try {
+                const win = doc.defaultView || (typeof window !== 'undefined' ? window : null);
+                const sess = (win && win.sessionStorage) || (typeof sessionStorage !== 'undefined' ? sessionStorage : null);
+                const loc = (win && win.localStorage) || (typeof localStorage !== 'undefined' ? localStorage : null);
+                if (exam.assignmentId || exam.classCode) {
+                    const metaObj = {
+                        classCode: exam.classCode,
+                        assignmentId: exam.assignmentId,
+                        class_code: exam.classCode,
+                        assignment_id: exam.assignmentId,
+                        openAt: exam.openAt,
+                        dueAt: exam.dueAt,
+                        open_at: exam.openAt,
+                        due_at: exam.dueAt,
+                        examId: exam.id,
+                    };
+                    const metaStr = JSON.stringify(metaObj);
+                    sess?.setItem(STORAGE_ACTIVE_ASSIGNMENT_KEY, metaStr);
+                    sess?.setItem('cunata_active_assignment', metaStr);
+                    try {
+                        loc?.setItem(STORAGE_ACTIVE_ASSIGNMENT_KEY, metaStr);
+                        loc?.setItem('cunata_active_assignment', metaStr);
+                    }
+                    catch { }
+                }
+            }
+            catch { }
             // Navigate to report
             const repWrapper = doc.querySelector('#reportWrapper');
             const exWrapper = doc.querySelector('#examWrapper');
@@ -524,76 +645,146 @@ export function mountStudentArea(container, options = {}) {
         }
         // Set active assignment metadata if any
         try {
+            const win = doc.defaultView || (typeof window !== 'undefined' ? window : null);
+            const sess = (win && win.sessionStorage) || (typeof sessionStorage !== 'undefined' ? sessionStorage : null);
+            const loc = (win && win.localStorage) || (typeof localStorage !== 'undefined' ? localStorage : null);
             if (exam.assignmentId || exam.classCode) {
                 const metaObj = {
                     classCode: exam.classCode,
                     assignmentId: exam.assignmentId,
                     class_code: exam.classCode,
                     assignment_id: exam.assignmentId,
+                    openAt: exam.openAt,
+                    dueAt: exam.dueAt,
+                    open_at: exam.openAt,
+                    due_at: exam.dueAt,
+                    examId: exam.id,
                 };
                 const metaStr = JSON.stringify(metaObj);
-                sessionStorage.setItem(STORAGE_ACTIVE_ASSIGNMENT_KEY, metaStr);
-                sessionStorage.setItem('cunata_active_assignment', metaStr);
+                sess?.setItem(STORAGE_ACTIVE_ASSIGNMENT_KEY, metaStr);
+                sess?.setItem('cunata_active_assignment', metaStr);
                 try {
-                    localStorage.setItem(STORAGE_ACTIVE_ASSIGNMENT_KEY, metaStr);
-                    localStorage.setItem('cunata_active_assignment', metaStr);
+                    loc?.setItem(STORAGE_ACTIVE_ASSIGNMENT_KEY, metaStr);
+                    loc?.setItem('cunata_active_assignment', metaStr);
                 }
                 catch { }
             }
             else {
-                sessionStorage.removeItem(STORAGE_ACTIVE_ASSIGNMENT_KEY);
-                sessionStorage.removeItem('cunata_active_assignment');
+                sess?.removeItem(STORAGE_ACTIVE_ASSIGNMENT_KEY);
+                sess?.removeItem('cunata_active_assignment');
+                try {
+                    loc?.removeItem(STORAGE_ACTIVE_ASSIGNMENT_KEY);
+                    loc?.removeItem('cunata_active_assignment');
+                }
+                catch { }
             }
         }
         catch { }
         btnStartExam.setLoading(true);
         try {
             let fullExam = null;
-            let examUrl = exam.url;
-            if (!examUrl) {
-                if (publicExams.length === 0) {
-                    await loadPublicExams();
-                }
-                const pub = publicExams.find((p) => p.id === exam.id);
-                if (pub && pub.url)
-                    examUrl = pub.url;
-            }
-            if (examUrl) {
+            let asClient = options.client;
+            if (!asClient) {
                 try {
-                    const res = await fetch(examUrl, { cache: 'no-store' });
-                    if (res.ok)
-                        fullExam = await res.json();
+                    const cfg = await loadAppConfig();
+                    const url = options.appsScriptUrl || cfg.appsScriptUrl;
+                    if (url && url.trim()) {
+                        asClient = createAppsScriptClient(url.trim());
+                    }
                 }
                 catch { }
             }
-            if (!fullExam && options.client) {
-                try {
-                    const res = await options.client.getExam(exam.id);
-                    if (res.ok)
-                        fullExam = res.value;
+            if (exam.source === 'teacher' && asClient && asClient.configured) {
+                const res = await asClient.getExam(exam.id);
+                if (res.ok) {
+                    const parsed = parseExam(res.value);
+                    if (parsed.ok) {
+                        fullExam = parsed.value;
+                    }
+                    else {
+                        throw new Error('Dữ liệu đề thi không hợp lệ: ' + parsed.issues.map((i) => `${i.code}: ${i.message}`).join('; '));
+                    }
                 }
-                catch { }
+                else {
+                    throw new Error(res.message || 'Không tìm thấy đề thi trên máy chủ');
+                }
             }
-            if (!fullExam) {
-                try {
-                    const res = await fetch(`public/exams/${exam.id}.json`, { cache: 'no-store' });
-                    if (res.ok)
-                        fullExam = await res.json();
+            else {
+                let examUrl = exam.url;
+                if (!examUrl) {
+                    if (publicExams.length === 0) {
+                        await loadPublicExams();
+                    }
+                    const pub = publicExams.find((p) => p.id === exam.id);
+                    if (pub && pub.url)
+                        examUrl = pub.url;
                 }
-                catch { }
+                if (examUrl) {
+                    try {
+                        const res = await fetch(examUrl, { cache: 'no-store' });
+                        if (res.ok) {
+                            const data = await res.json();
+                            const parsed = parseExam(data);
+                            if (parsed.ok)
+                                fullExam = parsed.value;
+                        }
+                    }
+                    catch { }
+                }
+                if (!fullExam && asClient && asClient.configured) {
+                    try {
+                        const res = await asClient.getExam(exam.id);
+                        if (res.ok) {
+                            const parsed = parseExam(res.value);
+                            if (parsed.ok)
+                                fullExam = parsed.value;
+                        }
+                    }
+                    catch { }
+                }
+                if (!fullExam) {
+                    try {
+                        const res = await fetch(`public/exams/${exam.id}.json`, { cache: 'no-store' });
+                        if (res.ok) {
+                            const data = await res.json();
+                            const parsed = parseExam(data);
+                            if (parsed.ok)
+                                fullExam = parsed.value;
+                        }
+                    }
+                    catch { }
+                }
             }
             if (options.onStartExam && fullExam) {
                 container.style.display = 'none';
+                const startExamPayload = (exam.assignmentId || exam.classCode)
+                    ? {
+                        ...fullExam,
+                        classCode: exam.classCode,
+                        assignmentId: exam.assignmentId,
+                        class_code: exam.classCode,
+                        assignment_id: exam.assignmentId,
+                        openAt: exam.openAt,
+                        dueAt: exam.dueAt,
+                        open_at: exam.openAt,
+                        due_at: exam.dueAt,
+                    }
+                    : fullExam;
                 if (exam.assignmentId || exam.classCode) {
-                    fullExam.classCode = exam.classCode;
-                    fullExam.assignmentId = exam.assignmentId;
-                    fullExam.class_code = exam.classCode;
-                    fullExam.assignment_id = exam.assignmentId;
+                    options.onStartExam(startExamPayload, candidateName, {
+                        assignmentId: exam.assignmentId,
+                        classCode: exam.classCode,
+                        openAt: exam.openAt,
+                        dueAt: exam.dueAt,
+                        assignment_id: exam.assignmentId,
+                        class_code: exam.classCode,
+                        open_at: exam.openAt,
+                        due_at: exam.dueAt,
+                    });
                 }
-                options.onStartExam(fullExam, candidateName, {
-                    assignmentId: exam.assignmentId,
-                    classCode: exam.classCode,
-                });
+                else {
+                    options.onStartExam(startExamPayload, candidateName, undefined);
+                }
             }
             else {
                 // Fallback: trigger standard bootstrap start if global callback exists
@@ -604,7 +795,12 @@ export function mountStudentArea(container, options = {}) {
             }
         }
         catch (err) {
-            alert('Không thể tải nội dung đề thi: ' + (err?.message || String(err)));
+            if (typeof alert === 'function') {
+                alert('Không thể tải nội dung đề thi: ' + (err?.message || String(err)));
+            }
+            else {
+                console.error('Không thể tải nội dung đề thi:', err);
+            }
         }
         finally {
             btnStartExam.setLoading(false);
@@ -643,14 +839,18 @@ export function mountStudentArea(container, options = {}) {
                     const eff = getEffectiveStatus(a.examId, a.openAt, a.dueAt);
                     const pub = publicExams.find((p) => p.id === a.examId);
                     const resolvedUrl = pub?.url;
+                    const displayTitle = (a.title && a.title !== a.examId) ? a.title : (pub?.title || a.title || a.examId);
+                    const displaySubject = a.subject || pub?.subject || 'Đề thi';
+                    const displayCount = a.questionCount || pub?.questionCount || 0;
+                    const displayDuration = a.durationMinutes || pub?.durationMinutes || 50;
                     const card = ExamCard({
                         id: a.examId,
                         assignmentId: a.assignmentId,
                         url: resolvedUrl,
-                        title: a.title,
-                        subject: a.subject || 'Đề thi',
-                        questionCount: a.questionCount || 0,
-                        durationMinutes: a.durationMinutes || 50,
+                        title: displayTitle,
+                        subject: displaySubject,
+                        questionCount: displayCount,
+                        durationMinutes: displayDuration,
                         openAt: formatDateVi(a.openAt),
                         dueAt: formatDateVi(a.dueAt),
                         status: eff.status,
@@ -661,10 +861,10 @@ export function mountStudentArea(container, options = {}) {
                                 assignmentId: a.assignmentId,
                                 classCode: c.code,
                                 url: resolvedUrl,
-                                title: a.title,
-                                subject: a.subject || 'Đề thi',
-                                questionCount: a.questionCount,
-                                durationMinutes: a.durationMinutes,
+                                title: displayTitle,
+                                subject: displaySubject,
+                                questionCount: displayCount,
+                                durationMinutes: displayDuration,
                                 openAt: a.openAt,
                                 dueAt: a.dueAt,
                             });
@@ -677,7 +877,16 @@ export function mountStudentArea(container, options = {}) {
             myClassesContainer.appendChild(section);
         }
     }
+    let teacherError = '';
     function renderPracticeExams() {
+        if (teacherError) {
+            practiceNotice.textContent = `Lưu ý: ${teacherError}`;
+            practiceNotice.style.display = '';
+        }
+        else {
+            practiceNotice.textContent = '';
+            practiceNotice.style.display = 'none';
+        }
         practiceGrid.textContent = '';
         for (const e of publicExams) {
             const eff = getEffectiveStatus(e.id);
@@ -698,12 +907,15 @@ export function mountStudentArea(container, options = {}) {
         }
     }
     async function loadPublicExams() {
+        let staticExams = [];
+        let teacherExams = [];
+        teacherError = '';
         try {
             const res = await fetch('public/exams/index.json', { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
                 if (data && Array.isArray(data.exams)) {
-                    publicExams = data.exams.map((e) => ({
+                    staticExams = data.exams.map((e) => ({
                         id: String(e.id || ''),
                         title: String(e.title || ''),
                         subject: String(e.subject || ''),
@@ -718,8 +930,66 @@ export function mountStudentArea(container, options = {}) {
             }
         }
         catch {
-            publicExams = [];
+            staticExams = [];
         }
+        let asClient = options.client;
+        if (!asClient) {
+            try {
+                const cfg = await loadAppConfig();
+                const url = options.appsScriptUrl || cfg.appsScriptUrl;
+                if (url && url.trim()) {
+                    asClient = createAppsScriptClient(url.trim());
+                }
+            }
+            catch { }
+        }
+        if (asClient && asClient.configured) {
+            try {
+                const res = await asClient.listExams();
+                if (res.ok && Array.isArray(res.value)) {
+                    teacherExams = res.value.map((e) => ({
+                        id: String(e.id || ''),
+                        title: String(e.title || ''),
+                        subject: String(e.subject || ''),
+                        grade: Number(e.grade) || 12,
+                        durationMinutes: Number(e.durationMinutes) || 50,
+                        questionCount: Number(e.questionCount) || 0,
+                        source: 'teacher',
+                        description: e.description || `Đề giáo viên xuất bản · ${Number(e.questionCount) || 0} câu`,
+                    }));
+                }
+                else {
+                    teacherError = res?.error?.message || res?.message || 'Không thể tải danh sách đề từ giáo viên';
+                }
+            }
+            catch (err) {
+                teacherError = err?.message || 'Không thể tải danh sách đề từ giáo viên';
+            }
+        }
+        const teacherMap = new Map();
+        for (const te of teacherExams) {
+            if (te.id)
+                teacherMap.set(te.id, te);
+        }
+        const merged = [];
+        const handledIds = new Set();
+        for (const se of staticExams) {
+            if (teacherMap.has(se.id)) {
+                merged.push(teacherMap.get(se.id));
+                handledIds.add(se.id);
+            }
+            else {
+                merged.push(se);
+                handledIds.add(se.id);
+            }
+        }
+        for (const te of teacherExams) {
+            if (!handledIds.has(te.id)) {
+                merged.push(te);
+                handledIds.add(te.id);
+            }
+        }
+        publicExams = merged;
     }
     async function joinClassByCode(code) {
         const config = await loadAppConfig();
@@ -829,9 +1099,6 @@ export function mountStudentArea(container, options = {}) {
         },
         dispose() {
             isDisposed = true;
-            doc.removeEventListener('input', handleCandidateNameEvent, true);
-            doc.removeEventListener('change', handleCandidateNameEvent, true);
-            doc.removeEventListener('focusin', handleFocusIn, true);
             closePreview();
         },
     };

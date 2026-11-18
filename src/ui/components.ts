@@ -118,6 +118,7 @@ export function ExamCard(options: ExamCardOptions, doc: Document = document): HT
   const subject = options.subject.toLocaleLowerCase('vi');
   const band = /vật l[íý]|^l[íý]$/.test(subject) ? 'ly' : /hóa|hoá/.test(subject) ? 'hoa' : /toán/.test(subject) ? 'toan' : 'khac';
   const card = el('button', `ui-card exam-card exam-list-item exam-card--${band}`, doc); card.type = 'button';
+  if (!card.dataset) (card as any).dataset = {};
   card.dataset.examId = options.id;
   if (options.url) card.dataset.examUrl = options.url;
   if (options.assignmentId) card.dataset.assignmentId = options.assignmentId;

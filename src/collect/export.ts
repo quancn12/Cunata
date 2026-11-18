@@ -190,19 +190,6 @@ export function buildWebResultPayload(final: AttemptRecord): WebResultV1 {
     (final as any).metadata?.assignment_id ??
     (final as any).metadata?.assignmentId;
 
-  if (!classCode || !assignmentId) {
-    try {
-      if (typeof sessionStorage !== 'undefined') {
-        const stored = sessionStorage.getItem('cunata:active_assignment') || sessionStorage.getItem('cunata_active_assignment');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (!classCode && parsed?.classCode) classCode = parsed.classCode;
-          if (!assignmentId && parsed?.assignmentId) assignmentId = parsed.assignmentId;
-        }
-      }
-    } catch {}
-  }
-
   return {
     schemaVersion: 'web-result-v1',
     attemptId: final.attemptId,

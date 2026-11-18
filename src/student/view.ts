@@ -131,6 +131,110 @@ function ensureStudentStyles(doc: Document): void {
   styleEl.textContent = `
     .cunata-student-view { font-family: var(--font); color: var(--c-text); width: 100%; box-sizing: border-box; }
     .cunata-student-view * { box-sizing: border-box; }
+
+    #examWrapper[style*="display: none"], .cunata-student-view .main-wrapper[style*="display: none"] {
+      display: none !important;
+    }
+
+    @media (min-width: 1024px) {
+      #examWrapper:not([style*="display: none"]), .cunata-student-view .main-wrapper:not([style*="display: none"]) {
+        display: grid !important;
+        grid-template-columns: 1fr 280px !important;
+        gap: var(--sp-4, 16px) !important;
+        align-items: start !important;
+      }
+      #examWrapper #examPane {
+        order: 1 !important;
+      }
+      #examWrapper .palette-card, .cunata-student-view .palette-card {
+        order: 2 !important;
+        position: sticky !important;
+        top: 5rem !important;
+        display: block !important;
+      }
+      #btnPalette {
+        display: none !important;
+      }
+    }
+
+    @media (max-width: 1023px) {
+      #examWrapper:not([style*="display: none"]), .cunata-student-view .main-wrapper:not([style*="display: none"]) {
+        display: block !important;
+        grid-template-columns: 1fr !important;
+      }
+      #examWrapper #examPane {
+        order: 1 !important;
+        width: 100% !important;
+      }
+      #examWrapper .palette-card, .cunata-student-view .palette-card {
+        display: none !important;
+        order: 2 !important;
+      }
+      #examWrapper .palette-card.is-open, .cunata-student-view .palette-card.is-open {
+        display: block !important;
+        position: fixed !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        top: auto !important;
+        width: 100% !important;
+        max-height: 75vh !important;
+        overflow-y: auto !important;
+        z-index: 1000 !important;
+        border-radius: var(--r-lg, 16px) var(--r-lg, 16px) 0 0 !important;
+        box-shadow: var(--shadow-2) !important;
+        background: var(--c-surface) !important;
+        border: 1px solid var(--c-border) !important;
+        padding: var(--sp-4, 16px) var(--sp-4, 16px) var(--sp-6, 32px) var(--sp-4, 16px) !important;
+      }
+      .header-actions {
+        flex-wrap: wrap !important;
+        gap: var(--sp-2, 8px) !important;
+      }
+      #btnOpenExamList, #btnSubmit {
+        white-space: nowrap !important;
+        height: var(--target, 44px) !important;
+        min-height: var(--target, 44px) !important;
+        max-height: var(--target, 44px) !important;
+        padding: 0 var(--sp-3, 12px) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: var(--fs-xs, 12px) !important;
+        line-height: 20px !important;
+      }
+      .sync-status-badge {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        height: var(--target, 44px) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        padding: 0 var(--sp-2, 8px) !important;
+      }
+      #timerBox {
+        white-space: nowrap !important;
+        height: var(--target, 44px) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        line-height: 20px !important;
+      }
+      #btnPalette {
+        white-space: nowrap !important;
+        height: var(--target, 44px) !important;
+        min-height: var(--target, 44px) !important;
+        max-height: var(--target, 44px) !important;
+        padding: 0 var(--sp-2, 8px) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        font-size: var(--fs-xs, 12px) !important;
+        line-height: 20px !important;
+      }
+      #btnPalette * {
+        font-size: var(--fs-xs, 12px) !important;
+      }
+    }
   `;
   if (doc.head) {
     doc.head.appendChild(styleEl);
@@ -276,7 +380,7 @@ export function mount(
           const response: ResponseIII = {
             kind: "III",
             questionVersionId: qId,
-            raw: val,
+            raw: typeof val === "string" && val.length > 0 ? val : null,
           };
           localResponses.set(qId, response);
           queueAnswer(response);
@@ -499,6 +603,8 @@ export function mount(
   candidateInputEl.placeholder = "Tên hoặc SBD...";
   candidateInputEl.value = initialCandidateName;
   candidateInputEl.setAttribute("autocomplete", "off");
+  candidateInputEl.readOnly = true;
+  candidateInputEl.setAttribute("readonly", "readonly");
   if (currentRecord?.phase === "final") {
     candidateInputEl.disabled = true;
   }
@@ -1186,7 +1292,7 @@ export function mount(
           const response: ResponseIII = {
             kind: "III",
             questionVersionId: qIII.questionVersionId,
-            raw: val,
+            raw: typeof val === "string" && val.length > 0 ? val : null,
           };
 
           localResponses.set(qIII.questionVersionId, response);
@@ -1291,6 +1397,10 @@ export function mount(
           setTimeout(() => {
             target.classList.remove("highlight");
           }, 1200);
+        }
+        const palCard = doc.querySelector(".palette-card");
+        if (palCard && palCard.classList.contains("is-open")) {
+          palCard.classList.remove("is-open");
         }
         actions.navigateQuestion?.(q.questionVersionId);
       });

@@ -31,6 +31,7 @@ export interface StoragePort {
   deleteObject(store: 'bank' | 'exams' | 'imports', id: string, expectedRevision: number): Promise<Result<void>>;
   getOutbox(key: AttemptKey): Promise<Result<OutboxRecord | null>>;
   updateOutbox(value: OutboxRecord, expectedGeneration: number | null): Promise<Result<OutboxRecord>>;
+  listOutbox?(): Promise<Result<readonly OutboxRecord[]>>;
   exportBackup(): Promise<Result<Blob>>;
   importBackup(input: unknown): Promise<Result<void>>;
   clearAll(confirmed: boolean): Promise<Result<void>>;

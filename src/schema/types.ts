@@ -121,6 +121,15 @@ export interface AttemptRecord extends AttemptKey {
   readonly phase: "draft" | "final";
   readonly submittedAt: number | null;
   readonly scoreDTO: unknown | null;
+  readonly class_code?: string;
+  readonly assignment_id?: string;
+  readonly classCode?: string;
+  readonly assignmentId?: string;
+  readonly openAt?: string;
+  readonly dueAt?: string;
+  readonly open_at?: string;
+  readonly due_at?: string;
+  readonly metadata?: Readonly<Record<string, unknown>>;
 }
 
 export type SaveState = "local_saved" | "queued" | "sending" | "server_confirmed" | "failed";

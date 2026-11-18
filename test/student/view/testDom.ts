@@ -20,6 +20,7 @@ export {
 
 export class EnhancedMockElement extends MockElement {
   public checked: boolean = false;
+  public dataset: Record<string, string> = {};
 
   scrollIntoView(_options?: unknown): void {
     // Stub for scrollIntoView

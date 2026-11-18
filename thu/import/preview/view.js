@@ -24,20 +24,20 @@ export function ensurePreviewStyles(doc) {
     styleEl.textContent = `
     .import-preview-root {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      color: #1f2937;
-      background: #f9fafb;
+      color: var(--c-text);
+      background: var(--c-bg);
       padding: 1.5rem;
       max-width: 1200px;
       margin: 0 auto;
       line-height: 1.5;
     }
     .preview-header {
-      background: #ffffff;
+      background: var(--c-surface);
       padding: 1.25rem 1.5rem;
       border-radius: 8px;
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--c-border);
       margin-bottom: 1rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      box-shadow: var(--shadow-1);
     }
     .preview-title-row {
       display: flex;
@@ -49,7 +49,7 @@ export function ensurePreviewStyles(doc) {
     .preview-title {
       font-size: 1.25rem;
       font-weight: 700;
-      color: #111827;
+      color: var(--c-text);
       margin: 0;
     }
     .preview-stats-row {
@@ -63,22 +63,22 @@ export function ensurePreviewStyles(doc) {
       padding: 0.25rem 0.625rem;
       border-radius: 9999px;
       font-weight: 500;
-      background: #f3f4f6;
-      color: #374151;
+      background: var(--c-surface-2);
+      color: var(--c-text);
     }
-    .stat-badge-confirmed { background: #d1fae5; color: #065f46; }
-    .stat-badge-missing { background: #fee2e2; color: #991b1b; }
-    .stat-badge-warning { background: #fef3c7; color: #92400e; }
-    .stat-badge-total { background: #e0e7ff; color: #3730a3; }
+    .stat-badge-confirmed { background: var(--c-surface-2); color: var(--c-success); }
+    .stat-badge-missing { background: var(--c-surface-2); color: var(--c-danger); }
+    .stat-badge-warning { background: var(--c-surface-2); color: var(--c-warning); }
+    .stat-badge-total { background: var(--c-primary-soft); color: var(--c-subject-ly); }
 
     .preview-warning-banner {
-      background: #fffbeb;
-      border-left: 4px solid #f59e0b;
+      background: var(--c-surface-2);
+      border-left: 4px solid var(--c-warning);
       padding: 1rem;
       border-radius: 4px;
       margin-bottom: 1rem;
       font-size: 0.875rem;
-      color: #92400e;
+      color: var(--c-warning);
     }
     .warning-banner-item {
       display: flex;
@@ -88,10 +88,10 @@ export function ensurePreviewStyles(doc) {
     }
 
     .preview-toolbar {
-      background: #ffffff;
+      background: var(--c-surface);
       padding: 1rem;
       border-radius: 8px;
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--c-border);
       margin-bottom: 1rem;
       display: flex;
       flex-wrap: wrap;
@@ -108,10 +108,10 @@ export function ensurePreviewStyles(doc) {
     .preview-filter-select, .preview-search-input {
       padding: 0.375rem 0.75rem;
       font-size: 0.875rem;
-      border: 1px solid #d1d5db;
+      border: 1px solid var(--c-border);
       border-radius: 6px;
-      background: #ffffff;
-      color: #374151;
+      background: var(--c-surface);
+      color: var(--c-text);
     }
     .preview-search-input {
       min-width: 200px;
@@ -128,14 +128,14 @@ export function ensurePreviewStyles(doc) {
       gap: 0.375rem;
       transition: background-color 0.15s, border-color 0.15s;
     }
-    .btn-secondary { background: #f3f4f6; color: #374151; border-color: #d1d5db; }
-    .btn-secondary:hover { background: #e5e7eb; }
-    .btn-primary { background: #2563eb; color: #ffffff; }
-    .btn-primary:hover { background: #1d4ed8; }
-    .btn-danger { background: #dc2626; color: #ffffff; }
-    .btn-danger:hover { background: #b91c1c; }
-    .btn-success { background: #16a34a; color: #ffffff; }
-    .btn-success:hover { background: #15803d; }
+    .btn-secondary { background: var(--c-surface-2); color: var(--c-text); border-color: var(--c-border); }
+    .btn-secondary:hover { background: var(--c-border); }
+    .btn-primary { background: var(--c-primary); color: var(--c-primary-ink); }
+    .btn-primary:hover { background: var(--c-primary); }
+    .btn-danger { background: var(--c-danger); color: var(--c-primary-ink); }
+    .btn-danger:hover { background: var(--c-danger); }
+    .btn-success { background: var(--c-success); color: var(--c-primary-ink); }
+    .btn-success:hover { background: var(--c-success); }
     .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
 
     .preview-draft-list {
@@ -145,22 +145,22 @@ export function ensurePreviewStyles(doc) {
       margin-bottom: 1.5rem;
     }
     .preview-draft-card {
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
       border-radius: 8px;
       padding: 1.25rem;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      box-shadow: var(--shadow-1);
       position: relative;
     }
     .draft-card-unconfirmed {
-      border-left: 4px solid #9ca3af;
+      border-left: 4px solid var(--c-text-2);
     }
     .draft-card-confirmed {
-      border-left: 4px solid #16a34a;
+      border-left: 4px solid var(--c-success);
     }
     .draft-card-missing-key {
-      border-left: 4px solid #dc2626;
-      background: #fffcfc;
+      border-left: 4px solid var(--c-danger);
+      background: var(--c-surface);
     }
 
     .draft-card-header {
@@ -171,7 +171,7 @@ export function ensurePreviewStyles(doc) {
       gap: 0.5rem;
       margin-bottom: 0.75rem;
       padding-bottom: 0.5rem;
-      border-bottom: 1px solid #f3f4f6;
+      border-bottom: 1px solid var(--c-surface-2);
     }
     .draft-header-left {
       display: flex;
@@ -194,13 +194,13 @@ export function ensurePreviewStyles(doc) {
       border-radius: 4px;
       text-transform: uppercase;
     }
-    .kind-badge-I { background: #dbeafe; color: #1e40af; }
-    .kind-badge-II { background: #fef3c7; color: #92400e; }
-    .kind-badge-III { background: #e0e7ff; color: #4338ca; }
+    .kind-badge-I { background: var(--c-primary-soft); color: var(--c-primary); }
+    .kind-badge-II { background: var(--c-surface-2); color: var(--c-warning); }
+    .kind-badge-III { background: var(--c-primary-soft); color: var(--c-subject-ly); }
 
     .prov-text {
       font-size: 0.75rem;
-      color: #6b7280;
+      color: var(--c-text-2);
     }
     .draft-warning-tags {
       display: flex;
@@ -213,10 +213,10 @@ export function ensurePreviewStyles(doc) {
       border-radius: 4px;
       font-weight: 600;
     }
-    .tag-missing-key { background: #fee2e2; color: #991b1b; }
-    .tag-omml { background: #ffedd5; color: #c2410c; }
-    .tag-pdf { background: #fef9c3; color: #854d0e; }
-    .tag-hostile { background: #7f1d1d; color: #ffffff; }
+    .tag-missing-key { background: var(--c-surface-2); color: var(--c-danger); }
+    .tag-omml { background: var(--c-surface-2); color: var(--c-subject-toan); }
+    .tag-pdf { background: var(--c-surface-2); color: var(--c-warning); }
+    .tag-hostile { background: var(--c-danger); color: var(--c-primary-ink); }
 
     .draft-content-area {
       margin-bottom: 1rem;
@@ -225,9 +225,9 @@ export function ensurePreviewStyles(doc) {
     .draft-blocks-area {
       margin-top: 0.5rem;
       padding: 0.5rem;
-      background: #f9fafb;
+      background: var(--c-bg);
       border-radius: 4px;
-      border: 1px dashed #e5e7eb;
+      border: 1px dashed var(--c-border);
     }
 
     .draft-options-list {
@@ -242,13 +242,13 @@ export function ensurePreviewStyles(doc) {
       gap: 0.5rem;
       padding: 0.5rem 0.75rem;
       border-radius: 6px;
-      border: 1px solid #e5e7eb;
-      background: #f9fafb;
+      border: 1px solid var(--c-border);
+      background: var(--c-bg);
       cursor: pointer;
     }
     .draft-option-correct {
-      border-color: #16a34a;
-      background: #f0fdf4;
+      border-color: var(--c-success);
+      background: var(--c-surface-2);
       font-weight: 500;
     }
     .draft-option-radio {
@@ -268,8 +268,8 @@ export function ensurePreviewStyles(doc) {
       gap: 0.75rem;
       padding: 0.5rem 0.75rem;
       border-radius: 6px;
-      border: 1px solid #e5e7eb;
-      background: #f9fafb;
+      border: 1px solid var(--c-border);
+      background: var(--c-bg);
     }
     .draft-stmt-toggles {
       display: flex;
@@ -280,19 +280,19 @@ export function ensurePreviewStyles(doc) {
       font-size: 0.75rem;
       font-weight: 600;
       border-radius: 4px;
-      border: 1px solid #d1d5db;
-      background: #ffffff;
+      border: 1px solid var(--c-border);
+      background: var(--c-surface);
       cursor: pointer;
     }
     .stmt-toggle-btn.active-true {
-      background: #16a34a;
-      color: #ffffff;
-      border-color: #16a34a;
+      background: var(--c-success);
+      color: var(--c-primary-ink);
+      border-color: var(--c-success);
     }
     .stmt-toggle-btn.active-false {
-      background: #dc2626;
-      color: #ffffff;
-      border-color: #dc2626;
+      background: var(--c-danger);
+      color: var(--c-primary-ink);
+      border-color: var(--c-danger);
     }
 
     .draft-sa-box {
@@ -307,15 +307,15 @@ export function ensurePreviewStyles(doc) {
       font-weight: bold;
       width: 100px;
       padding: 0.375rem 0.5rem;
-      border: 1px solid #d1d5db;
+      border: 1px solid var(--c-border);
       border-radius: 4px;
       text-align: center;
     }
 
     .draft-explanation-area {
       font-size: 0.8125rem;
-      color: #4b5563;
-      background: #f3f4f6;
+      color: var(--c-text-2);
+      background: var(--c-surface-2);
       padding: 0.5rem 0.75rem;
       border-radius: 4px;
       margin-top: 0.5rem;
@@ -324,8 +324,8 @@ export function ensurePreviewStyles(doc) {
     .draft-edit-form {
       margin-top: 1rem;
       padding: 1rem;
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
+      background: var(--c-bg);
+      border: 1px solid var(--c-border);
       border-radius: 6px;
     }
     .form-grid-2 {
@@ -342,14 +342,14 @@ export function ensurePreviewStyles(doc) {
     .form-label {
       font-size: 0.75rem;
       font-weight: 600;
-      color: #475569;
+      color: var(--c-text-2);
     }
     .form-input, .form-textarea, .form-select {
       font-size: 0.875rem;
       padding: 0.375rem 0.5rem;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--c-border);
       border-radius: 4px;
-      background: #ffffff;
+      background: var(--c-surface);
     }
     .form-textarea {
       min-height: 60px;
@@ -357,10 +357,10 @@ export function ensurePreviewStyles(doc) {
     }
 
     .preview-action-footer {
-      background: #ffffff;
+      background: var(--c-surface);
       padding: 1.25rem 1.5rem;
       border-radius: 8px;
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--c-border);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -368,14 +368,14 @@ export function ensurePreviewStyles(doc) {
       gap: 1rem;
       position: sticky;
       bottom: 1rem;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-1);
     }
     .footer-left {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       font-size: 0.875rem;
-      color: #4b5563;
+      color: var(--c-text-2);
     }
     .footer-right {
       display: flex;
@@ -538,9 +538,9 @@ export function mount(root, model, actions = {}) {
         if (errorMessage) {
             const errBanner = doc.createElement("div");
             errBanner.className = "preview-warning-banner";
-            errBanner.style.backgroundColor = "#fee2e2";
-            errBanner.style.borderColor = "#dc2626";
-            errBanner.style.color = "#991b1b";
+            errBanner.style.backgroundColor = "var(--c-surface-2)";
+            errBanner.style.borderColor = "var(--c-danger)";
+            errBanner.style.color = "var(--c-danger)";
             errBanner.setAttribute("role", "alert");
             errBanner.textContent = `Lỗi: ${errorMessage}`;
             container.appendChild(errBanner);
@@ -548,9 +548,9 @@ export function mount(root, model, actions = {}) {
         if (statusMessage) {
             const statusBanner = doc.createElement("div");
             statusBanner.className = "preview-warning-banner";
-            statusBanner.style.backgroundColor = "#d1fae5";
-            statusBanner.style.borderColor = "#16a34a";
-            statusBanner.style.color = "#065f46";
+            statusBanner.style.backgroundColor = "var(--c-surface-2)";
+            statusBanner.style.borderColor = "var(--c-success)";
+            statusBanner.style.color = "var(--c-success)";
             statusBanner.textContent = statusMessage;
             container.appendChild(statusBanner);
         }
@@ -714,7 +714,7 @@ export function mount(root, model, actions = {}) {
             const emptyDiv = doc.createElement("div");
             emptyDiv.style.textAlign = "center";
             emptyDiv.style.padding = "2rem";
-            emptyDiv.style.color = "#6b7280";
+            emptyDiv.style.color = "var(--c-text-2)";
             emptyDiv.textContent = "Không tìm thấy câu hỏi phù hợp với bộ lọc.";
             draftList.appendChild(emptyDiv);
         }

@@ -1059,6 +1059,17 @@ export function createStoragePort(
       }
     },
 
+    async listOutbox(): Promise<Result<readonly OutboxRecord[]>> {
+      try {
+        const outbox = await adapter.runTransaction(['outbox'], 'readonly', async (tx) => {
+          return ((await tx.getAll('outbox')) as OutboxRecord[]).map(deepClone);
+        });
+        return { ok: true, value: outbox };
+      } catch (err) {
+        return { ok: false, error: mapStorageError(err, 'listOutbox') };
+      }
+    },
+
     async exportBackup(): Promise<Result<Blob>> {
       try {
         const payload = await adapter.runTransaction(

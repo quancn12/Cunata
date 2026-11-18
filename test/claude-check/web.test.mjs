@@ -156,7 +156,7 @@ for (const target of TARGETS) {
     });
 
     run('[storage][student] tải lại trang: giữ nguyên bài làm, tên thí sinh và đồng hồ chạy tiếp theo mốc thời gian', async (ctx) => {
-      const page = await openApp(ctx, server, target);
+      const page = await openApp(ctx, server, target, { name: 'Trần Bình 0456' });
       const exam = makeExam();
       await loadExam(page, exam);
       await setName(page, 'Trần Bình 0456');
@@ -186,7 +186,7 @@ for (const target of TARGETS) {
     });
 
     run('[student][storage] quay lại sau khi hết giờ: tự nộp bài đã lưu, giữ đúng tên thí sinh', async (ctx) => {
-      const page = await openApp(ctx, server, target);
+      const page = await openApp(ctx, server, target, { name: 'Nguyễn An 0123' });
       await loadExam(page, makeExam());
       await setName(page, 'Nguyễn An 0123');
       await pickOption(page, qI(1), 'a');
@@ -202,9 +202,9 @@ for (const target of TARGETS) {
     });
 
     run('[report][ui] tên chứa mã HTML không được chạy; báo cáo tải về tự chứa, đúng điểm, đã escape', async (ctx) => {
-      const page = await openApp(ctx, server, target);
-      await loadExam(page, makeExam());
       const evil = '<img src=x onerror="window.__xss=1">An';
+      const page = await openApp(ctx, server, target, { name: evil });
+      await loadExam(page, makeExam());
       await setName(page, evil);
       await pickOption(page, qI(1), 'a');
       await waitSaved(page);

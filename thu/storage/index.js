@@ -877,6 +877,17 @@ export function createStoragePort(adapter, broadcastChannel) {
                 return { ok: false, error: mapStorageError(err, 'updateOutbox') };
             }
         },
+        async listOutbox() {
+            try {
+                const outbox = await adapter.runTransaction(['outbox'], 'readonly', async (tx) => {
+                    return (await tx.getAll('outbox')).map(deepClone);
+                });
+                return { ok: true, value: outbox };
+            }
+            catch (err) {
+                return { ok: false, error: mapStorageError(err, 'listOutbox') };
+            }
+        },
         async exportBackup() {
             try {
                 const payload = await adapter.runTransaction(['attempts', 'outbox', 'bank', 'exams', 'imports'], 'readonly', async (tx) => {

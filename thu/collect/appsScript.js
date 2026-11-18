@@ -335,7 +335,7 @@ export function createAppsScriptClient(url, fetchImpl) {
             },
         };
     }
-    return {
+    const client = {
         configured: true,
         async listExams() {
             const getUrl = buildGetUrl(trimmedUrl, { action: 'listExams' });
@@ -357,31 +357,10 @@ export function createAppsScriptClient(url, fetchImpl) {
         },
         async getExam(id) {
             const getUrl = buildGetUrl(trimmedUrl, { action: 'getExam', id });
-            const asRes = await executeAppsScriptRequest(getUrl, { method: 'GET', redirect: 'follow', cache: 'no-store' }, fetchFn, (data) => ({
+            return executeAppsScriptRequest(getUrl, { method: 'GET', redirect: 'follow', cache: 'no-store' }, fetchFn, (data) => ({
                 ok: true,
                 value: data.exam !== undefined ? data.exam : data,
             }));
-            if (asRes.ok) {
-                return asRes;
-            }
-            // If Apps Script returns NOT_FOUND, fallback to static shared exams in public/exams/index.json
-            try {
-                const manifestRes = await fetchFn('public/exams/index.json', { cache: 'no-store' });
-                if (manifestRes && manifestRes.ok) {
-                    const manifest = await manifestRes.json();
-                    const exams = Array.isArray(manifest?.exams) ? manifest.exams : [];
-                    const matched = exams.find((e) => e.id === id);
-                    if (matched && matched.url) {
-                        const examRes = await fetchFn(matched.url, { cache: 'no-store' });
-                        if (examRes && examRes.ok) {
-                            const examData = await examRes.json();
-                            return { ok: true, value: examData };
-                        }
-                    }
-                }
-            }
-            catch { }
-            return asRes;
         },
         async getClass(code) {
             const getUrl = buildGetUrl(trimmedUrl, { action: 'getClass', code: String(code || '').trim() });
@@ -603,27 +582,78 @@ export function createAppsScriptClient(url, fetchImpl) {
             let classId = '';
             let assignmentId = undefined;
             if (assignmentIdArg !== undefined) {
-                token = tokenOrClassId;
+                token = tokenOrClassId || '';
                 classId = classIdOrAssignmentId || '';
                 assignmentId = assignmentIdArg;
             }
             else if (classIdOrAssignmentId !== undefined) {
-                if (tokenOrClassId.length >= 32) {
+                const stored = getTeacherToken();
+                const isArg0Uuid = Boolean(tokenOrClassId && /^[0-9a-f-]{36}$/i.test(tokenOrClassId) && tokenOrClassId.includes('-'));
+                if (stored && isArg0Uuid) {
+                    token = stored;
+                    classId = tokenOrClassId || '';
+                    assignmentId = classIdOrAssignmentId;
+                }
+                else if (tokenOrClassId && (tokenOrClassId.length >= 32 || tokenOrClassId === stored || !stored)) {
                     token = tokenOrClassId;
-                    classId = classIdOrAssignmentId;
+                    classId = classIdOrAssignmentId || '';
                 }
                 else {
-                    token = getTeacherToken() || '';
-                    classId = tokenOrClassId;
+                    token = stored || '';
+                    classId = tokenOrClassId || '';
                     assignmentId = classIdOrAssignmentId;
                 }
             }
             else {
-                token = getTeacherToken() || '';
-                classId = tokenOrClassId;
+                const stored = getTeacherToken();
+                if (tokenOrClassId && tokenOrClassId.length >= 32 && !tokenOrClassId.includes('-')) {
+                    token = tokenOrClassId;
+                    classId = '';
+                }
+                else {
+                    token = stored || '';
+                    classId = tokenOrClassId || '';
+                }
             }
             if (!token)
                 token = getTeacherToken() || '';
+            // Khi classId rỗng (giáo viên chọn "-- Tất cả lớp --" hoặc không truyền classId):
+            // Tra cứu toàn bộ các lớp của giáo viên qua listMyClasses rồi tổng hợp kết quả của từng lớp.
+            if (!classId || classId.trim() === '') {
+                const classesRes = await client.listMyClasses(token);
+                if (!classesRes.ok) {
+                    return classesRes;
+                }
+                const classes = classesRes.value || [];
+                if (classes.length === 0) {
+                    return { ok: true, value: [] };
+                }
+                const classResultsPromises = classes.map((c) => client.listResults(token, c.classId, assignmentId));
+                const settled = await Promise.all(classResultsPromises);
+                const seenAttempts = new Set();
+                const combined = [];
+                let firstErr = null;
+                for (const item of settled) {
+                    if (item.ok && Array.isArray(item.value)) {
+                        for (const resItem of item.value) {
+                            const id = resItem.attempt_id || resItem.attemptId;
+                            if (id) {
+                                if (seenAttempts.has(id))
+                                    continue;
+                                seenAttempts.add(id);
+                            }
+                            combined.push(resItem);
+                        }
+                    }
+                    else if (!item.ok && !firstErr) {
+                        firstErr = item;
+                    }
+                }
+                if (combined.length === 0 && firstErr && classes.length > 0) {
+                    return firstErr;
+                }
+                return { ok: true, value: combined };
+            }
             const body = {
                 action: 'listResults',
                 token,
@@ -797,6 +827,7 @@ export function createAppsScriptClient(url, fetchImpl) {
             clearAdminToken();
         },
     };
+    return client;
 }
 /**
  * Khởi tạo CollectorPort nộp kết quả bài thi tới Apps Script, tương thích với Outbox hiện có.
@@ -838,21 +869,6 @@ export function createAppsScriptCollectorPort(url, fetchImpl) {
                 final.metadata?.assignment_id ??
                 final.metadata?.assignmentId ??
                 basePayload.assignment_id;
-            if (!classCode || !assignmentId) {
-                try {
-                    if (typeof sessionStorage !== 'undefined') {
-                        const stored = sessionStorage.getItem('cunata:active_assignment') || sessionStorage.getItem('cunata_active_assignment');
-                        if (stored) {
-                            const parsed = JSON.parse(stored);
-                            if (!classCode && parsed?.classCode)
-                                classCode = parsed.classCode;
-                            if (!assignmentId && parsed?.assignmentId)
-                                assignmentId = parsed.assignmentId;
-                        }
-                    }
-                }
-                catch { }
-            }
             const payload = {
                 action: 'submitResult',
                 ...basePayload,

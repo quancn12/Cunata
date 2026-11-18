@@ -301,5 +301,169 @@ describe('WEB-FINAL-STUDENT-STORAGE: Storage Regressions', () => {
     const finalized = unwrap(finRes);
     assert.equal(finalized.candidateName, updatedName, 'deadline auto-submit must preserve renamed candidateName');
   });
+
+  it('FX30-storage regression: listOutbox lists all outbox records, isolates mutations, and preserves attempt metadata', async () => {
+    const adapter = new MemoryTransactionAdapter();
+    const port = createStoragePort(adapter);
+    const exam = createSampleExam('ck-exam-30', 'v1.0.0');
+
+    // 1. Initial listOutbox is empty
+    if (port.listOutbox) {
+      const emptyRes = await port.listOutbox();
+      assert.equal(emptyRes.ok, true);
+      assert.deepEqual(unwrap(emptyRes), []);
+    }
+
+    // 2. Finalize two attempts with distinct candidate names
+    const attempt1 = createSampleAttempt(exam, 'attempt-fx30-01', 'Nguyễn An 0123');
+    unwrap(await port.create(attempt1));
+    const final1: AttemptRecord = {
+      ...attempt1,
+      revision: 2,
+      phase: 'final',
+      submittedAt: 1000,
+      scoreDTO: { total: '0.25' },
+    };
+    unwrap(await port.finalize(final1, 1));
+
+    const attempt2 = createSampleAttempt(exam, 'attempt-fx30-02', 'Codex trạng thái cục bộ');
+    unwrap(await port.create(attempt2));
+    const final2: AttemptRecord = {
+      ...attempt2,
+      revision: 2,
+      phase: 'final',
+      submittedAt: 2000,
+      scoreDTO: { total: '0' },
+    };
+    unwrap(await port.finalize(final2, 1));
+
+    // 3. listOutbox returns both outbox records in local_saved state
+    assert.ok(port.listOutbox, 'listOutbox must be defined on StoragePort');
+    const outboxRes = await port.listOutbox();
+    assert.equal(outboxRes.ok, true);
+    const outboxList = unwrap(outboxRes);
+    assert.equal(outboxList.length, 2);
+    assert.ok(outboxList.some((o) => o.attemptId === 'attempt-fx30-01' && o.state === 'local_saved'));
+    assert.ok(outboxList.some((o) => o.attemptId === 'attempt-fx30-02' && o.state === 'local_saved'));
+
+    // 4. Verify mutation isolation: mutating returned list does not mutate storage
+    (outboxList as any)[0].state = 'server_confirmed';
+    const freshOutboxRes = await port.listOutbox();
+    const freshList = unwrap(freshOutboxRes);
+    assert.ok(freshList.every((o) => o.state === 'local_saved'), 'mutating listOutbox result must not leak into storage');
+
+    // 5. Verify reload preserves outbox and attempts records
+    const reloadedPort = createStoragePort(new MemoryTransactionAdapter(adapter.getBackingData()));
+    assert.ok(reloadedPort.listOutbox);
+    const reloadedOutbox = unwrap(await reloadedPort.listOutbox());
+    assert.equal(reloadedOutbox.length, 2);
+
+    const reloadedA1 = unwrap(await reloadedPort.load(attempt1));
+    assert.ok(reloadedA1);
+    assert.equal(reloadedA1.candidateName, 'Nguyễn An 0123');
+
+    const reloadedA2 = unwrap(await reloadedPort.load(attempt2));
+    assert.ok(reloadedA2);
+    assert.equal(reloadedA2.candidateName, 'Codex trạng thái cục bộ');
+  });
+
+  it('FX33-storage regression: storage preserves candidateName through draft reload, post-deadline auto-finalize, and zero-endpoint local_saved status', async () => {
+    const adapter = new MemoryTransactionAdapter();
+    const port = createStoragePort(adapter);
+    const exam = createSampleExam('exam-fx33-storage', 'v1.0.0');
+
+    // Case 1: "tải lại trang: giữ nguyên bài làm, tên thí sinh và đồng hồ chạy tiếp"
+    // Candidate starts draft with name 'Trần Bình 0456'
+    const draftName1 = 'Trần Bình 0456';
+    const draft1 = createSampleAttempt(exam, 'att-fx33-01', draftName1);
+    unwrap(await port.create(draft1));
+
+    // Save answers in draft (revision 1 -> 2)
+    const updatedDraft1: AttemptRecord = {
+      ...draft1,
+      candidateName: draftName1,
+      revision: 1,
+      responses: {
+        attemptId: draft1.attemptId,
+        examVersionId: exam.examVersionId,
+        responses: [
+          { kind: 'I', questionVersionId: 'q1-v1', selectedOptionId: 'opt-1c' },
+        ],
+      },
+    };
+    const savedDraftRes = await port.saveDraft(updatedDraft1, 1);
+    assert.equal(savedDraftRes.ok, true);
+    assert.equal(unwrap(savedDraftRes).candidateName, draftName1);
+    assert.equal(unwrap(savedDraftRes).revision, 2);
+
+    // Simulate browser reload: new StoragePort over existing backing data
+    const reloadedPort1 = createStoragePort(new MemoryTransactionAdapter(adapter.getBackingData()));
+    const loadedDraft1 = unwrap(await reloadedPort1.load(draft1));
+    assert.ok(loadedDraft1);
+    assert.equal(loadedDraft1.candidateName, draftName1, 'draft candidateName must be preserved on reload');
+    assert.equal(loadedDraft1.phase, 'draft');
+    assert.equal(loadedDraft1.revision, 2);
+    assert.deepEqual(loadedDraft1.responses, updatedDraft1.responses, 'draft responses must be preserved on reload');
+
+    // Case 2: "quay lại sau khi hết giờ: tự nộp bài đã lưu, giữ đúng tên thí sinh"
+    // Candidate starts draft with name 'Nguyễn An 0123'
+    const draftName2 = 'Nguyễn An 0123';
+    const draft2 = createSampleAttempt(exam, 'att-fx33-02', draftName2);
+    unwrap(await port.create(draft2));
+
+    // Page reloads after deadline expired; controller auto-finalizes the saved attempt
+    const reloadedPort2 = createStoragePort(new MemoryTransactionAdapter(adapter.getBackingData()));
+    const loadedDraft2 = unwrap(await reloadedPort2.load(draft2));
+    assert.ok(loadedDraft2);
+    assert.equal(loadedDraft2.candidateName, draftName2);
+
+    const autoFinal2: AttemptRecord = {
+      ...loadedDraft2,
+      revision: loadedDraft2.revision + 1,
+      phase: 'final',
+      submittedAt: loadedDraft2.deadline + 3 * 3600 * 1000,
+      scoreDTO: { total: '0,25/10', sections: { I: '0,25/1' } },
+    };
+    const autoFinalRes = await reloadedPort2.finalize(autoFinal2, loadedDraft2.revision);
+    assert.equal(autoFinalRes.ok, true);
+    const finalRecord2 = unwrap(autoFinalRes);
+    assert.equal(finalRecord2.candidateName, draftName2, 'auto-finalized attempt must preserve candidateName');
+    assert.equal(finalRecord2.phase, 'final');
+
+    // Outbox record must be created with local_saved and matching payloadHash containing candidateName
+    const outbox2 = unwrap(await reloadedPort2.getOutbox(draft2));
+    assert.ok(outbox2);
+    assert.equal(outbox2.state, 'local_saved');
+    assert.equal(outbox2.payloadHash, computePayloadHash(finalRecord2));
+
+    // Case 3: "no endpoint: honest local status and zero collector requests, including reload"
+    const draftName3 = 'Codex trạng thái cục bộ';
+    const draft3 = createSampleAttempt(exam, 'att-fx33-03', draftName3);
+    unwrap(await port.create(draft3));
+
+    const final3: AttemptRecord = {
+      ...draft3,
+      revision: 2,
+      phase: 'final',
+      submittedAt: 5000,
+      scoreDTO: { total: '10/10' },
+    };
+    const finalRes3 = await port.finalize(final3, 1);
+    assert.equal(finalRes3.ok, true);
+    const finalRecord3 = unwrap(finalRes3);
+    assert.equal(finalRecord3.candidateName, draftName3);
+
+    // Simulate reload after submission
+    const reloadedPort3 = createStoragePort(new MemoryTransactionAdapter(adapter.getBackingData()));
+    const reloadedFinal3 = unwrap(await reloadedPort3.load(draft3));
+    assert.ok(reloadedFinal3);
+    assert.equal(reloadedFinal3.candidateName, draftName3, 'reload after submit must preserve final candidate name');
+    assert.equal(reloadedFinal3.phase, 'final');
+
+    const reloadedOutbox3 = unwrap(await reloadedPort3.getOutbox(draft3));
+    assert.ok(reloadedOutbox3);
+    assert.equal(reloadedOutbox3.state, 'local_saved', 'outbox state must remain local_saved');
+    assert.equal(reloadedOutbox3.retryCount, 0);
+  });
 });
 

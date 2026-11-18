@@ -13,7 +13,7 @@ export function mountRoleShell(root: HTMLElement, router: Router, onChangeName?:
   const doc = root.ownerDocument;
   const host = doc.createElement('div'); host.id = 'appTopBar';
   const chooser = doc.createElement('main'); chooser.id = 'roleChooser'; chooser.className = 'ui-page ui-stack role-chooser';
-  chooser.hidden = router.getState().route !== 'chooser';
+  chooser.hidden = true; host.hidden = true;
   const title = doc.createElement('h1'); title.textContent = 'Chào mừng đến với Cunata';
   const intro = doc.createElement('p'); intro.textContent = 'Chọn vai trò để bắt đầu.';
   const choices = doc.createElement('div'); choices.className = 'ui-exam-grid';

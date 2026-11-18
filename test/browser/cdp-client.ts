@@ -289,10 +289,12 @@ export class CdpClient {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
       const isVis = await this.evaluate<boolean>(`(() => {
-        const el = document.querySelector(${JSON.stringify(selector)});
-        if (!el) return false;
-        const style = window.getComputedStyle(el);
-        return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+        const els = document.querySelectorAll(${JSON.stringify(selector)});
+        for (const el of els) {
+          const style = window.getComputedStyle(el);
+          if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') return true;
+        }
+        return false;
       })()`);
       if (isVis) return true;
       await new Promise((r) => setTimeout(r, 100));

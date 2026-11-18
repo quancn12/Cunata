@@ -15,7 +15,7 @@ import { mountStudentArea } from '../student/index.js';
 import { initAuthoring } from './authoring.js';
 import { mountRoleShell, readRememberedRole } from './role-shell.js';
 import { mountTeacherPortal } from '../teacher/portal.js';
-import { createAppsScriptClient, loadAppConfig } from '../collect/appsScript.js';
+import { createAppsScriptClient, loadAppConfig, createAppsScriptCollectorPort, enqueue, drainOutbox, resumeOutbox, } from '../collect/index.js';
 import { ErrorState } from '../ui/components.js';
 function formatDisplayScore(val) {
     return formatRationalScore(val);
@@ -292,6 +292,8 @@ function ensureShellStructure(root) {
     title.textContent = 'Đang tải đề thi...';
     const candInput = createEl('input', 'candidateName', 'candidate-input');
     candInput.value = 'Thí sinh tự do';
+    candInput.readOnly = true;
+    candInput.setAttribute('readonly', 'readonly');
     const syncStatus = createEl('div', 'syncStatus', 'sync-status-badge');
     const syncText = createEl('span', 'syncText');
     syncText.textContent = 'Chưa lưu';
@@ -664,8 +666,11 @@ export async function bootstrap(root, options) {
             reportWrapper.style.display = '';
         if (btnSubmit)
             btnSubmit.style.display = 'none';
-        if (candidateInput)
+        if (candidateInput) {
+            candidateInput.readOnly = true;
+            candidateInput.setAttribute('readonly', 'readonly');
             candidateInput.disabled = true;
+        }
         router.navigate('report', { attemptId });
         if (announcer && typeof announcer.announce === 'function') {
             announcer.announce(`Lỗi toàn vẹn dữ liệu: ${err.code} - ${err.message}`, 'assertive');
@@ -762,6 +767,272 @@ export async function bootstrap(root, options) {
                 errMsg.textContent = err.message;
         }
     };
+    let currentClassCode = undefined;
+    let currentAssignmentId = undefined;
+    let currentDueAt = undefined;
+    let currentOpenAt = undefined;
+    let reportRestartIntervalId = null;
+    const resolveAssignmentSchedule = () => {
+        if (currentDueAt || currentOpenAt) {
+            return { openAt: currentOpenAt, dueAt: currentDueAt };
+        }
+        const examAny = currentExam;
+        if (examAny?.dueAt || examAny?.due_at || examAny?.openAt || examAny?.open_at) {
+            const due = examAny.dueAt || examAny.due_at;
+            const open = examAny.openAt || examAny.open_at;
+            if (due || open) {
+                if (!currentDueAt && due)
+                    currentDueAt = due;
+                if (!currentOpenAt && open)
+                    currentOpenAt = open;
+                return { openAt: currentOpenAt, dueAt: currentDueAt };
+            }
+        }
+        const finalAny = finalRecord;
+        if (finalAny &&
+            finalRecord &&
+            finalRecord.examId === currentExam.examId &&
+            finalRecord.examVersionId === currentExam.examVersionId) {
+            const matchesAssignment = currentAssignmentId
+                ? (finalAny.assignmentId === currentAssignmentId || finalAny.assignment_id === currentAssignmentId)
+                : (!finalAny.assignmentId && !finalAny.assignment_id);
+            if (matchesAssignment && (finalAny?.dueAt || finalAny?.due_at || finalAny?.openAt || finalAny?.open_at)) {
+                const due = finalAny.dueAt || finalAny.due_at;
+                const open = finalAny.openAt || finalAny.open_at;
+                if (due || open) {
+                    if (!currentDueAt && due)
+                        currentDueAt = due;
+                    if (!currentOpenAt && open)
+                        currentOpenAt = open;
+                    return { openAt: currentOpenAt, dueAt: currentDueAt };
+                }
+            }
+        }
+        try {
+            if (typeof sessionStorage !== 'undefined') {
+                const raw = sessionStorage.getItem('cunata:active_assignment') || sessionStorage.getItem('cunata_active_assignment');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && parsed.examId && parsed.examId === currentExam.examId) {
+                        if (!currentAssignmentId || !parsed.assignmentId || parsed.assignmentId === currentAssignmentId) {
+                            const due = parsed.dueAt || parsed.due_at;
+                            const open = parsed.openAt || parsed.open_at;
+                            if (due || open) {
+                                if (!currentDueAt && due)
+                                    currentDueAt = due;
+                                if (!currentOpenAt && open)
+                                    currentOpenAt = open;
+                                return { openAt: currentOpenAt, dueAt: currentDueAt };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+        try {
+            if (typeof localStorage !== 'undefined') {
+                const raw = localStorage.getItem('cunata:active_assignment') || localStorage.getItem('cunata_active_assignment');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && parsed.examId && parsed.examId === currentExam.examId) {
+                        if (!currentAssignmentId || !parsed.assignmentId || parsed.assignmentId === currentAssignmentId) {
+                            const due = parsed.dueAt || parsed.due_at;
+                            const open = parsed.openAt || parsed.open_at;
+                            if (due || open) {
+                                if (!currentDueAt && due)
+                                    currentDueAt = due;
+                                if (!currentOpenAt && open)
+                                    currentOpenAt = open;
+                                return { openAt: currentOpenAt, dueAt: currentDueAt };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+        try {
+            if (typeof localStorage !== 'undefined') {
+                const raw = localStorage.getItem('cunata:classes');
+                if (raw) {
+                    const classes = JSON.parse(raw);
+                    if (Array.isArray(classes)) {
+                        for (const c of classes) {
+                            if (currentClassCode && c.code && c.code.trim().toUpperCase() !== currentClassCode.trim().toUpperCase()) {
+                                continue;
+                            }
+                            if (Array.isArray(c.assignments)) {
+                                for (const a of c.assignments) {
+                                    if (currentAssignmentId && a.assignmentId === currentAssignmentId) {
+                                        if (!currentDueAt && a.dueAt)
+                                            currentDueAt = a.dueAt;
+                                        if (!currentOpenAt && a.openAt)
+                                            currentOpenAt = a.openAt;
+                                        return { openAt: currentOpenAt, dueAt: currentDueAt };
+                                    }
+                                    if (currentClassCode && !currentAssignmentId && a.examId === currentExam.examId) {
+                                        if (!currentDueAt && a.dueAt)
+                                            currentDueAt = a.dueAt;
+                                        if (!currentOpenAt && a.openAt)
+                                            currentOpenAt = a.openAt;
+                                        return { openAt: currentOpenAt, dueAt: currentDueAt };
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch { }
+        return null;
+    };
+    const activeTimers = new Map();
+    const drainAttempt = async (key) => {
+        if (!appsScriptUrl || !appsScriptUrl.trim() || !storage)
+            return;
+        const keyStr = `${key.examId}::${key.examVersionId}::${key.attemptId}`;
+        if (activeTimers.has(keyStr)) {
+            clearTimeout(activeTimers.get(keyStr));
+            activeTimers.delete(keyStr);
+        }
+        const isCurrent = () => attemptId === key.attemptId;
+        const outboxRes = await storage.getOutbox(key);
+        if (!outboxRes.ok || !outboxRes.value)
+            return;
+        const currentOutbox = outboxRes.value;
+        if (currentOutbox.state === 'server_confirmed') {
+            if (isCurrent() && syncText)
+                syncText.textContent = 'Đã gửi';
+            return;
+        }
+        if (currentOutbox.state === 'failed' || currentOutbox.retryCount >= 5) {
+            if (isCurrent() && syncText)
+                syncText.textContent = 'Chưa gửi được — sẽ thử lại';
+            return;
+        }
+        const currentNow = now();
+        if (currentOutbox.nextRetryAt !== null && currentNow < currentOutbox.nextRetryAt) {
+            if (isCurrent() && syncText)
+                syncText.textContent = 'Chưa gửi được — sẽ thử lại';
+            const delay = Math.max(100, currentOutbox.nextRetryAt - currentNow);
+            const timer = setTimeout(() => {
+                activeTimers.delete(keyStr);
+                void drainAttempt(key);
+            }, delay);
+            activeTimers.set(keyStr, timer);
+            return;
+        }
+        if (isCurrent() && syncText)
+            syncText.textContent = 'Đang gửi...';
+        const transport = createAppsScriptCollectorPort(appsScriptUrl.trim(), options?.fetch);
+        const drainRes = await drainOutbox(key, {
+            storage,
+            transport,
+            now,
+        });
+        if (drainRes.ok) {
+            if (isCurrent() && syncText) {
+                syncText.textContent = 'Đã gửi';
+            }
+            return;
+        }
+        const err = drainRes.error;
+        if (isCurrent() && syncText) {
+            if (err.code === 'PAST_DUE') {
+                syncText.textContent = 'Nộp sau hạn — giáo viên chưa nhận';
+            }
+            else if (err.code === 'NOT_OPEN') {
+                syncText.textContent = 'Bài thi chưa đến giờ mở';
+            }
+            else if (err.code === 'PAYLOAD_CONFLICT') {
+                syncText.textContent = 'Lỗi xung đột dữ liệu nộp bài';
+            }
+            else {
+                syncText.textContent = 'Chưa gửi được — sẽ thử lại';
+            }
+        }
+        const updatedRes = await storage.getOutbox(key);
+        if (updatedRes.ok && updatedRes.value) {
+            const updated = updatedRes.value;
+            if (updated.state === 'queued' && updated.nextRetryAt !== null && updated.retryCount < 5) {
+                const delay = Math.max(100, updated.nextRetryAt - now());
+                const timer = setTimeout(() => {
+                    activeTimers.delete(keyStr);
+                    void drainAttempt(key);
+                }, delay);
+                activeTimers.set(keyStr, timer);
+            }
+        }
+    };
+    const syncOutboxStateOnFinal = async (record, isDurable) => {
+        if (!appsScriptUrl || !appsScriptUrl.trim() || !storage) {
+            if (syncText)
+                syncText.textContent = isDurable ? 'Đã nộp & lưu cục bộ' : 'Chưa lưu';
+            return;
+        }
+        const key = {
+            examId: record.examId,
+            examVersionId: record.examVersionId,
+            attemptId: record.attemptId,
+        };
+        try {
+            const outboxRes = await storage.getOutbox(key);
+            const outbox = outboxRes.ok ? outboxRes.value : null;
+            if (outbox) {
+                if (outbox.state === 'server_confirmed') {
+                    if (syncText)
+                        syncText.textContent = 'Đã gửi';
+                    return;
+                }
+                if (outbox.state === 'local_saved') {
+                    await enqueue(record, storage, appsScriptUrl.trim());
+                    void drainAttempt(key);
+                    return;
+                }
+                if (outbox.state === 'queued' || outbox.state === 'sending') {
+                    void drainAttempt(key);
+                    return;
+                }
+                if (outbox.state === 'failed') {
+                    if (syncText)
+                        syncText.textContent = 'Chưa gửi được — sẽ thử lại';
+                    return;
+                }
+            }
+            else {
+                await enqueue(record, storage, appsScriptUrl.trim());
+                void drainAttempt(key);
+                return;
+            }
+        }
+        catch {
+            if (syncText)
+                syncText.textContent = isDurable ? 'Đã nộp & lưu cục bộ' : 'Chưa lưu';
+        }
+    };
+    const sweepPendingOutbox = async () => {
+        if (!appsScriptUrl || !appsScriptUrl.trim() || !storage)
+            return;
+        try {
+            if (typeof storage.listOutbox === 'function') {
+                const listRes = await storage.listOutbox();
+                if (listRes.ok && Array.isArray(listRes.value)) {
+                    for (const item of listRes.value) {
+                        if (item.state === 'queued' || item.state === 'sending' || item.state === 'local_saved') {
+                            void drainAttempt({
+                                examId: item.examId,
+                                examVersionId: item.examVersionId,
+                                attemptId: item.attemptId,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        catch (_) { }
+    };
     const adoptFinalRecord = (record, isDurable = true) => {
         attemptId = record.attemptId;
         loadedExamId = record.examId;
@@ -770,6 +1041,31 @@ export async function bootstrap(root, options) {
         activateWaitingWorker();
         if (timerIntervalId)
             clearInterval(timerIntervalId);
+        if (record.class_code || record.classCode) {
+            currentClassCode = (record.class_code || record.classCode).trim().toUpperCase();
+        }
+        else {
+            currentClassCode = undefined;
+        }
+        if (record.assignment_id || record.assignmentId) {
+            currentAssignmentId = record.assignment_id || record.assignmentId;
+        }
+        else {
+            currentAssignmentId = undefined;
+        }
+        if (record.dueAt || record.due_at) {
+            currentDueAt = record.dueAt || record.due_at;
+        }
+        else {
+            currentDueAt = undefined;
+        }
+        if (record.openAt || record.open_at) {
+            currentOpenAt = record.openAt || record.open_at;
+        }
+        else {
+            currentOpenAt = undefined;
+        }
+        resolveAssignmentSchedule();
         if (record.submittedAt) {
             submittedAt = record.submittedAt;
         }
@@ -778,6 +1074,8 @@ export async function bootstrap(root, options) {
             candidateName = record.candidateName;
         if (candidateInput) {
             candidateInput.value = candidateName;
+            candidateInput.readOnly = true;
+            candidateInput.setAttribute('readonly', 'readonly');
             candidateInput.disabled = true;
         }
         if (record.examSnapshot)
@@ -801,9 +1099,7 @@ export async function bootstrap(root, options) {
         activeReportModel = repRes.value;
         scoredResult = scoreLegacyAttempt(currentExam, responses);
         const isReallyDurable = isDurable && isStorageAvailable && !record.degradedRescueMirror;
-        if (syncText) {
-            syncText.textContent = isReallyDurable ? 'Đã nộp & lưu cục bộ' : 'Chưa lưu';
-        }
+        void syncOutboxStateOnFinal(record, isReallyDurable);
         if (!isReallyDurable) {
             showStorageUnavailableWarning();
         }
@@ -811,26 +1107,156 @@ export async function bootstrap(root, options) {
             showReport(record, activeReportModel ?? undefined);
         }
     };
+    const dirtyQuestionIds = new Set();
+    let pendingSaveCount = 0;
+    let lastSaveOk = true;
+    function createDomainResponseForQuestion(exam, qid, resMap) {
+        const q = exam.questions.find((x) => x.questionVersionId === qid);
+        if (!q)
+            return null;
+        const val = resMap[qid];
+        if (val === undefined)
+            return null;
+        if (q.kind === 'I') {
+            return {
+                kind: 'I',
+                questionVersionId: q.questionVersionId,
+                selectedOptionId: typeof val === 'string' && val ? val : null,
+            };
+        }
+        else if (q.kind === 'II') {
+            const answers = (q.statements || []).map((st) => ({
+                statementId: st.statementId,
+                value: val && typeof val === 'object' && typeof val[st.statementId] === 'boolean' ? val[st.statementId] : null,
+            }));
+            return {
+                kind: 'II',
+                questionVersionId: q.questionVersionId,
+                answers,
+            };
+        }
+        else if (q.kind === 'III') {
+            return {
+                kind: 'III',
+                questionVersionId: q.questionVersionId,
+                raw: typeof val === 'string' && val.length > 0 ? val : null,
+            };
+        }
+        return null;
+    }
     // Save State helper
     const saveStateToStorage = async (domainResponse, knownSaveOk) => {
+        if (domainResponse) {
+            dirtyQuestionIds.add(domainResponse.questionVersionId);
+        }
+        pendingSaveCount++;
+        if (syncText && !isSubmitted) {
+            syncText.textContent = 'Đang lưu...';
+        }
         let saveOk = knownSaveOk ?? false;
-        // 1. Submit to controller (writes to IndexedDB attempts store)
-        if (isStorageAvailable && controller && !isSubmitted) {
-            if (domainResponse) {
+        try {
+            // 1. Submit to controller (writes to IndexedDB attempts store)
+            if (isStorageAvailable && controller && !isSubmitted) {
+                if (dirtyQuestionIds.size > 0) {
+                    const idsToPersist = Array.from(dirtyQuestionIds);
+                    let allOk = true;
+                    for (const qid of idsToPersist) {
+                        const resp = createDomainResponseForQuestion(currentExam, qid, responses);
+                        if (!resp) {
+                            dirtyQuestionIds.delete(qid);
+                            continue;
+                        }
+                        try {
+                            const res = await controller.answer(resp);
+                            if (res.ok) {
+                                dirtyQuestionIds.delete(qid);
+                            }
+                            else if (res.error.code === 'ATTEMPT_FINALIZED' && storage) {
+                                const loadRes = await storage.load({
+                                    examId: currentExam.examId,
+                                    examVersionId: currentExam.examVersionId,
+                                    attemptId,
+                                });
+                                if (loadRes.ok && loadRes.value && loadRes.value.phase === 'final') {
+                                    adoptFinalRecord(loadRes.value);
+                                    return;
+                                }
+                                allOk = false;
+                                break;
+                            }
+                            else {
+                                allOk = false;
+                                break;
+                            }
+                        }
+                        catch {
+                            allOk = false;
+                            break;
+                        }
+                    }
+                    saveOk = allOk && dirtyQuestionIds.size === 0;
+                }
+                else if (knownSaveOk === undefined) {
+                    saveOk = isStorageAvailable;
+                }
+            }
+            else if (isStorageAvailable && !controller && storage && !isSubmitted) {
                 try {
-                    const res = await controller.answer(domainResponse);
-                    if (res.ok) {
+                    const domainExam = toDomainExam(currentExam);
+                    const domResponses = toDomainResponses(currentExam, attemptId, responses);
+                    const record = {
+                        schemaVersion: 'web-attempt-v1',
+                        examId: currentExam.examId,
+                        examVersionId: currentExam.examVersionId,
+                        attemptId,
+                        revision: 1,
+                        candidateName,
+                        examSnapshot: currentExam,
+                        presentationOrder: presentationOrder || createPresentationOrder(domainExam, currentExam.settings, attemptId),
+                        responses: domResponses,
+                        startedAt,
+                        deadline,
+                        phase: 'draft',
+                        submittedAt: null,
+                        scoreDTO: null,
+                        ...(currentClassCode ? { class_code: currentClassCode, classCode: currentClassCode } : {}),
+                        ...(currentAssignmentId ? { assignment_id: currentAssignmentId, assignmentId: currentAssignmentId } : {}),
+                        ...(currentDueAt ? { dueAt: currentDueAt, due_at: currentDueAt } : {}),
+                        ...(currentOpenAt ? { openAt: currentOpenAt, open_at: currentOpenAt } : {}),
+                    };
+                    const cr = await storage.saveDraft(record, 1);
+                    if (cr.ok) {
+                        dirtyQuestionIds.clear();
                         saveOk = true;
                     }
-                    else if (res.error.code === 'ATTEMPT_FINALIZED' && storage) {
-                        const loadRes = await storage.load({
-                            examId: currentExam.examId,
-                            examVersionId: currentExam.examVersionId,
-                            attemptId,
-                        });
+                    else if (cr.error.code === 'STORAGE_CONFLICT') {
+                        const loadRes = await storage.load(record);
                         if (loadRes.ok && loadRes.value && loadRes.value.phase === 'final') {
                             adoptFinalRecord(loadRes.value);
                             return;
+                        }
+                        if (loadRes.ok && !loadRes.value) {
+                            const c2 = await storage.create(record);
+                            if (c2.ok) {
+                                dirtyQuestionIds.clear();
+                                saveOk = true;
+                            }
+                            else {
+                                saveOk = false;
+                            }
+                        }
+                        else {
+                            saveOk = false;
+                        }
+                    }
+                    else {
+                        const c2 = await storage.create(record);
+                        if (c2.ok) {
+                            dirtyQuestionIds.clear();
+                            saveOk = true;
+                        }
+                        else {
+                            saveOk = false;
                         }
                     }
                 }
@@ -838,103 +1264,67 @@ export async function bootstrap(root, options) {
                     saveOk = false;
                 }
             }
-            else if (knownSaveOk === undefined) {
-                saveOk = isStorageAvailable;
+            else if (!isStorageAvailable) {
+                saveOk = false;
             }
-        }
-        else if (isStorageAvailable && !controller && storage && !isSubmitted) {
-            try {
-                const domainExam = toDomainExam(currentExam);
-                const domResponses = toDomainResponses(currentExam, attemptId, responses);
-                const record = {
-                    schemaVersion: 'web-attempt-v1',
-                    examId: currentExam.examId,
-                    examVersionId: currentExam.examVersionId,
-                    attemptId,
-                    revision: 1,
-                    candidateName,
-                    examSnapshot: currentExam,
-                    presentationOrder: presentationOrder || createPresentationOrder(domainExam, currentExam.settings, attemptId),
-                    responses: domResponses,
-                    startedAt,
-                    deadline,
-                    phase: 'draft',
-                    submittedAt: null,
-                    scoreDTO: null,
-                };
-                const cr = await storage.saveDraft(record, 1);
-                if (cr.ok) {
-                    saveOk = true;
-                }
-                else if (cr.error.code === 'STORAGE_CONFLICT') {
-                    const loadRes = await storage.load(record);
+            // 2. Check if another session finalized in durable storage (NOT from localStorage mirror!)
+            if (isStorageAvailable && storage && !isSubmitted && !controller) {
+                try {
+                    const loadRes = await storage.load({
+                        examId: currentExam.examId,
+                        examVersionId: currentExam.examVersionId,
+                        attemptId,
+                    });
                     if (loadRes.ok && loadRes.value && loadRes.value.phase === 'final') {
                         adoptFinalRecord(loadRes.value);
                         return;
                     }
                 }
-                else {
-                    const c2 = await storage.create(record);
-                    if (c2.ok)
-                        saveOk = true;
+                catch (_) { }
+            }
+            // 3. Mirror payload to localStorage (rescue mirror)
+            if (typeof localStorage !== 'undefined') {
+                try {
+                    const key = getStorageKey(currentExam, { attemptId });
+                    const finalKey = getFinalStorageKey(currentExam, { attemptId });
+                    const pointerKey = 'cunata:active_attempt:' + encodeURIComponent(currentExam.examId) + ':' + encodeURIComponent(currentExam.examVersionId);
+                    localStorage.setItem(pointerKey, attemptId);
+                    const payload = {
+                        examId: currentExam.examId,
+                        examVersionId: currentExam.examVersionId,
+                        attemptId,
+                        candidateName,
+                        responses,
+                        presentationOrder,
+                        startedAt,
+                        deadline,
+                        submitted: isSubmitted,
+                        scoreResult: scoredResult,
+                        degradedRescueMirror: !isStorageAvailable,
+                    };
+                    const jsonStr = JSON.stringify(payload, (_k, v) => (typeof v === 'bigint' ? v.toString() : v));
+                    localStorage.setItem(key, jsonStr);
+                    if (isSubmitted) {
+                        localStorage.setItem(finalKey, jsonStr);
+                    }
+                }
+                catch (lsErr) {
+                    // localStorage write error
                 }
             }
-            catch {
-                saveOk = false;
-            }
         }
-        // 2. Check if another session finalized in durable storage (NOT from localStorage mirror!)
-        if (isStorageAvailable && storage && !isSubmitted) {
-            try {
-                const loadRes = await storage.load({
-                    examId: currentExam.examId,
-                    examVersionId: currentExam.examVersionId,
-                    attemptId,
-                });
-                if (loadRes.ok && loadRes.value && loadRes.value.phase === 'final') {
-                    adoptFinalRecord(loadRes.value);
-                    return;
-                }
-            }
-            catch (_) { }
-        }
-        // 3. Mirror payload to localStorage (rescue mirror)
-        if (typeof localStorage !== 'undefined') {
-            try {
-                const key = getStorageKey(currentExam, { attemptId });
-                const finalKey = getFinalStorageKey(currentExam, { attemptId });
-                const pointerKey = 'cunata:active_attempt:' + encodeURIComponent(currentExam.examId) + ':' + encodeURIComponent(currentExam.examVersionId);
-                localStorage.setItem(pointerKey, attemptId);
-                const payload = {
-                    examId: currentExam.examId,
-                    examVersionId: currentExam.examVersionId,
-                    attemptId,
-                    candidateName,
-                    responses,
-                    presentationOrder,
-                    startedAt,
-                    deadline,
-                    submitted: isSubmitted,
-                    scoreResult: scoredResult,
-                    degradedRescueMirror: !isStorageAvailable,
-                };
-                const jsonStr = JSON.stringify(payload, (_k, v) => (typeof v === 'bigint' ? v.toString() : v));
-                localStorage.setItem(key, jsonStr);
-                if (isSubmitted) {
-                    localStorage.setItem(finalKey, jsonStr);
-                }
-            }
-            catch (lsErr) {
-                // localStorage write error
-            }
-        }
-        // 4. Update syncText based strictly on durable saveOk
-        if (syncText) {
-            if (saveOk) {
-                syncText.textContent = isSubmitted ? 'Đã nộp & lưu cục bộ' : 'Đã lưu';
+        finally {
+            pendingSaveCount--;
+            if (saveOk && dirtyQuestionIds.size === 0) {
+                lastSaveOk = true;
             }
             else {
-                syncText.textContent = 'Chưa lưu';
+                lastSaveOk = false;
+            }
+            if (syncText && !isSubmitted) {
+                if (pendingSaveCount === 0) {
+                    syncText.textContent = (lastSaveOk && dirtyQuestionIds.size === 0 && isStorageAvailable) ? 'Đã lưu' : 'Chưa lưu';
+                }
             }
         }
     };
@@ -1200,8 +1590,44 @@ export async function bootstrap(root, options) {
                 const wrap = docObj.createElement('div');
                 wrap.className = 'short-answer-container';
                 const curVal = typeof responses[q.questionVersionId] === 'string' ? responses[q.questionVersionId] : '';
-                wrap.innerHTML = `<div class="short-answer-input-wrap"><input type="text" maxlength="4" class="short-answer-input" placeholder="Ví dụ: -0,5" value="${escapeHtml(curVal)}" autocomplete="off" /></div><div class="quick-keys-bar"><span style="font-size: 0.8125rem; color: var(--gray-600); font-weight: 500;">Phím tắt:</span><button type="button" class="quick-key-btn" data-char="-">- (Dấu âm)</button><button type="button" class="quick-key-btn" data-char=",">, (Dấu phẩy)</button><button type="button" class="quick-key-btn" data-action="clear">Xóa</button></div>`;
-                const inputEl = wrap.querySelector('.short-answer-input');
+                const inputWrap = docObj.createElement('div');
+                inputWrap.className = 'short-answer-input-wrap';
+                const inputEl = docObj.createElement('input');
+                inputEl.type = 'text';
+                inputEl.maxLength = 4;
+                inputEl.className = 'short-answer-input';
+                inputEl.placeholder = 'Ví dụ: -0,5';
+                inputEl.value = curVal;
+                inputEl.setAttribute('autocomplete', 'off');
+                inputWrap.appendChild(inputEl);
+                wrap.appendChild(inputWrap);
+                const quickKeysBar = docObj.createElement('div');
+                quickKeysBar.className = 'quick-keys-bar';
+                const label = docObj.createElement('span');
+                label.style.fontSize = '0.8125rem';
+                label.style.color = 'var(--gray-600)';
+                label.style.fontWeight = '500';
+                label.textContent = 'Phím tắt:';
+                quickKeysBar.appendChild(label);
+                const btnMinus = docObj.createElement('button');
+                btnMinus.type = 'button';
+                btnMinus.className = 'quick-key-btn';
+                btnMinus.setAttribute('data-char', '-');
+                btnMinus.textContent = '- (Dấu âm)';
+                quickKeysBar.appendChild(btnMinus);
+                const btnComma = docObj.createElement('button');
+                btnComma.type = 'button';
+                btnComma.className = 'quick-key-btn';
+                btnComma.setAttribute('data-char', ',');
+                btnComma.textContent = ', (Dấu phẩy)';
+                quickKeysBar.appendChild(btnComma);
+                const btnClear = docObj.createElement('button');
+                btnClear.type = 'button';
+                btnClear.className = 'quick-key-btn';
+                btnClear.setAttribute('data-action', 'clear');
+                btnClear.textContent = 'Xóa';
+                quickKeysBar.appendChild(btnClear);
+                wrap.appendChild(quickKeysBar);
                 const updateAria = (v) => {
                     if (!inputEl)
                         return;
@@ -1221,7 +1647,7 @@ export async function bootstrap(root, options) {
                         await saveStateToStorage({
                             kind: 'III',
                             questionVersionId: q.questionVersionId,
-                            raw: val,
+                            raw: typeof val === 'string' && val.length > 0 ? val : null,
                         });
                         updatePalette();
                     };
@@ -1240,14 +1666,15 @@ export async function bootstrap(root, options) {
                         if (isSubmitted)
                             return;
                         let valToSave = '';
-                        if (btn.dataset.action === 'clear') {
+                        const action = btn.dataset ? btn.dataset.action : (typeof btn.getAttribute === 'function' ? btn.getAttribute('data-action') : null);
+                        if (action === 'clear') {
                             responses[q.questionVersionId] = '';
                             if (inputEl)
                                 inputEl.value = '';
                             valToSave = '';
                         }
                         else {
-                            const ch = btn.dataset.char;
+                            const ch = btn.dataset ? btn.dataset.char : (typeof btn.getAttribute === 'function' ? btn.getAttribute('data-char') : '');
                             const cur = typeof responses[q.questionVersionId] === 'string' ? responses[q.questionVersionId] : '';
                             if (cur.length < 4) {
                                 const updated = cur + ch;
@@ -1265,7 +1692,7 @@ export async function bootstrap(root, options) {
                         await saveStateToStorage({
                             kind: 'III',
                             questionVersionId: q.questionVersionId,
-                            raw: valToSave,
+                            raw: typeof valToSave === 'string' && valToSave.length > 0 ? valToSave : null,
                         });
                         updatePalette();
                     });
@@ -1326,9 +1753,37 @@ export async function bootstrap(root, options) {
                 const qid = card?.id?.replace('qcard-', '');
                 const inp = container.querySelector ? container.querySelector('.short-answer-input') : null;
                 if (qid && inp && typeof inp.value === 'string') {
-                    responses[qid] = inp.value;
+                    const hasExisting = Boolean(controller?.getSnapshot().responses.responses.some((r) => r.questionVersionId === qid));
+                    if (inp.value.length > 0 || (qid in responses) || hasExisting) {
+                        responses[qid] = inp.value;
+                    }
                 }
             });
+        }
+        // Ensure any dirty or flushed responses are persisted into controller before finalization
+        if (isStorageAvailable && controller) {
+            for (const q of currentExam.questions) {
+                const resp = createDomainResponseForQuestion(currentExam, q.questionVersionId, responses);
+                if (resp) {
+                    const ctrlRec = controller.getSnapshot();
+                    const existing = ctrlRec.responses.responses.find((r) => r.questionVersionId === q.questionVersionId);
+                    const isSame = JSON.stringify(existing) === JSON.stringify(resp);
+                    if (!isSame) {
+                        const isAnswered = resp.kind === 'I' ? resp.selectedOptionId !== null :
+                            resp.kind === 'II' ? resp.answers.some((a) => a.value !== null) :
+                                resp.raw !== null;
+                        if (existing || isAnswered) {
+                            try {
+                                const ansRes = await controller.answer(resp);
+                                if (ansRes.ok) {
+                                    dirtyQuestionIds.delete(q.questionVersionId);
+                                }
+                            }
+                            catch (_) { }
+                        }
+                    }
+                }
+            }
         }
         // Check concurrent final in durable storage (NOT from localStorage mirror!)
         if (isStorageAvailable && storage) {
@@ -1359,7 +1814,13 @@ export async function bootstrap(root, options) {
             try {
                 const subRes = await controller.submit(reason);
                 if (subRes.ok) {
-                    finalRecord = subRes.value;
+                    finalRecord = {
+                        ...subRes.value,
+                        ...(currentClassCode ? { class_code: currentClassCode, classCode: currentClassCode } : {}),
+                        ...(currentAssignmentId ? { assignment_id: currentAssignmentId, assignmentId: currentAssignmentId } : {}),
+                        ...(currentDueAt ? { dueAt: currentDueAt, due_at: currentDueAt } : {}),
+                        ...(currentOpenAt ? { openAt: currentOpenAt, open_at: currentOpenAt } : {}),
+                    };
                     if (finalRecord.submittedAt) {
                         submittedAt = finalRecord.submittedAt;
                     }
@@ -1372,7 +1833,13 @@ export async function bootstrap(root, options) {
                         attemptId,
                     });
                     if (loadRes.ok && loadRes.value && loadRes.value.phase === 'final') {
-                        finalRecord = loadRes.value;
+                        finalRecord = {
+                            ...loadRes.value,
+                            ...(currentClassCode ? { class_code: currentClassCode, classCode: currentClassCode } : {}),
+                            ...(currentAssignmentId ? { assignment_id: currentAssignmentId, assignmentId: currentAssignmentId } : {}),
+                            ...(currentDueAt ? { dueAt: currentDueAt, due_at: currentDueAt } : {}),
+                            ...(currentOpenAt ? { openAt: currentOpenAt, open_at: currentOpenAt } : {}),
+                        };
                         if (finalRecord.submittedAt) {
                             submittedAt = finalRecord.submittedAt;
                         }
@@ -1403,6 +1870,10 @@ export async function bootstrap(root, options) {
                     phase: 'final',
                     submittedAt: submitTs,
                     scoreDTO,
+                    ...(currentClassCode ? { class_code: currentClassCode, classCode: currentClassCode } : {}),
+                    ...(currentAssignmentId ? { assignment_id: currentAssignmentId, assignmentId: currentAssignmentId } : {}),
+                    ...(currentDueAt ? { dueAt: currentDueAt, due_at: currentDueAt } : {}),
+                    ...(currentOpenAt ? { openAt: currentOpenAt, open_at: currentOpenAt } : {}),
                 };
                 const fRes = await storage.finalize(finalRec, 1);
                 if (fRes.ok) {
@@ -1443,6 +1914,10 @@ export async function bootstrap(root, options) {
                 phase: 'final',
                 submittedAt: submittedAt || now(),
                 scoreDTO: scoreResultToDTO(scoreAttempt(domainExam, domResponses)),
+                ...(currentClassCode ? { class_code: currentClassCode, classCode: currentClassCode } : {}),
+                ...(currentAssignmentId ? { assignment_id: currentAssignmentId, assignmentId: currentAssignmentId } : {}),
+                ...(currentDueAt ? { dueAt: currentDueAt, due_at: currentDueAt } : {}),
+                ...(currentOpenAt ? { openAt: currentOpenAt, open_at: currentOpenAt } : {}),
             };
         }
         if (finalRecord) {
@@ -1482,6 +1957,10 @@ export async function bootstrap(root, options) {
                     scoreResult: scoredResult,
                     scoreDTO,
                     degradedRescueMirror: !isStorageAvailable,
+                    ...(currentClassCode ? { class_code: currentClassCode, classCode: currentClassCode } : {}),
+                    ...(currentAssignmentId ? { assignment_id: currentAssignmentId, assignmentId: currentAssignmentId } : {}),
+                    ...(currentDueAt ? { dueAt: currentDueAt, due_at: currentDueAt } : {}),
+                    ...(currentOpenAt ? { openAt: currentOpenAt, open_at: currentOpenAt } : {}),
                 };
                 const jsonStr = JSON.stringify(payload, (_k, v) => (typeof v === 'bigint' ? v.toString() : v));
                 localStorage.setItem(key, jsonStr);
@@ -1494,86 +1973,18 @@ export async function bootstrap(root, options) {
         if (appsScriptUrl && appsScriptUrl.trim()) {
             if (syncText)
                 syncText.textContent = 'Đang gửi...';
-            const toRatStr = (val) => {
-                if (typeof val === 'string')
-                    return val;
-                if (!val)
-                    return '0';
-                if (typeof val === 'object') {
-                    const num = val.num !== undefined ? val.num : val.n;
-                    const den = val.den !== undefined ? val.den : (val.d !== undefined ? val.d : 1);
-                    return (den === 1 || den === 1n || den === '1') ? String(num) : String(num) + '/' + String(den);
-                }
-                return String(val);
-            };
-            let classCode;
-            let assignmentId;
-            try {
-                const raw = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('cunata:active_assignment') : null) ||
-                    (typeof localStorage !== 'undefined' ? localStorage.getItem('cunata:active_assignment') : null);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (parsed.classCode || parsed.class_code)
-                        classCode = (parsed.classCode || parsed.class_code).trim().toUpperCase();
-                    if (parsed.assignmentId || parsed.assignment_id)
-                        assignmentId = parsed.assignmentId || parsed.assignment_id;
-                }
-            }
-            catch { }
-            if (!classCode && currentExam.classCode) {
-                classCode = String(currentExam.classCode).trim().toUpperCase();
-            }
-            if (!assignmentId && currentExam.assignmentId) {
-                assignmentId = String(currentExam.assignmentId);
-            }
-            const scoreDTO = scoreResultToDTO(scoreAttempt(domainExam, domResponses));
-            const asPayload = {
-                action: 'submitResult',
-                attempt_id: attemptId,
-                exam_id: currentExam.examId,
-                exam_version_id: currentExam.examVersionId,
-                candidate_display: candidateName,
-                started_at: new Date(startedAt).toISOString(),
-                submitted_at: new Date(submittedAt || now()).toISOString(),
-                duration_seconds: Math.max(0, Math.round(((submittedAt || now()) - startedAt) / 1000)),
-                policy_version: currentExam.ruleSetId || 'custom-v1',
-                sections: {
-                    I: { score: toRatStr(scoreDTO.sections.I.score), max: toRatStr(scoreDTO.sections.I.max) },
-                    II: { score: toRatStr(scoreDTO.sections.II.score), max: toRatStr(scoreDTO.sections.II.max) },
-                    III: { score: toRatStr(scoreDTO.sections.III.score), max: toRatStr(scoreDTO.sections.III.max) }
-                },
-                total: toRatStr(scoreDTO.total),
-                maxTotal: toRatStr(scoreDTO.maxTotal),
-                raw_answers_json: responses,
-                ...(classCode && assignmentId ? { class_code: classCode, assignment_id: assignmentId } : {}),
-            };
-            const sendToGas = async (retry = 0) => {
-                const MAX_RETRIES = 5;
+            const finalToEnqueue = finalRecord;
+            if (finalToEnqueue && storage) {
                 try {
-                    const res = await fetch(appsScriptUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify(asPayload),
-                    });
-                    const data = await res.json();
-                    if (data && data.success) {
-                        if (syncText)
-                            syncText.textContent = 'Đã gửi';
-                        return;
-                    }
+                    await enqueue(finalToEnqueue, storage, appsScriptUrl.trim());
                 }
-                catch (_) { }
-                if (syncText)
-                    syncText.textContent = 'Chưa gửi được — sẽ thử lại';
-                if (retry < MAX_RETRIES) {
-                    const delays = [1000, 2000, 4000, 8000, 16000];
-                    const delay = delays[retry] || 5000;
-                    setTimeout(() => {
-                        sendToGas(retry + 1);
-                    }, delay);
-                }
-            };
-            sendToGas();
+                catch { }
+                void drainAttempt({
+                    examId: finalToEnqueue.examId,
+                    examVersionId: finalToEnqueue.examVersionId,
+                    attemptId: finalToEnqueue.attemptId,
+                });
+            }
         }
         else {
             if (syncText) {
@@ -1586,12 +1997,91 @@ export async function bootstrap(root, options) {
         showReport(finalRecord ?? undefined, activeReportModel ?? undefined);
     };
     // Unified load or resume exam helper (CK08-F05)
-    const loadOrResumeExam = async (examData, forceNew = false, requestedAttemptId) => {
+    const loadOrResumeExam = async (examData, forceNew = false, requestedAttemptId, meta) => {
         controller?.dispose();
         controller = null;
         currentExam = examData;
         const examId = currentExam.examId;
         const version = currentExam.examVersionId;
+        if (reportRestartIntervalId) {
+            clearInterval(reportRestartIntervalId);
+            reportRestartIntervalId = null;
+        }
+        if (meta && (meta.classCode || meta.assignmentId || meta.class_code || meta.assignment_id || meta.dueAt || meta.due_at || meta.openAt || meta.open_at)) {
+            currentClassCode = (meta.classCode || meta.class_code)?.trim().toUpperCase();
+            currentAssignmentId = meta.assignmentId || meta.assignment_id;
+            currentDueAt = meta.dueAt || meta.due_at;
+            currentOpenAt = meta.openAt || meta.open_at;
+        }
+        else if (examData.classCode || examData.assignmentId || examData.class_code || examData.assignment_id || examData.dueAt || examData.due_at || examData.openAt || examData.open_at) {
+            currentClassCode = (examData.classCode || examData.class_code)?.trim().toUpperCase();
+            currentAssignmentId = examData.assignmentId || examData.assignment_id;
+            currentDueAt = examData.dueAt || examData.due_at;
+            currentOpenAt = examData.openAt || examData.open_at;
+        }
+        else if (!requestedAttemptId) {
+            currentClassCode = undefined;
+            currentAssignmentId = undefined;
+            currentDueAt = undefined;
+            currentOpenAt = undefined;
+        }
+        // Reset previous attempt finalRecord and activeReportModel if switching exam or assignment context
+        if (finalRecord &&
+            (finalRecord.examId !== examId ||
+                finalRecord.examVersionId !== version ||
+                (currentAssignmentId && (finalRecord.assignmentId || finalRecord.assignment_id) !== currentAssignmentId) ||
+                (!currentAssignmentId && (finalRecord.assignmentId || finalRecord.assignment_id)))) {
+            finalRecord = null;
+            activeReportModel = null;
+        }
+        resolveAssignmentSchedule();
+        if (forceNew) {
+            const sched = resolveAssignmentSchedule();
+            if (sched?.dueAt) {
+                const dueTime = new Date(sched.dueAt).getTime();
+                if (Number.isFinite(dueTime) && now() > dueTime) {
+                    if (finalRecord) {
+                        adoptFinalRecord(finalRecord, true);
+                    }
+                    else {
+                        showReport();
+                    }
+                    return;
+                }
+            }
+            if (sched?.openAt) {
+                const openTime = new Date(sched.openAt).getTime();
+                if (Number.isFinite(openTime) && now() < openTime) {
+                    if (finalRecord) {
+                        adoptFinalRecord(finalRecord, true);
+                    }
+                    else {
+                        showReport();
+                    }
+                    return;
+                }
+            }
+            const maxAtt = currentExam.settings?.maxAttempts;
+            if (typeof maxAtt === 'number' && maxAtt > 0 && storage && isStorageAvailable) {
+                try {
+                    const listRes = await storage.listAttempts(examId, version);
+                    if (listRes.ok) {
+                        const finals = listRes.value.filter((a) => a.phase === 'final');
+                        if (finals.length >= maxAtt) {
+                            const latestFinal = [...finals].sort((a, b) => b.startedAt - a.startedAt)[0];
+                            if (latestFinal) {
+                                adoptFinalRecord(latestFinal, true);
+                            }
+                            else {
+                                showReport();
+                            }
+                            return;
+                        }
+                    }
+                }
+                catch (_) { }
+            }
+        }
         if (timerIntervalId)
             clearInterval(timerIntervalId);
         // Clear any previous error banner and reset report styling
@@ -1629,39 +2119,59 @@ export async function bootstrap(root, options) {
         let isDurableRecord = false;
         if (!forceNew) {
             let foundAttemptId = requestedAttemptId ?? null;
-            if (!foundAttemptId && typeof localStorage !== 'undefined') {
-                const pointerKey = 'cunata:active_attempt:' + encodeURIComponent(examId) + ':' + encodeURIComponent(version);
-                foundAttemptId = localStorage.getItem(pointerKey);
-                if (!foundAttemptId) {
-                    const prefix = 'cunata:attempt:' + encodeURIComponent(examId) + ':' + encodeURIComponent(version) + ':';
-                    const finalPrefix = 'cunata:final:' + encodeURIComponent(examId) + ':' + encodeURIComponent(version) + ':';
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const k = localStorage.key(i);
-                        if (k && k.startsWith(prefix)) {
-                            foundAttemptId = decodeURIComponent(k.slice(prefix.length));
-                            break;
-                        }
-                        else if (k && k.startsWith(finalPrefix)) {
-                            foundAttemptId = decodeURIComponent(k.slice(finalPrefix.length));
-                            break;
+            // Check maxAttempts limit when not loading a specific attempt
+            const maxAtt = currentExam.settings?.maxAttempts;
+            if (typeof maxAtt === 'number' && maxAtt > 0 && !requestedAttemptId && storage && isStorageAvailable) {
+                try {
+                    const listRes = await storage.listAttempts(examId, version);
+                    if (listRes.ok) {
+                        const finals = listRes.value.filter((a) => a.phase === 'final');
+                        if (finals.length >= maxAtt) {
+                            const latestFinal = [...finals].sort((a, b) => b.startedAt - a.startedAt)[0];
+                            if (latestFinal) {
+                                adoptFinalRecord(latestFinal, true);
+                                return;
+                            }
                         }
                     }
                 }
+                catch (_) { }
             }
             if (!foundAttemptId && storage && isStorageAvailable) {
                 try {
                     const listRes = await storage.listAttempts(examId, version);
                     if (listRes.ok && listRes.value.length > 0) {
-                        const sorted = [...listRes.value].sort((a, b) => b.startedAt - a.startedAt);
-                        const first = sorted[0];
-                        if (first) {
-                            foundAttemptId = first.attemptId;
-                            resumedRecord = first;
+                        const drafts = listRes.value.filter((a) => a.phase === 'draft');
+                        const target = drafts.length > 0
+                            ? [...drafts].sort((a, b) => b.startedAt - a.startedAt)[0]
+                            : [...listRes.value].sort((a, b) => b.startedAt - a.startedAt)[0];
+                        if (target) {
+                            foundAttemptId = target.attemptId;
+                            resumedRecord = target;
                             isDurableRecord = true;
                         }
                     }
                 }
                 catch (_) { }
+            }
+            if (!foundAttemptId && typeof localStorage !== 'undefined') {
+                const pointerKey = 'cunata:active_attempt:' + encodeURIComponent(examId) + ':' + encodeURIComponent(version);
+                const candidateId = localStorage.getItem(pointerKey);
+                if (candidateId) {
+                    const draftKey = 'cunata:attempt:' + encodeURIComponent(examId) + ':' + encodeURIComponent(version) + ':' + encodeURIComponent(candidateId);
+                    const raw = localStorage.getItem(draftKey);
+                    if (raw) {
+                        try {
+                            const parsed = JSON.parse(raw);
+                            if (parsed && !parsed.submitted && parsed.phase !== 'final') {
+                                foundAttemptId = candidateId;
+                                resumedRecord = parsed;
+                                isDurableRecord = false;
+                            }
+                        }
+                        catch (_) { }
+                    }
+                }
             }
             if (foundAttemptId && !resumedRecord) {
                 if (storage && isStorageAvailable) {
@@ -1692,6 +2202,21 @@ export async function bootstrap(root, options) {
             throw new Error('Không tìm thấy bài làm trên máy này.');
         if (resumedRecord && resumedRecord.examId === examId && resumedRecord.examVersionId === version) {
             attemptId = resumedRecord.attemptId;
+            dirtyQuestionIds.clear();
+            lastSaveOk = isStorageAvailable;
+            if (resumedRecord.class_code || resumedRecord.classCode) {
+                currentClassCode = (resumedRecord.class_code || resumedRecord.classCode).trim().toUpperCase();
+            }
+            if (resumedRecord.assignment_id || resumedRecord.assignmentId) {
+                currentAssignmentId = resumedRecord.assignment_id || resumedRecord.assignmentId;
+            }
+            if (resumedRecord.dueAt || resumedRecord.due_at) {
+                currentDueAt = resumedRecord.dueAt || resumedRecord.due_at;
+            }
+            if (resumedRecord.openAt || resumedRecord.open_at) {
+                currentOpenAt = resumedRecord.openAt || resumedRecord.open_at;
+            }
+            resolveAssignmentSchedule();
             if (resumedRecord.candidateName)
                 candidateName = resumedRecord.candidateName;
             if (candidateInput) {
@@ -1754,8 +2279,9 @@ export async function bootstrap(root, options) {
                     adoptFinalRecord(resumedRecord, isDurableFinal);
                     return;
                 }
+                let mockFinal = null;
                 if (resumedRecord && resumedRecord.scoreDTO) {
-                    const mockFinal = {
+                    mockFinal = {
                         schemaVersion: 'web-attempt-v1',
                         examId,
                         examVersionId: version,
@@ -1770,6 +2296,10 @@ export async function bootstrap(root, options) {
                         phase: 'final',
                         submittedAt: resumedRecord.submittedAt || now(),
                         scoreDTO: resumedRecord.scoreDTO,
+                        ...(currentClassCode ? { class_code: currentClassCode, classCode: currentClassCode } : {}),
+                        ...(currentAssignmentId ? { assignment_id: currentAssignmentId, assignmentId: currentAssignmentId } : {}),
+                        ...(currentDueAt ? { dueAt: currentDueAt, due_at: currentDueAt } : {}),
+                        ...(currentOpenAt ? { openAt: currentOpenAt, open_at: currentOpenAt } : {}),
                     };
                     const repRes = buildReport(mockFinal, now());
                     if (!repRes.ok) {
@@ -1780,8 +2310,12 @@ export async function bootstrap(root, options) {
                     }
                     activeReportModel = repRes.value;
                 }
-                if (syncText)
+                if (mockFinal) {
+                    void syncOutboxStateOnFinal(mockFinal, isDurableFinal);
+                }
+                else if (syncText) {
                     syncText.textContent = isDurableFinal ? 'Đã nộp & lưu cục bộ' : 'Chưa lưu';
+                }
                 showReport();
                 return;
             }
@@ -1795,6 +2329,8 @@ export async function bootstrap(root, options) {
         else {
             attemptId = 'attempt-' + now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
             responses = Object.create(null);
+            dirtyQuestionIds.clear();
+            lastSaveOk = isStorageAvailable;
             isSubmitted = false;
             notifyWorkerAttemptState(true);
             scoredResult = null;
@@ -1810,12 +2346,27 @@ export async function bootstrap(root, options) {
                 shuffleOptions: currentExam.settings?.shuffleOptions ?? false,
             }, attemptId);
             try {
-                const startRes = await startAttempt(currentExam, candidateName, { storage, now, id: idGen }, { attemptId });
+                const startRes = await startAttempt(currentExam, candidateName, { storage, now, id: idGen }, {
+                    attemptId,
+                    ...(currentClassCode ? { classCode: currentClassCode, class_code: currentClassCode } : {}),
+                    ...(currentAssignmentId ? { assignmentId: currentAssignmentId, assignment_id: currentAssignmentId } : {}),
+                    ...(currentDueAt ? { dueAt: currentDueAt, due_at: currentDueAt } : {}),
+                    ...(currentOpenAt ? { openAt: currentOpenAt, open_at: currentOpenAt } : {}),
+                });
                 if (startRes.ok) {
                     controller = startRes.value;
                 }
                 else {
                     controller = null;
+                    if (startRes.error.code === 'ASSIGNMENT_PAST_DUE' || startRes.error.code === 'ASSIGNMENT_NOT_OPEN') {
+                        if (finalRecord) {
+                            adoptFinalRecord(finalRecord, true);
+                        }
+                        else {
+                            showIntegrityError(startRes.error);
+                        }
+                        return;
+                    }
                 }
             }
             catch {
@@ -1827,6 +2378,9 @@ export async function bootstrap(root, options) {
             examTitle.textContent = currentExam.title || 'Đề thi';
         if (candidateInput) {
             candidateInput.value = candidateName;
+            candidateInput.readOnly = true;
+            candidateInput.setAttribute('readonly', 'readonly');
+            candidateInput.disabled = false;
         }
         if (examWrapper)
             examWrapper.style.display = '';
@@ -1873,8 +2427,11 @@ export async function bootstrap(root, options) {
             reportWrapper.style.display = '';
         if (btnSubmit)
             btnSubmit.style.display = 'none';
-        if (candidateInput)
+        if (candidateInput) {
+            candidateInput.readOnly = true;
+            candidateInput.setAttribute('readonly', 'readonly');
             candidateInput.disabled = true;
+        }
         if (examTitle && currentExam) {
             examTitle.textContent = currentExam.title || 'Đề thi';
         }
@@ -2146,20 +2703,77 @@ export async function bootstrap(root, options) {
         // Restart Exam Handler
         const btnRestart = root.querySelector('#btnRestart');
         if (btnRestart) {
-            const maxAtt = currentExam.settings?.maxAttempts;
-            if (typeof maxAtt === 'number' && maxAtt <= 1) {
-                btnRestart.disabled = true;
-                btnRestart.style.display = 'none';
+            if (reportRestartIntervalId) {
+                clearInterval(reportRestartIntervalId);
+                reportRestartIntervalId = null;
             }
-            else {
-                btnRestart.disabled = false;
-                btnRestart.style.display = '';
-            }
+            const updateRestartButtonState = async () => {
+                const sched = resolveAssignmentSchedule();
+                const currentTime = now();
+                let isPastDue = false;
+                let isNotOpen = false;
+                if (sched?.dueAt) {
+                    const dueTime = new Date(sched.dueAt).getTime();
+                    if (Number.isFinite(dueTime) && currentTime > dueTime) {
+                        isPastDue = true;
+                    }
+                }
+                if (sched?.openAt) {
+                    const openTime = new Date(sched.openAt).getTime();
+                    if (Number.isFinite(openTime) && currentTime < openTime) {
+                        isNotOpen = true;
+                    }
+                }
+                const maxAtt = currentExam.settings?.maxAttempts;
+                let isAttemptsExhausted = false;
+                if (typeof maxAtt === 'number' && maxAtt > 0) {
+                    if (maxAtt <= 1) {
+                        isAttemptsExhausted = true;
+                    }
+                    else if (storage && isStorageAvailable) {
+                        try {
+                            const listRes = await storage.listAttempts(currentExam.examId, currentExam.examVersionId);
+                            if (listRes.ok) {
+                                const finals = listRes.value.filter((a) => a.phase === 'final');
+                                if (finals.length >= maxAtt) {
+                                    isAttemptsExhausted = true;
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                const canRestart = !isPastDue && !isNotOpen && !isAttemptsExhausted;
+                if (canRestart) {
+                    btnRestart.disabled = false;
+                    btnRestart.style.display = '';
+                }
+                else {
+                    btnRestart.disabled = true;
+                    btnRestart.style.display = 'none';
+                }
+                return { canRestart, isPastDue, isNotOpen, isAttemptsExhausted };
+            };
+            void updateRestartButtonState();
+            // Check periodically while on report screen in case dueAt passes
+            reportRestartIntervalId = setInterval(() => {
+                void updateRestartButtonState();
+            }, 250);
             btnRestart.onclick = async () => {
-                const maxAttCurrent = currentExam.settings?.maxAttempts;
-                if (typeof maxAttCurrent === 'number' && maxAttCurrent <= 1) {
-                    if (typeof alert === 'function')
-                        alert('Đề thi này chỉ cho phép làm bài tối đa 1 lượt.');
+                const state = await updateRestartButtonState();
+                if (!state.canRestart) {
+                    if (state.isPastDue) {
+                        if (typeof alert === 'function')
+                            alert('Bài thi đã hết hạn nộp.');
+                    }
+                    else if (state.isNotOpen) {
+                        if (typeof alert === 'function')
+                            alert('Bài thi chưa đến giờ mở.');
+                    }
+                    else if (state.isAttemptsExhausted) {
+                        if (typeof alert === 'function')
+                            alert('Đề thi này đã đạt giới hạn số lượt làm bài tối đa.');
+                    }
                     return;
                 }
                 await loadOrResumeExam(currentExam, true);
@@ -2168,6 +2782,10 @@ export async function bootstrap(root, options) {
     };
     // Route synchronization
     const applyRoute = (state) => {
+        if (state.route !== 'report' && reportRestartIntervalId) {
+            clearInterval(reportRestartIntervalId);
+            reportRestartIntervalId = null;
+        }
         roleShell?.show(state, state.route === 'teacher' ? '' : candidateName === 'Thí sinh tự do' ? '' : candidateName, Boolean(controller));
         const startScr = root.querySelector('#startScreen');
         if (startScr && state.route !== 'student')
@@ -2240,55 +2858,15 @@ export async function bootstrap(root, options) {
                 break;
         }
     };
-    applyRoute(router.getState());
     const unsubscribeRouter = router.subscribe((state) => {
         applyRoute(state);
         onAreaRoute?.(state);
     });
     // Modal actions
-    const onSubmitClick = async () => {
+    const onSubmitClick = () => {
         if (isSubmitted) {
             showReport();
             return;
-        }
-        // Flush active inputs before prompting submit
-        if (root) {
-            root.querySelectorAll('.short-answer-container').forEach((container) => {
-                let card = null;
-                if (typeof container.closest === 'function') {
-                    card = container.closest('.question-card');
-                }
-                else {
-                    let curr = container.parentNode;
-                    while (curr) {
-                        if (curr.classList && typeof curr.classList.contains === 'function' && curr.classList.contains('question-card')) {
-                            card = curr;
-                            break;
-                        }
-                        curr = curr.parentNode;
-                    }
-                }
-                const qid = card?.id?.replace('qcard-', '');
-                const inp = container.querySelector ? container.querySelector('.short-answer-input') : null;
-                if (qid && inp && typeof inp.value === 'string') {
-                    responses[qid] = inp.value;
-                }
-            });
-        }
-        // Check if finalized concurrently in durable storage (NOT from localStorage mirror!)
-        if (isStorageAvailable && storage) {
-            try {
-                const loadRes = await storage.load({
-                    examId: currentExam.examId,
-                    examVersionId: currentExam.examVersionId,
-                    attemptId,
-                });
-                if (loadRes.ok && loadRes.value && loadRes.value.phase === 'final') {
-                    adoptFinalRecord(loadRes.value);
-                    return;
-                }
-            }
-            catch (_) { }
         }
         if (submitModal) {
             submitModal.style.display = 'flex';
@@ -2380,7 +2958,7 @@ export async function bootstrap(root, options) {
             }
         }
         const reader = new FileReader();
-        reader.onload = (evt) => {
+        reader.onload = async (evt) => {
             try {
                 const text = evt.target?.result;
                 if (typeof text !== 'string')
@@ -2388,10 +2966,12 @@ export async function bootstrap(root, options) {
                 const parsed = JSON.parse(text);
                 const v = parseExam(parsed);
                 if (v.ok) {
-                    void switchExam(v.value, true);
+                    await switchExam(v.value, true);
                 }
             }
             catch (_) { }
+            if (examFileInput)
+                examFileInput.value = '';
         };
         reader.readAsText(file);
     };
@@ -2426,20 +3006,46 @@ export async function bootstrap(root, options) {
             onStartExam: async (exam, name, meta) => {
                 candidateName = name;
                 if (meta && (meta.classCode || meta.assignmentId)) {
+                    currentClassCode = meta.classCode ? meta.classCode.trim().toUpperCase() : undefined;
+                    currentAssignmentId = meta.assignmentId;
+                    currentDueAt = meta.dueAt || meta.due_at;
+                    currentOpenAt = meta.openAt || meta.open_at;
                     try {
-                        sessionStorage.setItem('cunata:active_assignment', JSON.stringify({
+                        const payload = JSON.stringify({
                             classCode: meta.classCode,
                             assignmentId: meta.assignmentId,
-                        }));
+                            openAt: currentOpenAt,
+                            dueAt: currentDueAt,
+                            examId: exam.examId,
+                        });
+                        sessionStorage.setItem('cunata:active_assignment', payload);
+                        localStorage.setItem('cunata:active_assignment', payload);
                     }
                     catch { }
                 }
-                if (candidateInput)
+                else {
+                    currentClassCode = undefined;
+                    currentAssignmentId = undefined;
+                    currentDueAt = undefined;
+                    currentOpenAt = undefined;
+                    try {
+                        sessionStorage.removeItem('cunata:active_assignment');
+                        sessionStorage.removeItem('cunata_active_assignment');
+                        localStorage.removeItem('cunata:active_assignment');
+                        localStorage.removeItem('cunata_active_assignment');
+                    }
+                    catch { }
+                }
+                if (candidateInput) {
                     candidateInput.value = candidateName;
+                    candidateInput.readOnly = true;
+                    candidateInput.setAttribute('readonly', 'readonly');
+                    candidateInput.disabled = false;
+                }
                 if (examWrapper)
                     examWrapper.style.display = '';
                 router.navigate('exam');
-                await loadOrResumeExam(exam, false);
+                await loadOrResumeExam(exam, false, undefined, meta);
             },
         });
     }
@@ -2654,18 +3260,32 @@ export async function bootstrap(root, options) {
         docTarget.addEventListener('keydown', onKeyDown);
     }
     const winTarget = typeof window !== 'undefined' ? window : null;
+    const onOnline = () => {
+        void sweepPendingOutbox();
+        if (finalRecord) {
+            void drainAttempt({
+                examId: finalRecord.examId,
+                examVersionId: finalRecord.examVersionId,
+                attemptId: finalRecord.attemptId,
+            });
+        }
+    };
     if (winTarget && typeof winTarget.addEventListener === 'function') {
         winTarget.addEventListener('storage', onStorageEvent);
+        winTarget.addEventListener('online', onOnline);
     }
+    void sweepPendingOutbox();
     // An unfinished durable attempt wins over a remembered role; a final never auto-starts an exam.
     const entryRoute = router.getState();
     if (isTeacherQuery || entryRoute.route === 'teacher') {
         router.navigate('teacher', entryRoute.params);
     }
     else if (entryRoute.route === 'report' && entryRoute.params.attemptId) {
+        applyRoute(entryRoute);
         await resolveAreaRoute(entryRoute, ++routeGeneration);
     }
     else if (entryRoute.route === 'exam' && entryRoute.params.examId && !resumableDraft) {
+        applyRoute(entryRoute);
         await resolveAreaRoute(entryRoute, ++routeGeneration);
     }
     else if (!shouldShowStartScreen) {
@@ -2686,6 +3306,7 @@ export async function bootstrap(root, options) {
         }
         else {
             router.navigate(rememberedRole ?? 'chooser');
+            applyRoute(router.getState());
         }
     }
     // Register Native Service Worker in real browser HTTP environment
@@ -2784,7 +3405,16 @@ export async function bootstrap(root, options) {
         }
         if (winTarget && typeof winTarget.removeEventListener === 'function') {
             winTarget.removeEventListener('storage', onStorageEvent);
+            winTarget.removeEventListener('online', onOnline);
         }
+        if (reportRestartIntervalId) {
+            clearInterval(reportRestartIntervalId);
+            reportRestartIntervalId = null;
+        }
+        for (const tid of activeTimers.values()) {
+            clearTimeout(tid);
+        }
+        activeTimers.clear();
     };
 }
 // Auto-run bootstrap when loaded in browser as entrypoint module

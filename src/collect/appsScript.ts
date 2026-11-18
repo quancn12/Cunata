@@ -352,10 +352,10 @@ export interface AppsScriptClient {
   listAssignments(token: string, classId: string): Promise<AsResult<AssignmentMeta[]>>;
   listAssignments(tokenOrClassId: string, classId?: string): Promise<AsResult<AssignmentMeta[]>>;
 
-  listResults(classId: string, assignmentId?: string): Promise<AsResult<ClassResultItem[]>>;
-  listResults(token: string, classId: string, assignmentId?: string): Promise<AsResult<ClassResultItem[]>>;
+  listResults(classId?: string, assignmentId?: string): Promise<AsResult<ClassResultItem[]>>;
+  listResults(token: string, classId?: string, assignmentId?: string): Promise<AsResult<ClassResultItem[]>>;
   listResults(
-    tokenOrClassId: string,
+    tokenOrClassId?: string,
     classIdOrAssignmentId?: string,
     assignmentId?: string
   ): Promise<AsResult<ClassResultItem[]>>;
@@ -579,7 +579,7 @@ export function createAppsScriptClient(
         return notConfiguredResult();
       },
       async listResults(
-        _tokenOrClassId: string,
+        _tokenOrClassId?: string,
         _classIdOrAssignmentId?: string,
         _assignmentId?: string
       ): Promise<AsResult<ClassResultItem[]>> {
@@ -625,7 +625,7 @@ export function createAppsScriptClient(
     };
   }
 
-  return {
+  const client: AppsScriptClient = {
     configured: true,
 
     async listExams(): Promise<AsResult<PublishedExamMeta[]>> {
@@ -654,7 +654,7 @@ export function createAppsScriptClient(
 
     async getExam(id: string): Promise<AsResult<unknown>> {
       const getUrl = buildGetUrl(trimmedUrl, { action: 'getExam', id });
-      const asRes = await executeAppsScriptRequest(
+      return executeAppsScriptRequest(
         getUrl,
         { method: 'GET', redirect: 'follow', cache: 'no-store' },
         fetchFn,
@@ -663,26 +663,6 @@ export function createAppsScriptClient(
           value: data.exam !== undefined ? data.exam : data,
         })
       );
-      if (asRes.ok) {
-        return asRes;
-      }
-      // If Apps Script returns NOT_FOUND, fallback to static shared exams in public/exams/index.json
-      try {
-        const manifestRes = await fetchFn('public/exams/index.json', { cache: 'no-store' });
-        if (manifestRes && manifestRes.ok) {
-          const manifest = await manifestRes.json();
-          const exams = Array.isArray(manifest?.exams) ? manifest.exams : [];
-          const matched = exams.find((e: any) => e.id === id);
-          if (matched && matched.url) {
-            const examRes = await fetchFn(matched.url, { cache: 'no-store' });
-            if (examRes && examRes.ok) {
-              const examData = await examRes.json();
-              return { ok: true, value: examData };
-            }
-          }
-        }
-      } catch {}
-      return asRes;
     },
 
     async getClass(code: string): Promise<AsResult<ClassInfo>> {
@@ -962,7 +942,7 @@ export function createAppsScriptClient(
     },
 
     async listResults(
-      tokenOrClassId: string,
+      tokenOrClassId?: string,
       classIdOrAssignmentId?: string,
       assignmentIdArg?: string
     ): Promise<AsResult<ClassResultItem[]>> {
@@ -971,23 +951,73 @@ export function createAppsScriptClient(
       let assignmentId: string | undefined = undefined;
 
       if (assignmentIdArg !== undefined) {
-        token = tokenOrClassId;
+        token = tokenOrClassId || '';
         classId = classIdOrAssignmentId || '';
         assignmentId = assignmentIdArg;
       } else if (classIdOrAssignmentId !== undefined) {
-        if (tokenOrClassId.length >= 32) {
+        const stored = getTeacherToken();
+        const isArg0Uuid = Boolean(tokenOrClassId && /^[0-9a-f-]{36}$/i.test(tokenOrClassId) && tokenOrClassId.includes('-'));
+        if (stored && isArg0Uuid) {
+          token = stored;
+          classId = tokenOrClassId || '';
+          assignmentId = classIdOrAssignmentId;
+        } else if (tokenOrClassId && (tokenOrClassId.length >= 32 || tokenOrClassId === stored || !stored)) {
           token = tokenOrClassId;
-          classId = classIdOrAssignmentId;
+          classId = classIdOrAssignmentId || '';
         } else {
-          token = getTeacherToken() || '';
-          classId = tokenOrClassId;
+          token = stored || '';
+          classId = tokenOrClassId || '';
           assignmentId = classIdOrAssignmentId;
         }
       } else {
-        token = getTeacherToken() || '';
-        classId = tokenOrClassId;
+        const stored = getTeacherToken();
+        if (tokenOrClassId && tokenOrClassId.length >= 32 && !tokenOrClassId.includes('-')) {
+          token = tokenOrClassId;
+          classId = '';
+        } else {
+          token = stored || '';
+          classId = tokenOrClassId || '';
+        }
       }
       if (!token) token = getTeacherToken() || '';
+
+      // Khi classId rỗng (giáo viên chọn "-- Tất cả lớp --" hoặc không truyền classId):
+      // Tra cứu toàn bộ các lớp của giáo viên qua listMyClasses rồi tổng hợp kết quả của từng lớp.
+      if (!classId || classId.trim() === '') {
+        const classesRes = await client.listMyClasses(token);
+        if (!classesRes.ok) {
+          return classesRes as AsResult<ClassResultItem[]>;
+        }
+        const classes = classesRes.value || [];
+        if (classes.length === 0) {
+          return { ok: true, value: [] };
+        }
+        const classResultsPromises = classes.map((c) =>
+          client.listResults(token, c.classId, assignmentId)
+        );
+        const settled = await Promise.all(classResultsPromises);
+        const seenAttempts = new Set<string>();
+        const combined: ClassResultItem[] = [];
+        let firstErr: AsResult<ClassResultItem[]> | null = null;
+        for (const item of settled) {
+          if (item.ok && Array.isArray(item.value)) {
+            for (const resItem of item.value) {
+              const id = (resItem as any).attempt_id || (resItem as any).attemptId;
+              if (id) {
+                if (seenAttempts.has(id)) continue;
+                seenAttempts.add(id);
+              }
+              combined.push(resItem);
+            }
+          } else if (!item.ok && !firstErr) {
+            firstErr = item;
+          }
+        }
+        if (combined.length === 0 && firstErr && classes.length > 0) {
+          return firstErr;
+        }
+        return { ok: true, value: combined };
+      }
 
       const body: Record<string, unknown> = {
         action: 'listResults',
@@ -1216,6 +1246,8 @@ export function createAppsScriptClient(
       clearAdminToken();
     },
   };
+
+  return client;
 }
 
 /**
@@ -1278,19 +1310,6 @@ export function createAppsScriptCollectorPort(
         (final as any).metadata?.assignment_id ??
         (final as any).metadata?.assignmentId ??
         basePayload.assignment_id;
-
-      if (!classCode || !assignmentId) {
-        try {
-          if (typeof sessionStorage !== 'undefined') {
-            const stored = sessionStorage.getItem('cunata:active_assignment') || sessionStorage.getItem('cunata_active_assignment');
-            if (stored) {
-              const parsed = JSON.parse(stored);
-              if (!classCode && parsed?.classCode) classCode = parsed.classCode;
-              if (!assignmentId && parsed?.assignmentId) assignmentId = parsed.assignmentId;
-            }
-          }
-        } catch {}
-      }
 
       const payload = {
         action: 'submitResult',

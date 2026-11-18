@@ -294,7 +294,45 @@ class StudentControllerImpl implements StudentController {
         }),
       });
 
-      const saveResult = await this.deps.storage.saveDraft(newRecord, this.currentRecord.revision);
+      let saveResult = await this.deps.storage.saveDraft(newRecord, this.currentRecord.revision);
+      for (
+        let retry = 0;
+        retry < 3 && !saveResult.ok && saveResult.error.code === "STORAGE_CONFLICT";
+        retry++
+      ) {
+        const latest = await this.deps.storage.load(this.currentRecord);
+        if (!latest.ok || !latest.value) break;
+        if (latest.value.phase === "final") {
+          this.currentRecord = deepFreeze(latest.value);
+          this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
+          return {
+            ok: false,
+            error: {
+              code: "ATTEMPT_FINALIZED",
+              path: "phase",
+              message: "Attempt finalized by another session",
+              recoverable: false,
+            },
+          };
+        }
+        const mergedResponses = [...latest.value.responses.responses];
+        const mIdx = mergedResponses.findIndex(
+          (r) => r.questionVersionId === normalized.questionVersionId
+        );
+        if (mIdx >= 0) mergedResponses[mIdx] = normalized;
+        else mergedResponses.push(normalized);
+
+        const retryRecord: AttemptRecord = deepFreeze({
+          ...latest.value,
+          revision: latest.value.revision + 1,
+          responses: deepFreeze({
+            attemptId: latest.value.attemptId,
+            examVersionId: latest.value.examVersionId,
+            responses: mergedResponses,
+          }),
+        });
+        saveResult = await this.deps.storage.saveDraft(retryRecord, latest.value.revision);
+      }
       if (!saveResult.ok) {
         if (saveResult.error.code === "STORAGE_CONFLICT") {
           const latest = await this.deps.storage.load(this.currentRecord);
@@ -380,7 +418,34 @@ class StudentControllerImpl implements StudentController {
         candidateName: raw,
       });
 
-      const saveResult = await this.deps.storage.saveDraft(newRecord, this.currentRecord.revision);
+      let saveResult = await this.deps.storage.saveDraft(newRecord, this.currentRecord.revision);
+      for (
+        let retry = 0;
+        retry < 3 && !saveResult.ok && saveResult.error.code === "STORAGE_CONFLICT";
+        retry++
+      ) {
+        const latest = await this.deps.storage.load(this.currentRecord);
+        if (!latest.ok || !latest.value) break;
+        if (latest.value.phase === "final") {
+          this.currentRecord = deepFreeze(latest.value);
+          this.notifyListeners({ type: "attempt_finalized", record: this.currentRecord });
+          return {
+            ok: false,
+            error: {
+              code: "ATTEMPT_FINALIZED",
+              path: "phase",
+              message: "Attempt finalized by another session",
+              recoverable: false,
+            },
+          };
+        }
+        const retryRecord: AttemptRecord = deepFreeze({
+          ...latest.value,
+          revision: latest.value.revision + 1,
+          candidateName: raw,
+        });
+        saveResult = await this.deps.storage.saveDraft(retryRecord, latest.value.revision);
+      }
       if (!saveResult.ok) {
         if (saveResult.error.code === "STORAGE_CONFLICT") {
           const latest = await this.deps.storage.load(this.currentRecord);
@@ -678,6 +743,96 @@ export async function startAttempt(
   const durationMs = exam.settings.durationMinutes * 60 * 1000;
   const deadline = startedAt + durationMs;
 
+  let classCode =
+    options?.classCode ??
+    options?.class_code ??
+    deps.classCode ??
+    deps.class_code ??
+    (exam as any).classCode ??
+    (exam as any).class_code;
+  let assignmentId =
+    options?.assignmentId ??
+    options?.assignment_id ??
+    deps.assignmentId ??
+    deps.assignment_id ??
+    (exam as any).assignmentId ??
+    (exam as any).assignment_id;
+  let openAt =
+    options?.openAt ??
+    options?.open_at ??
+    deps.openAt ??
+    deps.open_at ??
+    (exam as any).openAt ??
+    (exam as any).open_at;
+  let dueAt =
+    options?.dueAt ??
+    options?.due_at ??
+    deps.dueAt ??
+    deps.due_at ??
+    (exam as any).dueAt ??
+    (exam as any).due_at;
+
+  if ((!classCode || !assignmentId || !openAt || !dueAt) && typeof sessionStorage !== "undefined") {
+    try {
+      const raw = sessionStorage.getItem("cunata:active_assignment") || sessionStorage.getItem("cunata_active_assignment");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.examId && parsed.examId === exam.examId) {
+          if (!classCode && (parsed.classCode || parsed.class_code)) {
+            classCode = parsed.classCode || parsed.class_code;
+          }
+          if (!assignmentId && (parsed.assignmentId || parsed.assignment_id)) {
+            assignmentId = parsed.assignmentId || parsed.assignment_id;
+          }
+          if (!openAt && (parsed.openAt || parsed.open_at)) {
+            openAt = parsed.openAt || parsed.open_at;
+          }
+          if (!dueAt && (parsed.dueAt || parsed.due_at)) {
+            dueAt = parsed.dueAt || parsed.due_at;
+          }
+        }
+      }
+    } catch {}
+  }
+  if ((!classCode || !assignmentId || !openAt || !dueAt) && typeof localStorage !== "undefined") {
+    try {
+      const raw = localStorage.getItem("cunata:active_assignment") || localStorage.getItem("cunata_active_assignment");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.examId && parsed.examId === exam.examId) {
+          if (!classCode && (parsed.classCode || parsed.class_code)) {
+            classCode = parsed.classCode || parsed.class_code;
+          }
+          if (!assignmentId && (parsed.assignmentId || parsed.assignment_id)) {
+            assignmentId = parsed.assignmentId || parsed.assignment_id;
+          }
+          if (!openAt && (parsed.openAt || parsed.open_at)) {
+            openAt = parsed.openAt || parsed.open_at;
+          }
+          if (!dueAt && (parsed.dueAt || parsed.due_at)) {
+            dueAt = parsed.dueAt || parsed.due_at;
+          }
+        }
+      }
+    } catch {}
+  }
+
+  // Reject starting attempt if past assignment dueAt
+  if (dueAt) {
+    const dueTime = new Date(dueAt).getTime();
+    if (Number.isFinite(dueTime) && deps.now() > dueTime) {
+      return {
+        ok: false,
+        error: {
+          code: "ASSIGNMENT_PAST_DUE",
+          path: "dueAt",
+          message: "Đề thi đã hết hạn nộp.",
+          recoverable: false,
+        },
+      };
+    }
+  }
+
   const initialRecord: AttemptRecord = deepFreeze({
     schemaVersion: "web-attempt-v1",
     examId: exam.examId,
@@ -697,6 +852,10 @@ export async function startAttempt(
     phase: "draft",
     submittedAt: null,
     scoreDTO: null,
+    ...(classCode ? { classCode: String(classCode).trim().toUpperCase(), class_code: String(classCode).trim().toUpperCase() } : {}),
+    ...(assignmentId ? { assignmentId: String(assignmentId).trim(), assignment_id: String(assignmentId).trim() } : {}),
+    ...(openAt ? { openAt: String(openAt).trim(), open_at: String(openAt).trim() } : {}),
+    ...(dueAt ? { dueAt: String(dueAt).trim(), due_at: String(dueAt).trim() } : {}),
   });
 
   const createResult = await deps.storage.create(initialRecord);

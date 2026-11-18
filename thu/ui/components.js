@@ -124,6 +124,8 @@ export function ExamCard(options, doc = document) {
     const band = /vật l[íý]|^l[íý]$/.test(subject) ? 'ly' : /hóa|hoá/.test(subject) ? 'hoa' : /toán/.test(subject) ? 'toan' : 'khac';
     const card = el('button', `ui-card exam-card exam-list-item exam-card--${band}`, doc);
     card.type = 'button';
+    if (!card.dataset)
+        card.dataset = {};
     card.dataset.examId = options.id;
     if (options.url)
         card.dataset.examUrl = options.url;

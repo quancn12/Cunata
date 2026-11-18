@@ -1561,6 +1561,56 @@ export function mountTeacherPortal(root, deps) {
                 URL.revokeObjectURL(url);
             }, 500);
         });
+        function renderTableRows(items) {
+            clearChildren(tbody);
+            if (items.length === 0) {
+                const tr = doc.createElement('tr');
+                const td = doc.createElement('td');
+                td.setAttribute('colspan', '7');
+                td.style.textAlign = 'center';
+                td.style.color = 'var(--c-text-2)';
+                td.textContent = 'Chưa có bài nộp nào.';
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+                return;
+            }
+            for (const item of items) {
+                const tr = doc.createElement('tr');
+                const name = item.candidateName || item.candidate_display || 'Học sinh';
+                const clsCode = item.class_code || '';
+                const subAt = formatViDateTime(item.submitted_at);
+                const pI = item.sections?.I ? `${item.sections.I.score}/${item.sections.I.max}` : '-';
+                const pII = item.sections?.II ? `${item.sections.II.score}/${item.sections.II.max}` : '-';
+                const pIII = item.sections?.III ? `${item.sections.III.score}/${item.sections.III.max}` : '-';
+                const total = item.total ? `${item.total} / ${item.maxTotal || 10}` : '-';
+                const tdName = doc.createElement('td');
+                const strongName = doc.createElement('strong');
+                strongName.textContent = name;
+                tdName.appendChild(strongName);
+                tr.appendChild(tdName);
+                const tdCode = doc.createElement('td');
+                tdCode.textContent = clsCode;
+                tr.appendChild(tdCode);
+                const tdSubAt = doc.createElement('td');
+                tdSubAt.textContent = subAt;
+                tr.appendChild(tdSubAt);
+                const tdPI = doc.createElement('td');
+                tdPI.textContent = pI;
+                tr.appendChild(tdPI);
+                const tdPII = doc.createElement('td');
+                tdPII.textContent = pII;
+                tr.appendChild(tdPII);
+                const tdPIII = doc.createElement('td');
+                tdPIII.textContent = pIII;
+                tr.appendChild(tdPIII);
+                const tdTotal = doc.createElement('td');
+                const strongTotal = doc.createElement('strong');
+                strongTotal.textContent = total;
+                tdTotal.appendChild(strongTotal);
+                tr.appendChild(tdTotal);
+                tbody.appendChild(tr);
+            }
+        }
         async function loadResults() {
             clearChildren(tbody);
             const loadingTr = doc.createElement('tr');
@@ -1582,67 +1632,70 @@ export function mountTeacherPortal(root, deps) {
                 return;
             }
             try {
-                const res = await deps.client.listResults(tok, chosenClassId);
-                if (res.ok) {
-                    currentResultsData = res.value || [];
-                    clearChildren(tbody);
-                    if (currentResultsData.length === 0) {
+                if (chosenClassId) {
+                    const res = await deps.client.listResults(tok, chosenClassId);
+                    if (res.ok) {
+                        currentResultsData = res.value || [];
+                        renderTableRows(currentResultsData);
+                    }
+                    else {
+                        clearChildren(tbody);
                         const tr = doc.createElement('tr');
                         const td = doc.createElement('td');
                         td.setAttribute('colspan', '7');
-                        td.style.textAlign = 'center';
-                        td.style.color = 'var(--c-text-2)';
-                        td.textContent = 'Chưa có bài nộp nào.';
+                        td.className = 'teacher-error-text';
+                        td.textContent = toVietnameseErrorMessage(res.code, res.message);
                         tr.appendChild(td);
-                        tbody.appendChild(tr);
-                        return;
-                    }
-                    for (const item of currentResultsData) {
-                        const tr = doc.createElement('tr');
-                        const name = item.candidateName || item.candidate_display || 'Học sinh';
-                        const clsCode = item.class_code || '';
-                        const subAt = formatViDateTime(item.submitted_at);
-                        const pI = item.sections?.I ? `${item.sections.I.score}/${item.sections.I.max}` : '-';
-                        const pII = item.sections?.II ? `${item.sections.II.score}/${item.sections.II.max}` : '-';
-                        const pIII = item.sections?.III ? `${item.sections.III.score}/${item.sections.III.max}` : '-';
-                        const total = item.total ? `${item.total} / ${item.maxTotal || 10}` : '-';
-                        const tdName = doc.createElement('td');
-                        const strongName = doc.createElement('strong');
-                        strongName.textContent = name;
-                        tdName.appendChild(strongName);
-                        tr.appendChild(tdName);
-                        const tdCode = doc.createElement('td');
-                        tdCode.textContent = clsCode;
-                        tr.appendChild(tdCode);
-                        const tdSubAt = doc.createElement('td');
-                        tdSubAt.textContent = subAt;
-                        tr.appendChild(tdSubAt);
-                        const tdPI = doc.createElement('td');
-                        tdPI.textContent = pI;
-                        tr.appendChild(tdPI);
-                        const tdPII = doc.createElement('td');
-                        tdPII.textContent = pII;
-                        tr.appendChild(tdPII);
-                        const tdPIII = doc.createElement('td');
-                        tdPIII.textContent = pIII;
-                        tr.appendChild(tdPIII);
-                        const tdTotal = doc.createElement('td');
-                        const strongTotal = doc.createElement('strong');
-                        strongTotal.textContent = total;
-                        tdTotal.appendChild(strongTotal);
-                        tr.appendChild(tdTotal);
                         tbody.appendChild(tr);
                     }
                 }
                 else {
-                    clearChildren(tbody);
-                    const tr = doc.createElement('tr');
-                    const td = doc.createElement('td');
-                    td.setAttribute('colspan', '7');
-                    td.className = 'teacher-error-text';
-                    td.textContent = toVietnameseErrorMessage(res.code, res.message);
-                    tr.appendChild(td);
-                    tbody.appendChild(tr);
+                    // If no specific class selected (-- Tất cả lớp --): aggregate across all teacher's classes
+                    let classes = cachedMyClasses;
+                    if ((!classes || classes.length === 0) && deps.client.listMyClasses) {
+                        try {
+                            const cRes = await deps.client.listMyClasses(tok);
+                            if (cRes.ok && Array.isArray(cRes.value)) {
+                                classes = cRes.value;
+                                cachedMyClasses = classes;
+                                syncClassSelectOptions();
+                            }
+                        }
+                        catch { }
+                    }
+                    if (!classes || classes.length === 0) {
+                        // Check if backend supports listResults directly without classId (mock client or direct)
+                        try {
+                            const directRes = await deps.client.listResults(tok, '');
+                            if (directRes.ok && Array.isArray(directRes.value) && directRes.value.length > 0) {
+                                currentResultsData = directRes.value;
+                                renderTableRows(currentResultsData);
+                                return;
+                            }
+                        }
+                        catch { }
+                        currentResultsData = [];
+                        renderTableRows([]);
+                        return;
+                    }
+                    const fetchPromises = classes.map(async (c) => {
+                        try {
+                            const res = await deps.client.listResults(tok, c.classId);
+                            return res.ok && Array.isArray(res.value) ? res.value : [];
+                        }
+                        catch {
+                            return [];
+                        }
+                    });
+                    const perClass = await Promise.all(fetchPromises);
+                    const allResults = perClass.flat();
+                    allResults.sort((a, b) => {
+                        const tA = Date.parse(a.submitted_at || '') || 0;
+                        const tB = Date.parse(b.submitted_at || '') || 0;
+                        return tB - tA;
+                    });
+                    currentResultsData = allResults;
+                    renderTableRows(currentResultsData);
                 }
             }
             catch (err) {
@@ -1656,27 +1709,36 @@ export function mountTeacherPortal(root, deps) {
                 tbody.appendChild(tr);
             }
         }
-        // Populate class options
-        clearChildren(clsSelect);
-        const defaultOpt = doc.createElement('option');
-        defaultOpt.value = '';
-        defaultOpt.textContent = '-- Tất cả lớp --';
-        clsSelect.appendChild(defaultOpt);
-        if (deps.client.listMyClasses) {
-            try {
-                const tok = getStoredTeacherToken() || '';
-                const res = await deps.client.listMyClasses(tok);
-                if (res.ok) {
-                    cachedMyClasses = res.value;
-                    for (const c of cachedMyClasses) {
-                        const opt = doc.createElement('option');
-                        opt.value = c.classId;
-                        opt.textContent = `${c.name} (${c.code})`;
-                        clsSelect.appendChild(opt);
+        function syncClassSelectOptions() {
+            const curVal = clsSelect.value;
+            clearChildren(clsSelect);
+            const defaultOpt = doc.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = '-- Tất cả lớp --';
+            clsSelect.appendChild(defaultOpt);
+            for (const c of cachedMyClasses) {
+                const opt = doc.createElement('option');
+                opt.value = c.classId;
+                opt.textContent = `${c.name} (${c.code})`;
+                if (c.classId === curVal)
+                    opt.selected = true;
+                clsSelect.appendChild(opt);
+            }
+        }
+        syncClassSelectOptions();
+        const listMyClassesFn = deps.client.listMyClasses;
+        if (listMyClassesFn) {
+            void (async () => {
+                try {
+                    const tok = getStoredTeacherToken() || '';
+                    const res = await listMyClassesFn(tok);
+                    if (res.ok && Array.isArray(res.value)) {
+                        cachedMyClasses = res.value;
+                        syncClassSelectOptions();
                     }
                 }
-            }
-            catch { }
+                catch { }
+            })();
         }
         clsSelect.addEventListener('change', () => {
             void loadResults();

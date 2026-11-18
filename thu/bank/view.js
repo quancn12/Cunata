@@ -597,7 +597,7 @@ export function mount(root, model, actions = {}) {
                 else if (blk.type === 'math') {
                     blkDiv.textContent = `[Công thức ${blk.format}]: ${blk.source}`;
                     blkDiv.style.fontFamily = 'monospace';
-                    blkDiv.style.backgroundColor = '#f1f5f9';
+                    blkDiv.style.backgroundColor = 'var(--c-surface-2)';
                     blkDiv.style.padding = '4px 8px';
                     blkDiv.style.borderRadius = '4px';
                 }
@@ -757,7 +757,7 @@ export function mount(root, model, actions = {}) {
         mBody.appendChild(msg);
         const note = doc.createElement('p');
         note.style.fontSize = '0.8125rem';
-        note.style.color = '#b91c1c';
+        note.style.color = 'var(--c-danger)';
         note.textContent = 'Hành động này không thể hoàn tác. Các lượt thi cũ hoặc đề đã xuất bản sẽ không bị ảnh hưởng.';
         mBody.appendChild(note);
         dialog.appendChild(mBody);
@@ -927,7 +927,7 @@ export function mount(root, model, actions = {}) {
         const deleteBtn = doc.createElement('button');
         deleteBtn.type = 'button';
         deleteBtn.className = 'cunata-btn cunata-btn-sm cunata-delete-btn';
-        deleteBtn.style.color = '#dc2626';
+        deleteBtn.style.color = 'var(--c-danger)';
         deleteBtn.textContent = '🗑️ Xóa';
         deleteBtn.setAttribute('aria-label', `Xóa câu hỏi ${entry.questionId}`);
         attachEvent(deleteBtn, 'click', () => openConfirmDeleteModal(entry));

@@ -228,4 +228,19 @@ describe('WEB-W2-UI-POLISH: Responsive Viewports, Touch Targets & Layout Structu
       assert.strictEqual(isReducedMotionPreferred(standardWin), false);
     });
   });
+
+  describe('components.css: Responsive Exam Layout & Palette Contract', () => {
+    it('enforces mobile ordering and static palette positioning under 1024px', async () => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const cssPath = path.resolve(process.cwd(), 'src/ui/components.css');
+      const content = fs.readFileSync(cssPath, 'utf8');
+
+      assert.ok(content.includes('#examWrapper'), 'components.css must define rules for #examWrapper');
+      assert.ok(content.includes('order: 1'), 'examPane must be order: 1 on mobile');
+      assert.ok(content.includes('order: 2'), 'palette-card must be order: 2 on mobile');
+      assert.ok(content.includes('position: static'), 'palette-card must be static on mobile so it never covers questions');
+      assert.ok(content.includes('white-space: nowrap'), 'action buttons must have white-space: nowrap');
+    });
+  });
 });

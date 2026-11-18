@@ -734,6 +734,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
   });
 
   async function enterExamIfRoleChooser(c: CdpClient) {
+    await c.waitForSelector('#roleChooser, #startScreen, #studentNameGate, .question-card', 10000);
     const isChooser = await c.evaluate<boolean>(`Boolean(document.getElementById('roleChooser') && !document.getElementById('roleChooser').hidden && document.getElementById('roleChooser').style.display !== 'none')`);
     if (isChooser) {
       await c.click('#btnRoleStudent');
@@ -752,8 +753,12 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
     } else {
       const isStartScreen = await c.evaluate<boolean>(`Boolean(document.getElementById('startScreen') && document.getElementById('startScreen').style.display !== 'none')`);
       if (isStartScreen) {
-        await c.waitForSelector('#startScreen .exam-list-item', 10000);
-        await c.click('#startScreen .exam-list-item');
+        const examParam = await c.evaluate<string | null>(`new URLSearchParams(window.location.search).get('exam')`);
+        const itemSelector = examParam
+          ? `#startScreen .exam-list-item[data-exam-id="${examParam}"]`
+          : '#startScreen .exam-list-item';
+        await c.waitForSelector(itemSelector, 10000);
+        await c.click(itemSelector);
         await c.waitForSelector('#btnStartExam:not([disabled])', 8000);
         await c.click('#btnStartExam');
       }
@@ -1160,7 +1165,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
 
       // Tab B: Open second tab in the SAME browser instance with a different exam
       clientB = await clientA.createTab();
-      await clientB.navigate(`${origin}/Cunata/?exam=ly12-hang-tuan-de-10`);
+      await clientB.navigate(`${origin}/Cunata/?exam=ly12-hang-tuan-de-11`);
       await enterExamIfRoleChooser(clientB);
       await clientB.waitForSelector('.question-card', 10000);
 
@@ -1448,5 +1453,219 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
     );
     assert.ok(resp, 'Must find matching question response');
     assert.equal(resp.selectedOptionId, 'opt-a');
+  });
+
+  it('CK37-F01 regression: past due assignment A does not corrupt draft creation in storage for practice exam B in bootstrap', async () => {
+    const mockStorage = createMockLocalStorage();
+    (globalThis as any).localStorage = mockStorage;
+    (globalThis as any).window = createMockWindow();
+    (globalThis as any).FileReader = MockFileReader;
+
+    const adapter = new MemoryTransactionAdapter();
+    const storageRes = await openStorage({ adapter, approveD03: true });
+    assert.ok(storageRes.ok);
+    const storage = storageRes.value;
+
+    let currentTime = 1700000000000;
+    const now = () => currentTime;
+
+    const openTime = new Date(currentTime - 60000).toISOString();
+    const dueTime = new Date(currentTime + 12000).toISOString();
+
+    const examA: WebExam = {
+      ...SAMPLE_EXAM,
+      examId: 'exam-ck37-A',
+      examVersionId: 'v1.0.0',
+      title: 'Đề bài giao A',
+      classCode: '12A1',
+      assignmentId: 'asg-A',
+      openAt: openTime,
+      dueAt: dueTime,
+    } as any;
+
+    const examB: WebExam = {
+      ...SAMPLE_EXAM,
+      examId: 'exam-ck37-B',
+      examVersionId: 'v1.0.0',
+      title: 'Đề luyện tập B',
+      questions: [
+        {
+          kind: 'III',
+          questionVersionId: 'q-b3',
+          title: 'Câu 1',
+          content: 'Nhập đáp án',
+          answerKey: '1,5',
+        },
+      ],
+    };
+
+    // 1. Mount UI and bootstrap directly with assigned Exam A
+    const doc = createMockDocument();
+    (doc as any).createElementNS = (_ns: string, tag: string) => doc.createElement(tag);
+    (doc as any).getElementById = (id: string) => (doc as any).querySelector ? (doc as any).querySelector('#' + id) : null;
+    const root = doc.createElement('div') as unknown as HTMLElement;
+    doc.body.appendChild(root as unknown as MockElement);
+
+    const cleanup = await bootstrap(root, {
+      storageAdapter: adapter,
+      initialExam: examA,
+      now,
+    });
+
+    try {
+      // 2. Answer question 1 and submit Exam A through real UI controls
+      const optCard = root.querySelector('[data-qid="q01"][data-option-id="opt-1a"]');
+      assert.ok(optCard, 'Exam A option opt-1a must exist in DOM');
+      (optCard as any).dispatchEvent(new MockEvent('click'));
+
+      const btnSubmit = root.querySelector('#btnSubmit');
+      assert.ok(btnSubmit, '#btnSubmit must exist');
+      (btnSubmit as any).dispatchEvent(new MockEvent('click'));
+
+      const btnConfirmSubmit = root.querySelector('#btnConfirmSubmit');
+      assert.ok(btnConfirmSubmit, '#btnConfirmSubmit must exist');
+      (btnConfirmSubmit as any).dispatchEvent(new MockEvent('click'));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // Exam A is finalized; finalRecord is present in closure
+      const listA = await storage.listAttempts(examA.examId, examA.examVersionId);
+      assert.ok(listA.ok);
+      const finalsA = listA.value.filter((a) => a.phase === 'final');
+      assert.equal(finalsA.length, 1, 'Exam A must be finalized in storage');
+
+      // 3. Advance clock past dueAt of assignment A (+ 15 seconds)
+      currentTime += 15000;
+
+      // 4. Switch to practice exam B in the same bootstrap session via #examFileInput
+      const examFileInput = root.querySelector('#examFileInput') as any;
+      assert.ok(examFileInput, '#examFileInput must exist in DOM');
+
+      const mockFile = {
+        name: 'practice-b.json',
+        text: async () => JSON.stringify(examB),
+      };
+      examFileInput.files = [mockFile];
+      examFileInput.dispatchEvent(new MockEvent('change', { target: examFileInput }));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // 5. Input '1,5' into Exam B short answer field
+      const inputIII = root.querySelector('.short-answer-input') as any;
+      assert.ok(inputIII, 'Exam B Part III input must exist in DOM');
+      inputIII.value = '1,5';
+      inputIII.dispatchEvent(new MockEvent('input', { target: inputIII }));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // 6. Check IndexedDB attempts store for exam B draft created before reload
+      const listRes = await storage.listAttempts(examB.examId, examB.examVersionId);
+      assert.ok(listRes.ok);
+      const draftsB = listRes.value.filter((a) => a.phase === 'draft');
+      assert.equal(draftsB.length, 1, 'Durable draft for Exam B must be created in storage before reload');
+      const draft0 = draftsB[0];
+      assert.ok(draft0);
+      assert.equal(draft0.phase, 'draft');
+      assert.equal(draft0.dueAt, undefined, 'Exam B draft must not inherit Exam A dueAt');
+      assert.equal(draft0.assignmentId, undefined, 'Exam B draft must not inherit Exam A assignmentId');
+      const resp = draft0.responses.responses[0] as any;
+      assert.ok(resp, 'Exam B draft must have responses');
+      assert.equal(resp.raw, '1,5', 'Exam B draft must store raw input 1,5');
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('CK38-F01 regression: Apps Script 8-hour session lifetime, cache-miss fallback from PropertiesService, and credential revocation', async () => {
+    const { makeGas } = await (Function('return import("../claude-check/gas-fake.mjs")')() as Promise<any>);
+    const g = makeGas();
+
+    // 1. Admin login and verify advertised 8-hour expiration
+    const adminLogin = g.post({ action: 'adminLogin', password: 'Admin-Cunata-2026' });
+    assert.equal(adminLogin.success, true, 'Admin login must succeed');
+    const advertisedMs = Date.parse(adminLogin.expiresAt) - Date.now();
+    assert.ok(Math.abs(advertisedMs - 8 * 3600 * 1000) < 5000, 'Session must advertise 8 hours lifetime');
+
+    // 2. Create teacher and teacher login
+    g.post({
+      action: 'adminCreateTeacher',
+      token: adminLogin.token,
+      name: 'Cô Lan',
+      username: 'colan',
+      password: 'MatKhau-Lan-01',
+    });
+    const teacherLogin = g.post({
+      action: 'teacherLogin',
+      username: 'colan',
+      password: 'MatKhau-Lan-01',
+    });
+    assert.equal(teacherLogin.success, true, 'Teacher login must succeed');
+
+    // 3. Time probe: 0h, 5.999h, 6h + 1s (cache miss), 7.99h (near expiry), 8h + 1s (expired)
+    const realNow = Date.now;
+    try {
+      // 0h: both valid
+      Date.now = () => realNow();
+      assert.equal(g.post({ action: 'adminStats', token: adminLogin.token }).success, true);
+      assert.equal(g.post({ action: 'listMyClasses', token: teacherLogin.token }).success, true);
+
+      // 5.999h: both valid
+      Date.now = () => realNow() + 5.999 * 3600 * 1000;
+      assert.equal(g.post({ action: 'adminStats', token: adminLogin.token }).success, true);
+      assert.equal(g.post({ action: 'listMyClasses', token: teacherLogin.token }).success, true);
+
+      // 6h + 1s: beyond CacheService TTL (21600s), restored from PropertiesService
+      Date.now = () => realNow() + (6 * 3600 + 1) * 1000;
+      assert.equal(g.post({ action: 'adminStats', token: adminLogin.token }).success, true, 'Admin session must remain valid after 6h via durable session record');
+      assert.equal(g.post({ action: 'listMyClasses', token: teacherLogin.token }).success, true, 'Teacher session must remain valid after 6h via durable session record');
+
+      // 7h 59m: both valid before 8h
+      Date.now = () => realNow() + (7 * 3600 + 59 * 60) * 1000;
+      assert.equal(g.post({ action: 'adminStats', token: adminLogin.token }).success, true);
+      assert.equal(g.post({ action: 'listMyClasses', token: teacherLogin.token }).success, true);
+
+      // 8h + 1s: rejected as UNAUTHORIZED at expiresAt
+      Date.now = () => realNow() + (8 * 3600 + 1) * 1000;
+      assert.equal(g.post({ action: 'adminStats', token: adminLogin.token }).error, 'UNAUTHORIZED', 'Admin session must be rejected at expiresAt');
+      assert.equal(g.post({ action: 'listMyClasses', token: teacherLogin.token }).error, 'UNAUTHORIZED', 'Teacher session must be rejected at expiresAt');
+    } finally {
+      Date.now = realNow;
+    }
+
+    // 4. Cache wipe before expiresAt restores valid session from PropertiesService
+    const freshTeacherLogin = g.post({
+      action: 'teacherLogin',
+      username: 'colan',
+      password: 'MatKhau-Lan-01',
+    });
+    assert.equal(freshTeacherLogin.success, true);
+    g.cache.clear();
+    assert.equal(g.cache.size, 0);
+    const teacherClasses = g.post({ action: 'listMyClasses', token: freshTeacherLogin.token });
+    assert.equal(teacherClasses.success, true, 'Wiping cache must restore valid session from PropertiesService');
+    assert.ok(g.cache.has('session:' + freshTeacherLogin.token), 'Cache must be repopulated after restore');
+
+    // 5. Credential changes revoke active session immediately
+    // 5a. Password reset
+    g.post({
+      action: 'adminResetPassword',
+      token: adminLogin.token,
+      username: 'colan',
+      password: 'MatKhau-Moi-Lan-02',
+    });
+    assert.equal(g.post({ action: 'listMyClasses', token: freshTeacherLogin.token }).error, 'UNAUTHORIZED', 'Password reset must revoke session token');
+
+    // 5b. Account lock
+    const login3 = g.post({
+      action: 'teacherLogin',
+      username: 'colan',
+      password: 'MatKhau-Moi-Lan-02',
+    });
+    assert.equal(login3.success, true);
+    g.post({ action: 'adminSetTeacherActive', token: adminLogin.token, username: 'colan', active: false });
+    assert.equal(g.post({ action: 'listMyClasses', token: login3.token }).error, 'UNAUTHORIZED', 'Account lock must revoke session token');
+
+    // 5c. Admin password change
+    const adminLogin2 = g.post({ action: 'adminLogin', password: 'Admin-Cunata-2026' });
+    assert.equal(adminLogin2.success, true);
+    g.props.set('ADMIN_PASSWORD', 'New-Admin-Password-2026');
+    assert.equal(g.post({ action: 'adminStats', token: adminLogin2.token }).error, 'UNAUTHORIZED', 'Admin password change must revoke admin session token');
   });
 });

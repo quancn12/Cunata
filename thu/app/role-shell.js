@@ -17,7 +17,8 @@ export function mountRoleShell(root, router, onChangeName) {
     const chooser = doc.createElement('main');
     chooser.id = 'roleChooser';
     chooser.className = 'ui-page ui-stack role-chooser';
-    chooser.hidden = router.getState().route !== 'chooser';
+    chooser.hidden = true;
+    host.hidden = true;
     const title = doc.createElement('h1');
     title.textContent = 'Chào mừng đến với Cunata';
     const intro = doc.createElement('p');

@@ -117,11 +117,12 @@ export async function enterFromStart(page, { name = START_NAME, url, id } = {}) 
     'bấm #btnStartExam: vào màn làm bài có câu hỏi', 10000);
 }
 
-export async function openApp(ctx, server, target) {
+/** Mở ứng dụng và vào làm bài. `name`: tên thí sinh nhập ở cổng tên (bản build, WEB-contract 19.1). */
+export async function openApp(ctx, server, target, { name = START_NAME } = {}) {
   const page = await ctx.newPage();
   await page.goto(server.url + target.path);
   await waitBoot(page);
-  await enterFromStart(page);
+  await enterFromStart(page, { name });
   return page;
 }
 
@@ -154,7 +155,18 @@ export async function typeShort(page, qid, text) {
 }
 export const shortValue = (page, qid) => page.eval((s) => document.querySelector(s)?.value ?? null, shortSel(qid));
 
+/**
+ * Đặt tên thí sinh trên màn làm bài.
+ * Bản build (WEB-contract 19.1): #candidateName CHỈ ĐỌC trong lúc thi; tên phải nhập ở cổng tên trước khi vào bài
+ * (openApp(..., { name }) hoặc enterFromStart(page, { name })). Khi đó hàm này chỉ xác nhận tên đã đúng, không gõ vào ô.
+ * Bản gốc index.html (giữ nguyên theo mục 18): ô tên còn sửa được nên gõ trực tiếp.
+ */
 export async function setName(page, name) {
+  const f = await page.eval(() => { const e = document.getElementById('candidateName'); return { ro: !!e && (e.readOnly || e.hasAttribute('readonly') || e.tagName !== 'INPUT'), value: e?.value ?? e?.textContent ?? '' }; });
+  if (f.ro) {
+    if (f.value.trim() !== name.trim()) throw new Error(`#candidateName chỉ đọc trong lúc thi (WEB-contract 19.1) nhưng đang là "${f.value}", cần "${name}": tên phải nhập ở cổng tên — mở bài bằng openApp(..., { name }) / enterFromStart(page, { name }), không mở khóa ô tên`);
+    return;
+  }
   await page.eval(() => { const e = document.getElementById('candidateName'); e.focus(); e.select(); });
   await page.send('Input.insertText', { text: name });
   await page.eval(() => { const e = document.getElementById('candidateName'); e.dispatchEvent(new Event('change', { bubbles: true })); e.blur(); });

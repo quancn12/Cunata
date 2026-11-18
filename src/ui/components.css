@@ -134,4 +134,47 @@ textarea.ui-control { min-height: calc(var(--target) * 3); resize: vertical; }
 .quick-key-btn { min-height: var(--target); min-width: var(--target); }
 .option-card { min-height: var(--target); }
 
+/* Responsive Exam Layout & Palette (WEB-contract §19 / DESIGN.md) */
+#examWrapper, .main-wrapper {
+  box-sizing: border-box;
+}
+
+@media (max-width: 1023px) {
+  #examWrapper, .main-wrapper {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  #examWrapper #examPane, .main-wrapper .exam-pane {
+    order: 1 !important;
+    min-width: 0;
+  }
+  #examWrapper .palette-card, .main-wrapper .palette-card {
+    order: 2 !important;
+    position: static !important;
+    top: auto !important;
+    min-width: 0;
+  }
+  .header-actions {
+    gap: var(--sp-2);
+    flex-wrap: nowrap;
+  }
+  #btnOpenExamList, #btnSubmit {
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 1024px) {
+  #examWrapper, .main-wrapper {
+    grid-template-columns: minmax(0, 1fr) 280px !important;
+  }
+  #examWrapper #examPane, .main-wrapper .exam-pane {
+    order: 1 !important;
+  }
+  #examWrapper .palette-card, .main-wrapper .palette-card {
+    order: 2 !important;
+    position: sticky !important;
+    top: 5rem !important;
+  }
+}
+
+
 

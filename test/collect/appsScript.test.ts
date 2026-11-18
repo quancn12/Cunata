@@ -427,14 +427,15 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
       assert.equal(err.message, 'Không tìm thấy đề');
     });
 
-    it('getExam falls back to public/exams/index.json when Apps Script returns NOT_FOUND', async () => {
-      const dummyExam = createDummyExam();
+    it('getExam preserves server error and does NOT fall back to static exam manifest (CK32-F03 regression)', async () => {
+      let staticManifestRequested = false;
       const fakeFetch: typeof fetch = async (url) => {
         const urlStr = String(url);
         if (urlStr.includes('action=getExam')) {
-          return new Response(JSON.stringify({ success: false, error: 'NOT_FOUND', message: 'Không tìm thấy đề' }), { status: 200 });
+          return new Response(JSON.stringify({ success: false, error: 'INTERNAL_ERROR', message: 'temporary outage' }), { status: 200 });
         }
-        if (urlStr === 'public/exams/index.json') {
+        if (urlStr.includes('public/exams/index.json')) {
+          staticManifestRequested = true;
           return new Response(JSON.stringify({
             version: 1,
             exams: [
@@ -442,16 +443,17 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
             ],
           }), { status: 200 });
         }
-        if (urlStr === 'public/exams/shared-static.json') {
-          return new Response(JSON.stringify(dummyExam), { status: 200 });
-        }
         return new Response('Not found', { status: 404 });
       };
 
       const client = createAppsScriptClient(BASE_URL, fakeFetch);
       const res = await client.getExam('shared-static-exam-01');
-      const val = assertAsOk(res);
-      assert.deepEqual(val, dummyExam);
+      assert.equal(res.ok, false);
+      if (!res.ok) {
+        assert.equal(res.code, 'INTERNAL_ERROR');
+        assert.equal(res.message, 'temporary outage');
+      }
+      assert.equal(staticManifestRequested, false, 'client.getExam must not silently fetch public/exams/index.json on server error');
     });
 
     it('teacherLogin performs POST with text/plain, password in body, never in URL', async () => {
@@ -865,6 +867,59 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
       const errRes = await clientForbidden.listResults('tok', 'cls-other');
       const err = assertAsErr(errRes, 'FORBIDDEN');
       assert.match(err.message, /Lớp thuộc giáo viên khác|không có quyền/i);
+    });
+
+    it('listResults queries all teacher classes and combines results when classId is empty', async () => {
+      const calls: any[] = [];
+      const multiClassFetch: typeof fetch = async (_url, init) => {
+        const body = JSON.parse(String(init?.body || '{}'));
+        calls.push(body);
+        if (body.action === 'listMyClasses') {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              classes: [
+                { classId: 'cls-1', code: 'ABCDEF', name: 'Lớp 12A1', createdAt: '2026-11-17T00:00:00Z', studentCount: 1 },
+                { classId: 'cls-2', code: 'XYZ123', name: 'Lớp 12A2', createdAt: '2026-11-17T00:00:00Z', studentCount: 1 },
+              ],
+            }),
+            { status: 200 }
+          );
+        }
+        if (body.action === 'listResults' && body.classId === 'cls-1') {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              results: [
+                { attempt_id: 'att-1', candidate_display: 'Học sinh 1', total: '10/10' },
+              ],
+            }),
+            { status: 200 }
+          );
+        }
+        if (body.action === 'listResults' && body.classId === 'cls-2') {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              results: [
+                { attempt_id: 'att-2', candidate_display: 'Học sinh 2', total: '8/10' },
+              ],
+            }),
+            { status: 200 }
+          );
+        }
+        return new Response(JSON.stringify({ success: false, error: 'BAD_REQUEST' }), { status: 400 });
+      };
+
+      const client = createAppsScriptClient(BASE_URL, multiClassFetch);
+      // Call with empty classId
+      const res = await client.listResults('tok_test', '');
+      const val = assertAsOk(res);
+      assert.equal(val.length, 2);
+      assert.equal(val[0]?.candidate_display, 'Học sinh 1');
+      assert.equal(val[1]?.candidate_display, 'Học sinh 2');
+      assert.equal(calls.length, 3);
+      assert.equal(calls[0].action, 'listMyClasses');
     });
 
     it('adminLogin sends POST and stores admin token in sessionStorage', async () => {

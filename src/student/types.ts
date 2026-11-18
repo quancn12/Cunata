@@ -98,11 +98,27 @@ export interface StudentControllerDeps {
   readonly id: () => string;
   readonly attemptId?: string;
   readonly bypassAdvisoryLimit?: boolean;
+  readonly classCode?: string;
+  readonly assignmentId?: string;
+  readonly class_code?: string;
+  readonly assignment_id?: string;
+  readonly openAt?: string;
+  readonly dueAt?: string;
+  readonly open_at?: string;
+  readonly due_at?: string;
 }
 
 export interface StudentStartOptions {
   readonly attemptId?: string;
   readonly bypassAdvisoryLimit?: boolean;
+  readonly classCode?: string;
+  readonly assignmentId?: string;
+  readonly class_code?: string;
+  readonly assignment_id?: string;
+  readonly openAt?: string;
+  readonly dueAt?: string;
+  readonly open_at?: string;
+  readonly due_at?: string;
 }
 
 export interface StudentController {

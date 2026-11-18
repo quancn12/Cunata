@@ -178,6 +178,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
+  white-space: nowrap;
 }
 
 .btn-submit:hover:not(:disabled) {
@@ -250,6 +251,13 @@ body {
 @media (max-width: 860px) {
   .main-wrapper {
     grid-template-columns: 1fr;
+  }
+  #examPane {
+    order: 1;
+  }
+  .palette-card {
+    order: 2;
+    position: static;
   }
 }
 
@@ -768,6 +776,7 @@ body {
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .btn-secondary:hover {

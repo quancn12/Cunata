@@ -1100,13 +1100,29 @@ function teacherRow(username) {
 function newSession(role, username, name, credential) {
     var token = randomToken();
     var expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();
-    CacheService.getScriptCache().put('session:' + token, JSON.stringify({ role: role, username: username,
-        name: name, credential: credential, expiresAt: expiresAt }), 21600); // CacheService maximum; eight-hour retention needs owner decision.
+    var payload = JSON.stringify({ role: role, username: username,
+        name: name, credential: credential, expiresAt: expiresAt });
+    CacheService.getScriptCache().put('session:' + token, payload, 21600);
+    PropertiesService.getScriptProperties().setProperty('session:' + token, payload);
     return { success: true, token: token, name: name, expiresAt: expiresAt };
 }
 function sessionPrincipal(token, role) {
     if (typeof token !== 'string' || !/^[a-f0-9]{64}$/i.test(token)) return null;
     var raw = CacheService.getScriptCache().get('session:' + token);
+    if (!raw) {
+        raw = PropertiesService.getScriptProperties().getProperty('session:' + token);
+        if (raw) {
+            try {
+                var cached = JSON.parse(raw);
+                var ttlSec = Math.floor((Date.parse(cached.expiresAt) - Date.now()) / 1000);
+                if (ttlSec > 0) {
+                    CacheService.getScriptCache().put('session:' + token, raw, Math.min(21600, ttlSec));
+                }
+            } catch (err) {
+                raw = null;
+            }
+        }
+    }
     if (!raw) return null;
     var session = JSON.parse(raw);
     if (session.role !== role || Date.parse(session.expiresAt) <= Date.now()) return null;

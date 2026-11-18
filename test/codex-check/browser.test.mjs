@@ -1,7 +1,7 @@
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { launchBrowser, startServer, sleep } from '../claude-check/harness.mjs';
-import { TARGETS, loadExam, makeExam, setName, waitSaved, typeShort, qIII } from '../claude-check/app.mjs';
+import { TARGETS, loadExam, makeExam, setName, waitSaved, typeShort, qIII, enterFromStart } from '../claude-check/app.mjs';
 import { open, field, jsonFile, answer, fullResponses, download, oracleCases, webFixture, assertScores, docxFile, csvRows } from './support.mjs';
 
 let browser;
@@ -202,6 +202,7 @@ for (const target of TARGETS) describe(`${target.name} — supplemental real-bro
 
   for (const prefix of ['=', '+', '-', '@']) run(`[collect] JSON raw + CSV formula protection for nickname ${prefix}`, async (ctx, page) => {
     const name = `${prefix}SUM(1,1)`;
+    await enterFromStart(page, { name }); // WEB-contract 19.1: tên nhập ở cổng tên, ô tên chỉ đọc trong bài
     await loadExam(page, makeExam({ id: `codex-collect-${prefix.charCodeAt(0)}`, part1: [], part2: [], part3: ['-0,5'] }));
     await setName(page, name); await typeShort(page, qIII(1), '-0,5'); await submit(page);
     const buttons = await page.eval(() => [...document.querySelectorAll('button,a[download]')].filter(e => e.getClientRects().length).map(e => ({ id: e.id, text: e.textContent })));
@@ -217,6 +218,7 @@ for (const target of TARGETS) describe(`${target.name} — supplemental real-bro
     assert.ok(!cells.some(c => /^[\s\u0000-\u001f]*[=+@-]/u.test(c)), 'no executable spreadsheet cell prefix');
   });
   run('[collect][storage] no endpoint: honest local status and zero collector requests, including reload', async (_ctx, page) => {
+    await enterFromStart(page, { name: 'Codex trạng thái cục bộ' });
     await loadExam(page, makeExam({ id: 'codex-no-endpoint', part1: ['a'], part2: [], part3: [] }));
     await setName(page, 'Codex trạng thái cục bộ'); await waitSaved(page); await submit(page);
     const check = async () => {

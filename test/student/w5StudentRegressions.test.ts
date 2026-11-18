@@ -430,4 +430,336 @@ describe('WEB-FINAL-STUDENT-STORAGE: Student Regressions', () => {
       assert.equal(dto.sections.III.max, '1');
     }
   });
+
+  it('verifies StudentController handles oracle golden-39-0-3 (39 Part I, 0 Part II, 3 Part III) and one-III scoring', async () => {
+    const adapter = new MemoryTransactionAdapter();
+    const storage = createStoragePort(adapter);
+    let currentTime = 1000;
+    const now = () => currentTime;
+    let idCounter = 1;
+    const id = () => `att-golden-3903-${idCounter++}`;
+
+    const exam3903: WebExam = {
+      schemaVersion: 'web-exam-v1',
+      examId: 'exam:golden-39-0-3',
+      examVersionId: 'version:golden-39-0-3',
+      ruleSetId: 'custom-v1',
+      inputPolicyId: 'sa-charset-v1',
+      title: 'Oracle golden-39-0-3',
+      subject: 'Toán học',
+      grade: 12,
+      settings: {
+        durationMinutes: 50,
+        maxAttempts: null,
+        releasePolicy: 'immediate',
+        shuffleQuestions: false,
+        shuffleOptions: false,
+      },
+      questions: [
+        // 39 questions Part I
+        ...Array.from({ length: 39 }, (_, i) => ({
+          kind: 'I' as const,
+          questionVersionId: `golden-39-0-3:I:${i}`,
+          title: `Câu I.${i + 1}`,
+          options: [0, 1, 2, 3].map((optIdx) => ({
+            optionId: `golden-39-0-3:I:${i}:option:${optIdx}`,
+            text: `Lựa chọn ${optIdx}`,
+          })),
+          correctOptionId: `golden-39-0-3:I:${i}:option:${i % 4}`,
+        })),
+        // 3 questions Part III
+        { kind: 'III' as const, questionVersionId: 'golden-39-0-3:III:0', title: 'Câu III.1', answerKey: '1,5' },
+        { kind: 'III' as const, questionVersionId: 'golden-39-0-3:III:1', title: 'Câu III.2', answerKey: '-0,5' },
+        { kind: 'III' as const, questionVersionId: 'golden-39-0-3:III:2', title: 'Câu III.3', answerKey: '0' },
+      ],
+      assets: [],
+    };
+
+    assert.equal(exam3903.questions.length, 42);
+
+    const startRes = await startAttempt(exam3903, 'Thí sinh golden-39-0-3', { storage, now, id });
+    assert.equal(startRes.ok, true);
+    if (!startRes.ok) return;
+    const ctrl = startRes.value;
+
+    // Answer only golden-39-0-3:III:0 with exact key '1,5'
+    const ansRes = await ctrl.answer({ kind: 'III', questionVersionId: 'golden-39-0-3:III:0', raw: '1,5' });
+    assert.equal(ansRes.ok, true);
+
+    const subRes = await ctrl.submit('manual');
+    assert.equal(subRes.ok, true);
+
+    const dto = ctrl.getSnapshot().scoreDTO as any;
+    // N1=39 (max 39/4 = 9.75), N2=0, N3=3 -> BASE=9.75 < 10 -> POINT_III = (10 - 9.75) / 3 = 1/12
+    // MAX_III = 3 * (1/12) = 1/4
+    // 1 correct in Part III -> score = 1/12
+    assert.equal(dto.sections.I.score, '0');
+    assert.equal(dto.sections.I.max, '39/4');
+    assert.equal(dto.sections.II.score, '0');
+    assert.equal(dto.sections.II.max, '0');
+    assert.equal(dto.sections.III.score, '1/12');
+    assert.equal(dto.sections.III.max, '1/4');
+    assert.equal(dto.total, '1/12');
+    assert.equal(dto.maxTotal, '10');
+  });
+
+  it('FX33-student regression: controller.rename updates candidateName and persists across reload and overdue autosubmit without resetting', async () => {
+    const adapter = new MemoryTransactionAdapter();
+    const storage = createStoragePort(adapter);
+    let currentTime = 1000000;
+    const now = () => currentTime;
+    let nextId = 1;
+    const id = () => `att-fx33-${nextId++}`;
+
+    const exam = createSampleExam('exam-fx33-rename', 'v1.0');
+
+    // 1. Start with initial name 'Học sinh kiểm định'
+    const startRes = await startAttempt(exam, 'Học sinh kiểm định', { storage, now, id });
+    assert.equal(startRes.ok, true);
+    if (!startRes.ok) return;
+    const ctrl1 = startRes.value;
+    assert.equal(ctrl1.getSnapshot().candidateName, 'Học sinh kiểm định');
+
+    // 2. Answer question 1
+    const ansRes = await ctrl1.answer({
+      kind: 'I',
+      questionVersionId: 'q1-v1',
+      selectedOptionId: 'opt-1c',
+    });
+    assert.equal(ansRes.ok, true);
+
+    // 3. Rename to 'Trần Bình 0456'
+    const renameRes = await ctrl1.rename('Trần Bình 0456');
+    assert.equal(renameRes.ok, true);
+    assert.equal(ctrl1.getSnapshot().candidateName, 'Trần Bình 0456');
+
+    // 4. Resume attempt (simulate page reload)
+    const resumeRes = await resumeAttempt(
+      {
+        examId: exam.examId,
+        examVersionId: exam.examVersionId,
+        attemptId: ctrl1.getSnapshot().attemptId,
+      },
+      { storage, now, id }
+    );
+    assert.equal(resumeRes.ok, true);
+    if (!resumeRes.ok) return;
+    const ctrl2 = resumeRes.value;
+    assert.equal(ctrl2.getSnapshot().candidateName, 'Trần Bình 0456', 'reloaded attempt must preserve renamed candidateName');
+    assert.equal(ctrl2.getSnapshot().responses.responses.length, 1);
+
+    // 5. Simulate clock advancing past deadline (e.g. + 3 hours) and resume again (simulating return after deadline)
+    currentTime += 3 * 3600 * 1000;
+    const overdueResumeRes = await resumeAttempt(
+      {
+        examId: exam.examId,
+        examVersionId: exam.examVersionId,
+        attemptId: ctrl1.getSnapshot().attemptId,
+      },
+      { storage, now, id }
+    );
+    assert.equal(overdueResumeRes.ok, true);
+    if (!overdueResumeRes.ok) return;
+    const ctrl3 = overdueResumeRes.value;
+    const finalSnap = ctrl3.getSnapshot();
+    assert.equal(finalSnap.phase, 'final', 'overdue resume must auto-finalize');
+    assert.equal(finalSnap.candidateName, 'Trần Bình 0456', 'auto-finalized attempt must keep renamed candidateName');
+    assert.notEqual(finalSnap.candidateName, 'Học sinh kiểm định');
+    assert.notEqual(finalSnap.candidateName, 'Thí sinh tự do');
+  });
+
+  it('CK36-F01 regression: startAttempt preserves dueAt/openAt in initial record and rejects when past dueAt', async () => {
+    const adapter = new MemoryTransactionAdapter();
+    const storage = createStoragePort(adapter);
+    let currentTime = 1700000000000;
+    const now = () => currentTime;
+    let nextId = 1;
+    const id = () => `att-ck36-${nextId++}`;
+
+    const exam = createSampleExam('exam-ck36-due', 'v1.0');
+    const openTime = new Date(currentTime - 60000).toISOString();
+    const dueTime = new Date(currentTime + 12000).toISOString();
+
+    // 1. Before dueAt: startAttempt succeeds and persists schedule
+    const startRes1 = await startAttempt(
+      exam,
+      'Học sinh An',
+      { storage, now, id },
+      {
+        assignmentId: 'asg-test-1',
+        classCode: 'LOPHOC',
+        openAt: openTime,
+        dueAt: dueTime,
+      }
+    );
+    assert.equal(startRes1.ok, true);
+    if (!startRes1.ok) return;
+    const snap1 = startRes1.value.getSnapshot();
+    assert.equal(snap1.dueAt, dueTime);
+    assert.equal(snap1.openAt, openTime);
+    assert.equal(snap1.assignmentId, 'asg-test-1');
+    assert.equal(snap1.classCode, 'LOPHOC');
+
+    // Submit attempt 1
+    const subRes = await startRes1.value.submit('manual');
+    assert.equal(subRes.ok, true);
+
+    // 2. Advance time past dueAt (+15 seconds)
+    currentTime += 15000;
+
+    // 3. Attempting to start a new attempt past dueAt MUST be rejected
+    const startRes2 = await startAttempt(
+      exam,
+      'Học sinh An',
+      { storage, now, id },
+      {
+        assignmentId: 'asg-test-1',
+        classCode: 'LOPHOC',
+        openAt: openTime,
+        dueAt: dueTime,
+      }
+    );
+    assert.equal(startRes2.ok, false, 'startAttempt past dueAt must be rejected');
+    if (startRes2.ok) return;
+    assert.equal(startRes2.error.code, 'ASSIGNMENT_PAST_DUE');
+
+    // 4. Verify storage contains exactly 1 final and 0 new drafts
+    const listRes = await storage.listAttempts(exam.examId, exam.examVersionId);
+    assert.equal(listRes.ok, true);
+    if (!listRes.ok) return;
+    const finals = listRes.value.filter((a) => a.phase === 'final');
+    const drafts = listRes.value.filter((a) => a.phase === 'draft');
+    assert.equal(finals.length, 1, 'final attempt must be preserved');
+    assert.equal(drafts.length, 0, 'no draft must be created past dueAt');
+
+    // 5. Practice exam without dueAt can still start normally
+    const practiceExam = createSampleExam('exam-practice', 'v1.0');
+    const practiceStart = await startAttempt(practiceExam, 'Học sinh An', { storage, now, id });
+    assert.equal(practiceStart.ok, true, 'practice exam without dueAt starts normally');
+  });
+
+  it('CK37-F01 regression: past due assignment A does not leak schedule or starve durable draft of practice exam B', async () => {
+    const adapter = new MemoryTransactionAdapter();
+    const storage = createStoragePort(adapter);
+    let currentTime = 1700000000000;
+    const now = () => currentTime;
+    let nextId = 1;
+    const id = () => `att-ck37-${nextId++}`;
+
+    const examA = createSampleExam('exam-A-assigned', 'v1.0');
+    const examB = createSampleExam('exam-B-practice', 'v1.0');
+    const examBTeacher = createSampleExam('exam-B-teacher', 'v1.0');
+
+    const openTime = new Date(currentTime - 60000).toISOString();
+    const dueTime = new Date(currentTime + 12000).toISOString();
+
+    // 1. Student takes assigned exam A
+    const startA = await startAttempt(
+      examA,
+      'Học sinh Bình',
+      { storage, now, id },
+      {
+        assignmentId: 'asg-A',
+        classCode: '12A1',
+        openAt: openTime,
+        dueAt: dueTime,
+      }
+    );
+    assert.equal(startA.ok, true);
+    if (!startA.ok) return;
+
+    // Answer and submit Exam A
+    await startA.value.answer({
+      kind: 'I',
+      questionVersionId: 'q1-v1',
+      selectedOptionId: 'opt-1a',
+    });
+    const submitA = await startA.value.submit('manual');
+    assert.equal(submitA.ok, true);
+
+    // 2. Advance time past Exam A dueAt (+15 seconds)
+    currentTime += 15000;
+
+    // 3. Start practice Exam B (has no assignment, no dueAt)
+    // Verify that startAttempt on Exam B does NOT inherit Exam A dueAt or assignmentId
+    const startB = await startAttempt(
+      examB,
+      'Học sinh Bình',
+      { storage, now, id },
+      {} // no assignment metadata
+    );
+    assert.equal(startB.ok, true, 'Exam B must start normally even when Exam A is past due');
+    if (!startB.ok) return;
+
+    const snapB = startB.value.getSnapshot();
+    assert.equal(snapB.dueAt, undefined, 'Exam B must not inherit Exam A dueAt');
+    assert.equal(snapB.openAt, undefined, 'Exam B must not inherit Exam A openAt');
+    assert.equal(snapB.assignmentId, undefined, 'Exam B must not inherit Exam A assignmentId');
+    assert.equal(snapB.classCode, undefined, 'Exam B must not inherit Exam A classCode');
+
+    // Answer Exam B
+    const ansB = await startB.value.answer({
+      kind: 'III',
+      questionVersionId: 'q3-v1',
+      raw: '1,5',
+    });
+    assert.equal(ansB.ok, true, 'Must answer Exam B');
+
+    // 4. Verify durable draft for Exam B exists in storage immediately before any reload
+    const listB = await storage.listAttempts(examB.examId, examB.examVersionId);
+    assert.equal(listB.ok, true);
+    if (!listB.ok) return;
+    const draftsB = listB.value.filter((a) => a.phase === 'draft');
+    assert.equal(draftsB.length, 1, 'Exam B must have exactly 1 durable draft in storage');
+    const draftB0 = draftsB[0];
+    assert.ok(draftB0);
+    assert.equal(draftB0.responses.responses.length, 1, 'Exam B draft must persist response');
+    const respB = draftB0.responses.responses[0] as any;
+    assert.equal(respB.raw, '1,5');
+    assert.equal(draftB0.dueAt, undefined, 'Durable draft must not contain dueAt');
+
+    // 5. Repeat for teacher published Exam B (without assignment)
+    const startBTeacher = await startAttempt(
+      examBTeacher,
+      'Học sinh Bình',
+      { storage, now, id },
+      {}
+    );
+    assert.equal(startBTeacher.ok, true, 'Teacher published Exam B without assignment starts normally');
+    if (!startBTeacher.ok) return;
+    const snapBTeacher = startBTeacher.value.getSnapshot();
+    assert.equal(snapBTeacher.dueAt, undefined);
+    assert.equal(snapBTeacher.assignmentId, undefined);
+
+    // 6. Test when Exam A is NOT yet past due: metadata still must not leak to Exam B
+    currentTime -= 20000; // Back before Exam A dueAt
+    const startB2 = await startAttempt(
+      examB,
+      'Học sinh Bình',
+      { storage, now, id },
+      {}
+    );
+    assert.equal(startB2.ok, true);
+    if (!startB2.ok) return;
+    assert.equal(startB2.value.getSnapshot().dueAt, undefined, 'Active non-expired assignment A must not leak dueAt to B');
+    assert.equal(startB2.value.getSnapshot().assignmentId, undefined);
+
+    // 7. Exam A past due: restart of Exam A past due must be rejected
+    currentTime += 30000;
+    const restartA = await startAttempt(
+      examA,
+      'Học sinh Bình',
+      { storage, now, id },
+      {
+        assignmentId: 'asg-A',
+        classCode: '12A1',
+        openAt: openTime,
+        dueAt: dueTime,
+      }
+    );
+    assert.equal(restartA.ok, false, 'Restart of Exam A past due must be rejected');
+    if (!restartA.ok) {
+      assert.equal(restartA.error.code, 'ASSIGNMENT_PAST_DUE');
+    }
+  });
 });

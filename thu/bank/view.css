@@ -8,8 +8,8 @@
 .cunata-bank-view {
   display: block;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  color: #0f172a;
-  background-color: #f8fafc;
+  color: var(--c-text);
+  background-color: var(--c-bg);
   line-height: 1.5;
   box-sizing: border-box;
   width: 100%;
@@ -26,13 +26,13 @@
 
 /* 1. Honest Local-Tool Role Banner */
 .cunata-bank-role-banner {
-  background-color: #f0fdf4;
-  border: 1px solid #86efac;
-  border-left: 5px solid #16a34a;
+  background-color: var(--c-surface-2);
+  border: 1px solid var(--c-success);
+  border-left: 5px solid var(--c-success);
   border-radius: 6px;
   padding: 12px 16px;
   margin-bottom: 20px;
-  color: #14532d;
+  color: var(--c-success);
   font-size: 0.9375rem;
 }
 
@@ -46,14 +46,14 @@
 
 .cunata-bank-role-banner .banner-desc {
   margin: 0;
-  color: #166534;
+  color: var(--c-success);
   font-size: 0.875rem;
 }
 
 .cunata-bank-role-banner .banner-warning {
   margin-top: 6px;
   font-size: 0.8125rem;
-  color: #854d0e;
+  color: var(--c-warning);
 }
 
 /* 2. Header and Top Toolbar */
@@ -64,20 +64,20 @@
   align-items: center;
   gap: 16px;
   margin-bottom: 20px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--c-border);
   padding-bottom: 16px;
 }
 
 .cunata-bank-title-group h1 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--c-text);
   margin: 0 0 4px 0;
 }
 
 .cunata-bank-title-group p {
   margin: 0;
-  color: #475569;
+  color: var(--c-text-2);
   font-size: 0.875rem;
 }
 
@@ -101,9 +101,9 @@
   font-weight: 600;
   line-height: 1.25;
   border-radius: 6px;
-  border: 1px solid #cbd5e1;
-  background-color: #ffffff;
-  color: #1e293b;
+  border: 1px solid var(--c-border);
+  background-color: var(--c-primary-ink);
+  color: var(--c-text);
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   user-select: none;
@@ -111,12 +111,12 @@
 }
 
 .cunata-btn:hover:not(:disabled) {
-  background-color: #f1f5f9;
-  border-color: #94a3b8;
+  background-color: var(--c-surface-2);
+  border-color: var(--c-border);
 }
 
 .cunata-btn:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--c-primary);
   outline-offset: 2px;
 }
 
@@ -126,24 +126,24 @@
 }
 
 .cunata-btn-primary {
-  background-color: #2563eb;
-  border-color: #1d4ed8;
-  color: #ffffff;
+  background-color: var(--c-primary);
+  border-color: var(--c-primary);
+  color: var(--c-primary-ink);
 }
 
 .cunata-btn-primary:hover:not(:disabled) {
-  background-color: #1d4ed8;
-  border-color: #1e40af;
+  background-color: var(--c-primary);
+  border-color: var(--c-primary);
 }
 
 .cunata-btn-danger {
-  background-color: #dc2626;
-  border-color: #b91c1c;
-  color: #ffffff;
+  background-color: var(--c-danger);
+  border-color: var(--c-danger);
+  color: var(--c-primary-ink);
 }
 
 .cunata-btn-danger:hover:not(:disabled) {
-  background-color: #b91c1c;
+  background-color: var(--c-danger);
 }
 
 .cunata-btn-sm {
@@ -154,18 +154,18 @@
 
 /* 3. Five-Level Filter Section */
 .cunata-bank-filters-panel {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
+  background-color: var(--c-primary-ink);
+  border: 1px solid var(--c-border);
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-1);
 }
 
 .cunata-bank-filters-panel legend {
   font-weight: 700;
   font-size: 1rem;
-  color: #1e293b;
+  color: var(--c-text);
   padding: 0 6px;
   margin-bottom: 8px;
 }
@@ -184,16 +184,16 @@
   min-height: 44px;
   padding: 10px 14px;
   font-size: 0.9375rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--c-border);
   border-radius: 6px;
-  background-color: #ffffff;
-  color: #0f172a;
+  background-color: var(--c-primary-ink);
+  color: var(--c-text);
 }
 
 .cunata-search-input:focus {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--c-primary);
   outline-offset: 1px;
-  border-color: #2563eb;
+  border-color: var(--c-primary);
 }
 
 .cunata-filter-grid {
@@ -211,7 +211,7 @@
 .cunata-filter-field label {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #334155;
+  color: var(--c-text-2);
 }
 
 .cunata-filter-select,
@@ -219,17 +219,17 @@
   min-height: 44px;
   padding: 8px 10px;
   font-size: 0.875rem;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--c-border);
   border-radius: 6px;
-  background-color: #ffffff;
-  color: #0f172a;
+  background-color: var(--c-primary-ink);
+  color: var(--c-text);
 }
 
 .cunata-filter-select:focus,
 .cunata-filter-text-input:focus {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--c-primary);
   outline-offset: 1px;
-  border-color: #2563eb;
+  border-color: var(--c-primary);
 }
 
 .cunata-filter-actions {
@@ -246,12 +246,12 @@
   align-items: center;
   margin-bottom: 12px;
   font-size: 0.875rem;
-  color: #475569;
+  color: var(--c-text-2);
 }
 
 .cunata-bank-results-count {
   font-weight: 600;
-  color: #0f172a;
+  color: var(--c-text);
 }
 
 /* 5. Question List & Cards */
@@ -262,17 +262,17 @@
 }
 
 .cunata-bank-card {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
+  background-color: var(--c-primary-ink);
+  border: 1px solid var(--c-border);
   border-radius: 8px;
   padding: 16px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-1);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .cunata-bank-card:hover {
-  border-color: #94a3b8;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  border-color: var(--c-border);
+  box-shadow: var(--shadow-1);
 }
 
 .cunata-bank-card-header {
@@ -302,51 +302,51 @@
 }
 
 .cunata-badge-subject {
-  background-color: #e0f2fe;
-  color: #0369a1;
+  background-color: var(--c-primary-soft);
+  color: var(--c-primary);
 }
 
 .cunata-badge-grade {
-  background-color: #f1f5f9;
-  color: #334155;
+  background-color: var(--c-surface-2);
+  color: var(--c-text-2);
 }
 
 .cunata-badge-diff-nb {
-  background-color: #dcfce7;
-  color: #15803d;
+  background-color: var(--c-surface-2);
+  color: var(--c-success);
 }
 
 .cunata-badge-diff-th {
-  background-color: #fef9c3;
-  color: #854d0e;
+  background-color: var(--c-surface-2);
+  color: var(--c-warning);
 }
 
 .cunata-badge-diff-vd {
-  background-color: #fee2e2;
-  color: #b91c1c;
+  background-color: var(--c-surface-2);
+  color: var(--c-danger);
 }
 
 .cunata-badge-kind {
-  background-color: #ede9fe;
-  color: #6d28d9;
+  background-color: var(--c-primary-soft);
+  color: var(--c-subject-ly);
 }
 
 .cunata-badge-provenance {
-  background-color: #f8fafc;
-  color: #64748b;
-  border: 1px dashed #cbd5e1;
+  background-color: var(--c-bg);
+  color: var(--c-text-2);
+  border: 1px dashed var(--c-border);
 }
 
 .cunata-bank-card-title {
   font-size: 1.0625rem;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--c-text);
   margin: 0 0 6px 0;
 }
 
 .cunata-bank-card-content {
   font-size: 0.9375rem;
-  color: #334155;
+  color: var(--c-text-2);
   margin-bottom: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -361,10 +361,10 @@
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--c-surface-2);
   padding-top: 10px;
   font-size: 0.8125rem;
-  color: #64748b;
+  color: var(--c-text-2);
 }
 
 .cunata-card-meta {
@@ -382,15 +382,15 @@
 .cunata-bank-empty {
   text-align: center;
   padding: 48px 16px;
-  background-color: #ffffff;
-  border: 2px dashed #cbd5e1;
+  background-color: var(--c-primary-ink);
+  border: 2px dashed var(--c-border);
   border-radius: 8px;
-  color: #64748b;
+  color: var(--c-text-2);
 }
 
 .cunata-bank-empty h3 {
   font-size: 1.125rem;
-  color: #334155;
+  color: var(--c-text-2);
   margin: 0 0 8px 0;
 }
 
@@ -405,7 +405,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(15, 23, 42, 0.6);
+  background-color: var(--c-backdrop);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -415,16 +415,16 @@
 }
 
 .cunata-modal-dialog {
-  background-color: #ffffff;
+  background-color: var(--c-primary-ink);
   border-radius: 10px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-2);
   max-width: 720px;
   width: 100%;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--c-border);
 }
 
 .cunata-modal-header {
@@ -432,21 +432,21 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--c-border);
 }
 
 .cunata-modal-header h2 {
   font-size: 1.25rem;
   font-weight: 700;
   margin: 0;
-  color: #0f172a;
+  color: var(--c-text);
 }
 
 .cunata-modal-body {
   padding: 20px;
   overflow-y: auto;
   font-size: 0.9375rem;
-  color: #1e293b;
+  color: var(--c-text);
 }
 
 .cunata-modal-footer {
@@ -454,8 +454,8 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 14px 20px;
-  border-top: 1px solid #e2e8f0;
-  background-color: #f8fafc;
+  border-top: 1px solid var(--c-border);
+  background-color: var(--c-bg);
 }
 
 /* Preview details */
@@ -467,7 +467,7 @@
   font-size: 0.8125rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--c-text-2);
   margin-bottom: 6px;
   letter-spacing: 0.025em;
 }
@@ -484,14 +484,14 @@
   align-items: flex-start;
   gap: 10px;
   padding: 8px 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--c-border);
   border-radius: 6px;
 }
 
 .cunata-option-item.correct {
-  background-color: #f0fdf4;
-  border-color: #86efac;
-  color: #14532d;
+  background-color: var(--c-surface-2);
+  border-color: var(--c-success);
+  color: var(--c-success);
   font-weight: 600;
 }
 
@@ -504,7 +504,7 @@
 
 .cunata-statement-item {
   padding: 8px 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--c-border);
   border-radius: 6px;
 }
 
@@ -523,30 +523,30 @@
 }
 
 .cunata-statement-ans-badge.true {
-  background-color: #dcfce7;
-  color: #166534;
+  background-color: var(--c-surface-2);
+  color: var(--c-success);
 }
 
 .cunata-statement-ans-badge.false {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: var(--c-surface-2);
+  color: var(--c-danger);
 }
 
 .cunata-statement-expl {
   margin-top: 4px;
   font-size: 0.8125rem;
-  color: #64748b;
+  color: var(--c-text-2);
 }
 
 .cunata-short-answer-preview {
   margin-top: 10px;
   padding: 12px;
-  background-color: #f1f5f9;
+  background-color: var(--c-surface-2);
   border-radius: 6px;
   font-family: monospace;
   font-size: 1.125rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--c-text);
 }
 
 /* Status message banner */
@@ -559,21 +559,21 @@
 }
 
 .cunata-bank-status.info {
-  background-color: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1e40af;
+  background-color: var(--c-primary-soft);
+  border: 1px solid var(--c-primary);
+  color: var(--c-primary);
 }
 
 .cunata-bank-status.success {
-  background-color: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #15803d;
+  background-color: var(--c-surface-2);
+  border: 1px solid var(--c-success);
+  color: var(--c-success);
 }
 
 .cunata-bank-status.error {
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
+  background-color: var(--c-surface-2);
+  border: 1px solid var(--c-danger);
+  color: var(--c-danger);
 }
 
 /* 7. Responsive Breakpoint Adjustments */
