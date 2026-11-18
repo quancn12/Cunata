@@ -3148,6 +3148,7 @@ export async function bootstrap(root, options) {
             startScr.style.display = 'none';
         if (examWrapper)
             examWrapper.style.display = '';
+        loadedExamId = parsed.examId;
         router.navigate('exam', { examId: parsed.examId });
         await loadOrResumeExam(parsed, false);
     };

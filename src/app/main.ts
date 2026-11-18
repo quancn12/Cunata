@@ -3181,6 +3181,7 @@ export async function bootstrap(
     const startScr = root.querySelector('#startScreen') as HTMLElement | null;
     if (startScr) startScr.style.display = 'none';
     if (examWrapper) examWrapper.style.display = '';
+    loadedExamId = parsed.examId;
     router.navigate('exam', { examId: parsed.examId });
     await loadOrResumeExam(parsed, false);
   };
