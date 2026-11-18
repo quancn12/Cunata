@@ -3,8 +3,11 @@
 import { after, before, describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { launchBrowser, sleep, startServer } from './harness.mjs';
-import { TARGETS, enterFromStart, enterStudentArea, loadExam, makeExam, onRoleChooser, pickOption, startFromCard, submit, waitBoot, waitSaved } from './app.mjs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { TARGETS, enterFromStart, enterStudentArea, joinClass, loadExam, makeExam, mouseClick, onRoleChooser, pickOption, setStatement, startFromCard, submit, timerSeconds, typeShort, waitBoot, waitSaved } from './app.mjs';
 import { startGasServer } from './gas-server.mjs';
+import { seedClass } from './classroom.mjs';
 
 let browser;
 before(async () => { browser = await launchBrowser(); });
@@ -49,12 +52,88 @@ for (const target of TARGETS.filter((t) => t.name === 'dist')) {
       'đăng nhập xong: #teacherShell có điều hướng #teacherNav (Lớp học · Đề thi · Kết quả)', 12000);
     const nav = async (page, where) => { await page.click(`#teacherNav a[data-nav="${where}"]`); await page.waitFor((w) => document.querySelector(`#teacherNav a[data-nav="${w}"]`)?.getAttribute('aria-current') === 'page', `mục ${where} đang chọn (aria-current="page")`, 5000, where); };
 
+    const manifest = () => JSON.parse(readFileSync(join(target.dir, 'public', 'exams', 'index.json'), 'utf8')).exams
+      .map((e) => ({ ...e, exam: JSON.parse(readFileSync(join(target.dir, e.url), 'utf8')) }));
+
+    // Lỗi thật trên /thu/ 19/11/2026 ("không click được đề nào"): #examPreview thiếu CSS hộp thoại nên hiện ở CUỐI trang, ngoài khung nhìn.
+    // Bấm bằng chuột thật vào thẻ đề của lớp (WEB-contract 21: đề chỉ đến qua lớp), ở 3 khổ màn, trang đã cuộn.
+    for (const [w, h] of [[1850, 980], [1280, 800], [390, 844]]) {
+      run(`[student][ui] bấm thẻ đề của lớp bằng chuột thật (${w}x${h}, đã cuộn): #examPreview nổi lên TRONG khung nhìn, nút #btnStartExam bấm được và nhận focus; Esc đóng`, async ({ ctx, server, gas }) => {
+        const ids = manifest().slice(0, 6).map((e) => e.id);
+        const { code } = seedClass(gas, ids);
+        const page = await ctx.newPage();
+        await page.setViewport(w, h, w < 600);
+        await page.goto(server.url + target.path + '#/hoc-sinh');
+        await waitBoot(page);
+        await enterStudentArea(page, { name: 'Học sinh chuột thật' });
+        await joinClass(page, code);
+        const sel = `#myClasses .class-section[data-class-code="${code}"] .exam-card[data-assignment-id][data-exam-id="${ids[4]}"]`;
+        await page.waitFor((q) => !!document.querySelector(q), 'lớp có thẻ đề được giao thứ 5', 10000, sel);
+        const hit = await mouseClick(page, sel);
+        assert.ok(hit.hitsTarget, `chuột tại giữa thẻ đề phải trúng thẻ, đang bị phần tử khác đè: ${hit.top}`);
+        await page.waitFor(() => { const p = document.getElementById('examPreview'); return !!p && getComputedStyle(p).display !== 'none'; }, 'bấm thẻ: #examPreview mở', 5000);
+        const v = await page.eval(() => {
+          const b = document.getElementById('btnStartExam'); const r = b.getBoundingClientRect();
+          const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return { btnInView: r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth, btnReachable: !!top && b.contains(top),
+            focusInside: document.getElementById('examPreview').contains(document.activeElement), pos: getComputedStyle(document.getElementById('examPreview')).position };
+        });
+        assert.equal(v.btnInView, true, `WEB-contract 19.1: bấm thẻ đề thì hộp thoại #examPreview phải hiện trong khung nhìn (nút #btnStartExam nằm trong màn hình), không được rơi xuống cuối trang; position=${v.pos}`);
+        assert.equal(v.btnReachable, true, 'nút #btnStartExam phải bấm được bằng chuột (không bị phần tử khác đè)');
+        assert.equal(v.focusInside, true, 'mở hộp thoại thì focus phải chuyển vào trong #examPreview (bàn phím / trình đọc màn hình)');
+        await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+        await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+        await page.waitFor(() => getComputedStyle(document.getElementById('examPreview')).display === 'none', 'nhấn Esc: đóng #examPreview', 3000);
+        const back = await mouseClick(page, sel);
+        assert.ok(back.hitsTarget, 'đóng hộp thoại xong, bấm lại thẻ đề phải được (không còn lớp phủ sót lại)');
+        await page.waitFor(() => getComputedStyle(document.getElementById('examPreview')).display !== 'none', 'mở lại #examPreview', 5000);
+        await mouseClick(page, '#btnStartExam');
+        await page.waitFor(() => { const e = document.getElementById('examWrapper'); return !!e && e.getClientRects().length > 0 && document.querySelectorAll('#examPane .question-card').length > 0; },
+          'bấm "Bắt đầu làm bài" bằng chuột thật: vào màn làm bài', 15000);
+        assert.equal(await page.eval(() => document.getElementById('candidateName')?.value), 'Học sinh chuột thật', 'vào bài từ thẻ đề của lớp: #candidateName là tên ở cổng tên');
+      });
+    }
+
+    // Quyết định D03 (Codex CK08-F05) trên bản build: chuyển qua lại giữa hai đề được giao phải mở đúng bài dở, giữ đáp án và đồng hồ (§21: qua lớp).
+    run('[student][storage] đề A → đề B → quay lại A (cùng lớp): mở lại đúng bài dở của A, giữ đáp án và hạn nộp', async ({ ctx, server, gas }) => {
+      const ex = manifest();
+      const [A, B] = [ex[ex.length - 1], ex[ex.length - 2]];
+      const { code } = seedClass(gas, [A.id, B.id]);
+      const page = await open(ctx, server, '#/hoc-sinh');
+      await enterStudentArea(page, { name: 'Học sinh A B A' });
+      await joinClass(page, code);
+      const titleIs = (e) => page.waitFor((t, n) => (document.getElementById('examTitle')?.textContent ?? '').trim() === t && document.querySelectorAll('#examPane .question-card').length === n,
+        `đề "${e.exam.title}" được nạp vào phòng thi`, 15000, e.exam.title, e.exam.questions.length);
+      const choose = async (e) => {
+        if (await page.eval(() => { const x = document.getElementById('examWrapper'); return !!x && x.getClientRects().length > 0; })) await page.click('#btnOpenExamList');
+        await startFromCard(page, `#myClasses .class-section[data-class-code="${code}"] .exam-card[data-exam-id="${e.id}"]`);
+        await titleIs(e);
+      };
+      const answerFirst = async (e) => { const q = e.exam.questions[0];
+        if (q.kind === 'I') await page.click(`[data-qid="${q.questionVersionId}"][data-option-id="${q.options[0].optionId}"]`);
+        else if (q.kind === 'II') await setStatement(page, q.questionVersionId, 0, true); else await typeShort(page, q.questionVersionId, '7'); };
+      const answered = (e) => page.eval((q) => { const card = document.querySelector(`[id="qcard-${q.questionVersionId}"]`); if (!card) return null;
+        if (q.kind === 'I') return card.querySelectorAll('[aria-checked="true"]').length === 1;
+        if (q.kind === 'II') { const b = card.querySelector('.statement-row .tf-btn[data-val="true"]'); return !!b && (/selected/.test(b.className) || b.getAttribute('aria-pressed') === 'true'); }
+        return card.querySelector('.short-answer-input')?.value === '7'; }, e.exam.questions[0]);
+      await choose(A); await answerFirst(A); await waitSaved(page);
+      const tA = await timerSeconds(page);
+      await sleep(2200);
+      await choose(B); await answerFirst(B); await waitSaved(page);
+      await choose(A);
+      assert.equal(await answered(A), true, 'quay lại đề A phải mở đúng bài đang làm dở: đáp án đã chọn vẫn còn (D03)');
+      assert.ok(await timerSeconds(page) <= tA - 2, 'quay lại đề A không được đặt lại đồng hồ');
+      await choose(B);
+      assert.equal(await answered(B), true, 'bài dở của đề B cũng phải còn nguyên khi quay lại');
+    });
+
     run('[app][teacher] chưa cấu hình Apps Script: khu giáo viên báo chưa cấu hình; học sinh nộp bài vẫn lưu trên máy, không gọi ra ngoài', async ({ ctx, server }) => {
       const page = await open(ctx, server);
       await toTeacher(page);
       await page.waitFor(() => /chưa cấu hình/i.test(document.getElementById('teacherLogin')?.innerText ?? ''), 'chưa có appsScriptUrl: #teacherLogin phải báo "chưa cấu hình"', 8000);
       const p2 = await ctx.newPage(); await p2.goto(server.url + target.path + '#/hoc-sinh'); await waitBoot(p2);
       await enterFromStart(p2);
+      await loadExam(p2, makeExam({ id: 'claude-check-chua-cau-hinh', title: 'Đề kiểm định chưa cấu hình' }));   // §21: không còn đề công khai
       await submit(p2);
       await sleep(800);
       assert.match(await p2.eval(() => document.getElementById('syncText').textContent), /lưu cục bộ/i, 'chưa cấu hình: trạng thái phải là đã lưu cục bộ, không giả vờ đã gửi');
@@ -206,10 +285,12 @@ for (const target of TARGETS.filter((t) => t.name === 'dist')) {
         const idx = JSON.parse(await (await fetch(server.url + 'public/exams/index.json')).text());
         overrides['public/exams/index.json'] = JSON.stringify({ ...idx, exams: [...idx.exams, { ...idx.exams[0], id: 'claude-check-moi-them', title: 'Đề vừa thêm vào danh sách' }] });
         await page.reload(); await waitBoot(page);
-        await page.waitFor(() => !!document.querySelector('#startScreen .exam-list-item[data-exam-id="claude-check-moi-them"]'),
-          'tải lại khi có mạng: danh sách đề phải là bản mới nhất (index.json đi mạng trước)', 10000);
         const t = await open(ctx, server, '?teacher');
         await toTeacher(t); await login(t); await loggedIn(t);
+        // §21: danh sách đề kho chung giờ nằm trong thư viện đề của giáo viên.
+        await nav(t, 'de');
+        await t.waitFor(() => !!document.querySelector('#teacherShell [data-exam-id="claude-check-moi-them"]'),
+          'tải lại khi có mạng: thư viện đề của giáo viên (#/giao-vien/de) phải có đề vừa thêm vào index.json (đi mạng trước, §17.6)', 10000);
         assert.ok(newGas.log.some((l) => l.method === 'POST' && /teacherLogin/.test(l.body)), 'đăng nhập phải gửi tới link Apps Script MỚI');
         assert.equal(oldGas.log.filter((l) => l.method === 'POST').length, 0, 'không gửi gì tới link cũ');
       } finally { await ctx.close(); await server.close(); await oldGas.close(); await newGas.close(); }

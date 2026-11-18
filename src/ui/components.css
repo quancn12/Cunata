@@ -187,3 +187,5 @@ textarea.ui-control { min-height: calc(var(--target) * 3); resize: vertical; }
   .ui-dialog-backdrop { align-items: flex-end; padding: 0; }
   .ui-dialog-backdrop > .ui-card { width: 100%; max-height: calc(100dvh - var(--sp-4)); border-radius: var(--r-lg) var(--r-lg) 0 0; padding-bottom: max(var(--sp-4), env(safe-area-inset-bottom)); }
 }
+.exam-preview-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
+.exam-preview-header h2 { margin: 0; }

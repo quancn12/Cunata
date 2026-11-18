@@ -58,7 +58,7 @@ export const START_NAME = 'Học sinh kiểm định';
 export async function waitBoot(page, timeout = 15000) {
   await page.waitFor(`(() => { const shown = ${shown}; const t = document.getElementById('examTitle')?.textContent ?? '';
     const exam = shown('examWrapper') && document.querySelectorAll('#examPane .question-card').length > 0 && t.trim() !== '' && !/Đang tải/.test(t);
-    const start = shown('startScreen') && (document.querySelectorAll('#startScreen .exam-list-item').length > 0 || !!document.querySelector('#studentNameGate input#startName'));
+    const start = shown('startScreen') && (document.querySelectorAll('#startScreen .exam-list-item').length > 0 || !!document.querySelector('#studentNameGate input#startName') || shown('classCodeInput'));
     const role = shown('roleChooser');
     return exam || start || role || (shown('reportWrapper') && /\\d/.test(document.getElementById('scoreTotal')?.textContent ?? '')); })()`,
   'ứng dụng khởi động xong: màn chọn vai #roleChooser, khu học sinh #startScreen, đang làm bài, hoặc màn báo cáo (WEB-contract 19.1)', timeout);
@@ -67,12 +67,13 @@ export async function waitBoot(page, timeout = 15000) {
 export const onStartScreen = (page) => page.eval(`(() => { const shown = ${shown}; return shown('startScreen'); })()`);
 export const onRoleChooser = (page) => page.eval(`(() => { const shown = ${shown}; return shown('roleChooser'); })()`);
 
-/** Vào khu học sinh từ màn chọn vai (nếu đang ở đó) và qua cổng tên (nếu có). */
+const inStudentArea = `(() => { const shown = ${shown}; return !!document.querySelector('#studentNameGate input#startName') && shown('studentNameGate') || shown('classCodeInput'); })()`;
+
+/** Vào khu học sinh từ màn chọn vai (nếu đang ở đó) và qua cổng tên (nếu có). Dừng ở khu học sinh (ô mã lớp #classCodeInput). */
 export async function enterStudentArea(page, { name = START_NAME } = {}) {
   if (await onRoleChooser(page)) {
     await page.click('#btnRoleStudent');
-    await page.waitFor(() => !!document.querySelector('#studentNameGate input#startName') || document.querySelectorAll('#startScreen .exam-list-item').length > 0,
-      'bấm #btnRoleStudent: vào khu học sinh (cổng tên #studentNameGate hoặc lưới đề)', 10000);
+    await page.waitFor(inStudentArea, 'bấm #btnRoleStudent: vào khu học sinh (cổng tên #studentNameGate hoặc ô mã lớp #classCodeInput)', 10000);
   }
   const gate = await page.eval(`(() => { const shown = ${shown}; return shown('studentNameGate'); })()`);
   if (gate) {
@@ -81,8 +82,19 @@ export async function enterStudentArea(page, { name = START_NAME } = {}) {
     await page.eval(() => document.getElementById('startName').dispatchEvent(new Event('input', { bubbles: true })));
     await page.waitFor(() => { const b = document.getElementById('btnNameContinue'); return !!b && !b.disabled; }, 'nhập tên thì #btnNameContinue bấm được', 5000);
     await page.click('#btnNameContinue');
-    await page.waitFor(() => document.querySelectorAll('#startScreen .exam-list-item').length > 0, 'qua cổng tên: hiện lưới thẻ đề', 10000);
+    await page.waitFor(`(() => { const shown = ${shown}; return shown('classCodeInput'); })()`, 'qua cổng tên: khu học sinh có ô nhập mã lớp #classCodeInput (WEB-contract 19.1, 21)', 10000);
   }
+}
+
+/** Vào lớp bằng mã (WEB-contract 19.1/21) và chờ thẻ đề được giao hiện trong #myClasses. Trả về selector thẻ đề đầu tiên của lớp. */
+export async function joinClass(page, code) {
+  await page.eval(() => { const e = document.getElementById('classCodeInput'); e.scrollIntoView({ block: 'center' }); e.focus(); e.select?.(); });
+  await page.send('Input.insertText', { text: code });
+  await page.eval(() => document.getElementById('classCodeInput').dispatchEvent(new Event('input', { bubbles: true })));
+  await page.click('#btnJoinClass');
+  const sel = `#myClasses .class-section[data-class-code="${code}"] .exam-card[data-assignment-id]`;
+  await page.waitFor((q) => !!document.querySelector(q), `vào lớp ${code}: #myClasses có thẻ đề được giao`, 15000, sel);
+  return sel;
 }
 
 /** Mở #examPreview của một thẻ đề rồi bấm #btnStartExam. */
@@ -96,14 +108,15 @@ export async function startFromCard(page, sel) {
     'bấm #btnStartExam: vào màn làm bài có câu hỏi', 10000);
 }
 
-/** Bản build: chọn vai → học sinh → tên → thẻ đề → xem trước → bắt đầu. Bản gốc (index.html): màn vào thi cũ (mục 16) nếu có. */
-export async function enterFromStart(page, { name = START_NAME, url, id } = {}) {
+/**
+ * Bản build: chọn vai → học sinh → cổng tên, dừng ở khu học sinh (WEB-contract 21: không còn đề luyện tập công khai; đề chỉ đến qua lớp).
+ * Bản gốc (index.html, giữ nguyên theo mục 18): màn vào thi cũ (mục 16) nếu có.
+ */
+export async function enterFromStart(page, { name = START_NAME, url } = {}) {
   const role = await onRoleChooser(page);
   if (!role && !(await onStartScreen(page))) return;
-  if (role || await page.eval(() => !!document.getElementById('studentNameGate') || !!document.querySelector('#startScreen .exam-card'))) {
+  if (role || await page.eval(() => !!document.getElementById('studentNameGate') || !!document.getElementById('classCodeInput'))) {
     await enterStudentArea(page, { name });
-    const sel = id ? `#startScreen .exam-list-item[data-exam-id="${id}"]` : url ? `#startScreen .exam-list-item[data-exam-url="${url}"]` : '#startScreen .exam-list-item[data-exam-url]';
-    await startFromCard(page, sel);
     return;
   }
   // bản cũ (mục 16): ô tên + danh sách + nút bắt đầu trên cùng một màn
@@ -117,12 +130,18 @@ export async function enterFromStart(page, { name = START_NAME, url, id } = {}) 
     'bấm #btnStartExam: vào màn làm bài có câu hỏi', 10000);
 }
 
-/** Mở ứng dụng và vào làm bài. `name`: tên thí sinh nhập ở cổng tên (bản build, WEB-contract 19.1). */
+/**
+ * Mở ứng dụng và vào làm bài. `name`: tên thí sinh nhập ở cổng tên (bản build, WEB-contract 19.1).
+ * Bản build không còn đề công khai (§21): sau cổng tên nạp một đề kiểm định qua #examFileInput ẩn; tên thí sinh phải là tên ở cổng tên.
+ */
+export const BOOT_EXAM = { id: 'claude-check-khoi-dong', title: 'Đề kiểm định khởi động' };
 export async function openApp(ctx, server, target, { name = START_NAME } = {}) {
   const page = await ctx.newPage();
   await page.goto(server.url + target.path);
   await waitBoot(page);
   await enterFromStart(page, { name });
+  const inExam = await page.eval(`(() => { const shown = ${shown}; return shown('examWrapper') && document.querySelectorAll('#examPane .question-card').length > 0; })()`);
+  if (!inExam) await loadExam(page, makeExam(BOOT_EXAM));
   return page;
 }
 

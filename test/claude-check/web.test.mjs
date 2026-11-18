@@ -34,8 +34,8 @@ for (const target of TARGETS) {
 
     // WEB-contract mục 16 (Trưởng phòng 16/11/2026): "học sinh vào web phải điền tên và chọn đề trước", không tự hiện một đề.
     // WEB-contract 19.1 (Trưởng phòng 16/11/2026: chọn vai Học sinh/Giáo viên trước; học sinh thấy đề dạng thẻ có mô tả).
-    runDist('[app][student] mở trang lần đầu: chọn vai → nhập tên → lưới thẻ đề → xem trước → làm bài; chưa hiện câu hỏi trước đó', async (ctx) => {
-      const exams = readManifest();
+    // WEB-contract 21 (Trưởng phòng 19/11/2026): đề luyện tập KHÔNG công khai; học sinh chỉ thấy đề khi vào lớp. Đề nạp bằng file dùng tên ở cổng tên.
+    runDist('[app][student] mở trang lần đầu: chọn vai → nhập tên → khu học sinh chỉ có ô mã lớp + hướng dẫn, KHÔNG có đề công khai nào (§21)', async (ctx) => {
       const page = await ctx.newPage();
       await page.goto(server.url + target.path);
       await waitBoot(page);
@@ -48,54 +48,24 @@ for (const target of TARGETS) {
       await page.eval(() => document.getElementById('startName').dispatchEvent(new Event('input', { bubbles: true })));
       assert.equal(await page.eval(() => document.getElementById('btnNameContinue').disabled), true, 'tên chỉ có khoảng trắng không được tính là đã nhập tên');
       await enterStudentArea(page, { name: 'Lê Minh 12A1' });
-      const ids = await page.eval(() => [...document.querySelectorAll('#startScreen #practiceExams .exam-list-item[data-exam-id]')].map((b) => b.getAttribute('data-exam-id')));
-      assert.deepEqual([...ids].sort(), exams.map((e) => e.id).sort(), 'mục "Đề luyện tập" (#practiceExams) phải có đủ các đề trong public/exams/index.json');
-      const pick = exams[exams.length - 1];
-      await page.click(`#startScreen .exam-list-item[data-exam-id="${pick.id}"]`);
-      await page.waitFor((t) => { const p = document.getElementById('examPreview'); return !!p && getComputedStyle(p).display !== 'none' && p.innerText.includes(t); },
-        'bấm thẻ đề: #examPreview hiện đúng tiêu đề đề đó', 8000, pick.title);
-      assert.match(await page.eval(() => document.getElementById('examPreview').innerText), /\d+ câu · \d+ phút/, '#examPreview phải có "N câu · M phút"');
-      await page.click('#btnStartExam');
-      await titleIs(page, pick);
-      assert.equal(await page.eval(() => document.getElementById('candidateName')?.value || document.getElementById('candidateName')?.textContent), 'Lê Minh 12A1', 'tên nhập ở cổng tên phải là tên thí sinh của bài làm');
+      await sleep(800);
+      const area = await page.eval(() => {
+        const vis = (e) => !!e && e.getClientRects().length > 0 && getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden';
+        return { practice: vis(document.getElementById('practiceExams')), cards: [...document.querySelectorAll('#startScreen .exam-card, #startScreen .exam-list-item')].filter(vis).length,
+          join: vis(document.getElementById('classCodeInput')) && vis(document.getElementById('btnJoinClass')), text: document.getElementById('startScreen')?.innerText ?? '' };
+      });
+      assert.equal(area.practice, false, 'WEB-contract 21: khu học sinh không còn lưới "Đề luyện tập" #practiceExams công khai');
+      assert.equal(area.cards, 0, `WEB-contract 21: chưa vào lớp nào thì không có thẻ đề nào (đề chỉ đến qua lớp); đang thấy ${area.cards} thẻ`);
+      assert.equal(area.join, true, 'khu học sinh luôn có ô #classCodeInput và nút #btnJoinClass');
+      assert.match(area.text, /mã lớp/i, 'chưa vào lớp: phải có hướng dẫn nhập mã lớp do giáo viên cung cấp');
+      // Đề nạp bằng file ẩn (#examFileInput) dùng tên ở cổng tên, không phải "Thí sinh tự do".
+      await loadExam(page, makeExam({ id: 'claude-check-ten-cong', title: 'Đề kiểm định tên ở cổng tên' }));
+      assert.equal(await page.eval(() => document.getElementById('candidateName')?.value || document.getElementById('candidateName')?.textContent), 'Lê Minh 12A1',
+        'WEB-contract 21: đề nạp bằng file phải dùng tên học sinh đã nhập ở cổng tên làm #candidateName');
       assert.deepEqual(pageProblems(page), [], 'không lỗi JS hay request hỏng');
     });
 
-    // Lỗi thật trên /thu/ 19/11/2026 (Trưởng phòng báo "không click được đề nào"): #examPreview không có CSS hộp thoại nên hiện ở CUỐI trang,
-    // ngoài khung nhìn. Bấm bằng chuột thật, ở 3 khổ màn, thẻ nằm giữa danh sách (trang đã cuộn).
-    for (const [w, h] of [[1850, 980], [1280, 800], [390, 844]]) {
-      runDist(`[student][ui] bấm thẻ đề bằng chuột thật (${w}x${h}, đã cuộn): #examPreview nổi lên TRONG khung nhìn, có nút #btnStartExam nhìn thấy và nhận focus; Esc đóng`, async (ctx) => {
-        const page = await ctx.newPage();
-        await page.setViewport(w, h, w < 600);
-        await page.goto(server.url + target.path);
-        await waitBoot(page);
-        await enterStudentArea(page, { name: 'Học sinh chuột thật' });
-        const sel = '#practiceExams .exam-card.exam-list-item:nth-of-type(5)';
-        const hit = await mouseClick(page, sel);
-        assert.ok(hit.hitsTarget, `chuột tại giữa thẻ đề phải trúng thẻ, đang bị phần tử khác đè: ${hit.top}`);
-        await page.waitFor(() => { const p = document.getElementById('examPreview'); return !!p && getComputedStyle(p).display !== 'none'; }, 'bấm thẻ: #examPreview mở', 5000);
-        const v = await page.eval(() => {
-          const b = document.getElementById('btnStartExam'); const r = b.getBoundingClientRect();
-          const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-          return { btnInView: r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth, btnReachable: !!top && b.contains(top),
-            focusInside: document.getElementById('examPreview').contains(document.activeElement), pos: getComputedStyle(document.getElementById('examPreview')).position };
-        });
-        assert.equal(v.btnInView, true, `WEB-contract 19.1: bấm thẻ đề thì hộp thoại #examPreview phải hiện trong khung nhìn (nút #btnStartExam nằm trong màn hình), không được rơi xuống cuối trang; position=${v.pos}`);
-        assert.equal(v.btnReachable, true, 'nút #btnStartExam phải bấm được bằng chuột (không bị phần tử khác đè)');
-        assert.equal(v.focusInside, true, 'mở hộp thoại thì focus phải chuyển vào trong #examPreview (bàn phím / trình đọc màn hình)');
-        await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
-        await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
-        await page.waitFor(() => getComputedStyle(document.getElementById('examPreview')).display === 'none', 'nhấn Esc: đóng #examPreview', 3000);
-        const back = await mouseClick(page, sel);
-        assert.ok(back.hitsTarget, 'đóng hộp thoại xong, bấm lại thẻ đề phải được (không còn lớp phủ sót lại)');
-        await page.waitFor(() => getComputedStyle(document.getElementById('examPreview')).display !== 'none', 'mở lại #examPreview', 5000);
-        await mouseClick(page, '#btnStartExam');
-        await page.waitFor(() => { const e = document.getElementById('examWrapper'); return !!e && e.getClientRects().length > 0 && document.querySelectorAll('#examPane .question-card').length > 0; },
-          'bấm "Bắt đầu làm bài" bằng chuột thật: vào màn làm bài', 10000);
-      });
-    }
-
-    runDist('[app][student] lần sau mở lại: nhớ vai và tên (không hỏi lại tên), ?exam= mở sẵn phần xem trước của đề đó', async (ctx) => {
+    runDist('[app][student] lần sau mở lại: nhớ vai và tên (không hỏi lại tên); link ?exam= KHÔNG mở đề, báo chỉ làm được khi giáo viên giao (§21)', async (ctx) => {
       const exams = readManifest();
       const page = await openApp(ctx, server, target);
       await submit(page);
@@ -103,8 +73,12 @@ for (const target of TARGETS) {
       await p2.goto(server.url + target.path + '?exam=' + encodeURIComponent(exams[0].id));
       await waitBoot(p2);
       assert.equal(await onRoleChooser(p2), false, 'đã chọn vai học sinh lần trước: không hỏi lại vai');
-      await p2.waitFor((t) => { const p = document.getElementById('examPreview'); return !!p && getComputedStyle(p).display !== 'none' && p.innerText.includes(t); },
-        '?exam=: mở sẵn #examPreview của đề đó', 10000, exams[0].title);
+      await p2.waitFor(() => /giáo viên giao/i.test(document.body.innerText), 'WEB-contract 21: mở ?exam= phải báo "Đề này chỉ làm được khi giáo viên giao cho lớp…"', 10000);
+      await sleep(500);
+      assert.equal(await p2.eval(() => { const p = document.getElementById('examPreview'); return !!p && getComputedStyle(p).display !== 'none'; }), false,
+        'WEB-contract 21: link ?exam= không được mở #examPreview của đề công khai');
+      assert.equal(await p2.eval(() => { const e = document.getElementById('examWrapper'); return !!e && e.getClientRects().length > 0 && getComputedStyle(e).display !== 'none'; }), false,
+        'WEB-contract 21: link ?exam= không được vào bài thi');
       assert.equal(await p2.eval(() => { const g = document.getElementById('studentNameGate'); return !!g && getComputedStyle(g).display !== 'none'; }), false, 'đã có tên: không hiện lại cổng tên');
       assert.ok(await p2.eval((n) => document.body.innerText.includes(n), START_NAME), 'tên đã dùng phải hiện trên trang học sinh (TopBar)');
     });
@@ -533,7 +507,8 @@ for (const target of TARGETS) {
     });
 
     // Quyết định D03 + WEB-contract mục 15: đề đã có bài làm dở trên máy thì chọn lại phải mở đúng bài dở (Codex CK08-F05).
-    run('[student][storage] chọn đề A → sang đề B → quay lại A: mở lại đúng bài dở của A, giữ đáp án và hạn nộp', async (ctx) => {
+    // Bản build (§21): ca này làm qua thẻ đề của lớp trong teacher.test.mjs.
+    runRoot('[student][storage] chọn đề A → sang đề B → quay lại A: mở lại đúng bài dở của A, giữ đáp án và hạn nộp', async (ctx) => {
       const exams = readManifest();
       const [A, B] = [exams[exams.length - 1], exams[exams.length - 2]];
       const page = await openApp(ctx, server, target);
@@ -613,6 +588,8 @@ for (const target of TARGETS) {
           await page.goto(own.url + target.path);
           await waitBoot(page);
           await enterFromStart(page);
+          // §21: không còn đề công khai; bài đang làm (nạp sẵn) phải mở lại được khi mất mạng (D03).
+          await loadExam(page, makeExam({ id: 'claude-check-offline', title: 'Đề kiểm định ngoại tuyến' }));
           await page.waitFor(() => navigator.serviceWorker?.getRegistrations().then((r) => r.some((x) => !!x.active)), 'service worker đã đăng ký và active', 15000);
           await sleep(1500);
           await page.reload(); await waitBoot(page);     // lần 2: service worker đã điều khiển trang, cache đủ

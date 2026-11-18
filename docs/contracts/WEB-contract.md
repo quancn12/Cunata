@@ -498,3 +498,14 @@ Lỗi thật trên bản build: phần "Chi tiết bài làm & lời giải" ch�
 - Phần II: đủ 4 mệnh đề `.review-statement[data-statement-id]`, mỗi mệnh đề có nhãn a–d + toàn văn, `data-key="true|false"` (đáp án), `data-chosen="true|false|none"` (học sinh chọn Đúng/Sai/bỏ trống), chữ "Đúng"/"Sai"/"Chưa chọn" cho cả hai.
 - Phần III: `.review-short-answer` hiện "Bạn điền: …" (nguyên văn, hoặc "Chưa làm") và "Đáp án: …".
 - File `.html` tải về chứa cùng các thông tin trên (toàn văn đề bài, phương án, mệnh đề, đáp án, lời giải), mọi nội dung người dùng đã escape.
+
+## 21. Đề chỉ đến tay học sinh qua lớp (Trưởng phòng chốt 19/11/2026) — thay phần "Đề luyện tập" của §15 và §19.1
+
+Quyết định: đề luyện tập không hiện công khai; mọi đề (16 đề Lý 12, đề mẫu, đề giáo viên xuất bản) nằm trong **thư viện đề** của giáo viên ("Kho đề chung" + "Đề của tôi" ở `#/giao-vien/de`). Học sinh chỉ thấy đề khi **vào lớp bằng mã** và giáo viên đã giao. Mức ẩn: **trên giao diện** (file đề tĩnh vẫn nằm trong bản công khai; không phải bảo mật). Link `?exam=` bị bỏ.
+
+- Khu học sinh `#/hoc-sinh` **không còn** lưới `#practiceExams` hay bất kỳ thẻ đề nào ngoài `#myClasses`. Chưa vào lớp nào: trạng thái trống (EmptyState) hướng dẫn "Nhập mã lớp do giáo viên cung cấp để xem đề được giao"; ô `#classCodeInput` + `#btnJoinClass` luôn hiện.
+- `#myClasses .class-section[data-class-code]` chứa các ExamCard đề được giao (như §19.1). Lớp đã vào được nhớ trên máy.
+- Mở `?exam=<id>` (hoặc `#/hoc-sinh?exam=`): **không** mở `#examPreview` hay bài thi; vào khu học sinh và hiện thông báo có chữ "giáo viên giao" (ví dụ "Đề này chỉ làm được khi giáo viên giao cho lớp của em."). Bài làm dở có sẵn trên máy (D03) vẫn mở tiếp được qua thẻ đề của lớp.
+- Không đổi: nút `#btnOpenExamList` ("Về trang học sinh"); kết quả và bài đã nộp vẫn xem lại được trên máy.
+- Đề nạp bằng file (`#examFileInput`, ẩn, không có nút trên màn học sinh) dùng **tên học sinh đã nhập ở cổng tên** làm `#candidateName`, không dùng "Thí sinh tự do".
+- Giáo viên: thư viện đề (`#/giao-vien/de`) vẫn hiện đủ đề kho chung theo `public/exams/index.json` (network-first, §17.6) để giao cho lớp.
