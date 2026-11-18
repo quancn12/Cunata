@@ -100,6 +100,9 @@ for (const target of TARGETS.filter((t) => t.name === 'dist')) {
       await t.eval((v) => { const e = document.getElementById('assignDueAt'); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); }, local(120));
       await t.click('#btnAssignConfirm');
       await t.waitFor(() => document.querySelectorAll('.assignment-row[data-assignment-id]').length === 1, 'giao xong: chi tiết lớp có 1 dòng .assignment-row', 10000);
+      // Lỗi thật trên /thu/ 19/11/2026: dòng đề đã giao hiện mã "exam-thpt-…-demo" thay vì tên đề (đề kho chung lấy tên từ public/exams/index.json).
+      const row = await t.eval(() => document.querySelector('.assignment-row[data-assignment-id]').innerText);
+      assert.ok(row.includes(hoaTitle), `chi tiết lớp: dòng đề đã giao phải hiện TÊN đề ("${hoaTitle}…"), không chỉ mã đề; thực tế "${row}"`);
       // học sinh
       const s = await open(ctx, server, '#/hoc-sinh');
       await enterStudentArea(s, { name: 'Trần Học Sinh' });
@@ -109,11 +112,15 @@ for (const target of TARGETS.filter((t) => t.name === 'dist')) {
       await s.waitFor((q) => !!document.querySelector(q), 'vào lớp bằng mã: mục #myClasses có thẻ đề được giao (có data-assignment-id)', 10000, sel);
       assert.match(await s.eval((q) => document.querySelector(q).innerText, sel), /Hạn nộp/, 'thẻ đề được giao phải hiện "Hạn nộp"');
       await startFromCard(s, sel);
+      // Lỗi thật trên /thu/ 19/11/2026: vào bài từ thẻ đề được giao thì ô "Thí sinh" trống (mất tên đã nhập ở cổng tên).
+      assert.equal(await s.eval(() => document.getElementById('candidateName')?.value ?? document.getElementById('candidateName')?.textContent),
+        'Trần Học Sinh', 'vào bài từ thẻ đề được giao: #candidateName phải là tên học sinh đã nhập ở cổng tên (WEB-contract 19.1), không được trống');
       await submit(s);
       await s.waitFor(() => /Đã gửi/i.test(document.getElementById('syncText')?.textContent ?? ''), 'nộp bài đề được giao: #syncText "Đã gửi"', 20000);
       const kq = gas.gas.sheets.get('KetQua');
       assert.ok(kq && kq.getLastRow() === 2, 'Google Sheet có đúng 1 dòng kết quả');
       assert.match(kq.rows[1].map(String).join(' | '), new RegExp(code), 'dòng kết quả phải có mã lớp');
+      assert.match(kq.rows[1].map(String).join(' | '), /Trần Học Sinh/, 'dòng kết quả trong Sheet phải có tên học sinh');
       // giáo viên xem kết quả
       await nav(t, 'ket-qua');
       await t.waitFor(() => /Trần Học Sinh/.test(document.getElementById('resultsTable')?.innerText ?? ''), 'mục Kết quả: #resultsTable có bài của học sinh vừa nộp', 15000);

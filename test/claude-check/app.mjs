@@ -135,7 +135,26 @@ export async function loadExam(page, exam) {
   `nạp đề "${exam.title}" qua #examFileInput: tiêu đề đúng và có ${exam.questions.length} thẻ câu hỏi`, 10000, exam.title, exam.questions.length);
 }
 
-export const pickOption = (page, qid, letter) => page.click(`[data-qid="${qid}"][data-option-id="${qid}-${letter}"]`);
+/**
+ * Bấm bằng CHUỘT THẬT (CDP Input.dispatchMouseEvent) vào giữa phần tử, sau khi cuộn tới. Khác page.click (gọi e.click()):
+ * bị chặn nếu có lớp phủ đè lên, giống người dùng thật. Trả về phần tử thật sự nằm dưới con trỏ.
+ */
+export async function mouseClick(page, sel) {
+  const p = await page.eval((s) => {
+    const e = document.querySelector(s); if (!e) return null;
+    e.scrollIntoView({ block: 'center' });
+    const r = e.getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2;
+    const top = document.elementFromPoint(x, y);
+    return { x, y, hitsTarget: !!top && e.contains(top), top: top ? top.tagName.toLowerCase() + (top.id ? '#' + top.id : '') + '.' + String(top.className).trim().split(/\s+/).join('.') : null };
+  }, sel);
+  if (!p) throw new Error('Không tìm thấy phần tử để bấm chuột: ' + sel);
+  for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased']) {
+    await page.send('Input.dispatchMouseEvent', { type, x: p.x, y: p.y, button: 'left', clickCount: type === 'mouseMoved' ? 0 : 1 });
+  }
+  return p;
+}
+
+export const pickOption =(page, qid, letter) => page.click(`[data-qid="${qid}"][data-option-id="${qid}-${letter}"]`);
 
 export async function setStatement(page, qid, index, value) {
   const ok = await page.eval((q, i, v) => {

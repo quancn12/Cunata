@@ -178,3 +178,12 @@ textarea.ui-control { min-height: calc(var(--target) * 3); resize: vertical; }
 
 
 
+
+/* Hộp thoại dựng bằng div (#examPreview và các hộp thoại có lớp nền .ui-dialog-backdrop): phủ cố định, nằm giữa khung nhìn;
+   điện thoại < 640px là tấm trượt dưới đáy. Lỗi thật 19/11/2026: thiếu CSS này nên #examPreview rơi xuống cuối trang, bấm thẻ đề như không có gì xảy ra. */
+.ui-dialog-backdrop { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: var(--sp-4); background: var(--c-backdrop); overflow-y: auto; overscroll-behavior: contain; }
+.ui-dialog-backdrop > .ui-card { width: min(var(--dialog-width), 100%); max-height: calc(100dvh - var(--sp-6)); overflow: auto; margin: 0; box-shadow: var(--shadow-2); }
+@media (max-width: 639px) {
+  .ui-dialog-backdrop { align-items: flex-end; padding: 0; }
+  .ui-dialog-backdrop > .ui-card { width: 100%; max-height: calc(100dvh - var(--sp-4)); border-radius: var(--r-lg) var(--r-lg) 0 0; padding-bottom: max(var(--sp-4), env(safe-area-inset-bottom)); }
+}

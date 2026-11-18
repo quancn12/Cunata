@@ -9,7 +9,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { launchBrowser, sleep, startServer } from './harness.mjs';
 import {
-  SECRET, TARGETS, START_NAME, enterFromStart, onStartScreen, onRoleChooser, enterStudentArea, startFromCard, isVisible, loadExam, makeExam, near, openApp, pageProblems, pickOption, qI, qII, qIII, readReport,
+  SECRET, TARGETS, START_NAME, enterFromStart, mouseClick, onStartScreen, onRoleChooser, enterStudentArea, startFromCard, isVisible, loadExam, makeExam, near, openApp, pageProblems, pickOption, qI, qII, qIII, readReport,
   setName, setStatement, shortValue, submit, timerSeconds, typeShort, waitBoot, waitReport, waitSaved,
 } from './app.mjs';
 
@@ -60,6 +60,40 @@ for (const target of TARGETS) {
       assert.equal(await page.eval(() => document.getElementById('candidateName')?.value || document.getElementById('candidateName')?.textContent), 'Lê Minh 12A1', 'tên nhập ở cổng tên phải là tên thí sinh của bài làm');
       assert.deepEqual(pageProblems(page), [], 'không lỗi JS hay request hỏng');
     });
+
+    // Lỗi thật trên /thu/ 19/11/2026 (Trưởng phòng báo "không click được đề nào"): #examPreview không có CSS hộp thoại nên hiện ở CUỐI trang,
+    // ngoài khung nhìn. Bấm bằng chuột thật, ở 3 khổ màn, thẻ nằm giữa danh sách (trang đã cuộn).
+    for (const [w, h] of [[1850, 980], [1280, 800], [390, 844]]) {
+      runDist(`[student][ui] bấm thẻ đề bằng chuột thật (${w}x${h}, đã cuộn): #examPreview nổi lên TRONG khung nhìn, có nút #btnStartExam nhìn thấy và nhận focus; Esc đóng`, async (ctx) => {
+        const page = await ctx.newPage();
+        await page.setViewport(w, h, w < 600);
+        await page.goto(server.url + target.path);
+        await waitBoot(page);
+        await enterStudentArea(page, { name: 'Học sinh chuột thật' });
+        const sel = '#practiceExams .exam-card.exam-list-item:nth-of-type(5)';
+        const hit = await mouseClick(page, sel);
+        assert.ok(hit.hitsTarget, `chuột tại giữa thẻ đề phải trúng thẻ, đang bị phần tử khác đè: ${hit.top}`);
+        await page.waitFor(() => { const p = document.getElementById('examPreview'); return !!p && getComputedStyle(p).display !== 'none'; }, 'bấm thẻ: #examPreview mở', 5000);
+        const v = await page.eval(() => {
+          const b = document.getElementById('btnStartExam'); const r = b.getBoundingClientRect();
+          const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          return { btnInView: r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth, btnReachable: !!top && b.contains(top),
+            focusInside: document.getElementById('examPreview').contains(document.activeElement), pos: getComputedStyle(document.getElementById('examPreview')).position };
+        });
+        assert.equal(v.btnInView, true, `WEB-contract 19.1: bấm thẻ đề thì hộp thoại #examPreview phải hiện trong khung nhìn (nút #btnStartExam nằm trong màn hình), không được rơi xuống cuối trang; position=${v.pos}`);
+        assert.equal(v.btnReachable, true, 'nút #btnStartExam phải bấm được bằng chuột (không bị phần tử khác đè)');
+        assert.equal(v.focusInside, true, 'mở hộp thoại thì focus phải chuyển vào trong #examPreview (bàn phím / trình đọc màn hình)');
+        await page.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+        await page.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+        await page.waitFor(() => getComputedStyle(document.getElementById('examPreview')).display === 'none', 'nhấn Esc: đóng #examPreview', 3000);
+        const back = await mouseClick(page, sel);
+        assert.ok(back.hitsTarget, 'đóng hộp thoại xong, bấm lại thẻ đề phải được (không còn lớp phủ sót lại)');
+        await page.waitFor(() => getComputedStyle(document.getElementById('examPreview')).display !== 'none', 'mở lại #examPreview', 5000);
+        await mouseClick(page, '#btnStartExam');
+        await page.waitFor(() => { const e = document.getElementById('examWrapper'); return !!e && e.getClientRects().length > 0 && document.querySelectorAll('#examPane .question-card').length > 0; },
+          'bấm "Bắt đầu làm bài" bằng chuột thật: vào màn làm bài', 10000);
+      });
+    }
 
     runDist('[app][student] lần sau mở lại: nhớ vai và tên (không hỏi lại tên), ?exam= mở sẵn phần xem trước của đề đó', async (ctx) => {
       const exams = readManifest();

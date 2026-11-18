@@ -452,6 +452,14 @@ export function mountStudentArea(container, options = {}) {
     examPreviewModal.setAttribute('role', 'dialog');
     examPreviewModal.setAttribute('aria-modal', 'true');
     examPreviewModal.style.display = 'none';
+    let previewReturnFocus = null;
+    // Esc hoặc bấm ra vùng nền ngoài thẻ thì đóng hộp thoại.
+    examPreviewModal.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') {
+        ev.preventDefault();
+        closePreview();
+    } });
+    examPreviewModal.addEventListener('click', (ev) => { if (ev.target === examPreviewModal)
+        closePreview(); });
     const previewCard = Card(undefined, doc);
     previewCard.className = 'ui-card exam-preview-card';
     const previewHeading = doc.createElement('div');
@@ -590,11 +598,18 @@ export function mountStudentArea(container, options = {}) {
                 btnStartExam.textContent = 'Bắt đầu làm bài';
             }
         }
+        previewReturnFocus = doc.activeElement instanceof HTMLElement ? doc.activeElement : null;
         examPreviewModal.style.display = 'flex';
+        // Hộp thoại phải nổi giữa khung nhìn và nhận focus (WEB-contract 19.1; lỗi thật 19/11/2026: rơi xuống cuối trang).
+        (btnStartExam.disabled ? btnClosePreview : btnStartExam).focus();
     }
     function closePreview() {
+        const wasOpen = examPreviewModal.style.display !== 'none';
         examPreviewModal.style.display = 'none';
         currentPreviewExam = null;
+        if (wasOpen && previewReturnFocus && doc.contains(previewReturnFocus))
+            previewReturnFocus.focus();
+        previewReturnFocus = null;
     }
     async function handleStartOrResumeExam(exam) {
         closePreview();
