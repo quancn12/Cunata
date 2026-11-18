@@ -370,6 +370,42 @@ export function buildReport(
       blocks = bList;
     }
 
+    let orderedOptions: readonly WebOption[] | undefined;
+    if (q.kind === "I" && q.options) {
+      const qOptOrder = final.presentationOrder?.optionOrder?.find(
+        (oo) => oo.questionVersionId === q.questionVersionId
+      );
+      if (qOptOrder && Array.isArray(qOptOrder.optionIds) && qOptOrder.optionIds.length > 0) {
+        const optMap = new Map<string, WebOption>();
+        for (const o of q.options) optMap.set(o.optionId, o);
+        const list: WebOption[] = [];
+        for (const id of qOptOrder.optionIds) {
+          const opt = optMap.get(id);
+          if (opt) list.push(opt);
+        }
+        for (const o of q.options) {
+          if (!list.some((x) => x.optionId === o.optionId)) list.push(o);
+        }
+        orderedOptions = Object.freeze(list);
+      } else {
+        orderedOptions = Object.freeze([...q.options]);
+      }
+    }
+
+    let unreleasedStatements: readonly WebStatement[] | undefined;
+    if (q.kind === "II" && q.statements) {
+      unreleasedStatements = Object.freeze(
+        q.statements.map((s) =>
+          Object.freeze({
+            statementId: s.statementId,
+            label: s.label,
+            text: s.text,
+            answer: false,
+          })
+        )
+      );
+    }
+
     const baseQ: ReportQuestion = {
       questionVersionId: q.questionVersionId,
       kind: q.kind,
@@ -379,6 +415,9 @@ export function buildReport(
       status,
       points,
       maxPoints,
+      ...(q.content ? { content: q.content } : {}),
+      ...(orderedOptions ? { options: orderedOptions } : {}),
+      ...(unreleasedStatements ? { statements: unreleasedStatements } : {}),
     };
 
     if (!released) {
@@ -421,6 +460,9 @@ export function buildReport(
         ...baseQ,
         answer,
         explanation: Object.freeze(expBlocks),
+        ...(q.kind === "I" ? { correctOptionId: q.correctOptionId } : {}),
+        ...(q.kind === "III" ? { rawAnswerKey: q.answerKey } : {}),
+        ...(q.kind === "II" && q.statements ? { statements: Object.freeze([...q.statements]) } : {}),
       };
       reportQuestions.push(Object.freeze(relQ));
     }
@@ -433,6 +475,7 @@ export function buildReport(
       attemptId: final.attemptId,
     },
     candidateName: final.candidateName,
+    examTitle: final.examSnapshot.title,
     startedAt: final.startedAt,
     submittedAt: final.submittedAt,
     scoreDTO: recomputedDTO,

@@ -319,4 +319,155 @@ describe('RD-admin: Trang Admin riêng (src/admin)', () => {
 
     ctrl.dispose();
   });
+
+  it('10. Mật khẩu có dấu cách biên: giữ nguyên văn cho login, createTeacher, resetPassword', async () => {
+    let capturedLoginPw = '';
+    let capturedCreatePw = '';
+    let capturedResetPw = '';
+
+    const client = createMockClient({
+      async adminLogin(pw: string) {
+        capturedLoginPw = pw;
+        if (pw === ' Admin-123456 ') {
+          return { ok: true, value: { token: 'tok-123' } };
+        }
+        return { ok: false, code: 'UNAUTHORIZED', message: 'Sai mật khẩu' };
+      },
+      async adminCreateTeacher(...args: any[]): Promise<AsResult<true>> {
+        if (typeof args[0] === 'object' && args[0] !== null) {
+          capturedCreatePw = args[0].password;
+        } else if (typeof args[1] === 'object' && args[1] !== null) {
+          capturedCreatePw = args[1].password;
+        } else {
+          capturedCreatePw = args[3];
+        }
+        return { ok: true, value: true };
+      },
+      async adminResetPassword(...args: any[]): Promise<AsResult<true>> {
+        if (typeof args[0] === 'object' && args[0] !== null) {
+          capturedResetPw = args[0].password;
+        } else if (args.length >= 3) {
+          capturedResetPw = args[2];
+        } else {
+          capturedResetPw = args[1];
+        }
+        return { ok: true, value: true };
+      },
+    });
+
+    const ctrl = await bootstrap(root as any, client, doc as any);
+
+    // 1. Login with spaces
+    const loginOk = await ctrl.login(' Admin-123456 ');
+    assert.equal(loginOk, true);
+    assert.equal(capturedLoginPw, ' Admin-123456 ');
+
+    // 2. Create teacher with 8-char password containing spaces
+    const createOk = await ctrl.createTeacher({ name: 'Cô Lan', username: 'colan_sp', password: ' 123456 ' });
+    assert.equal(createOk, true);
+    assert.equal(capturedCreatePw, ' 123456 ');
+
+    // 3. Reset password with spaces
+    const resetOk = await ctrl.resetPassword({ username: 'colan_sp', password: ' Moi-123456 ' });
+    assert.equal(resetOk, true);
+    assert.equal(capturedResetPw, ' Moi-123456 ');
+
+    ctrl.dispose();
+  });
+
+  it('11. Hết hạn phiên (UNAUTHORIZED): refresh đưa về cổng đăng nhập và xóa token', async () => {
+    let isExpired = false;
+    const client = createMockClient({
+      async adminStats() {
+        if (isExpired) return { ok: false, code: 'UNAUTHORIZED', message: 'Phiên hết hạn' };
+        return { ok: true, value: { teachers: 1, classes: 0, exams: 0, results: 0 } };
+      },
+    });
+
+    const ctrl = await bootstrap(root as any, client, doc as any);
+    await ctrl.login('Admin-Secret-123');
+    assert.ok(ctrl.getState().token);
+    assert.equal(doc.getElementById('adminPanel')?.style.display, '');
+
+    // Làm mới khi phiên hết hạn
+    isExpired = true;
+    await ctrl.refresh();
+
+    assert.equal(ctrl.getState().token, null, 'token phải bị xóa khi hết hạn');
+    assert.equal(doc.getElementById('adminPanel')?.style.display, 'none', '#adminPanel phải ẩn');
+    assert.equal(doc.getElementById('adminLogin')?.style.display, '', '#adminLogin phải hiện lại');
+    assert.match(doc.getElementById('adminLoginError')?.textContent ?? '', /hết hạn|đăng nhập lại/i);
+
+    ctrl.dispose();
+  });
+
+  it('12. Lỗi mạng/server khi làm mới: hiển thị thông báo tại chỗ và nút thử lại', async () => {
+    let failRefresh = false;
+    const client = createMockClient({
+      async adminStats() {
+        if (failRefresh) return { ok: false, code: 'INTERNAL_ERROR', message: 'Lỗi máy chủ thử nghiệm' };
+        return { ok: true, value: { teachers: 1, classes: 0, exams: 0, results: 0 } };
+      },
+    });
+
+    const ctrl = await bootstrap(root as any, client, doc as any);
+    await ctrl.login('Admin-Secret-123');
+
+    // Thất bại khi làm mới
+    failRefresh = true;
+    await ctrl.refresh();
+
+    const errBox = doc.getElementById('adminError');
+    assert.ok(errBox);
+    assert.equal(errBox!.style.display, '', '#adminError phải hiển thị khi lỗi');
+    assert.match(errBox!.textContent, /Lỗi|thử lại/i);
+
+    ctrl.dispose();
+  });
+
+  it('13. Lỗi tải ban đầu: không hiển thị danh sách rỗng, hiển thị thông báo lỗi', async () => {
+    const client = createMockClient({
+      async adminListTeachers() {
+        return { ok: false, code: 'INTERNAL_ERROR', message: 'Không tải được dữ liệu kiểm định' };
+      },
+    });
+
+    const ctrl = await bootstrap(root as any, client, doc as any);
+    await ctrl.login('Admin-Secret-123');
+
+    const emptyState = doc.querySelector('.admin-empty-state') as MockElement | null;
+    assert.equal(emptyState?.style.display, 'none', 'không được hiển thị danh sách rỗng khi lỗi tải');
+
+    const errBox = doc.getElementById('adminError');
+    assert.ok(errBox);
+    assert.equal(errBox!.style.display, '', '#adminError phải hiển thị');
+    assert.match(errBox!.textContent, /Không.*tải|thử lại/i);
+
+    ctrl.dispose();
+  });
+
+  it('14. Lỗi input: thiết lập aria-invalid="true" và aria-describedby trỏ tới lỗi', async () => {
+    const client = createMockClient();
+    const ctrl = await bootstrap(root as any, client, doc as any);
+    await ctrl.login('Admin-Secret-123');
+
+    // Mở hộp thoại tạo giáo viên
+    const btnCreate = doc.getElementById('btnCreateTeacher') as MockElement | null;
+    btnCreate?.click();
+
+    const userInp = doc.getElementById('newTeacherUsername') as MockElement | null;
+    assert.ok(userInp);
+
+    // Gõ username không hợp lệ (ab)
+    await ctrl.createTeacher({ name: 'Cô Lan', username: 'ab', password: 'Password-123' });
+
+    assert.equal(userInp!.getAttribute('aria-invalid'), 'true');
+    const describedby = userInp!.getAttribute('aria-describedby') ?? '';
+    assert.match(describedby, /createTeacherError/);
+
+    const errEl = doc.getElementById('createTeacherError');
+    assert.match(errEl?.textContent ?? '', /3.32/);
+
+    ctrl.dispose();
+  });
 });

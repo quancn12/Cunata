@@ -149,9 +149,22 @@ export async function bootstrap(
         return;
       }
 
-      if (!statsRes.ok || !teachersRes.ok) {
-        const failedRes = !statsRes.ok ? statsRes : teachersRes;
-        const viMsg = mapErrorToVietnamese(failedRes.code, failedRes.message);
+      if (!statsRes.ok) {
+        const viMsg = mapErrorToVietnamese(statsRes.code, statsRes.message);
+        const errMsg = viMsg
+          ? `Không thể tải dữ liệu: ${viMsg}. Vui lòng thử lại.`
+          : 'Không thể tải dữ liệu từ máy chủ. Vui lòng thử lại.';
+        state = {
+          ...state,
+          loading: false,
+          error: errMsg,
+        };
+        updateViewForState();
+        return;
+      }
+
+      if (!teachersRes.ok) {
+        const viMsg = mapErrorToVietnamese(teachersRes.code, teachersRes.message);
         const errMsg = viMsg
           ? `Không thể tải dữ liệu: ${viMsg}. Vui lòng thử lại.`
           : 'Không thể tải dữ liệu từ máy chủ. Vui lòng thử lại.';
@@ -530,10 +543,6 @@ export async function bootstrap(
     view.resetPasswordInput.removeAttribute('aria-invalid');
     if (typeof view.resetPasswordDialog.close === 'function') {
       view.resetPasswordDialog.close();
-    } else {
-      view.resetPasswordDialog.removeAttribute('open');
-    }
-  };
     } else {
       view.resetPasswordDialog.removeAttribute('open');
     }

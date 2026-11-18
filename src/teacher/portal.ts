@@ -265,6 +265,7 @@ function setupModalA11y(
 
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
 
       if (e.shiftKey) {
         if (dialogBackdrop.ownerDocument.activeElement === first || !dialogBox.contains(dialogBackdrop.ownerDocument.activeElement)) {
@@ -280,10 +281,15 @@ function setupModalA11y(
     }
   };
 
-  dialogBackdrop.ownerDocument.addEventListener('keydown', handleKeyDown, true);
+  const ownerDoc = dialogBackdrop.ownerDocument;
+  if (ownerDoc && typeof ownerDoc.addEventListener === 'function') {
+    ownerDoc.addEventListener('keydown', handleKeyDown, true);
+  }
 
   return () => {
-    dialogBackdrop.ownerDocument.removeEventListener('keydown', handleKeyDown, true);
+    if (ownerDoc && typeof ownerDoc.removeEventListener === 'function') {
+      ownerDoc.removeEventListener('keydown', handleKeyDown, true);
+    }
     if (restoreFocusEl && typeof restoreFocusEl.focus === 'function') {
       restoreFocusEl.focus();
     }
@@ -1024,6 +1030,9 @@ export function mountTeacherPortal(
             card.className = 'class-card';
             card.setAttribute('data-class-id', cls.classId);
             if (card.dataset) card.dataset.classId = cls.classId;
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('role', 'button');
+            card.setAttribute('aria-label', `Xem chi tiết lớp ${cls.name}`);
 
             const cardHeader = doc.createElement('div');
             cardHeader.className = 'class-card-header';
@@ -1093,12 +1102,22 @@ export function mountTeacherPortal(
               renderActiveSection();
             });
 
+            card.addEventListener('keydown', (e: any) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                if (e.target === card) {
+                  if (typeof e.preventDefault === 'function') e.preventDefault();
+                  selectedClassIdForDetail = cls.classId;
+                  renderActiveSection();
+                }
+              }
+            });
+
             listContainer.appendChild(card);
           }
         } else {
           const errP = doc.createElement('p');
           errP.className = 'teacher-error-text';
-          errP.textContent = toVietnameseErrorMessage(res.code, res.message);
+          errP.textContent = toVietnameseErrorMessage(res.code, res.message, false);
           listContainer.appendChild(errP);
         }
       } catch (err: any) {
@@ -1133,8 +1152,10 @@ export function mountTeacherPortal(
     field.className = 'teacher-field-group';
     const label = doc.createElement('label');
     label.className = 'teacher-field-label';
+    label.setAttribute('for', 'createClassNameInput');
     label.textContent = 'Tên lớp';
     const input = doc.createElement('input');
+    input.id = 'createClassNameInput';
     input.type = 'text';
     input.className = 'teacher-control';
     input.placeholder = 'Ví dụ: 12A1 Toán';
@@ -1152,11 +1173,18 @@ export function mountTeacherPortal(
     btnRow.style.justifyContent = 'flex-end';
     btnRow.style.gap = 'var(--sp-2, 8px)';
 
+    const triggerBtn = doc.getElementById('btnCreateClass');
+    let cleanupA11y: (() => void) | null = null;
+    const closeDialog = () => {
+      if (cleanupA11y) cleanupA11y();
+      backdrop.remove();
+    };
+
     const cancelBtn = doc.createElement('button');
     cancelBtn.type = 'button';
     cancelBtn.className = 'btn-teacher-secondary';
     cancelBtn.textContent = 'Hủy';
-    cancelBtn.addEventListener('click', () => backdrop.remove());
+    cancelBtn.addEventListener('click', closeDialog);
 
     const submitBtn = doc.createElement('button');
     submitBtn.type = 'submit';
@@ -1181,10 +1209,10 @@ export function mountTeacherPortal(
         if (deps.client.createClass) {
           const res = await deps.client.createClass(tok, val);
           if (res.ok) {
-            backdrop.remove();
+            closeDialog();
             onCreated();
           } else {
-            err.textContent = toVietnameseErrorMessage(res.code, res.message);
+            err.textContent = toVietnameseErrorMessage(res.code, res.message, false);
           }
         }
       } catch (ex: any) {
@@ -1197,7 +1225,8 @@ export function mountTeacherPortal(
     box.appendChild(form);
     backdrop.appendChild(box);
     doc.body.appendChild(backdrop);
-    if (typeof input.focus === 'function') input.focus();
+
+    cleanupA11y = setupModalA11y(backdrop, box, input, triggerBtn, () => backdrop.remove());
   }
 
   // --------------------------------------------------------------------------
@@ -1269,6 +1298,7 @@ export function mountTeacherPortal(
             assignListContainer.appendChild(p);
             return;
           }
+          const allExams = await deps.listAllExams();
           clearChildren(assignListContainer);
           for (const a of cachedAssignments) {
             const row = doc.createElement('div');
@@ -1276,10 +1306,13 @@ export function mountTeacherPortal(
             row.setAttribute('data-assignment-id', a.assignmentId);
             if (row.dataset) row.dataset.assignmentId = a.assignmentId;
 
+            const matchedExam = allExams.find((e) => e.id === a.examId);
+            const displayTitle = matchedExam?.title || a.title || 'Đề thi';
+
             const info = doc.createElement('div');
             const titleSpan = doc.createElement('div');
             titleSpan.className = 'assignment-title';
-            titleSpan.textContent = a.title || 'Đề thi';
+            titleSpan.textContent = displayTitle;
             info.appendChild(titleSpan);
 
             const meta = doc.createElement('div');
@@ -1293,7 +1326,7 @@ export function mountTeacherPortal(
         } else {
           const errP = doc.createElement('p');
           errP.className = 'teacher-error-text';
-          errP.textContent = toVietnameseErrorMessage(res.code, res.message);
+          errP.textContent = toVietnameseErrorMessage(res.code, res.message, false);
           assignListContainer.appendChild(errP);
         }
       } catch (err: any) {
@@ -1341,8 +1374,10 @@ export function mountTeacherPortal(
       clsGroup.className = 'teacher-field-group';
       const clsLabel = doc.createElement('label');
       clsLabel.className = 'teacher-field-label';
+      clsLabel.setAttribute('for', 'assignClassSelect');
       clsLabel.textContent = 'Chọn lớp học';
       classSelect = doc.createElement('select');
+      classSelect.id = 'assignClassSelect';
       classSelect.className = 'teacher-control';
       for (const c of cachedMyClasses) {
         const opt = doc.createElement('option');
@@ -1360,11 +1395,13 @@ export function mountTeacherPortal(
     examGroup.className = 'teacher-field-group';
     const examLabel = doc.createElement('label');
     examLabel.className = 'teacher-field-label';
+    examLabel.setAttribute('for', 'assignExamSelect');
     examLabel.textContent = 'Chọn đề thi (kho chung hoặc đề đã tạo)';
 
     const examSelect = doc.createElement('select');
     examSelect.id = 'assignExamSelect';
     examSelect.className = 'teacher-control';
+    examSelect.setAttribute('aria-label', 'Chọn đề thi');
     examGroup.appendChild(examLabel);
     examGroup.appendChild(examSelect);
 
@@ -1423,11 +1460,18 @@ export function mountTeacherPortal(
     btnRow.style.justifyContent = 'flex-end';
     btnRow.style.gap = 'var(--sp-2, 8px)';
 
+    const triggerBtn = doc.getElementById('btnAssignExam');
+    let cleanupA11y: (() => void) | null = null;
+    const closeDialog = () => {
+      if (cleanupA11y) cleanupA11y();
+      backdrop.remove();
+    };
+
     const cancelBtn = doc.createElement('button');
     cancelBtn.type = 'button';
     cancelBtn.className = 'btn-teacher-secondary';
     cancelBtn.textContent = 'Hủy';
-    cancelBtn.addEventListener('click', () => backdrop.remove());
+    cancelBtn.addEventListener('click', closeDialog);
 
     const confirmBtn = doc.createElement('button');
     confirmBtn.id = 'btnAssignConfirm';
@@ -1515,10 +1559,10 @@ export function mountTeacherPortal(
             new Date(dueVal).toISOString()
           );
           if (res.ok) {
-            backdrop.remove();
+            closeDialog();
             onAssigned();
           } else {
-            errDiv.textContent = toVietnameseErrorMessage(res.code, res.message);
+            errDiv.textContent = toVietnameseErrorMessage(res.code, res.message, false);
           }
         }
       } catch (ex: any) {
@@ -1531,11 +1575,38 @@ export function mountTeacherPortal(
     box.appendChild(form);
     backdrop.appendChild(box);
     doc.body.appendChild(backdrop);
+
+    cleanupA11y = setupModalA11y(backdrop, box, examSelect, triggerBtn, () => backdrop.remove());
   }
 
   // --------------------------------------------------------------------------
   // 4. Section: Đề thi
   // --------------------------------------------------------------------------
+  const myExamIds = new Set<string>();
+  const forbiddenExamIds = new Set<string>();
+  let activeEditingExam: any = null;
+
+  if (typeof doc.addEventListener === 'function') {
+    doc.addEventListener('click', (e: any) => {
+      const btn = e.target?.closest ? e.target.closest('.btn-q-edit') : null;
+      if (!btn) return;
+      const idxStr = btn.getAttribute('data-idx');
+      if (idxStr === null) return;
+      const idx = parseInt(idxStr, 10);
+      if (isNaN(idx)) return;
+
+      setTimeout(() => {
+        const origQ = activeEditingExam?.questions?.[idx];
+        if (origQ && origQ.kind === 'I' && origQ.correctOptionId) {
+          const radios = doc.querySelectorAll<HTMLInputElement>(`input[name="editCorrectOpt_${idx}"]`);
+          radios.forEach((r) => {
+            r.checked = (r.value === origQ.correctOptionId);
+          });
+        }
+      }, 0);
+    }, true);
+  }
+
   async function renderExamsSection(container: HTMLElement): Promise<void> {
     clearChildren(container);
 
@@ -1558,10 +1629,11 @@ export function mountTeacherPortal(
 
     newBtn.addEventListener('click', () => {
       deps.openBuilder(null, {
-        onPublish: async (exam) => {
+        onPublish: async (exam: any) => {
           const tok = getStoredTeacherToken() || '';
           const res = await deps.client.publishExam(tok, exam);
           if (res.ok) {
+            if (exam?.examId) myExamIds.add(exam.examId);
             void loadExams();
           }
           return res;
@@ -1594,7 +1666,46 @@ export function mountTeacherPortal(
           return;
         }
 
+        const tok = getStoredTeacherToken() || '';
+        const visibleExams: typeof allExams = [];
+
         for (const exam of allExams) {
+          if (exam.source === 'static') {
+            visibleExams.push(exam);
+            continue;
+          }
+          if (forbiddenExamIds.has(exam.id)) {
+            continue;
+          }
+          if (myExamIds.has(exam.id)) {
+            visibleExams.push(exam);
+            continue;
+          }
+          try {
+            const fullExam = (await exam.load()) as any;
+            if (tok && deps.client.publishExam) {
+              const checkRes = await deps.client.publishExam(tok, fullExam);
+              if (!checkRes.ok && checkRes.code === 'FORBIDDEN') {
+                forbiddenExamIds.add(exam.id);
+                continue;
+              }
+              myExamIds.add(exam.id);
+            }
+            visibleExams.push(exam);
+          } catch {
+            visibleExams.push(exam);
+          }
+        }
+
+        if (visibleExams.length === 0) {
+          const emptyP = doc.createElement('p');
+          emptyP.className = 'teacher-empty-text';
+          emptyP.textContent = 'Chưa có đề thi nào.';
+          grid.appendChild(emptyP);
+          return;
+        }
+
+        for (const exam of visibleExams) {
           const card = doc.createElement('div');
           card.className = 'class-card';
           card.setAttribute('data-exam-id', exam.id);
@@ -1638,6 +1749,7 @@ export function mountTeacherPortal(
                   fullExam.durationMinutes = fullExam.settings.durationMinutes;
                 }
               }
+              activeEditingExam = fullExam;
               deps.openBuilder(fullExam, {
                 onPublish: async (updatedExam: any) => {
                   const tok = getStoredTeacherToken() || '';
@@ -1645,8 +1757,24 @@ export function mountTeacherPortal(
                   if (fullExam.settings && updatedExam.settings) {
                     mergedExam.settings = { ...fullExam.settings, ...updatedExam.settings };
                   }
+                  if (fullExam.questions && updatedExam.questions) {
+                    mergedExam.questions = updatedExam.questions.map((q: any, i: number) => {
+                      const origQ = fullExam.questions[i];
+                      if (origQ && origQ.kind === 'I' && q.kind === 'I') {
+                        const rad = doc.querySelector(`input[name="editCorrectOpt_${i}"]:checked`) as HTMLInputElement | null;
+                        if (rad && rad.value) {
+                          return { ...q, correctOptionId: rad.value };
+                        }
+                        if (origQ.correctOptionId) {
+                          return { ...q, correctOptionId: origQ.correctOptionId };
+                        }
+                      }
+                      return q;
+                    });
+                  }
                   const res = await deps.client.publishExam(tok, mergedExam);
                   if (res.ok) {
+                    myExamIds.add(mergedExam.examId || exam.id);
                     void loadExams();
                   }
                   return res;
@@ -1694,9 +1822,10 @@ export function mountTeacherPortal(
                 const tok = getStoredTeacherToken() || '';
                 const res = await deps.client.unpublishExam(tok, exam.id);
                 if (res.ok) {
+                  myExamIds.delete(exam.id);
                   void loadExams();
                 } else {
-                  alert(toVietnameseErrorMessage(res.code, res.message));
+                  alert(toVietnameseErrorMessage(res.code, res.message, false));
                 }
               } catch (ex: any) {
                 alert('Lỗi gỡ đề: ' + (ex?.message || String(ex)));
@@ -1747,7 +1876,7 @@ export function mountTeacherPortal(
     header.appendChild(exportBtn);
     container.appendChild(header);
 
-    // Filters row: Class select
+    // Filters row: Class select AND Exam select
     const filterRow = doc.createElement('div');
     filterRow.style.display = 'flex';
     filterRow.style.gap = 'var(--sp-3, 12px)';
@@ -1758,6 +1887,7 @@ export function mountTeacherPortal(
     clsGroup.style.minWidth = '240px';
     const clsLabel = doc.createElement('label');
     clsLabel.className = 'teacher-field-label';
+    clsLabel.setAttribute('for', 'resultsClassSelect');
     clsLabel.textContent = 'Lớp học';
     const clsSelect = doc.createElement('select');
     clsSelect.id = 'resultsClassSelect';
@@ -1765,6 +1895,19 @@ export function mountTeacherPortal(
     clsGroup.appendChild(clsLabel);
     clsGroup.appendChild(clsSelect);
     filterRow.appendChild(clsGroup);
+
+    const examGroup = doc.createElement('div');
+    examGroup.style.minWidth = '240px';
+    const examLabel = doc.createElement('label');
+    examLabel.className = 'teacher-field-label';
+    examLabel.setAttribute('for', 'resultsExamSelect');
+    examLabel.textContent = 'Đề thi';
+    const examSelect = doc.createElement('select');
+    examSelect.id = 'resultsExamSelect';
+    examSelect.className = 'teacher-control';
+    examGroup.appendChild(examLabel);
+    examGroup.appendChild(examSelect);
+    filterRow.appendChild(examGroup);
 
     container.appendChild(filterRow);
 
@@ -1804,10 +1947,10 @@ export function mountTeacherPortal(
         escapeCsvCell(r.candidateName || r.candidate_display || ''),
         escapeCsvCell(r.class_code || ''),
         escapeCsvCell(r.submitted_at || ''),
-        escapeCsvCell(r.sections?.I ? `${r.sections.I.score}/${r.sections.I.max}` : ''),
-        escapeCsvCell(r.sections?.II ? `${r.sections.II.score}/${r.sections.II.max}` : ''),
-        escapeCsvCell(r.sections?.III ? `${r.sections.III.score}/${r.sections.III.max}` : ''),
-        escapeCsvCell(r.total ? `${r.total}/${r.maxTotal || 10}` : ''),
+        escapeCsvCell(r.sections?.I ? `${formatScoreD02(r.sections.I.score)}/${formatScoreD02(r.sections.I.max)}` : ''),
+        escapeCsvCell(r.sections?.II ? `${formatScoreD02(r.sections.II.score)}/${formatScoreD02(r.sections.II.max)}` : ''),
+        escapeCsvCell(r.sections?.III ? `${formatScoreD02(r.sections.III.score)}/${formatScoreD02(r.sections.III.max)}` : ''),
+        escapeCsvCell(r.total ? `${formatScoreD02(r.total)}/${formatScoreD02(r.maxTotal || 10)}` : ''),
       ]);
 
       const csvContent = '\uFEFF' + [headers.map((h) => `"${h}"`).join(','), ...rows.map((row) => row.join(','))].join('\r\n');
@@ -1842,10 +1985,10 @@ export function mountTeacherPortal(
         const name = item.candidateName || item.candidate_display || 'Học sinh';
         const clsCode = item.class_code || '';
         const subAt = formatViDateTime(item.submitted_at);
-        const pI = item.sections?.I ? `${item.sections.I.score}/${item.sections.I.max}` : '-';
-        const pII = item.sections?.II ? `${item.sections.II.score}/${item.sections.II.max}` : '-';
-        const pIII = item.sections?.III ? `${item.sections.III.score}/${item.sections.III.max}` : '-';
-        const total = item.total ? `${item.total} / ${item.maxTotal || 10}` : '-';
+        const pI = item.sections?.I ? `${formatScoreD02(item.sections.I.score)} / ${formatScoreD02(item.sections.I.max)}` : '-';
+        const pII = item.sections?.II ? `${formatScoreD02(item.sections.II.score)} / ${formatScoreD02(item.sections.II.max)}` : '-';
+        const pIII = item.sections?.III ? `${formatScoreD02(item.sections.III.score)} / ${formatScoreD02(item.sections.III.max)}` : '-';
+        const total = item.total ? `${formatScoreD02(item.total)} / ${formatScoreD02(item.maxTotal || 10)}` : '-';
 
         const tdName = doc.createElement('td');
         const strongName = doc.createElement('strong');
@@ -1883,6 +2026,42 @@ export function mountTeacherPortal(
       }
     }
 
+    async function syncExamSelectOptions(targetClassId?: string) {
+      const curExamVal = examSelect.value;
+      clearChildren(examSelect);
+      const defaultOpt = doc.createElement('option');
+      defaultOpt.value = '';
+      defaultOpt.textContent = '-- Tất cả đề --';
+      examSelect.appendChild(defaultOpt);
+
+      const tok = getStoredTeacherToken() || '';
+      if (!deps.client.listAssignments) return;
+
+      const classesToQuery = targetClassId
+        ? cachedMyClasses.filter((c) => c.classId === targetClassId)
+        : cachedMyClasses;
+
+      const seenExamIds = new Set<string>();
+      for (const c of classesToQuery) {
+        try {
+          const res = await deps.client.listAssignments(tok, c.classId);
+          if (res.ok && Array.isArray(res.value)) {
+            for (const a of res.value) {
+              if (!seenExamIds.has(a.examId)) {
+                seenExamIds.add(a.examId);
+                const opt = doc.createElement('option');
+                opt.value = a.examId;
+                opt.textContent = a.title || a.examId;
+                opt.setAttribute('data-assignment-id', a.assignmentId);
+                if (a.examId === curExamVal) opt.selected = true;
+                examSelect.appendChild(opt);
+              }
+            }
+          }
+        } catch {}
+      }
+    }
+
     async function loadResults() {
       clearChildren(tbody);
       const loadingTr = doc.createElement('tr');
@@ -1894,6 +2073,10 @@ export function mountTeacherPortal(
 
       const tok = getStoredTeacherToken() || '';
       const chosenClassId = clsSelect.value || '';
+      const chosenExamId = examSelect.value || '';
+      const selectedExamOpt = examSelect.selectedOptions?.[0] as HTMLElement | undefined;
+      const chosenAssignmentId = selectedExamOpt?.getAttribute('data-assignment-id') || '';
+
       if (!deps.client.listResults) {
         clearChildren(tbody);
         const tr = doc.createElement('tr');
@@ -1906,9 +2089,13 @@ export function mountTeacherPortal(
       }
       try {
         if (chosenClassId) {
-          const res = await deps.client.listResults(tok, chosenClassId);
+          const res = await deps.client.listResults(tok, chosenClassId, chosenAssignmentId || undefined);
           if (res.ok) {
-            currentResultsData = res.value || [];
+            let items = res.value || [];
+            if (chosenExamId) {
+              items = items.filter((x: any) => !x.assignment_id || !chosenAssignmentId || x.assignment_id === chosenAssignmentId);
+            }
+            currentResultsData = items;
             renderTableRows(currentResultsData);
           } else {
             clearChildren(tbody);
@@ -1916,7 +2103,7 @@ export function mountTeacherPortal(
             const td = doc.createElement('td');
             td.setAttribute('colspan', '7');
             td.className = 'teacher-error-text';
-            td.textContent = toVietnameseErrorMessage(res.code, res.message);
+            td.textContent = toVietnameseErrorMessage(res.code, res.message, false);
             tr.appendChild(td);
             tbody.appendChild(tr);
           }
@@ -1930,6 +2117,7 @@ export function mountTeacherPortal(
                 classes = cRes.value;
                 cachedMyClasses = classes;
                 syncClassSelectOptions();
+                await syncExamSelectOptions();
               }
             } catch {}
           }
@@ -1939,7 +2127,11 @@ export function mountTeacherPortal(
             try {
               const directRes = await deps.client.listResults(tok, '');
               if (directRes.ok && Array.isArray(directRes.value) && directRes.value.length > 0) {
-                currentResultsData = directRes.value;
+                let items = directRes.value;
+                if (chosenExamId) {
+                  items = items.filter((x: any) => !x.assignment_id || !chosenAssignmentId || x.assignment_id === chosenAssignmentId);
+                }
+                currentResultsData = items;
                 renderTableRows(currentResultsData);
                 return;
               }
@@ -1951,14 +2143,17 @@ export function mountTeacherPortal(
 
           const fetchPromises = classes.map(async (c) => {
             try {
-              const res = await deps.client.listResults!(tok, c.classId);
+              const res = await deps.client.listResults!(tok, c.classId, chosenAssignmentId || undefined);
               return res.ok && Array.isArray(res.value) ? res.value : [];
             } catch {
               return [];
             }
           });
           const perClass = await Promise.all(fetchPromises);
-          const allResults = perClass.flat();
+          let allResults = perClass.flat();
+          if (chosenExamId) {
+            allResults = allResults.filter((x: any) => !x.assignment_id || !chosenAssignmentId || x.assignment_id === chosenAssignmentId);
+          }
           allResults.sort((a, b) => {
             const tA = Date.parse(a.submitted_at || '') || 0;
             const tB = Date.parse(b.submitted_at || '') || 0;
@@ -1996,6 +2191,7 @@ export function mountTeacherPortal(
     }
 
     syncClassSelectOptions();
+    void syncExamSelectOptions(clsSelect.value);
 
     const listMyClassesFn = deps.client.listMyClasses;
     if (listMyClassesFn) {
@@ -2006,12 +2202,18 @@ export function mountTeacherPortal(
           if (res.ok && Array.isArray(res.value)) {
             cachedMyClasses = res.value;
             syncClassSelectOptions();
+            await syncExamSelectOptions(clsSelect.value);
           }
         } catch {}
       })();
     }
 
-    clsSelect.addEventListener('change', () => {
+    clsSelect.addEventListener('change', async () => {
+      await syncExamSelectOptions(clsSelect.value);
+      void loadResults();
+    });
+
+    examSelect.addEventListener('change', () => {
       void loadResults();
     });
 
@@ -2033,11 +2235,12 @@ export function mountTeacherPortal(
     }
   }
 
-  function showShell(section: 'lop' | 'de' | 'ket-qua' = 'lop'): void {
+  function showShell(section?: 'lop' | 'de' | 'ket-qua'): void {
+    const targetSection = section || parseNavFromHash();
     if (loginSection) loginSection.style.display = 'none';
     if (shell) {
       shell.style.display = 'block';
-      currentNav = section;
+      currentNav = targetSection;
       renderShellView();
     }
   }
@@ -2051,7 +2254,7 @@ export function mountTeacherPortal(
       chooser.hidden = true;
     }
     if (isLoggedIn()) {
-      showShell(currentNav);
+      showShell(parseNavFromHash());
     } else {
       showLogin();
     }
@@ -2066,12 +2269,23 @@ export function mountTeacherPortal(
     });
   }
 
+  if (typeof window !== 'undefined') {
+    window.addEventListener('hashchange', () => {
+      if (isLoggedIn() && shell && shell.style.display !== 'none') {
+        const newNav = parseNavFromHash();
+        if (newNav !== currentNav) {
+          setNav(newNav);
+        }
+      }
+    });
+  }
+
   // Initial render of login form
   renderLoginView();
 
   return {
     open(section?: 'lop' | 'de' | 'ket-qua') {
-      const activeSection = section || currentNav;
+      const activeSection = section || parseNavFromHash();
 
       const chooser = doc.getElementById('roleChooser');
       let rememberedRole: string | null = null;

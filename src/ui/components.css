@@ -115,6 +115,9 @@ textarea.ui-control { min-height: calc(var(--target) * 3); resize: vertical; }
 .question-num-tag { font-size: var(--fs-sm); }
 .option-letter { font-size: var(--fs-xs); }
 .statement-label { font-size: var(--fs-sm); }
+.question-stem, .question-stem p, .question-stem span { font-size: var(--fs-md); }
+.option-text, .option-text p, .option-text span { font-size: var(--fs-md); }
+.statement-text, .statement-text p, .statement-text span { font-size: var(--fs-md); }
 .tf-btn { font-size: var(--fs-xs); }
 .quick-keys-bar span, .quick-keys-bar button, .quick-key-btn { font-size: var(--fs-xs) !important; }
 .report-subtitle { font-size: var(--fs-sm); }
@@ -128,11 +131,112 @@ textarea.ui-control { min-height: calc(var(--target) * 3); resize: vertical; }
 
 /* Touch target minimum 44x44px for interactive elements (DESIGN.md / WCAG) */
 .candidate-input { min-height: var(--target); }
-#btnOpenExamList, #btnSubmit { min-height: var(--target); }
+#btnOpenExamList, #btnSubmit, #btnCancelSubmit, #btnConfirmSubmit, .modal-actions button, .modal-actions .btn-secondary, .modal-actions .btn-submit { min-height: var(--target); min-width: var(--target); }
 .palette-btn, .palette-item { min-height: var(--target); min-width: var(--target); }
 .tf-btn { min-height: var(--target); min-width: var(--target); }
 .quick-key-btn { min-height: var(--target); min-width: var(--target); }
 .option-card { min-height: var(--target); }
+
+/* Question cards, options, and explanation styling with token compliance (DESIGN.md) */
+.question-card, .review-question-card, .review-question-item {
+  background: var(--c-surface);
+  color: var(--c-text);
+  border: var(--border-width) solid var(--c-border);
+}
+.question-card .question-title, span.question-title {
+  color: var(--c-text);
+}
+.question-stem, .question-stem p {
+  color: var(--c-text);
+}
+.option-text, .option-text p {
+  color: var(--c-text);
+}
+.statement-text, .statement-text p {
+  color: var(--c-text);
+}
+.option-card {
+  background: var(--c-surface);
+  color: var(--c-text);
+  border: var(--border-width) solid var(--c-border);
+}
+.option-card:hover {
+  background: var(--c-surface-2);
+}
+.option-card.selected {
+  background: var(--c-primary-soft);
+  border-color: var(--c-primary);
+}
+.option-letter {
+  background: var(--c-surface-2);
+  color: var(--c-text);
+  border: var(--border-width) solid var(--c-border);
+}
+.option-card.selected .option-letter {
+  background: var(--c-primary);
+  color: var(--c-primary-ink);
+  border-color: var(--c-primary);
+}
+.explanation-box {
+  background: var(--c-surface-2);
+  color: var(--c-text);
+  border-left: 3px solid var(--c-primary);
+}
+.explanation-title {
+  color: var(--c-primary);
+}
+
+/* Modal and dialog actions layout (DESIGN.md §1.4 / §4) */
+.modal-overlay {
+  background: var(--c-backdrop);
+}
+.modal-content {
+  background: var(--c-surface);
+  color: var(--c-text);
+  border: var(--border-width) solid var(--c-border);
+  box-sizing: border-box;
+  max-width: min(var(--dialog-width), 100%);
+}
+.modal-title {
+  color: var(--c-text);
+}
+.modal-body {
+  color: var(--c-text-2);
+}
+.btn-secondary {
+  background: var(--c-surface);
+  color: var(--c-text);
+  border: var(--border-width) solid var(--c-border);
+}
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  justify-content: flex-end;
+}
+@media (max-width: 639px) {
+  .modal-overlay {
+    padding: var(--sp-2);
+    align-items: flex-end;
+  }
+  .modal-content {
+    width: 100%;
+    padding: var(--sp-4);
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    padding-bottom: max(var(--sp-4), env(safe-area-inset-bottom));
+  }
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+  .modal-actions button,
+  .modal-actions .btn-secondary,
+  .modal-actions .btn-submit,
+  #btnCancelSubmit,
+  #btnConfirmSubmit {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
 
 /* Responsive Exam Layout & Palette (WEB-contract §19 / DESIGN.md) */
 #examWrapper, .main-wrapper {

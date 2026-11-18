@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import { createAppsScriptClient, loadAppConfig, mapErrorToVietnamese, getAdminToken, clearAdminToken } from '../collect/appsScript.js';
-import { Toast } from '../ui/components.js';
+import { Toast, ErrorState } from '../ui/components.js';
 import { createAdminView, renderAdminStats, renderTeacherRows } from './view.js';
 export async function bootstrap(rootElement, clientOverride, doc = document) {
     const root = rootElement ?? doc.getElementById('adminRoot') ?? doc.body;
@@ -34,6 +34,11 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
             view.btnLogout.style.display = '';
             if (state.stats) {
                 renderAdminStats(view.adminStats, state.stats, doc);
+                view.adminStats.style.display = '';
+            }
+            else {
+                view.adminStats.replaceChildren();
+                view.adminStats.style.display = 'none';
             }
             renderTeacherRows(view.teacherTableBody, state.teachers, {
                 onResetPassword(username, name) {
@@ -41,6 +46,8 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
                     view.resetPasswordTeacherName.textContent = `Đặt lại mật khẩu cho tài khoản: ${name} (@${username})`;
                     view.resetPasswordInput.value = '';
                     view.resetPasswordError.textContent = '';
+                    view.resetPasswordInput.removeAttribute('aria-invalid');
+                    view.resetPasswordInput.setAttribute('aria-describedby', 'resetPasswordHint');
                     if (typeof view.resetPasswordDialog.showModal === 'function') {
                         view.resetPasswordDialog.showModal();
                     }
@@ -52,17 +59,43 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
                     await setTeacherActive({ username, active: !currentActive });
                 },
             }, doc);
-            if (state.teachers.length === 0) {
-                view.teacherEmptyState.style.display = '';
+            if (state.error) {
+                const errorNode = ErrorState({
+                    message: state.error,
+                    action: {
+                        label: 'Thử lại',
+                        onClick: () => {
+                            refresh();
+                        },
+                    },
+                }, doc);
+                view.adminError.replaceChildren(errorNode);
+                view.adminError.style.display = '';
             }
             else {
+                view.adminError.replaceChildren();
+                view.adminError.style.display = 'none';
+            }
+            if (state.teachers.length > 0) {
+                view.tableWrapper.style.display = '';
                 view.teacherEmptyState.style.display = 'none';
+            }
+            else {
+                view.tableWrapper.style.display = 'none';
+                if (state.error) {
+                    view.teacherEmptyState.style.display = 'none';
+                }
+                else {
+                    view.teacherEmptyState.style.display = '';
+                }
             }
         }
         else {
             view.adminLogin.style.display = '';
             view.adminPanel.style.display = 'none';
             view.btnLogout.style.display = 'none';
+            view.adminError.replaceChildren();
+            view.adminError.style.display = 'none';
         }
     }
     async function refresh() {
@@ -76,47 +109,94 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
                 client.adminStats(tokenArg),
                 client.adminListTeachers(tokenArg),
             ]);
-            let newStats = state.stats;
-            let newTeachers = state.teachers;
-            if (statsRes.ok) {
-                newStats = statsRes.value;
+            if ((!statsRes.ok && statsRes.code === 'UNAUTHORIZED') ||
+                (!teachersRes.ok && teachersRes.code === 'UNAUTHORIZED')) {
+                client.adminLogout();
+                clearAdminToken();
+                state = {
+                    token: null,
+                    stats: null,
+                    teachers: [],
+                    loading: false,
+                    error: 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.',
+                };
+                view.adminLoginError.textContent = 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.';
+                view.adminPasswordInput.setAttribute('aria-invalid', 'true');
+                view.adminPasswordInput.setAttribute('aria-describedby', 'adminLoginError');
+                updateViewForState();
+                return;
             }
-            if (teachersRes.ok) {
-                newTeachers = teachersRes.value;
+            if (!statsRes.ok) {
+                const viMsg = mapErrorToVietnamese(statsRes.code, statsRes.message);
+                const errMsg = viMsg
+                    ? `Không thể tải dữ liệu: ${viMsg}. Vui lòng thử lại.`
+                    : 'Không thể tải dữ liệu từ máy chủ. Vui lòng thử lại.';
+                state = {
+                    ...state,
+                    loading: false,
+                    error: errMsg,
+                };
+                updateViewForState();
+                return;
+            }
+            if (!teachersRes.ok) {
+                const viMsg = mapErrorToVietnamese(teachersRes.code, teachersRes.message);
+                const errMsg = viMsg
+                    ? `Không thể tải dữ liệu: ${viMsg}. Vui lòng thử lại.`
+                    : 'Không thể tải dữ liệu từ máy chủ. Vui lòng thử lại.';
+                state = {
+                    ...state,
+                    loading: false,
+                    error: errMsg,
+                };
+                updateViewForState();
+                return;
             }
             state = {
                 ...state,
-                stats: newStats,
-                teachers: newTeachers,
+                stats: statsRes.value,
+                teachers: teachersRes.value,
                 loading: false,
                 error: null,
             };
             updateViewForState();
         }
         catch (err) {
-            const msg = err instanceof Error ? err.message : 'Lỗi khi làm mới dữ liệu';
-            state = { ...state, loading: false, error: msg };
+            const msg = err instanceof Error ? err.message : 'Lỗi kết nối máy chủ';
+            state = {
+                ...state,
+                loading: false,
+                error: `Không thể tải dữ liệu: ${msg}. Vui lòng thử lại.`,
+            };
+            updateViewForState();
         }
         finally {
             view.btnRefreshAdmin.disabled = false;
         }
     }
     async function login(password) {
-        const trimmed = password.trim();
-        if (!trimmed) {
+        view.adminPasswordInput.removeAttribute('aria-invalid');
+        view.adminPasswordInput.removeAttribute('aria-describedby');
+        if (!password) {
             view.adminLoginError.textContent = 'Vui lòng nhập mật khẩu quản trị';
+            view.adminPasswordInput.setAttribute('aria-invalid', 'true');
+            view.adminPasswordInput.setAttribute('aria-describedby', 'adminLoginError');
             return false;
         }
         if (!client.configured) {
             view.adminLoginError.textContent = 'Chưa cấu hình máy chủ Apps Script';
+            view.adminPasswordInput.setAttribute('aria-invalid', 'true');
+            view.adminPasswordInput.setAttribute('aria-describedby', 'adminLoginError');
             return false;
         }
         view.adminLoginError.textContent = '';
         view.btnAdminLogin.disabled = true;
         try {
-            const res = await client.adminLogin(trimmed);
+            const res = await client.adminLogin(password);
             if (!res.ok) {
                 view.adminLoginError.textContent = mapErrorToVietnamese(res.code, res.message);
+                view.adminPasswordInput.setAttribute('aria-invalid', 'true');
+                view.adminPasswordInput.setAttribute('aria-describedby', 'adminLoginError');
                 return false;
             }
             state = {
@@ -125,6 +205,9 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
                 error: null,
             };
             view.adminPasswordInput.value = '';
+            view.adminPasswordInput.removeAttribute('aria-invalid');
+            view.adminPasswordInput.removeAttribute('aria-describedby');
+            view.adminLoginError.textContent = '';
             updateViewForState();
             await refresh();
             return true;
@@ -132,6 +215,8 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
         catch (err) {
             const msg = err instanceof Error ? err.message : 'Lỗi kết nối';
             view.adminLoginError.textContent = msg;
+            view.adminPasswordInput.setAttribute('aria-invalid', 'true');
+            view.adminPasswordInput.setAttribute('aria-describedby', 'adminLoginError');
             return false;
         }
         finally {
@@ -149,24 +234,39 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
             error: null,
         };
         view.adminPasswordInput.value = '';
+        view.adminPasswordInput.removeAttribute('aria-invalid');
+        view.adminPasswordInput.removeAttribute('aria-describedby');
         view.adminLoginError.textContent = '';
         updateViewForState();
         Toast('Đã đăng xuất tài khoản quản trị', doc).show(doc.body);
     }
     async function createTeacher(input) {
+        view.createTeacherError.textContent = '';
+        view.newTeacherNameInput.removeAttribute('aria-invalid');
+        view.newTeacherNameInput.removeAttribute('aria-describedby');
+        view.newTeacherUsernameInput.removeAttribute('aria-invalid');
+        view.newTeacherUsernameInput.setAttribute('aria-describedby', 'newTeacherUsernameHint');
+        view.newTeacherPasswordInput.removeAttribute('aria-invalid');
+        view.newTeacherPasswordInput.setAttribute('aria-describedby', 'newTeacherPasswordHint');
         const name = input.name.trim();
         const username = input.username.trim();
-        const password = input.password.trim();
+        const password = input.password;
         if (!name) {
             view.createTeacherError.textContent = 'Họ và tên giáo viên không được để trống';
+            view.newTeacherNameInput.setAttribute('aria-invalid', 'true');
+            view.newTeacherNameInput.setAttribute('aria-describedby', 'createTeacherError');
             return false;
         }
         if (!username || !/^[a-z0-9._-]{3,32}$/i.test(username) || /\s/.test(username)) {
             view.createTeacherError.textContent = 'Tên đăng nhập phải có 3–32 ký tự a-z0-9._- không chứa dấu cách';
+            view.newTeacherUsernameInput.setAttribute('aria-invalid', 'true');
+            view.newTeacherUsernameInput.setAttribute('aria-describedby', 'createTeacherError');
             return false;
         }
         if (!password || password.length < 8) {
             view.createTeacherError.textContent = 'Mật khẩu phải có ít nhất 8 ký tự';
+            view.newTeacherPasswordInput.setAttribute('aria-invalid', 'true');
+            view.newTeacherPasswordInput.setAttribute('aria-describedby', 'createTeacherError');
             return false;
         }
         if (!state.token) {
@@ -174,11 +274,36 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
             return false;
         }
         view.btnCreateTeacherConfirm.disabled = true;
-        view.createTeacherError.textContent = '';
         try {
             const res = await client.adminCreateTeacher(state.token, name, username, password);
             if (!res.ok) {
+                if (res.code === 'UNAUTHORIZED') {
+                    client.adminLogout();
+                    clearAdminToken();
+                    state = {
+                        token: null,
+                        stats: null,
+                        teachers: [],
+                        loading: false,
+                        error: 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.',
+                    };
+                    view.adminLoginError.textContent = 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.';
+                    view.adminPasswordInput.setAttribute('aria-invalid', 'true');
+                    view.adminPasswordInput.setAttribute('aria-describedby', 'adminLoginError');
+                    if (typeof view.createTeacherDialog.close === 'function') {
+                        view.createTeacherDialog.close();
+                    }
+                    else {
+                        view.createTeacherDialog.removeAttribute('open');
+                    }
+                    updateViewForState();
+                    return false;
+                }
                 view.createTeacherError.textContent = mapErrorToVietnamese(res.code, res.message);
+                if (res.code === 'USERNAME_TAKEN') {
+                    view.newTeacherUsernameInput.setAttribute('aria-invalid', 'true');
+                    view.newTeacherUsernameInput.setAttribute('aria-describedby', 'createTeacherError');
+                }
                 return false;
             }
             if (typeof view.createTeacherDialog.close === 'function') {
@@ -204,9 +329,14 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
         }
     }
     async function resetPassword(input) {
-        const password = input.password.trim();
+        view.resetPasswordError.textContent = '';
+        view.resetPasswordInput.removeAttribute('aria-invalid');
+        view.resetPasswordInput.setAttribute('aria-describedby', 'resetPasswordHint');
+        const password = input.password;
         if (!password || password.length < 8) {
             view.resetPasswordError.textContent = 'Mật khẩu mới phải có ít nhất 8 ký tự';
+            view.resetPasswordInput.setAttribute('aria-invalid', 'true');
+            view.resetPasswordInput.setAttribute('aria-describedby', 'resetPasswordError');
             return false;
         }
         if (!state.token) {
@@ -214,11 +344,34 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
             return false;
         }
         view.btnResetPasswordConfirm.disabled = true;
-        view.resetPasswordError.textContent = '';
         try {
             const res = await client.adminResetPassword(state.token, input.username, password);
             if (!res.ok) {
+                if (res.code === 'UNAUTHORIZED') {
+                    client.adminLogout();
+                    clearAdminToken();
+                    state = {
+                        token: null,
+                        stats: null,
+                        teachers: [],
+                        loading: false,
+                        error: 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.',
+                    };
+                    view.adminLoginError.textContent = 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.';
+                    view.adminPasswordInput.setAttribute('aria-invalid', 'true');
+                    view.adminPasswordInput.setAttribute('aria-describedby', 'adminLoginError');
+                    if (typeof view.resetPasswordDialog.close === 'function') {
+                        view.resetPasswordDialog.close();
+                    }
+                    else {
+                        view.resetPasswordDialog.removeAttribute('open');
+                    }
+                    updateViewForState();
+                    return false;
+                }
                 view.resetPasswordError.textContent = mapErrorToVietnamese(res.code, res.message);
+                view.resetPasswordInput.setAttribute('aria-invalid', 'true');
+                view.resetPasswordInput.setAttribute('aria-describedby', 'resetPasswordError');
                 return false;
             }
             if (typeof view.resetPasswordDialog.close === 'function') {
@@ -234,6 +387,8 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
         catch (err) {
             const msg = err instanceof Error ? err.message : 'Lỗi khi đặt lại mật khẩu';
             view.resetPasswordError.textContent = msg;
+            view.resetPasswordInput.setAttribute('aria-invalid', 'true');
+            view.resetPasswordInput.setAttribute('aria-describedby', 'resetPasswordError');
             return false;
         }
         finally {
@@ -248,6 +403,22 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
         try {
             const res = await client.adminSetTeacherActive(state.token, input.username, input.active);
             if (!res.ok) {
+                if (res.code === 'UNAUTHORIZED') {
+                    client.adminLogout();
+                    clearAdminToken();
+                    state = {
+                        token: null,
+                        stats: null,
+                        teachers: [],
+                        loading: false,
+                        error: 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.',
+                    };
+                    view.adminLoginError.textContent = 'Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.';
+                    view.adminPasswordInput.setAttribute('aria-invalid', 'true');
+                    view.adminPasswordInput.setAttribute('aria-describedby', 'adminLoginError');
+                    updateViewForState();
+                    return false;
+                }
                 Toast(mapErrorToVietnamese(res.code, res.message), doc).show(doc.body);
                 return false;
             }
@@ -282,6 +453,12 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
         view.newTeacherNameInput.value = '';
         view.newTeacherUsernameInput.value = '';
         view.newTeacherPasswordInput.value = '';
+        view.newTeacherNameInput.removeAttribute('aria-invalid');
+        view.newTeacherNameInput.removeAttribute('aria-describedby');
+        view.newTeacherUsernameInput.removeAttribute('aria-invalid');
+        view.newTeacherUsernameInput.setAttribute('aria-describedby', 'newTeacherUsernameHint');
+        view.newTeacherPasswordInput.removeAttribute('aria-invalid');
+        view.newTeacherPasswordInput.setAttribute('aria-describedby', 'newTeacherPasswordHint');
         if (typeof view.createTeacherDialog.showModal === 'function') {
             view.createTeacherDialog.showModal();
         }
@@ -291,6 +468,10 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
         view.newTeacherNameInput.focus();
     };
     const onCloseCreateTeacherDialog = () => {
+        view.createTeacherError.textContent = '';
+        view.newTeacherNameInput.removeAttribute('aria-invalid');
+        view.newTeacherUsernameInput.removeAttribute('aria-invalid');
+        view.newTeacherPasswordInput.removeAttribute('aria-invalid');
         if (typeof view.createTeacherDialog.close === 'function') {
             view.createTeacherDialog.close();
         }
@@ -306,6 +487,8 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
         });
     };
     const onCloseResetPasswordDialog = () => {
+        view.resetPasswordError.textContent = '';
+        view.resetPasswordInput.removeAttribute('aria-invalid');
         if (typeof view.resetPasswordDialog.close === 'function') {
             view.resetPasswordDialog.close();
         }

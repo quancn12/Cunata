@@ -18,6 +18,10 @@ before(async () => {
     overrides[file + '.js'] = stripTypeScriptTypes(readFileSync(`${PROJECT_ROOT}/${file}.ts`, 'utf8'))
       .replace(/(from\s+['"][^'"]+)\.ts(['"])/g, '$1.js$2');
   }
+  for (const font of ['latin', 'latin-ext', 'vietnamese', 'math', 'symbols']) {
+    const rel = `public/fonts/google-sans-flex-${font}.woff2`;
+    overrides[`src/${rel}`] = readFileSync(`${PROJECT_ROOT}/${rel}`) as any;
+  }
   server = await startServer(PROJECT_ROOT, { overrides }); browser = await launchBrowser();
 });
 after(async () => { await server?.close(); await browser?.close(); });

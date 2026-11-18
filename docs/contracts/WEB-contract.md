@@ -509,3 +509,32 @@ Quyết định: đề luyện tập không hiện công khai; mọi đề (16 �
 - Không đổi: nút `#btnOpenExamList` ("Về trang học sinh"); kết quả và bài đã nộp vẫn xem lại được trên máy.
 - Đề nạp bằng file (`#examFileInput`, ẩn, không có nút trên màn học sinh) dùng **tên học sinh đã nhập ở cổng tên** làm `#candidateName`, không dùng "Thí sinh tự do".
 - Giáo viên: thư viện đề (`#/giao-vien/de`) vẫn hiện đủ đề kho chung theo `public/exams/index.json` (network-first, §17.6) để giao cho lớp.
+
+## 22. Máy chủ trên Vercel + Neon thay Apps Script (Trưởng phòng chốt 19/11/2026, không chuyển dữ liệu cũ từ Sheet)
+
+Web chính: https://cunata.vercel.app (Vercel Hobby, tự triển khai từ repo công khai). Máy chủ mới thay hoàn toàn `apps-script/Code.js`, giữ nguyên **tên hành động, dữ liệu vào/ra và mã lỗi** của §17.2–17.6 và §19.2 để phía web chỉ đổi đường gửi.
+- **Mã nguồn:** `src/api/**` (vùng `api`), TypeScript, CHỈ dùng thư viện có sẵn của Node 20+ (`node:crypto`, `fetch`); không thêm gói npm. Lõi là hàm thuần `handle(request, ctx) → { status, body }` nhận `ctx.store` (giao diện lưu trữ) và `ctx.now`.
+- **Lưu trữ:** giao diện `Store` với hai bản: `src/api/store/memory.ts` (test) và `src/api/store/neon.ts` (Neon Postgres qua SQL-over-HTTP bằng `fetch`, chuỗi kết nối từ biến môi trường `DATABASE_URL`, không in ra log). Bảng tạo tự động bằng `CREATE TABLE IF NOT EXISTS` ở lần gọi đầu: `teachers`, `sessions`, `classes`, `students` (§23), `assignments`, `exams` (đề giáo viên xuất bản, cột `owner`), `results`.
+- **Điểm vào Vercel:** một hàm `api/rpc.js` (ES module, `api/package.json` có `"type":"module"`), `GET /api/rpc?action=…` cho hành động đọc công khai, `POST /api/rpc` thân JSON `{ action, … }` cho mọi hành động khác. Bản build: `node scripts/build.js` xuất `dist/api/**` (tự chứa, không import ra ngoài `dist/api`); `ops/publish.py` chép `dist/api` → `api/` ở gốc repo công khai, KHÔNG chép vào `site/`.
+- **Bảo mật:** mật khẩu giáo viên băm `scrypt` có muối (`node:crypto`); token phiên 32 byte ngẫu nhiên, lưu dạng băm trong `sessions`, **hết hạn sau 8 giờ** (giải quyết Q1); khóa/đặt lại mật khẩu vô hiệu phiên cũ. Mật khẩu Admin từ biến môi trường `ADMIN_PASSWORD` (chưa đặt → `ADMIN_PASSWORD_NOT_SET`). Phản hồi không bao giờ chứa mật khẩu, băm, muối, PIN băm hay `DATABASE_URL`. Hạn nộp: `NOT_OPEN`, `PAST_DUE` (+2 phút) như §19.2; nộp lại cùng `attempt_id` không tạo dòng trùng.
+- **Danh mục đề kho chung phía máy chủ** (giải quyết Q2): bản build sinh `dist/api/catalog.json` từ `public/exams/index.json` (id, title, subject, questionCount, durationMinutes); `getClass` và danh sách giao đề trả **tiêu đề thật** cho cả đề tĩnh.
+- **Phía web:** `public/config.json` có thêm `apiBase`; có `apiBase` thì dùng máy chủ mới (POST JSON bình thường, cùng nguồn), không thì dùng `appsScriptUrl` như cũ. `ops/publish.py` ghi `{"apiBase":"/api/rpc"}` cho `site/` (Vercel) và `{"apiBase":"https://cunata.vercel.app/api/rpc"}` cho GitHub Pages (máy chủ cho phép CORS từ `https://quancn12.github.io`).
+- **Không chuyển dữ liệu từ Google Sheet** (Trưởng phòng 19/11/2026). Apps Script giữ nguyên, không xóa, tới khi Trưởng phòng bỏ.
+
+## 23. Danh sách lớp + mã PIN học sinh (để học sinh xem lại bài trên mọi máy)
+
+- **Giáo viên**, chi tiết lớp: khối `#rosterPanel` có `textarea#rosterInput` (mỗi dòng một tên) + `#btnRosterSave` → mỗi học sinh một mã PIN 4 chữ số (khác nhau trong lớp), hiện thành `.roster-row[data-student-id]` (tên, PIN, nút `.btn-reset-pin`, `.btn-remove-student`); `#btnRosterPrint` in danh sách tên + PIN. API: `addStudents {token, classId, names}`, `listStudents {token, classId}`, `resetPin {token, studentId}`, `removeStudent {token, studentId}` (chỉ lớp của mình, khác → `FORBIDDEN`). PIN lưu băm.
+- **Học sinh** vào lớp: mã lớp → danh sách tên `#rosterPick .roster-name[data-student-id]` → `input#studentPinInput` + `#btnPinConfirm` → `studentLogin {code, studentId, pin}` → `{ studentToken, name }`. Sai PIN: `#pinError`; sai 5 lần liền → khóa 10 phút (`PIN_LOCKED`, máy chủ kiểm). Lớp chưa có danh sách: báo "Lớp chưa có danh sách học sinh — nhờ giáo viên thêm tên em".
+- Tên thí sinh của bài làm trong lớp = tên trong danh sách (không gõ tự do). Bài nộp mang `student_id`.
+- `myResults {studentToken}` trả các bài đã nộp của học sinh đó (đề, lớp, bài giao, điểm từng phần, lúc nộp, câu trả lời) → trên **máy bất kỳ** sau khi nhập PIN: thẻ đề hiện "Đã nộp" + điểm, "Xem kết quả" dựng lại báo cáo §20 từ dữ liệu máy chủ.
+- Bảng `#resultsTable` của giáo viên theo học sinh trong danh sách; học sinh chưa nộp hiện "Chưa nộp".
+
+## 24. Tính năng thêm (Trưởng phòng giao 19/11/2026: "lộ trình thay đổi và cả tính năng")
+
+- **24.1 Lọc khi xem lại bài (F1):** trong báo cáo, `#reviewFilter` có nút `[data-filter="all"|"wrong"|"blank"]` (`aria-pressed`), lọc `.review-question-card`; thanh số câu `#reviewNav a[href="#q-…"]` nhảy tới câu, câu sai/bỏ trống có nhãn chữ (không chỉ màu).
+- **24.2 Giáo viên xem bài từng học sinh (F3):** mỗi dòng `#resultsTable` có `.btn-view-submission` → hộp thoại `#submissionDialog` hiện bài làm như §20 (toàn văn câu, lựa chọn của học sinh, đáp án, điểm từng câu).
+- **24.3 Thống kê đề (F4):** ở Kết quả, chọn lớp + bài giao → `#examStats`: mỗi câu `.stat-row[data-qid]` có % đúng; Phần I có tỉ lệ chọn từng phương án; Phần III có 3 câu trả lời sai hay gặp nhất. Chỉ tính bài đã nộp hợp lệ.
+- **24.4 Lịch sử điểm của học sinh (F5):** khu học sinh có `#myHistory` (đề, lớp, điểm, ngày nộp; lấy từ `myResults`) và biểu đồ cột SVG tự vẽ `#historyChart` (không thư viện ngoài), có bảng chữ thay thế cho trình đọc màn hình.
+- **24.5 Luyện lại câu sai (F2):** báo cáo có `#btnRetryWrong` → lượt luyện mới chỉ gồm câu sai/bỏ trống, ghi rõ "Luyện lại câu sai — không gửi giáo viên"; KHÔNG gửi máy chủ, không đổi kết quả đã nộp.
+- **24.6 In đề (F7):** thẻ đề của giáo viên có `.btn-teacher-print` → trang in: đề không đáp án + phiếu trả lời (I: A–D, II: Đ/S từng ý, III: ô 4 ký tự) + trang đáp án riêng; dùng `window.print` và CSS in, công thức/hình hiện đúng.
+- **24.7 Chế độ tối (F8):** bộ màu tối trong `src/ui/tokens.css` theo `prefers-color-scheme` + nút `#btnTheme` trên TopBar (Sáng/Tối/Theo máy, nhớ trên máy); mọi màn đạt tương phản WCAG AA ở cả hai chế độ.

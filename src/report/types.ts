@@ -145,16 +145,22 @@ export interface ReportQuestion {
   readonly status: "full" | "partial" | "wrong" | "unanswered" | "invalid";
   readonly points: string;
   readonly maxPoints: string;
+  readonly content?: string;
+  readonly options?: readonly WebOption[];
+  readonly statements?: readonly WebStatement[];
 }
 
 export interface ReleasedReportQuestion extends ReportQuestion {
   readonly answer: string | readonly { readonly statementId: string; readonly answer: boolean }[];
   readonly explanation: readonly Block[];
+  readonly rawAnswerKey?: string;
+  readonly correctOptionId?: string;
 }
 
 export interface ReportBase {
   readonly attempt: AttemptKey;
   readonly candidateName: string;
+  readonly examTitle?: string;
   readonly startedAt: number;
   readonly submittedAt: number;
   readonly scoreDTO: unknown;

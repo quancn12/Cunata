@@ -1417,6 +1417,38 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
       assert.equal(body.assignment_id, 'assign-789');
     });
 
+    it('attaches all-numeric class_code (e.g. 222222 or "222222") as string and preserves literal apostrophe name', async () => {
+      const recordedCalls: { url: string; init?: RequestInit }[] = [];
+      const fakeFetch: typeof fetch = async (url, init) => {
+        recordedCalls.push({ url: String(url), init });
+        return new Response(
+          JSON.stringify({
+            success: true,
+            status: 'NEWLY_RECORDED',
+            attempt_id: 'att-num-class',
+            recorded_at: new Date().toISOString(),
+          }),
+          { status: 200 }
+        );
+      };
+
+      const port = createAppsScriptCollectorPort(BASE_URL, fakeFetch);
+      const final: any = {
+        ...createSampleAttempt('att-num-class'),
+        candidateName: "'Nguyễn An",
+        class_code: '222222',
+        assignment_id: 'assign-num-123',
+      };
+      const ac = new AbortController();
+      const res = await port.send(final, ac.signal);
+      assert.ok(res && typeof res === 'object');
+
+      const body = JSON.parse(String(recordedCalls[0]?.init?.body));
+      assert.equal(body.class_code, '222222');
+      assert.equal(body.candidate_display, "'Nguyễn An");
+      assert.equal(body.candidateName, "'Nguyễn An");
+    });
+
     it('throws non-recoverable CollectorError for NOT_OPEN and PAST_DUE responses with Vietnamese messages', async () => {
       // NOT_OPEN test
       const notOpenFetch: typeof fetch = async () => {

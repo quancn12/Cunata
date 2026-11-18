@@ -82,6 +82,10 @@
   margin-bottom: var(--sp-4);
 }
 
+.admin-error-container {
+  margin-bottom: var(--sp-4);
+}
+
 .admin-teachers-section {
   display: flex;
   flex-direction: column;
