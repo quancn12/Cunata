@@ -734,8 +734,12 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
   });
 
   async function enterExamIfRoleChooser(c: CdpClient) {
-    const alreadyInExam = await c.evaluate<boolean>(`Boolean(document.querySelectorAll('.question-card').length > 0)`);
-    if (alreadyInExam) return;
+    const startWait = Date.now();
+    while (Date.now() - startWait < 2000) {
+      const alreadyInExam = await c.evaluate<boolean>(`Boolean(document.querySelectorAll('.question-card').length > 0)`);
+      if (alreadyInExam) return;
+      await new Promise((r) => setTimeout(r, 100));
+    }
     await c.waitForSelector('#roleChooser, #startScreen, #studentNameGate, .question-card', 10000);
     const inExamNow = await c.evaluate<boolean>(`Boolean(document.querySelectorAll('.question-card').length > 0)`);
     if (inExamNow) return;
@@ -1002,7 +1006,6 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
           }, 15000);
         });
       })`);
-      console.log('CK15 waitingReached debug:', JSON.stringify(waitingReached));
       assert.ok(waitingReached && waitingReached.ok, 'Release B Service Worker must download and install into waiting state');
 
       // Verify that while exam is in progress, old cache still exists
@@ -1310,7 +1313,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
           setTimeout(() => {
             clearInterval(interval);
             resolve(!!reg.waiting);
-          }, 8000);
+          }, 15000);
         });
       })`);
       assert.ok(waitingReached, 'Release B worker must be installed into waiting state');

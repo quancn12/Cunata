@@ -1449,6 +1449,74 @@ describe('Apps Script Client & Collector Port (src/collect/appsScript.ts)', () =
       assert.equal(body.candidateName, "'Nguyễn An");
     });
 
+    it('attaches student_id when present on final attempt record (§23)', async () => {
+      const recordedCalls: { url: string; init?: RequestInit }[] = [];
+      const fakeFetch: typeof fetch = async (url, init) => {
+        recordedCalls.push({ url: String(url), init });
+        return new Response(
+          JSON.stringify({
+            success: true,
+            status: 'NEWLY_RECORDED',
+            attempt_id: 'att-student-id',
+            recorded_at: new Date().toISOString(),
+          }),
+          { status: 200 }
+        );
+      };
+
+      const port = createAppsScriptCollectorPort(BASE_URL, fakeFetch);
+      const final: any = {
+        ...createSampleAttempt('att-student-id'),
+        student_id: 'std-2026-xyz',
+        class_code: 'CLS123',
+      };
+      const ac = new AbortController();
+      const res = await port.send(final, ac.signal);
+      assert.ok(res && typeof res === 'object');
+
+      const body = JSON.parse(String(recordedCalls[0]?.init?.body));
+      assert.equal(body.student_id, 'std-2026-xyz');
+      assert.equal(body.class_code, 'CLS123');
+    });
+
+    it('sends large answer payloads (>50000 chars) correctly formatted without client truncation', async () => {
+      const recordedCalls: { url: string; init?: RequestInit }[] = [];
+      const fakeFetch: typeof fetch = async (url, init) => {
+        recordedCalls.push({ url: String(url), init });
+        return new Response(
+          JSON.stringify({
+            success: true,
+            status: 'NEWLY_RECORDED',
+            attempt_id: 'att-large',
+            recorded_at: new Date().toISOString(),
+          }),
+          { status: 200 }
+        );
+      };
+
+      const port = createAppsScriptCollectorPort(BASE_URL, fakeFetch);
+      const largeResponses: any[] = [];
+      for (let i = 0; i < 60; i++) {
+        const longId = 'q-' + 'x'.repeat(850) + '-' + i;
+        largeResponses.push({
+          kind: 'I',
+          questionVersionId: longId,
+          selectedOptionId: longId + '-a',
+        });
+      }
+      const final: any = {
+        ...createSampleAttempt('att-large'),
+        responses: largeResponses,
+      };
+      const ac = new AbortController();
+      const res = await port.send(final, ac.signal);
+      assert.ok(res && typeof res === 'object');
+
+      const body = JSON.parse(String(recordedCalls[0]?.init?.body));
+      assert.ok(JSON.stringify(body.responses).length > 50000, 'Payload responses should exceed 50000 chars');
+      assert.equal(body.attempt_id, 'att-large');
+    });
+
     it('throws non-recoverable CollectorError for NOT_OPEN and PAST_DUE responses with Vietnamese messages', async () => {
       // NOT_OPEN test
       const notOpenFetch: typeof fetch = async () => {

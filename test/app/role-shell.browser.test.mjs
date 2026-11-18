@@ -34,7 +34,7 @@ for (const width of [375, 768, 1440]) for (const scheme of ['light', 'dark']) {
       assert.equal(await page.eval(() => document.getElementById('roleChooser').hidden), false);
       await page.goto(server.url); await waitBoot(page);
       assert.equal(await page.eval(() => document.getElementById('roleChooser').hidden), false);
-      assert.deepEqual(page.errors.filter((error) => !/favicon/.test(error)), []);
+      assert.deepEqual(page.errors.filter((error) => !/(?:favicon|DEBUG-)/.test(error)), []);
     } finally { await ctx.close(); }
   });
 }

@@ -869,6 +869,11 @@ export function createAppsScriptCollectorPort(url, fetchImpl) {
                 final.metadata?.assignment_id ??
                 final.metadata?.assignmentId ??
                 basePayload.assignment_id;
+            let studentId = final.student_id ??
+                final.studentId ??
+                final.metadata?.student_id ??
+                final.metadata?.studentId ??
+                basePayload.student_id;
             const payload = {
                 action: 'submitResult',
                 ...basePayload,
@@ -889,6 +894,7 @@ export function createAppsScriptCollectorPort(url, fetchImpl) {
                 sections: scoreDTO?.sections ?? {},
                 ...(classCode ? { class_code: String(classCode).trim().toUpperCase() } : {}),
                 ...(assignmentId ? { assignment_id: String(assignmentId).trim() } : {}),
+                ...(studentId ? { student_id: String(studentId).trim() } : {}),
             };
             let response;
             try {

@@ -146,6 +146,10 @@ export function buildWebResultPayload(final) {
         final.assignmentId ??
         final.metadata?.assignment_id ??
         final.metadata?.assignmentId;
+    let studentId = final.student_id ??
+        final.studentId ??
+        final.metadata?.student_id ??
+        final.metadata?.studentId;
     return {
         schemaVersion: 'web-result-v1',
         attemptId: final.attemptId,
@@ -162,6 +166,7 @@ export function buildWebResultPayload(final) {
         responses: final.responses,
         ...(classCode ? { class_code: String(classCode).trim().toUpperCase() } : {}),
         ...(assignmentId ? { assignment_id: String(assignmentId).trim() } : {}),
+        ...(studentId ? { student_id: String(studentId).trim() } : {}),
     };
 }
 /**

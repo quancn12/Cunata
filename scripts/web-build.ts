@@ -251,6 +251,7 @@ export function validateBrowserEmit(targetDir: string): EmitValidationResult {
  * - Copies public/ assets to staging/public/
  */
 export function prepareShellAndAssets(rootDir: string, stagingDir: string): void {
+  fs.mkdirSync(stagingDir, { recursive: true });
   // 1. Prepare shell HTML
   const shellSrcPath = path.join(rootDir, 'src/app/shell.html');
   const indexDestPath = path.join(stagingDir, 'index.html');
@@ -690,6 +691,7 @@ export async function buildWeb(options?: BuildWebOptions): Promise<BuildResult> 
 
   // 1. Clean staging directory to ensure fresh isolation
   cleanDirectory(stagingDir);
+  fs.mkdirSync(stagingDir, { recursive: true });
 
   // 2. Run TypeScript compiler
   const compileRes = compileTypescript(rootDir, stagingDir, silent);

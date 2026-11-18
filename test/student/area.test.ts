@@ -566,6 +566,64 @@ describe('Student Area & D02 Scoring Specification Tests', () => {
 
       ctrl.dispose();
     });
+
+    test('FX47-student: refreshClasses appends cache-buster to getClass URL to prevent stale cache', async () => {
+      const doc = createEnhancedMockDocument();
+      const root = doc.createElement('div');
+      (root as any).ownerDocument = doc;
+      doc.body.appendChild(root);
+
+      const dummyStore: Record<string, string> = {
+        'cunata:classes': JSON.stringify([
+          { code: 'ABC123', name: 'Lớp 12A', teacherName: 'Thầy Tuấn', assignments: [] }
+        ])
+      };
+      const mockStorage = {
+        getItem: (k: string) => dummyStore[k] ?? null,
+        setItem: (k: string, v: string) => { dummyStore[k] = v; },
+        removeItem: (k: string) => { delete dummyStore[k]; },
+      };
+      (doc.defaultView as any).localStorage = mockStorage;
+      const prevLocalStorage = (globalThis as any).localStorage;
+      (globalThis as any).localStorage = mockStorage;
+
+      const fetchedUrls: string[] = [];
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = (async (url: string | URL | Request) => {
+        const u = String(url);
+        fetchedUrls.push(u);
+        if (u.includes('action=getClass')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              success: true,
+              class: { code: 'ABC123', name: 'Lớp 12A', teacherName: 'Thầy Tuấn' },
+              assignments: [],
+            }),
+          } as any;
+        }
+        return { ok: false, status: 404 } as any;
+      }) as any;
+
+      try {
+        const ctrl = mountStudentArea(root as unknown as HTMLElement, {
+          appsScriptUrl: 'http://test-server/exec',
+          now: () => 1700000000000,
+        });
+
+        await ctrl.refreshList();
+
+        const getClassReq = fetchedUrls.find(u => u.includes('action=getClass'));
+        assert.ok(getClassReq, 'getClass request must be made');
+        assert.ok(getClassReq.includes('&_t='), 'getClass URL must contain cache-buster &_t= parameter');
+
+        ctrl.dispose();
+      } finally {
+        globalThis.fetch = originalFetch;
+        (globalThis as any).localStorage = prevLocalStorage;
+      }
+    });
   });
 });
 
