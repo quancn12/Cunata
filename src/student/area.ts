@@ -180,6 +180,7 @@ export function mountStudentArea(
   let joinedClasses: JoinedClass[] = [];
   try {
     const raw = localStorage.getItem(STORAGE_CLASSES_KEY);
+    console.error('DEBUG-mountStudentArea: STORAGE_CLASSES_KEY=' + STORAGE_CLASSES_KEY + ', raw=' + raw);
     if (raw) joinedClasses = JSON.parse(raw);
   } catch {
     joinedClasses = [];
@@ -1174,9 +1175,11 @@ export function mountStudentArea(
   }
 
   async function refreshClasses(): Promise<void> {
+    console.error('DEBUG-refreshClasses: START, joinedClasses.length=' + joinedClasses.length);
     if (joinedClasses.length === 0) return;
     const config = await loadAppConfig();
     const url = options.appsScriptUrl || config.appsScriptUrl;
+    console.error('DEBUG-refreshClasses: url=' + url);
     if (!url) return;
 
     let updated = false;
@@ -1184,9 +1187,12 @@ export function mountStudentArea(
       joinedClasses.map(async (cls, idx) => {
         try {
           const reqUrl = `${url}?action=getClass&code=${encodeURIComponent(cls.code)}`;
+          console.error('DEBUG-refreshClasses: fetching ' + reqUrl);
           const res = await fetch(reqUrl, { cache: 'no-store' });
+          console.error('DEBUG-refreshClasses: fetch res.status=' + res.status);
           if (!res.ok) return;
           const data = await res.json();
+          console.error('DEBUG-refreshClasses: data.success=' + data?.success + ', assignments=' + JSON.stringify(data?.assignments));
           if (data && data.success && data.class) {
             joinedClasses[idx] = {
               code: data.class.code,
@@ -1208,7 +1214,9 @@ export function mountStudentArea(
             };
             updated = true;
           }
-        } catch {}
+        } catch (err: any) {
+          console.error('DEBUG-refreshClasses: fetch catch error: ' + (err?.message || String(err)));
+        }
       })
     );
 
@@ -1217,14 +1225,19 @@ export function mountStudentArea(
         localStorage.setItem(STORAGE_CLASSES_KEY, JSON.stringify(joinedClasses));
       } catch {}
       renderClasses();
+      console.error('DEBUG-refreshClasses: renderClasses called after update');
     }
   }
 
   async function refreshList(): Promise<void> {
+    console.error('DEBUG-refreshList: START');
     await loadPublicExams();
+    console.error('DEBUG-refreshList: loadPublicExams done');
     renderClasses();
     renderPracticeExams();
+    console.error('DEBUG-refreshList: calling refreshClasses');
     await refreshClasses();
+    console.error('DEBUG-refreshList: refreshClasses done');
   }
 
   // Global listener for change name button (e.g. in TopBar)

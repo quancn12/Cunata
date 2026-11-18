@@ -1,0 +1,661 @@
+✔ dist: [api] R1: API00 Apps Script cũ vẫn chạy: trình duyệt thật, chuột thật, đăng nhập qua máy chủ cục bộ (WEB-contract §22) (1467.8583ms)
+✖ dist: [api] R1: API01 lõi handle dùng store bộ nhớ, không gọi mạng (WEB-contract §22) (0.7577ms)
+✖ dist: [api] R1: API02 Admin: chưa cấu hình, sai mật khẩu, token giả (WEB-contract §19.2/§22) (0.2126ms)
+✖ dist: [api] R1: API03 tạo tài khoản: username, trùng, mật khẩu tối thiểu, stats (WEB-contract §19.2/§22) (0.2028ms)
+✖ dist: [api] R1: API04 mật khẩu scrypt có muối riêng và phiên lưu dạng băm (WEB-contract §22) (0.2617ms)
+✖ dist: [api] R1: API05 token không lặp; hết hạn đúng 8 giờ cả Admin và giáo viên (WEB-contract §19.2/§22) (0.2067ms)
+✖ dist: [api] R1: API06-lock vô hiệu mọi phiên cũ khi khóa/đặt lại mật khẩu (WEB-contract §22) (0.2115ms)
+✖ dist: [api] R1: API06-reset vô hiệu mọi phiên cũ khi khóa/đặt lại mật khẩu (WEB-contract §22) (0.1221ms)
+✖ dist: [api] R1: API07 phân quyền Admin, lớp, đề và kết quả giữa hai giáo viên (WEB-contract §19.2/§22) (0.2162ms)
+✖ dist: [api] R1: API08 mã lớp, getClass, NOT_FOUND và danh sách giao đề (WEB-contract §19.2/§22) (0.2406ms)
+✖ dist: [api] R1: API09 publish/list/get/update/unpublish giữ JSON lớn nguyên văn (WEB-contract §17.2–17.3/§22) (0.2299ms)
+✖ dist: [api] R1: API10 từ chối đề sai từng loại câu, không lưu bản lỗi (WEB-contract §17.2/§22) (0.1963ms)
+✖ dist: [api] R1: API11 catalog phía server trả tên và metadata thật của mọi đề tĩnh (WEB-contract §22) (0.2008ms)
+✖ dist: [api] R1: API12 giờ mở và hạn nộp kiểm theo ctx.now, bù mạng đúng 2 phút (WEB-contract §19.2/§22) (0.1696ms)
+✖ dist: [api] R1: API13 nộp mặc định/submitResult, idempotency đồng thời và conflict (WEB-contract §17.2/§19.2/§22) (0.1715ms)
+✖ dist: [api] R1: API14 mọi phản hồi không lộ credential, hash, salt, PIN hash (WEB-contract §22) (0.1419ms)
+✖ dist: [api] R1: API15 HTTP Node cục bộ dùng cùng handle: GET công khai, POST JSON (WEB-contract §22) (0.1455ms)
+✖ dist: [api] R1: API16 trình duyệt thật qua HTTP: giáo viên đăng nhập và xem lớp (WEB-contract §19.1/§22) (0.1815ms)
+✖ dist: [api] R1: API17 GET không được tạo phiên hoặc thực hiện hành động cần quyền (WEB-contract §17.2/§19.2/§22) (0.1519ms)
+✖ dist: [api] R1: API18 mã lỗi dữ liệu nộp bài giữ tương thích Apps Script (WEB-contract §17.2/§22) (0.1397ms)
+✖ dist: [api] R1: API19 học sinh nhập tên ở cổng rồi vào lớp qua cùng handle HTTP (WEB-contract §19.1/§22) (0.1967ms)
+✖ dist: [api] R1: API20 apiBase ưu tiên hơn appsScriptUrl và POST JSON cùng nguồn (gate tích hợp R2) (WEB-contract §22) (0.1743ms)
+✖ dist: [api] R1: STORE01 Neon SQL-over-HTTP khởi tạo đủ bảng tự động, không lộ DATABASE_URL (WEB-contract §22) (0.2206ms)
+✖ dist: [api] R1: STORE02 Neon không nuốt lỗi HTTP thành ghi thành công (WEB-contract §22) (0.1552ms)
+✖ dist: [api] R1: STORE03 lõi giữ dữ liệu khi tái tạo ctx và tách Store khác (WEB-contract §22) (0.1279ms)
+✖ dist: [api] R1: STORE04 src/api chỉ dùng Node có sẵn, không Google hay SDK ngoài (WEB-contract §22) (0.1391ms)
+✖ dist: [glue] R1: GLUE01 build thật xuất dist/api/rpc.js và ES module package (WEB-contract §22) (2208.5262ms)
+✖ dist: [glue] R1: GLUE02 catalog build sinh đúng metadata từ public/exams/index.json (WEB-contract §22) (0.3268ms)
+✖ dist: [glue] R1: GLUE03 dist/api tự chứa, graph import không đi ra ngoài (WEB-contract §22) (0.3806ms)
+✖ dist: [glue] R1: GLUE04 publish thật trong fixture: api ở gốc, config hai host, giữ Apps Script (WEB-contract §22) (96.8959ms)
+✖ dist: [glue] R1: GLUE05 điểm vào Vercel thực sự cho CORS preflight từ GitHub Pages (WEB-contract §22) (0.4807ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 1
+ℹ fail 30
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3878.1028
+
+✖ failing tests:
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API01 lõi handle dùng store bộ nhớ, không gọi mạng (WEB-contract §22) (0.7577ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:35:21)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API02 Admin: chưa cấu hình, sai mật khẩu, token giả (WEB-contract §19.2/§22) (0.2126ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:42:25)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API03 tạo tài khoản: username, trùng, mật khẩu tối thiểu, stats (WEB-contract §19.2/§22) (0.2028ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:51:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API04 mật khẩu scrypt có muối riêng và phiên lưu dạng băm (WEB-contract §22) (0.2617ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:61:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API05 token không lặp; hết hạn đúng 8 giờ cả Admin và giáo viên (WEB-contract §19.2/§22) (0.2067ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:84:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API06-lock vô hiệu mọi phiên cũ khi khóa/đặt lại mật khẩu (WEB-contract §22) (0.2115ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:97:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API06-reset vô hiệu mọi phiên cũ khi khóa/đặt lại mật khẩu (WEB-contract §22) (0.1221ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:97:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API07 phân quyền Admin, lớp, đề và kết quả giữa hai giáo viên (WEB-contract §19.2/§22) (0.2162ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:111:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API08 mã lớp, getClass, NOT_FOUND và danh sách giao đề (WEB-contract §19.2/§22) (0.2406ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:123:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API09 publish/list/get/update/unpublish giữ JSON lớn nguyên văn (WEB-contract §17.2–17.3/§22) (0.2299ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:137:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API10 từ chối đề sai từng loại câu, không lưu bản lỗi (WEB-contract §17.2/§22) (0.1963ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:154:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API11 catalog phía server trả tên và metadata thật của mọi đề tĩnh (WEB-contract §22) (0.2008ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:168:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API12 giờ mở và hạn nộp kiểm theo ctx.now, bù mạng đúng 2 phút (WEB-contract §19.2/§22) (0.1696ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:181:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API13 nộp mặc định/submitResult, idempotency đồng thời và conflict (WEB-contract §17.2/§19.2/§22) (0.1715ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:195:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API14 mọi phản hồi không lộ credential, hash, salt, PIN hash (WEB-contract §22) (0.1419ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:211:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API15 HTTP Node cục bộ dùng cùng handle: GET công khai, POST JSON (WEB-contract §22) (0.1455ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:219:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API16 trình duyệt thật qua HTTP: giáo viên đăng nhập và xem lớp (WEB-contract §19.1/§22) (0.1815ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:229:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API17 GET không được tạo phiên hoặc thực hiện hành động cần quyền (WEB-contract §17.2/§19.2/§22) (0.1519ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:247:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API18 mã lỗi dữ liệu nộp bài giữ tương thích Apps Script (WEB-contract §17.2/§22) (0.1397ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:260:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API19 học sinh nhập tên ở cổng rồi vào lớp qua cùng handle HTTP (WEB-contract §19.1/§22) (0.1967ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:276:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\api.test.mjs:8:48
+✖ dist: [api] R1: API20 apiBase ưu tiên hơn appsScriptUrl và POST JSON cùng nguồn (gate tích hợp R2) (WEB-contract §22) (0.1743ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/api.test.mjs:299:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\storage.test.mjs:6:1
+✖ dist: [api] R1: STORE01 Neon SQL-over-HTTP khởi tạo đủ bảng tự động, không lộ DATABASE_URL (WEB-contract §22) (0.2206ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api/store/neon.ts
+      at required (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:22:10)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/storage.test.mjs:7:3)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\storage.test.mjs:37:1
+✖ dist: [api] R1: STORE02 Neon không nuốt lỗi HTTP thành ghi thành công (WEB-contract §22) (0.1552ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api/store/neon.ts
+      at required (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:22:10)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/storage.test.mjs:38:3)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\storage.test.mjs:57:1
+✖ dist: [api] R1: STORE03 lõi giữ dữ liệu khi tái tạo ctx và tách Store khác (WEB-contract §22) (0.1279ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api và hàm handle(request, ctx)
+      at loadHandle (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:29:10)
+      at rig (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:46:24)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/storage.test.mjs:58:19)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\storage.test.mjs:66:1
+✖ dist: [api] R1: STORE04 src/api chỉ dùng Node có sẵn, không Google hay SDK ngoài (WEB-contract §22) (0.1391ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu src/api
+      at required (file:///D:/Cunata/ops/roadmap/tests/R1/support.mjs:22:10)
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/storage.test.mjs:67:23)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\glue.test.mjs:29:40
+✖ dist: [glue] R1: GLUE01 build thật xuất dist/api/rpc.js và ES module package (WEB-contract §22) (2208.5262ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — build chưa sinh dist/api/rpc.js
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/glue.test.mjs:33:10)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\glue.test.mjs:29:40
+✖ dist: [glue] R1: GLUE02 catalog build sinh đúng metadata từ public/exams/index.json (WEB-contract §22) (0.3268ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu dist/api/catalog.json
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/glue.test.mjs:39:10)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\glue.test.mjs:29:40
+✖ dist: [glue] R1: GLUE03 dist/api tự chứa, graph import không đi ra ngoài (WEB-contract §22) (0.3806ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu artifact API để kiểm graph
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/glue.test.mjs:46:10)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\glue.test.mjs:29:40
+✖ dist: [glue] R1: GLUE04 publish thật trong fixture: api ở gốc, config hai host, giữ Apps Script (WEB-contract §22) (96.8959ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: publisher phải đặt API/config đúng trong fixture, không deploy (xem _runtime/publish.log)
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/glue.test.mjs:74:10)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R1\glue.test.mjs:29:40
+✖ dist: [glue] R1: GLUE05 điểm vào Vercel thực sự cho CORS preflight từ GitHub Pages (WEB-contract §22) (0.4807ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §22: NOT_IMPLEMENTED — thiếu rpc.js để kiểm CORS
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R1/glue.test.mjs:79:10)
+      at Test.runInAsyncScope (node:async_hooks:228:14)
+      at Test.run (node:internal/test_runner/test:1118:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:787:18)
+      at Test.postRun (node:internal/test_runner/test:1247:19)
+      at Test.run (node:internal/test_runner/test:1175:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

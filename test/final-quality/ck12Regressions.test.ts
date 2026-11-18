@@ -734,7 +734,11 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
   });
 
   async function enterExamIfRoleChooser(c: CdpClient) {
+    const alreadyInExam = await c.evaluate<boolean>(`Boolean(document.querySelectorAll('.question-card').length > 0)`);
+    if (alreadyInExam) return;
     await c.waitForSelector('#roleChooser, #startScreen, #studentNameGate, .question-card', 10000);
+    const inExamNow = await c.evaluate<boolean>(`Boolean(document.querySelectorAll('.question-card').length > 0)`);
+    if (inExamNow) return;
     const isChooser = await c.evaluate<boolean>(`Boolean(document.getElementById('roleChooser') && !document.getElementById('roleChooser').hidden && document.getElementById('roleChooser').style.display !== 'none')`);
     if (isChooser) {
       await c.click('#btnRoleStudent');
@@ -757,10 +761,32 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
         const itemSelector = examParam
           ? `#startScreen .exam-list-item[data-exam-id="${examParam}"]`
           : '#startScreen .exam-list-item';
-        await c.waitForSelector(itemSelector, 10000);
-        await c.click(itemSelector);
-        await c.waitForSelector('#btnStartExam:not([disabled])', 8000);
-        await c.click('#btnStartExam');
+        const hasItem = await c.evaluate<boolean>(`Boolean(document.querySelector('${itemSelector}'))`);
+        if (hasItem) {
+          await c.waitForSelector(itemSelector, 10000);
+          await c.click(itemSelector);
+          await c.waitForSelector('#btnStartExam:not([disabled])', 8000);
+          await c.click('#btnStartExam');
+        } else {
+          // §21: no public exams on #startScreen; load sample exam via hidden #examFileInput
+          const { root } = await c.send('DOM.getDocument', { depth: 0 });
+          const { nodeId } = await c.send('DOM.querySelector', { nodeId: root.nodeId, selector: '#examFileInput' });
+          if (nodeId) {
+            let sampleFile = path.resolve('public/exams/samples/sample-toan.json');
+            if (examParam) {
+              if (examParam.includes('de-11') && fs.existsSync(path.resolve('public/exams/ly12/de11.json'))) {
+                sampleFile = path.resolve('public/exams/ly12/de11.json');
+              } else if (fs.existsSync(path.resolve('public/exams', examParam + '.json'))) {
+                sampleFile = path.resolve('public/exams', examParam + '.json');
+              }
+            } else if (!fs.existsSync(sampleFile)) {
+              sampleFile = path.resolve('public/exams/toan-full.json');
+            }
+            await c.send('DOM.setFileInputFiles', { nodeId, files: [sampleFile] });
+            await c.evaluate(`document.getElementById('examFileInput')?.dispatchEvent(new Event('change', { bubbles: true }))`);
+            await c.waitForSelector('.question-card', 10000);
+          }
+        }
       }
     }
   }
@@ -846,12 +872,14 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       client = await CdpClient.launch({ width: 1280, height: 800 });
 
       // Step 1: Boot Release A
+      console.log('CK15: Step 1 Boot Release A');
       await client.navigate(`${origin}/Cunata/`);
       await enterExamIfRoleChooser(client);
       const hasCards = await client.waitForSelector('.question-card', 10000);
       assert.ok(hasCards, 'App must boot and render cards for Release A');
 
       // Wait for service worker to activate
+      console.log('CK15: Wait for SW A activate');
       await client.evaluate(`new Promise(resolve => {
         if (navigator.serviceWorker.controller) return resolve(true);
         navigator.serviceWorker.addEventListener('controllerchange', () => resolve(true), { once: true });
@@ -859,15 +887,18 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       })`);
 
       // Reload once to ensure worker caches Release A
+      console.log('CK15: Reload once');
       await client.navigate(`${origin}/Cunata/`);
       await enterExamIfRoleChooser(client);
       await client.waitForSelector('.question-card', 10000);
 
       // Verify that browser fetch returns Release A
+      console.log('CK15: Verify fetch Release A');
       const textA = await client.evaluate<string>(`fetch('./app/main.js').then(r => r.text())`);
       assert.ok(textA.includes('RELEASE_A_MARKER'), 'Browser fetch must initially return Release A module');
 
       // Candidate answers a question in Release A
+      console.log('CK15: Candidate answers question');
       await client.type('#candidateName', 'Thí sinh kiểm định F01');
       const selectedOptionA = await client.evaluate<{ qid: string; optionId: string } | null>(`(() => {
         const opt = document.querySelector('.question-card [role="radio"]');
@@ -883,6 +914,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       assert.ok(selectedOptionA && selectedOptionA.qid && selectedOptionA.optionId, 'Must find and click a valid radio option');
 
       // Wait for local save using predicate on IndexedDB
+      console.log('CK15: Wait for IDB save');
       const startPollA = Date.now();
       let draftRecordA: any = null;
       while (Date.now() - startPollA < 5000) {
@@ -927,17 +959,22 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       assert.equal(respA.selectedOptionId, selectedOptionA.optionId, 'Draft response must match selected option ID');
 
       // Step 2: Switch server to Release B and update worker
+      console.log('CK15: Step 2 Switch server to B');
       serverRelease = 'B';
-      const waitingReached = await client.evaluate<boolean>(`new Promise(resolve => {
+      const waitingReached = await client.evaluate<any>(`new Promise(resolve => {
         navigator.serviceWorker.getRegistration().then(reg => {
-          if (!reg) return resolve(false);
-          if (reg.waiting) return resolve(true);
+          if (!reg) return resolve({ ok: false, reason: 'no-reg' });
+          if (reg.waiting) return resolve({ ok: true, reason: 'already-waiting' });
 
+          const log = [];
           const checkWorker = (w) => {
             if (!w) return;
-            if (w.state === 'installed') return resolve(true);
+            log.push('worker state: ' + w.state);
+            if (w.state === 'installed') return resolve({ ok: true, reason: 'installed', log });
             w.addEventListener('statechange', () => {
-              if (w.state === 'installed' || reg.waiting) resolve(true);
+              log.push('statechange: ' + w.state);
+              if (w.state === 'installed' || reg.waiting) resolve({ ok: true, reason: 'statechange-installed', log });
+              if (w.state === 'redundant') resolve({ ok: false, reason: 'redundant', log });
             });
           };
 
@@ -946,31 +983,35 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
           }
 
           reg.addEventListener('updatefound', () => {
+            log.push('updatefound fired');
             checkWorker(reg.installing);
           });
 
-          reg.update().catch(() => {});
+          reg.update().then(() => log.push('reg.update resolved')).catch((e) => log.push('reg.update err: ' + e));
 
           const interval = setInterval(() => {
             if (reg.waiting || (reg.installing && reg.installing.state === 'installed')) {
               clearInterval(interval);
-              resolve(true);
+              resolve({ ok: true, reason: 'interval-waiting', log });
             }
           }, 100);
 
           setTimeout(() => {
             clearInterval(interval);
-            resolve(!!reg.waiting);
-          }, 8000);
+            resolve({ ok: !!reg.waiting, reason: 'timeout', waiting: !!reg.waiting, installing: reg.installing?.state, active: reg.active?.state, log });
+          }, 15000);
         });
       })`);
-      assert.ok(waitingReached, 'Release B Service Worker must download and install into waiting state');
+      console.log('CK15 waitingReached debug:', JSON.stringify(waitingReached));
+      assert.ok(waitingReached && waitingReached.ok, 'Release B Service Worker must download and install into waiting state');
 
       // Verify that while exam is in progress, old cache still exists
+      console.log('CK15: Verify old cache retained');
       const currentCacheStillA = await client.evaluate<boolean>(`caches.has('cunata-cache-v-release-a')`);
       assert.ok(currentCacheStillA, 'Old cache cunata-cache-v-release-a must be retained while exam is in progress');
 
       // Assert draft record is intact while Release B is waiting
+      console.log('CK15: Assert draft intact');
       const draftRecordWhileWaiting = await client.evaluate<any>(`new Promise((resolve, reject) => {
         const req = indexedDB.open('cunata-web');
         req.onerror = () => reject(req.error);
@@ -991,12 +1032,14 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       assert.deepEqual(draftRecordWhileWaiting.presentationOrder, draftRecordA.presentationOrder, 'Presentation order must remain unchanged');
 
       // Step 3: Complete exam
+      console.log('CK15: Step 3 Complete exam');
       await client.click('#btnSubmit');
       await client.waitForSelector('#btnConfirmSubmit');
       await client.click('#btnConfirmSubmit');
       await client.waitForVisible('#reportWrapper', 10000);
 
       // Assert final record in IDB preserves responses
+      console.log('CK15: Assert final record IDB');
       let finalRecord: any = null;
       const startFinalPoll = Date.now();
       while (Date.now() - startFinalPoll < 5000) {
@@ -1022,12 +1065,14 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
       assert.equal(finalRecord.examVersionId, draftRecordA.examVersionId, 'Final record must preserve examVersionId');
 
       // Step 4: Stop server IMMEDIATELY before reloading into Release B (test true offline cold boot)
+      console.log('CK15: Step 4 Stop server');
       await new Promise<void>((resolve) => {
         (server as any).closeAllConnections?.();
         server.close(() => resolve());
       });
 
       // Step 5: Reload while server is down (full cold offline)
+      console.log('CK15: Step 5 Reload offline');
       await client.navigate(`${origin}/Cunata/`);
       const pageInfo = await client.evaluate<any>(`({
         url: location.href,

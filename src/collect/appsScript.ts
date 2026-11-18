@@ -1310,6 +1310,12 @@ export function createAppsScriptCollectorPort(
         (final as any).metadata?.assignment_id ??
         (final as any).metadata?.assignmentId ??
         basePayload.assignment_id;
+      let studentId =
+        (final as any).student_id ??
+        (final as any).studentId ??
+        (final as any).metadata?.student_id ??
+        (final as any).metadata?.studentId ??
+        basePayload.student_id;
 
       const payload = {
         action: 'submitResult',
@@ -1331,6 +1337,7 @@ export function createAppsScriptCollectorPort(
         sections: scoreDTO?.sections ?? {},
         ...(classCode ? { class_code: String(classCode).trim().toUpperCase() } : {}),
         ...(assignmentId ? { assignment_id: String(assignmentId).trim() } : {}),
+        ...(studentId ? { student_id: String(studentId).trim() } : {}),
       };
 
       let response: Response;

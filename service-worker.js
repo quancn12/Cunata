@@ -1,8 +1,8 @@
 // Cunata Web Native Service Worker
-// Build Digest: 97934f6483524f43
-const BUILD_VERSION = 'v-97934f6483524f43';
+// Build Digest: 76728d0e43071d40
+const BUILD_VERSION = 'v-76728d0e43071d40';
 const CACHE_NAME_PREFIX = 'cunata-cache-';
-const CACHE_NAME = 'cunata-cache-v-97934f6483524f43';
+const CACHE_NAME = 'cunata-cache-v-76728d0e43071d40';
 const DEFAULT_PRECACHE_ENTRIES = [
   {
     "url": "index.html",
@@ -1098,6 +1098,10 @@ const DEFAULT_PRECACHE_ENTRIES = [
   },
   {
     "url": "public/exams/ly12/de25.json",
+    "critical": true
+  },
+  {
+    "url": "public/exams/samples/sample-toan.json",
     "critical": true
   },
   {

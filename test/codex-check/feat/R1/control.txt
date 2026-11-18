@@ -1,0 +1,9 @@
+✔ dist: [api] R1: API00 Apps Script cũ vẫn chạy: trình duyệt thật, chuột thật, đăng nhập qua máy chủ cục bộ (WEB-contract §22) (4338.596ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7609.6412

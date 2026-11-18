@@ -166,6 +166,7 @@ export interface WebResultV1 {
   readonly responses: AttemptResponses;
   readonly class_code?: string;
   readonly assignment_id?: string;
+  readonly student_id?: string;
 }
 
 /**
@@ -189,6 +190,11 @@ export function buildWebResultPayload(final: AttemptRecord): WebResultV1 {
     (final as any).assignmentId ??
     (final as any).metadata?.assignment_id ??
     (final as any).metadata?.assignmentId;
+  let studentId =
+    (final as any).student_id ??
+    (final as any).studentId ??
+    (final as any).metadata?.student_id ??
+    (final as any).metadata?.studentId;
 
   return {
     schemaVersion: 'web-result-v1',
@@ -206,6 +212,7 @@ export function buildWebResultPayload(final: AttemptRecord): WebResultV1 {
     responses: final.responses,
     ...(classCode ? { class_code: String(classCode).trim().toUpperCase() } : {}),
     ...(assignmentId ? { assignment_id: String(assignmentId).trim() } : {}),
+    ...(studentId ? { student_id: String(studentId).trim() } : {}),
   };
 }
 
