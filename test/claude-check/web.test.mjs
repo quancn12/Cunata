@@ -246,6 +246,96 @@ for (const target of TARGETS) {
       });
     }
 
+    // WEB-contract §20 (Trưởng phòng 18/11/2026): khi hiện đáp án thì hiện cả câu hỏi — toàn văn đề, đủ phương án/mệnh đề, đánh dấu đáp án và lựa chọn.
+    runDist('[report][student] §20: xem lại bài hiện toàn văn câu hỏi, đủ 4 phương án / 4 mệnh đề, đánh dấu đáp án đúng và lựa chọn của học sinh; file tải về cũng vậy', async (ctx) => {
+      const page = await openApp(ctx, server, target);
+      const exam = makeExam({ id: 'claude-check-review20', title: 'Đề kiểm định xem lại bài mục 20' });
+      await loadExam(page, exam);
+      await pickOption(page, qI(1), 'a');                                   // đúng
+      await pickOption(page, qI(2), 'b');                                   // sai (đáp án c); câu 3, 4 bỏ trống
+      await setStatement(page, qII(1), 0, true); await setStatement(page, qII(1), 1, true);   // ý a đúng, ý b sai; c, d bỏ trống
+      await typeShort(page, qIII(1), '0,5');                                // đúng; câu III.2 bỏ trống
+      await waitSaved(page);
+      await submit(page);
+      const seen = await page.eval(() => ({
+        title: document.querySelector('#reportWrapper .report-title')?.textContent ?? '',
+        cards: [...document.querySelectorAll('#reportWrapper .review-question-card[data-qid]')].map((c) => ({
+          qid: c.getAttribute('data-qid'), text: c.innerText,
+          options: [...c.querySelectorAll('.review-option[data-option-id]')].map((o) => ({ id: o.getAttribute('data-option-id'), correct: o.getAttribute('data-correct'), chosen: o.getAttribute('data-chosen'), text: o.innerText })),
+          statements: [...c.querySelectorAll('.review-statement[data-statement-id]')].map((s) => ({ id: s.getAttribute('data-statement-id'), key: s.getAttribute('data-key'), chosen: s.getAttribute('data-chosen'), text: s.innerText })),
+          short: c.querySelector('.review-short-answer')?.innerText ?? null,
+        })),
+      }));
+      assert.ok(seen.title.includes(exam.title), `§20: tiêu đề báo cáo (.report-title) phải là tiêu đề đề đang làm "${exam.title}", thực tế "${seen.title}"`);
+      assert.deepEqual(seen.cards.map((c) => c.qid), exam.questions.map((q) => q.questionVersionId), '§20: mỗi câu một .review-question-card[data-qid], đúng thứ tự đã làm');
+      const chosenI = { [qI(1)]: 'a', [qI(2)]: 'b' };
+      const chosenII = { [qII(1)]: ['true', 'true', 'none', 'none'] };
+      for (const q of exam.questions) {
+        const c = seen.cards.find((x) => x.qid === q.questionVersionId);
+        assert.ok(c.text.includes(q.content), `§20: thẻ ${q.questionVersionId} phải hiện toàn văn đề bài "${q.content}"`);
+        assert.ok(c.text.includes(SECRET), `§20/D08: thẻ ${q.questionVersionId} phải có lời giải`);
+        if (q.kind === 'I') {
+          assert.deepEqual(c.options.map((o) => o.id), q.options.map((o) => o.optionId), `§20: câu ${q.questionVersionId} phải hiện đủ 4 phương án .review-option[data-option-id] theo thứ tự lúc làm`);
+          for (const o of q.options) {
+            const v = c.options.find((x) => x.id === o.optionId);
+            assert.ok(v.text.includes(o.text) && v.text.includes(o.label), `§20: phương án ${o.optionId} phải có nhãn "${o.label}" và toàn văn "${o.text}", thực tế "${v.text}"`);
+            assert.equal(v.correct === 'true', o.optionId === q.correctOptionId, `§20: data-correct của ${o.optionId} sai`);
+            const pick = chosenI[q.questionVersionId];
+            assert.equal(v.chosen === 'true', !!pick && o.optionId === `${q.questionVersionId}-${pick}`, `§20: data-chosen của ${o.optionId} sai`);
+          }
+          if (!chosenI[q.questionVersionId]) assert.match(c.text, /Chưa chọn/, `§20: câu ${q.questionVersionId} bỏ trống phải ghi "Chưa chọn"`);
+        }
+        if (q.kind === 'II') {
+          assert.deepEqual(c.statements.map((s) => s.id), q.statements.map((s) => s.statementId), `§20: câu ${q.questionVersionId} phải hiện đủ 4 mệnh đề .review-statement[data-statement-id]`);
+          q.statements.forEach((s, j) => {
+            const v = c.statements[j];
+            assert.ok(v.text.includes(s.text), `§20: mệnh đề ${s.statementId} phải có toàn văn "${s.text}", thực tế "${v.text}"`);
+            assert.equal(v.key, String(s.answer), `§20: data-key của ${s.statementId} phải là "${s.answer}"`);
+            assert.equal(v.chosen, (chosenII[q.questionVersionId] ?? ['none', 'none', 'none', 'none'])[j], `§20: data-chosen của ${s.statementId} sai`);
+          });
+        }
+        if (q.kind === 'III') {
+          assert.ok(c.short && c.short.includes(q.answerKey), `§20: câu ${q.questionVersionId} phải có .review-short-answer ghi đáp án "${q.answerKey}", thực tế "${c.short}"`);
+          if (q.questionVersionId === qIII(1)) assert.match(c.short, /Bạn điền:\s*0,5/, '§20: phải ghi "Bạn điền: 0,5"');
+          else assert.match(c.short, /Chưa làm/, '§20: câu III bỏ trống phải ghi "Chưa làm"');
+        }
+      }
+      await page.click('#btnDownloadReportHtml');
+      const dl = await ctx.waitDownload();
+      const plain = dl.text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+      for (const q of exam.questions) {
+        assert.ok(plain.includes(q.content), `§20: file báo cáo tải về phải có toàn văn đề bài ${q.questionVersionId}`);
+        for (const o of q.options ?? []) assert.ok(plain.includes(o.text), `§20: file báo cáo tải về thiếu phương án "${o.text}"`);
+        for (const s of q.statements ?? []) assert.ok(plain.includes(s.text), `§20: file báo cáo tải về thiếu mệnh đề "${s.text}"`);
+      }
+    });
+
+    // Trưởng phòng 19/11/2026 chốt CX-C05 phương án A: bảng Markdown trong đề (đề 16 câu 6, đề 17 câu 13) phải hiện thành bảng thật.
+    runDist('[student][report] CX-C05/A: bảng Markdown trong đề bài hiện thành <table> (có tiêu đề cột, công thức trong ô) lúc làm bài và lúc xem lại bài', async (ctx) => {
+      const page = await openApp(ctx, server, target);
+      const exam = makeExam({ id: 'claude-check-mdtable', title: 'Đề kiểm định bảng Markdown' });
+      exam.questions[0].content = 'Nhiệt hóa hơi riêng cho trong bảng sau:\n\n| Chất lỏng | Rượu | Nước |\n| --- | --- | --- |\n| L (J / kg) | $0,9 · 10^6$ | $2,3 · 10^6$ |\n\nChất nào có L lớn nhất?';
+      await loadExam(page, exam);
+      const read = (scope) => page.eval((sel) => {
+        const card = document.querySelector(sel);
+        const t = card?.querySelector('table');
+        return { hasTable: !!t, th: t ? [...t.querySelectorAll('th')].map((e) => e.textContent.trim()) : [], rows: t ? t.querySelectorAll('tr').length : 0,
+          td: t ? [...t.querySelectorAll('td')].map((e) => e.textContent.replace(/\s+/g, ' ').trim()) : [], pipes: (card?.innerText.match(/\|/g) ?? []).length };
+      }, scope);
+      const inExam = await read(`[id="qcard-${qI(1)}"]`);
+      assert.equal(inExam.hasTable, true, 'CX-C05/A: lúc làm bài, bảng Markdown phải hiện thành thẻ <table>, không phải chữ có dấu "|"');
+      assert.deepEqual(inExam.th, ['Chất lỏng', 'Rượu', 'Nước'], 'CX-C05/A: dòng đầu bảng là tiêu đề cột <th>');
+      assert.equal(inExam.rows, 2, 'CX-C05/A: bảng có 2 dòng (tiêu đề + 1 dòng dữ liệu); dòng "| --- |" không được hiện');
+      assert.equal(inExam.td[0], 'L (J / kg)', 'CX-C05/A: ô dữ liệu đầu tiên đúng nội dung');
+      assert.equal(inExam.pipes, 0, 'CX-C05/A: không còn dấu "|" thô trong thẻ câu hỏi');
+      await pickOption(page, qI(1), 'a');
+      await waitSaved(page);
+      await submit(page);
+      const inReport = await read(`#reportWrapper .review-question-card[data-qid="${qI(1)}"]`);
+      assert.equal(inReport.hasTable, true, 'CX-C05/A + §20: phần xem lại bài cũng phải hiện bảng thành <table>');
+      assert.deepEqual(inReport.th, ['Chất lỏng', 'Rượu', 'Nước'], 'CX-C05/A + §20: tiêu đề cột trong phần xem lại bài');
+    });
+
     // QUYẾT ĐỊNH D02 của Trưởng phòng (16/11/2026): điểm không nguyên LUÔN hiện đúng 2 chữ số thập phân (dấu phẩy); điểm nguyên hiện số nguyên.
     run('[report][student] D02: điểm không nguyên luôn hiện 2 chữ số thập phân (0,50; 4,75), điểm nguyên không có phần thập phân', async (ctx) => {
       const page = await openApp(ctx, server, target);

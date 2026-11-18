@@ -578,15 +578,38 @@ export async function bootstrap(root, options) {
     };
     const activateWaitingWorker = async () => {
         try {
-            if (swRegistration?.waiting) {
-                swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
-                return;
-            }
-            if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+            let waiting = swRegistration?.waiting;
+            if (!waiting && typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
                 const reg = await navigator.serviceWorker.getRegistration();
-                if (reg?.waiting) {
-                    reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                }
+                waiting = reg?.waiting;
+            }
+            if (waiting) {
+                await new Promise((resolve) => {
+                    if (typeof navigator === 'undefined' || !navigator.serviceWorker) {
+                        resolve();
+                        return;
+                    }
+                    let resolved = false;
+                    const done = () => {
+                        if (!resolved) {
+                            resolved = true;
+                            clearTimeout(timer);
+                            navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+                            navigator.serviceWorker.removeEventListener('message', onSwMessage);
+                            resolve();
+                        }
+                    };
+                    const timer = setTimeout(done, 1500);
+                    const onControllerChange = () => done();
+                    const onSwMessage = (ev) => {
+                        if (ev?.data?.type === 'UPDATE_DEFERRED_REPORT') {
+                            done();
+                        }
+                    };
+                    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+                    navigator.serviceWorker.addEventListener('message', onSwMessage);
+                    waiting.postMessage({ type: 'SKIP_WAITING' });
+                });
             }
         }
         catch (_) { }
@@ -1038,7 +1061,7 @@ export async function bootstrap(root, options) {
         loadedExamId = record.examId;
         isSubmitted = true;
         notifyWorkerAttemptState(false);
-        activateWaitingWorker();
+        void activateWaitingWorker();
         if (timerIntervalId)
             clearInterval(timerIntervalId);
         if (record.class_code || record.classCode) {
@@ -1798,7 +1821,7 @@ export async function bootstrap(root, options) {
         }
         isSubmitted = true;
         notifyWorkerAttemptState(false);
-        activateWaitingWorker();
+        await activateWaitingWorker();
         if (timerIntervalId)
             clearInterval(timerIntervalId);
         // Compute score via domain scoreLegacyAttempt (uses scoreAttempt single truth)

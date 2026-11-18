@@ -25,7 +25,7 @@ Snapshot SHA-256 các file `dist` và cấu hình liên quan lúc bắt đầu k
 | `dist/app/routes.js` | `36f47f3a81e9d6d5bd5a93084880f0a35b134c73433b34612d6f07c047aea705` |
 | `dist/app/role-shell.js` | `d22093ef7ccc640606d67ee7d95ae06a33dbf5cb6b2448dfc4e6660a48850eef` |
 | `dist/student/index.js` | `9ca8f00a432615d8a9480e5132660eb198718bc3299559b8f1980affc3b610a2` |
-| `dist/student/area.js` | `e0b32c66ae978cb5ff111a9386d39002220d91d8e124876a445fe7ea107b34b1` |
+| `dist/student/area.js` | `461d4055c485c6140db2dfb686ccf2fd61b6559ece9ccf005abf09d243fff856` |
 | `dist/student/view.js` | `37144f898606972175c48a40fbcc3f8e64242e7196ca690fce52ee1a79a1cae7` |
 | `dist/ui/components.js` | `2764d6aa44ecbe86c9e89e6d3ce51adaa3b9d0bc313ef76a6e303240725cb48d` |
 | `dist/collect/appsScript.js` | `85351d11fc4446d685dee796fc2255c0b5978d9d4ad69f1a4e4a47b7c568e6a4` |

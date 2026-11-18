@@ -354,23 +354,39 @@ self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     const scope = (self.registration && self.registration.scope) || '/';
-    for (const item of DEFAULT_PRECACHE_ENTRIES) {
-      const fullUrl = resolveScopeUrl(scope, item.url);
-      try {
-        const resp = await fetch(fullUrl, { cache: 'no-cache' });
-        if (resp && resp.ok) {
-          await cache.put(fullUrl, resp.clone());
-          if (fullUrl !== item.url) await cache.put(item.url, resp);
-        } else if (item.critical) {
-          throw new Error('Critical asset failed: ' + item.url + ' status: ' + (resp ? resp.status : 'null'));
-        }
-      } catch (err) {
-        if (item.critical) {
-          try { await caches.delete(CACHE_NAME); } catch (_) {}
-          throw err;
+    const CONCURRENCY = 16;
+    let index = 0;
+    let abortError = null;
+
+    async function worker() {
+      while (index < DEFAULT_PRECACHE_ENTRIES.length && !abortError) {
+        const item = DEFAULT_PRECACHE_ENTRIES[index++];
+        if (!item) break;
+        const fullUrl = resolveScopeUrl(scope, item.url);
+        try {
+          const resp = await fetch(fullUrl, { cache: 'no-cache' });
+          if (resp && resp.ok) {
+            await cache.put(fullUrl, resp.clone());
+            if (fullUrl !== item.url) await cache.put(item.url, resp);
+          } else if (item.critical) {
+            throw new Error('Critical asset failed: ' + item.url + ' status: ' + (resp ? resp.status : 'null'));
+          }
+        } catch (err) {
+          if (item.critical) {
+            abortError = err;
+            try { await caches.delete(CACHE_NAME); } catch (_) {}
+            throw err;
+          }
         }
       }
     }
+
+    const workers = [];
+    for (let i = 0; i < Math.min(CONCURRENCY, DEFAULT_PRECACHE_ENTRIES.length); i++) {
+      workers.push(worker());
+    }
+    await Promise.all(workers);
+    if (abortError) throw abortError;
   })());
 });
 

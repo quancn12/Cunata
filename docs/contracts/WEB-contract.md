@@ -487,3 +487,14 @@ Quyết định: (1) học sinh vào lớp bằng **mã lớp** + tự gõ tên;
 - `src/admin/**` + `admin.html` (qua `scripts/web-build.ts`) — vùng admin.
 - `src/app/**` — vùng app: chọn vai `#roleChooser`, định tuyến hash, nạp cấu hình, nối các vùng.
 - `apps-script/**` — Apps Script (19.2).
+
+## 20. Xem lại bài: hiện đầy đủ câu hỏi cùng đáp án (Trưởng phòng yêu cầu 18/11/2026)
+
+Lỗi thật trên bản build: phần "Chi tiết bài làm & lời giải" chỉ ghi "Bạn chọn: A | Đáp án đúng: D", không hiện nội dung các phương án; tiêu đề báo cáo đề Vật lí lại ghi "… TOÁN 12". Áp dụng cho màn kết quả trên `dist/` và file báo cáo `.html` tải về (cùng nội dung, tự chứa, ảnh nhúng). Không đổi cách chấm điểm.
+
+- Tiêu đề báo cáo `#reportWrapper .report-title` chứa đúng tiêu đề đề đang làm (không gắn cứng môn).
+- Mỗi câu một thẻ `#reportWrapper .review-question-card[data-qid="<questionVersionId>"]`, đúng thứ tự học sinh đã làm (kể cả khi trộn). Thẻ có: số câu, phần, điểm câu, trạng thái; **toàn văn đề bài** (công thức, bảng, hình như lúc làm bài); lời giải `.explanation-box` (D08).
+- Phần I: đủ 4 phương án `.review-option[data-option-id]` theo thứ tự đã hiển thị lúc làm, mỗi phương án có nhãn chữ cái + toàn văn. Phương án đúng `data-correct="true"`, phương án học sinh chọn `data-chosen="true"`; chọn sai thì phân biệt rõ bằng chữ và biểu tượng (không chỉ bằng màu). Không chọn → ghi "Chưa chọn".
+- Phần II: đủ 4 mệnh đề `.review-statement[data-statement-id]`, mỗi mệnh đề có nhãn a–d + toàn văn, `data-key="true|false"` (đáp án), `data-chosen="true|false|none"` (học sinh chọn Đúng/Sai/bỏ trống), chữ "Đúng"/"Sai"/"Chưa chọn" cho cả hai.
+- Phần III: `.review-short-answer` hiện "Bạn điền: …" (nguyên văn, hoặc "Chưa làm") và "Đáp án: …".
+- File `.html` tải về chứa cùng các thông tin trên (toàn văn đề bài, phương án, mệnh đề, đáp án, lời giải), mọi nội dung người dùng đã escape.

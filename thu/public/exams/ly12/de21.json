@@ -738,7 +738,7 @@
           "label": "d",
           "text": "Giá trị $F_2 = 90$ N .",
           "answer": true,
-          "explanation": "Đẳng tích $\\frac{p_1}{T_1} = \\frac{p_4}{T_4}$ với $T_4 = T_3 = 270$ K $\\Rightarrow \\frac{1,2·10^5}{540} = \\frac{p_4}{270} \\Rightarrow p_4 = 0,6·10^5$ Pa. $F_1 + p_0 S_A + p_1 S_B = F_2 + p_1 S_A + p_0 S_B \\Rightarrow 30 + 10^5·30·10^-4 + 0,6·10^5·15·10^-4 = F_2 + 0,6·10^5·30·10^-4 + 10^5·15·10^-4 \\Rightarrow F_2 = 90$ N $\\Rightarrow$ d) Đúng."
+          "explanation": "Đẳng tích $\\frac{p_1}{T_1} = \\frac{p_4}{T_4}$ với $T_4 = T_3 = 270$ K $\\Rightarrow \\frac{1,2·10^5}{540} = \\frac{p_4}{270} \\Rightarrow p_4 = 0,6·10^5$ Pa. $F_1 + p_0 S_A + p_4 S_B = F_2 + p_4 S_A + p_0 S_B \\Rightarrow 30 + 10^5·30·10^-4 + 0,6·10^5·15·10^-4 = F_2 + 0,6·10^5·30·10^-4 + 10^5·15·10^-4 \\Rightarrow F_2 = 90$ N $\\Rightarrow$ d) Đúng."
         }
       ]
     },
