@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 200" width="100%" height="200" style="background:#ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <style>
+    .header-text { font-weight: 700; font-size: 15px; fill: #1e293b; text-anchor: middle; font-style: italic; }
+    .val-text { font-size: 14px; fill: #334155; text-anchor: middle; }
+    .sign-text { font-size: 16px; font-weight: 700; text-anchor: middle; }
+    .plus { fill: #16a34a; }
+    .minus { fill: #dc2626; }
+    .zero { fill: #64748b; font-weight: 600; }
+    .arrow { stroke: #2563eb; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    .grid-line { stroke: #cbd5e1; stroke-width: 1.5; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <polygon points="0 0, 7 3.5, 0 7" fill="#2563eb" />
+    </marker>
+  </defs>
+
+  <!-- Outer Border -->
+  <rect x="10" y="10" width="520" height="180" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" />
+
+  <!-- Horizontal divider lines -->
+  <line x1="10" y1="50" x2="530" y2="50" class="grid-line" />
+  <line x1="10" y1="95" x2="530" y2="95" class="grid-line" />
+
+  <!-- Vertical header divider -->
+  <line x1="80" y1="10" x2="80" y2="190" class="grid-line" />
+
+  <!-- Row 1: x -->
+  <text x="45" y="35" class="header-text">x</text>
+  <text x="115" y="35" class="val-text">−∞</text>
+  <text x="215" y="35" class="val-text">−1</text>
+  <text x="365" y="35" class="val-text">1</text>
+  <text x="495" y="35" class="val-text">+∞</text>
+
+  <!-- Row 2: f'(x) -->
+  <text x="45" y="77" class="header-text">f '(x)</text>
+  <text x="165" y="78" class="sign-text plus">+</text>
+  <text x="215" y="78" class="sign-text zero">0</text>
+  <text x="290" y="78" class="sign-text minus">−</text>
+  <text x="365" y="78" class="sign-text zero">0</text>
+  <text x="430" y="78" class="sign-text plus">+</text>
+
+  <!-- Row 3: f(x) -->
+  <text x="45" y="148" class="header-text">f (x)</text>
+
+  <!-- Arrows and values -->
+  <!-- Left to peak (-1, 2) -->
+  <text x="115" y="175" class="val-text">−∞</text>
+  <line x1="130" y1="168" x2="200" y2="122" class="arrow" />
+  <text x="215" y="118" class="val-text" font-weight="700">2</text>
+
+  <!-- Peak to valley (1, -2) -->
+  <line x1="230" y1="122" x2="350" y2="168" class="arrow" />
+  <text x="365" y="180" class="val-text" font-weight="700">−2</text>
+
+  <!-- Valley to +inf -->
+  <line x1="380" y1="168" x2="480" y2="122" class="arrow" />
+  <text x="495" y="118" class="val-text">+∞</text>
+</svg>

@@ -1,0 +1,1039 @@
+/* ==========================================================================
+   Cunata Student View - Scoped Stylesheet
+   M2: Exam Selection, Student Inputs, Palette, Timer, and History View
+   Conforms to Shared Product Contract v2.0 and WEB-contract.md §5, §6, §9
+   ========================================================================== */
+
+.cunata-student-view {
+  font-family: var(--font);
+  color: var(--c-text);
+  background-color: var(--c-bg);
+  line-height: 1.5;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.cunata-student-view *,
+.cunata-student-view *::before,
+.cunata-student-view *::after {
+  box-sizing: border-box;
+}
+
+/* ----------------- Header & App Bar ----------------- */
+.cunata-student-view .app-header {
+  background-color: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 2px 0 var(--shadow-1);
+}
+
+.cunata-student-view .header-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cunata-student-view .brand-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.cunata-student-view .logo-badge {
+  background: var(--c-primary);
+  color: var(--c-surface);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+}
+
+.cunata-student-view .exam-meta-title {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--c-text);
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cunata-student-view .candidate-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--c-surface-2);
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--c-border);
+}
+
+.cunata-student-view .candidate-input-wrap label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--c-text-2);
+  white-space: nowrap;
+}
+
+.cunata-student-view .candidate-input {
+  border: none;
+  background: transparent;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--c-text);
+  outline: none;
+  width: 150px;
+  min-height: 36px;
+}
+
+.cunata-student-view .candidate-input:focus-visible {
+  outline: 2px solid var(--c-primary);
+  border-radius: 4px;
+}
+
+.cunata-student-view .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ----------------- Sync Status Badge ----------------- */
+.cunata-student-view .sync-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  background-color: var(--c-surface-2);
+  color: var(--c-text-2);
+  border: 1px solid var(--c-border);
+}
+
+.cunata-student-view .sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--c-text-2);
+}
+
+.cunata-student-view .sync-status-badge.status-saved .sync-dot {
+  background-color: var(--c-success);
+}
+.cunata-student-view .sync-status-badge.status-saved {
+  background-color: var(--c-surface-2);
+  color: var(--c-success);
+  border-color: var(--c-border);
+}
+
+.cunata-student-view .sync-status-badge.status-queued .sync-dot {
+  background-color: var(--c-warning);
+}
+.cunata-student-view .sync-status-badge.status-queued {
+  background-color: var(--c-surface-2);
+  color: var(--c-warning);
+  border-color: var(--c-border);
+}
+
+.cunata-student-view .sync-status-badge.status-sending .sync-dot {
+  background-color: var(--c-primary);
+  animation: cunata-pulse 1s infinite alternate;
+}
+.cunata-student-view .sync-status-badge.status-sending {
+  background-color: var(--c-primary-soft);
+  color: var(--c-primary);
+  border-color: var(--c-primary-soft);
+}
+
+.cunata-student-view .sync-status-badge.status-confirmed .sync-dot {
+  background-color: var(--c-success);
+}
+.cunata-student-view .sync-status-badge.status-confirmed {
+  background-color: var(--c-surface-2);
+  color: var(--c-success);
+  border-color: var(--c-border);
+}
+
+.cunata-student-view .sync-status-badge.status-failed .sync-dot {
+  background-color: var(--c-danger);
+}
+.cunata-student-view .sync-status-badge.status-failed {
+  background-color: var(--c-surface-2);
+  color: var(--c-danger);
+  border-color: var(--c-border);
+}
+
+@keyframes cunata-pulse {
+  from { opacity: 0.4; }
+  to { opacity: 1; }
+}
+
+/* ----------------- Timer Box ----------------- */
+.cunata-student-view .timer-box {
+  background: var(--c-text);
+  color: var(--c-surface);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+}
+
+.cunata-student-view .timer-box.timer-warning {
+  background: var(--c-warning);
+  color: var(--c-surface);
+}
+
+.cunata-student-view .timer-box.timer-expired {
+  background: var(--c-danger);
+  color: var(--c-surface);
+}
+
+/* ----------------- Action Buttons ----------------- */
+.cunata-student-view .btn-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  background-color: var(--c-primary);
+  color: var(--c-surface);
+  border: none;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+  min-height: 44px;
+}
+
+.cunata-student-view .btn-submit:hover:not(:disabled) {
+  background-color: var(--c-primary);
+}
+
+.cunata-student-view .btn-submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.cunata-student-view .btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cunata-student-view .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  background-color: var(--c-surface);
+  color: var(--c-text-2);
+  border: 1px solid var(--c-border);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  padding: 0.5rem 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 44px;
+}
+
+.cunata-student-view .btn-secondary:hover:not(:disabled) {
+  background-color: var(--c-bg);
+  border-color: var(--c-text-2);
+}
+
+/* ----------------- Layout Grid ----------------- */
+.cunata-student-view .main-wrapper, #examWrapper { order: 0;
+  max-width: 1280px;
+  margin: 1.5rem auto;
+  padding: 0 1rem;
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+#examWrapper[style*="display: none"], .cunata-student-view .main-wrapper[style*="display: none"] {
+  display: none !important;
+}
+
+@media (min-width: 1024px) {
+  .cunata-student-view .main-wrapper:not([style*="display: none"]), #examWrapper:not([style*="display: none"]) {
+    display: grid !important;
+    grid-template-columns: 1fr 280px !important;
+    gap: var(--sp-4, 16px) !important;
+    align-items: start !important;
+  }
+  #examWrapper #examPane {
+    order: 1 !important;
+  }
+  #examWrapper .palette-card, .cunata-student-view .palette-card {
+    order: 2 !important;
+    position: sticky !important;
+    top: 5rem !important;
+    display: block !important;
+  }
+  #btnPalette {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .cunata-student-view .main-wrapper:not([style*="display: none"]), #examWrapper:not([style*="display: none"]) {
+    display: block !important;
+    grid-template-columns: 1fr !important;
+  }
+  #examWrapper #examPane {
+    order: 1 !important;
+    width: 100% !important;
+  }
+  #examWrapper .palette-card, .cunata-student-view .palette-card {
+    display: none !important;
+    order: 2 !important;
+  }
+  #examWrapper .palette-card.is-open, .cunata-student-view .palette-card.is-open {
+    display: block !important;
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-height: 75vh !important;
+    overflow-y: auto !important;
+    z-index: 1000 !important;
+    border-radius: var(--r-lg, 16px) var(--r-lg, 16px) 0 0 !important;
+    box-shadow: var(--shadow-2) !important;
+    background: var(--c-surface) !important;
+    border: 1px solid var(--c-border) !important;
+    padding: var(--sp-4, 16px) var(--sp-4, 16px) var(--sp-6, 32px) var(--sp-4, 16px) !important;
+  }
+  .header-actions {
+    flex-wrap: wrap !important;
+    gap: var(--sp-2, 8px) !important;
+  }
+  #btnOpenExamList, #btnSubmit {
+    white-space: nowrap !important;
+    height: var(--target, 44px) !important;
+    min-height: var(--target, 44px) !important;
+    max-height: var(--target, 44px) !important;
+    padding: 0 var(--sp-3, 12px) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: var(--fs-xs, 12px) !important;
+    line-height: 20px !important;
+  }
+  .sync-status-badge {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    height: var(--target, 44px) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 0 var(--sp-2, 8px) !important;
+  }
+  #timerBox {
+    white-space: nowrap !important;
+    height: var(--target, 44px) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    line-height: 20px !important;
+  }
+  #btnPalette {
+    white-space: nowrap !important;
+    height: var(--target, 44px) !important;
+    min-height: var(--target, 44px) !important;
+    max-height: var(--target, 44px) !important;
+    padding: 0 var(--sp-2, 8px) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    font-size: var(--fs-xs, 12px) !important;
+    line-height: 20px !important;
+  }
+  #btnPalette * {
+    font-size: var(--fs-xs, 12px) !important;
+  }
+}
+
+/* ----------------- Palette Sidebar ----------------- */
+#examWrapper .palette-card, .cunata-student-view .palette-card {
+  order: 2;
+  background: var(--c-surface);
+  border-radius: var(--r-md, 12px);
+  border: 1px solid var(--c-border);
+  padding: 1rem;
+  position: sticky;
+  top: 5rem;
+  box-shadow: 0 1px 2px 0 var(--shadow-1);
+}
+
+.cunata-student-view .palette-header {
+  margin-bottom: 0.875rem;
+  border-bottom: 1px solid var(--c-surface-2);
+  padding-bottom: 0.5rem;
+}
+
+.cunata-student-view .palette-title {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--c-text);
+}
+
+.cunata-student-view .palette-progress-text {
+  font-size: var(--fs-xs);
+  color: var(--c-text-2);
+  margin-top: 0.25rem;
+}
+
+.cunata-student-view .palette-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.cunata-student-view .palette-btn {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--c-text-2);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+  min-height: 44px;
+}
+
+.cunata-student-view .palette-btn:hover {
+  border-color: var(--c-primary);
+  background-color: var(--c-primary-soft);
+}
+
+.cunata-student-view .palette-btn:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+
+.cunata-student-view .palette-btn.answered {
+  background-color: var(--c-primary);
+  border-color: var(--c-primary);
+  color: var(--c-surface);
+}
+
+.cunata-student-view .palette-btn.partial {
+  background-color: var(--c-primary-soft);
+  border-color: var(--c-primary-soft);
+  color: var(--c-primary);
+  border-width: 2px;
+}
+
+.cunata-student-view .palette-btn.flagged::after {
+  content: "★";
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: var(--fs-xs);
+  color: var(--c-warning);
+}
+
+.cunata-student-view .palette-btn.answered.flagged::after {
+  color: var(--c-border);
+}
+
+.cunata-student-view .palette-btn.highlight {
+  animation: cunata-btn-flash 1s ease-in-out;
+}
+
+@keyframes cunata-btn-flash {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); box-shadow: 0 0 8px var(--c-primary-soft); }
+}
+
+/* ----------------- Palette Legend ----------------- */
+.cunata-student-view .palette-legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  font-size: var(--fs-xs);
+  color: var(--c-text-2);
+  border-top: 1px solid var(--c-surface-2);
+  padding-top: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.cunata-student-view .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.cunata-student-view .legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--c-border);
+}
+
+.cunata-student-view .swatch-answered {
+  background-color: var(--c-primary);
+  border-color: var(--c-primary);
+}
+
+.cunata-student-view .swatch-partial {
+  background-color: var(--c-primary-soft);
+  border-color: var(--c-primary-soft);
+}
+
+.cunata-student-view .swatch-unanswered {
+  background-color: var(--c-bg);
+}
+
+.cunata-student-view .swatch-flagged {
+  color: var(--c-warning);
+  font-size: var(--fs-sm);
+  line-height: 1;
+}
+
+.cunata-student-view .palette-footer {
+  border-top: 1px solid var(--c-surface-2);
+  padding-top: 0.75rem;
+}
+
+/* ----------------- Exam Pane & Question Cards ----------------- */
+#examWrapper #examPane, .cunata-student-view .exam-pane { order: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.cunata-student-view .section-banner {
+  background: var(--c-surface);
+  border-left: 4px solid var(--c-primary);
+  padding: 1rem 1.25rem;
+  border-radius: 0 10px 10px 0;
+  box-shadow: 0 1px 2px 0 var(--shadow-1);
+}
+
+.cunata-student-view .section-tag {
+  display: inline-block;
+  background-color: var(--c-primary-soft);
+  color: var(--c-primary);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 0.375rem;
+}
+
+.cunata-student-view .section-banner h2 {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--c-text);
+  margin-bottom: 0.25rem;
+}
+
+.cunata-student-view .section-banner p {
+  font-size: var(--fs-sm);
+  color: var(--c-text-2);
+}
+
+.cunata-student-view .question-card {
+  background: var(--c-surface);
+  border-radius: 10px;
+  border: 1px solid var(--c-border);
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px 0 var(--shadow-1);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cunata-student-view .question-card.highlight {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 2px var(--c-primary-soft);
+}
+
+.cunata-student-view .question-meta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.cunata-student-view .question-num-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: var(--fs-md);
+  color: var(--c-text);
+}
+
+.cunata-student-view .point-badge {
+  background-color: var(--c-surface-2);
+  color: var(--c-text-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.cunata-student-view .btn-flag {
+  background: transparent;
+  border: 1px solid var(--c-border);
+  color: var(--c-text-2);
+  font-size: var(--fs-xs);
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all 0.15s ease;
+  min-height: 36px;
+}
+
+.cunata-student-view .btn-flag:hover {
+  background-color: var(--c-surface-2);
+  border-color: var(--c-border);
+  color: var(--c-warning);
+}
+
+.cunata-student-view .btn-flag.flagged {
+  background-color: var(--c-surface-2);
+  border-color: var(--c-border);
+  color: var(--c-warning);
+  font-weight: 600;
+}
+
+.cunata-student-view .question-stem {
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  color: var(--c-text);
+  margin-bottom: 1.25rem;
+}
+
+.cunata-student-view .question-stem p {
+  margin-bottom: 0.75rem;
+}
+
+/* ----------------- Part I: Radio Options Grid ----------------- */
+.cunata-student-view .options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .cunata-student-view .options-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cunata-student-view .option-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--c-border);
+  background-color: var(--c-surface);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  min-height: 44px;
+}
+
+.cunata-student-view .option-card:hover {
+  background-color: var(--c-bg);
+  border-color: var(--c-border);
+}
+
+.cunata-student-view .option-card:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 1px;
+}
+
+.cunata-student-view .option-card.selected {
+  background-color: var(--c-primary-soft);
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 1px var(--c-primary);
+}
+
+.cunata-student-view .option-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--c-border);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--c-text-2);
+  flex-shrink: 0;
+  background-color: var(--c-bg);
+}
+
+.cunata-student-view .option-card.selected .option-letter {
+  background-color: var(--c-primary);
+  border-color: var(--c-primary);
+  color: var(--c-surface);
+}
+
+.cunata-student-view .option-text {
+  font-size: var(--fs-sm);
+  color: var(--c-text);
+  padding-top: 0.1rem;
+}
+
+/* ----------------- Part II: Statements Table ----------------- */
+.cunata-student-view .statements-table {
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cunata-student-view .statement-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 140px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--c-border);
+  background-color: var(--c-surface);
+}
+
+.cunata-student-view .statement-row:last-child {
+  border-bottom: none;
+}
+
+.cunata-student-view .statement-label {
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--c-text-2);
+}
+
+.cunata-student-view .statement-text {
+  font-size: var(--fs-sm);
+  color: var(--c-text);
+}
+
+.cunata-student-view .tf-toggle-group {
+  display: flex;
+  gap: 0.375rem;
+  justify-content: flex-end;
+}
+
+.cunata-student-view .tf-btn {
+  flex: 1;
+  padding: 0.35rem 0.5rem;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid var(--c-border);
+  background-color: var(--c-bg);
+  color: var(--c-text-2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 44px;
+}
+
+.cunata-student-view .tf-btn:hover {
+  background-color: var(--c-surface-2);
+}
+
+.cunata-student-view .tf-btn:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 1px;
+}
+
+.cunata-student-view .tf-btn.selected-true {
+  background-color: var(--c-success);
+  border-color: var(--c-success);
+  color: var(--c-surface);
+}
+
+.cunata-student-view .tf-btn.selected-false {
+  background-color: var(--c-danger);
+  border-color: var(--c-danger);
+  color: var(--c-surface);
+}
+
+@media (max-width: 640px) {
+  .cunata-student-view .statement-row {
+    grid-template-columns: 30px 1fr;
+    grid-template-rows: auto auto;
+  }
+  .cunata-student-view .tf-toggle-group {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+}
+
+/* ----------------- Part III: Short Answer ----------------- */
+.cunata-student-view .short-answer-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 420px;
+}
+
+.cunata-student-view .short-answer-chars-preview {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.cunata-student-view .char-box {
+  width: 38px;
+  height: 44px;
+  border: 2px dashed var(--c-border);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--c-text);
+  background-color: var(--c-bg);
+}
+
+.cunata-student-view .char-box.filled {
+  border: 2px solid var(--c-primary);
+  background-color: var(--c-primary-soft);
+  color: var(--c-primary);
+}
+
+.cunata-student-view .char-box.too-long {
+  border-color: var(--c-warning);
+}
+
+.cunata-student-view .short-answer-input-wrap {
+  width: 100%;
+}
+
+.cunata-student-view .short-answer-input {
+  width: 100%;
+  padding: 0.65rem 0.875rem;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  outline: none;
+  background-color: var(--c-surface);
+  color: var(--c-text);
+  min-height: 44px;
+}
+
+.cunata-student-view .short-answer-input:focus-visible {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px var(--c-primary-soft);
+}
+
+.cunata-student-view .quick-keys-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.cunata-student-view .quick-key-btn {
+  background-color: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: 6px;
+  padding: 0.25rem 0.65rem;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--c-text-2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 36px;
+}
+
+.cunata-student-view .quick-key-btn:hover {
+  background-color: var(--c-border);
+  border-color: var(--c-text-2);
+}
+
+.cunata-student-view .input-hint-text {
+  font-size: var(--fs-xs);
+  color: var(--c-text-2);
+  line-height: 1.4;
+}
+
+/* ----------------- History Table & Notice ----------------- */
+.cunata-student-view .history-section {
+  margin-top: 2rem;
+  background: var(--c-surface);
+  border-radius: 10px;
+  border: 1px solid var(--c-border);
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px 0 var(--shadow-1);
+}
+
+.cunata-student-view .history-title {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--c-text);
+  margin-bottom: 0.75rem;
+}
+
+.cunata-student-view .history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.cunata-student-view .history-table th,
+.cunata-student-view .history-table td {
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.cunata-student-view .history-table th {
+  background-color: var(--c-bg);
+  font-weight: 600;
+  color: var(--c-text-2);
+}
+
+.cunata-student-view .max-attempts-notice {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  color: var(--c-warning);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+/* ----------------- Modal Dialog ----------------- */
+.cunata-student-view .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: var(--c-backdrop);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  backdrop-filter: blur(2px);
+}
+
+.cunata-student-view .modal-content {
+  background: var(--c-surface);
+  border-radius: 14px;
+  box-shadow: 0 20px 25px -5px var(--shadow-2), 0 8px 10px -6px var(--shadow-2);
+  max-width: 480px;
+  width: 100%;
+  padding: 1.5rem;
+}
+
+.cunata-student-view .modal-title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--c-text);
+  margin-bottom: 0.75rem;
+}
+
+.cunata-student-view .modal-body {
+  font-size: var(--fs-sm);
+  color: var(--c-text-2);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.cunata-student-view .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* ----------------- Loading & Error States ----------------- */
+.cunata-student-view .student-loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: var(--c-text-2);
+  font-weight: 500;
+  gap: 1rem;
+}
+
+.cunata-student-view .student-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--c-border);
+  border-top-color: var(--c-primary);
+  border-radius: 50%;
+  animation: cunata-spin 0.8s linear infinite;
+}
+
+@keyframes cunata-spin {
+  to { transform: rotate(360deg); }
+}
+
+.cunata-student-view .student-error-banner {
+  background-color: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  color: var(--c-danger);
+  padding: 0.875rem 1.25rem;
+  border-radius: 8px;
+  margin: 1rem auto;
+  max-width: 1280px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--fs-sm);
+}
+
+.cunata-student-view .student-warning-banner {
+  background-color: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  color: var(--c-warning);
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  margin: 0.75rem auto;
+  max-width: 1280px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+/* ----------------- Accessibility & Reduced Motion ----------------- */
+@media (prefers-reduced-motion: reduce) {
+  .cunata-student-view * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

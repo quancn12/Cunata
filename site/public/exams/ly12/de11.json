@@ -1,0 +1,553 @@
+{
+  "schemaVersion": "web-exam-v1",
+  "examId": "ly12-hang-tuan-de-11",
+  "examVersionId": "v1.0.0",
+  "title": "Vật lí 12 — Đề số 11 hàng tuần",
+  "subject": "Vật lí",
+  "grade": 12,
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  },
+  "assets": [
+    {
+      "assetId": "ly12-de11-p01-1",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p01-1.png",
+      "alt": "Hình vẽ Câu 9"
+    },
+    {
+      "assetId": "ly12-de11-p02-1",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p02-1.png",
+      "alt": "Hình vẽ Câu 12"
+    },
+    {
+      "assetId": "ly12-de11-p02-2",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p02-2.png",
+      "alt": "Hình vẽ Câu 14"
+    },
+    {
+      "assetId": "ly12-de11-p02-3",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p02-3.png",
+      "alt": "Hình vẽ Câu 16"
+    },
+    {
+      "assetId": "ly12-de11-p02-4",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p02-4.png",
+      "alt": "Hình vẽ Câu 17"
+    },
+    {
+      "assetId": "ly12-de11-p03-1",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p03-1.png",
+      "alt": "Hình vẽ Câu 22"
+    },
+    {
+      "assetId": "ly12-de11-p03-2",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p03-2.png",
+      "alt": "Hình vẽ Câu 23"
+    },
+    {
+      "assetId": "ly12-de11-p03-3",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p03-3.png",
+      "alt": "Hình vẽ Câu 25"
+    },
+    {
+      "assetId": "ly12-de11-p03-4",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p03-4.png",
+      "alt": "Hình vẽ Câu 26"
+    },
+    {
+      "assetId": "ly12-de11-p03-5",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p03-5.png",
+      "alt": "Hình vẽ Câu 28"
+    },
+    {
+      "assetId": "ly12-de11-p06-1",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p06-1.png",
+      "alt": "Hình lời giải Câu 14"
+    },
+    {
+      "assetId": "ly12-de11-p06-4",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p06-4.png",
+      "alt": "Hình lời giải Câu 17"
+    },
+    {
+      "assetId": "ly12-de11-p09-2",
+      "mime": "image/png",
+      "data": "public/exams/ly12/de11/p09-2.png",
+      "alt": "Hình lời giải Câu 28"
+    }
+  ],
+  "questions": [
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-01",
+      "title": "Câu 1 (Phần I)",
+      "content": "Nội năng của một vật phụ thuộc vào:",
+      "options": [
+        { "optionId": "ly12-de11-i-01-a", "label": "A", "text": "Nhiệt độ và áp suất của vật" },
+        { "optionId": "ly12-de11-i-01-b", "label": "B", "text": "Nhiệt độ và khối lượng của vật" },
+        { "optionId": "ly12-de11-i-01-c", "label": "C", "text": "Thể tích và áp suất của vật" },
+        { "optionId": "ly12-de11-i-01-d", "label": "D", "text": "Thể tích và nhiệt độ của vật" }
+      ],
+      "correctOptionId": "ly12-de11-i-01-d",
+      "explanation": "Đáp án D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-02",
+      "title": "Câu 2 (Phần I)",
+      "content": "Chuyển động Brown là chuyển động hỗn loạn không ngừng của",
+      "options": [
+        { "optionId": "ly12-de11-i-02-a", "label": "A", "text": "các chất" },
+        { "optionId": "ly12-de11-i-02-b", "label": "B", "text": "các phân tử" },
+        { "optionId": "ly12-de11-i-02-c", "label": "C", "text": "các nguyên tử" },
+        { "optionId": "ly12-de11-i-02-d", "label": "D", "text": "các hạt rất nhỏ" }
+      ],
+      "correctOptionId": "ly12-de11-i-02-d",
+      "explanation": "Đáp án D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-03",
+      "title": "Câu 3 (Phần I)",
+      "content": "Lớp màn sương mù xuất hiện vào sáng sớm là quá trình chuyển thể nào sau đây?",
+      "options": [
+        { "optionId": "ly12-de11-i-03-a", "label": "A", "text": "Nóng chảy" },
+        { "optionId": "ly12-de11-i-03-b", "label": "B", "text": "Đông đặc" },
+        { "optionId": "ly12-de11-i-03-c", "label": "C", "text": "Bay hơi" },
+        { "optionId": "ly12-de11-i-03-d", "label": "D", "text": "Ngưng tụ" }
+      ],
+      "correctOptionId": "ly12-de11-i-03-d",
+      "explanation": "Đáp án D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-04",
+      "title": "Câu 4 (Phần I)",
+      "content": "Ba thông số mô tả trạng thái của chất khí là",
+      "options": [
+        { "optionId": "ly12-de11-i-04-a", "label": "A", "text": "nhiệt độ, thể tích, áp suất." },
+        { "optionId": "ly12-de11-i-04-b", "label": "B", "text": "khối lượng, nhiệt độ, khối lượng riêng." },
+        { "optionId": "ly12-de11-i-04-c", "label": "C", "text": "khối lượng, áp suất, nhiệt độ." },
+        { "optionId": "ly12-de11-i-04-d", "label": "D", "text": "khối lượng riêng, áp suất, nhiệt độ." }
+      ],
+      "correctOptionId": "ly12-de11-i-04-a",
+      "explanation": "Đáp án A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-05",
+      "title": "Câu 5 (Phần I)",
+      "content": "Gọi M là khối lượng mol, $N_A$ là số Avogadro, m là khối lượng của một khối chất nào đó. Biểu thức xác định số phân tử (hay nguyên tử) chứa trong khối lượng m của chất đó là:",
+      "options": [
+        { "optionId": "ly12-de11-i-05-a", "label": "A", "text": "$N = M m N_A$" },
+        { "optionId": "ly12-de11-i-05-b", "label": "B", "text": "$N = \\frac{M}{m} N_A$" },
+        { "optionId": "ly12-de11-i-05-c", "label": "C", "text": "$N = \\frac{m}{M} N_A$" },
+        { "optionId": "ly12-de11-i-05-d", "label": "D", "text": "$N = \\frac{1}{M m} N_A$" }
+      ],
+      "correctOptionId": "ly12-de11-i-05-c",
+      "explanation": "$N = n N_A = \\frac{m}{M} N_A$. Chọn C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-06",
+      "title": "Câu 6 (Phần I)",
+      "content": "Trong quá trình chất rắn kết tinh nóng chảy thì",
+      "options": [
+        { "optionId": "ly12-de11-i-06-a", "label": "A", "text": "tổng thế năng phân tử giảm và nội năng tăng." },
+        { "optionId": "ly12-de11-i-06-b", "label": "B", "text": "tổng thế năng phân tử giảm và nội năng giảm." },
+        { "optionId": "ly12-de11-i-06-c", "label": "C", "text": "tổng thế năng phân tử tăng và nội năng tăng." },
+        { "optionId": "ly12-de11-i-06-d", "label": "D", "text": "tổng thế năng phân tử tăng và nội năng giảm." }
+      ],
+      "correctOptionId": "ly12-de11-i-06-c",
+      "explanation": "Nhiệt độ không đổi ⇒ động năng phân tử không đổi. Nhận nhiệt lượng ⇒ nội năng tăng (tổng thế năng phân tử tăng). Chọn C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-07",
+      "title": "Câu 7 (Phần I)",
+      "content": "Câu nào sau đây nói về khí lí tưởng là không đúng?",
+      "options": [
+        { "optionId": "ly12-de11-i-07-a", "label": "A", "text": "Thể tích của các phân tử có thể bỏ qua." },
+        { "optionId": "ly12-de11-i-07-b", "label": "B", "text": "Khối lượng của các phân tử khí có thể bỏ qua." },
+        { "optionId": "ly12-de11-i-07-c", "label": "C", "text": "Các phân tử chỉ tương tác khi va chạm" },
+        { "optionId": "ly12-de11-i-07-d", "label": "D", "text": "Khí có thể gây áp suất lên thành bình." }
+      ],
+      "correctOptionId": "ly12-de11-i-07-b",
+      "explanation": "Đáp án B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-08",
+      "title": "Câu 8 (Phần I)",
+      "content": "Đun nóng khí trong bình kín. Kết luận nào sau đây là sai?",
+      "options": [
+        { "optionId": "ly12-de11-i-08-a", "label": "A", "text": "Thế năng tương tác của các phân tử khí tăng lên." },
+        { "optionId": "ly12-de11-i-08-b", "label": "B", "text": "Nội năng của khí tăng lên." },
+        { "optionId": "ly12-de11-i-08-c", "label": "C", "text": "Động năng của các phân tử khí tăng lên." },
+        { "optionId": "ly12-de11-i-08-d", "label": "D", "text": "Truyền nội năng cho chất khí." }
+      ],
+      "correctOptionId": "ly12-de11-i-08-a",
+      "explanation": "Bình kín nên thể tích không đổi ⇒ thế năng phân tử không đổi. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-09",
+      "title": "Câu 9 (Phần I)",
+      "content": "Như trên hình, một xi-lanh chứa khí có thành trong nhẵn đặt thẳng đứng trên mặt đất, piston hình chữ T có khối lượng m , diện tích đáy dưới là S . Áp suất khí quyển là $p_0$ và gia tốc rơi tự do là g . Áp suất của khí trong xi-lanh là:\n\n![Hình minh họa](public/exams/ly12/de11/p01-1.png)",
+      "image": "public/exams/ly12/de11/p01-1.png",
+      "options": [
+        { "optionId": "ly12-de11-i-09-a", "label": "A", "text": "$p_0$." },
+        { "optionId": "ly12-de11-i-09-b", "label": "B", "text": "$p_0 + \\frac{mg}{S}$." },
+        { "optionId": "ly12-de11-i-09-c", "label": "C", "text": "$\\frac{mg}{S}$." },
+        { "optionId": "ly12-de11-i-09-d", "label": "D", "text": "$2p_0 + \\frac{mg}{S}$." }
+      ],
+      "correctOptionId": "ly12-de11-i-09-b",
+      "explanation": "Điều kiện cân bằng piston là $pS = p_0 S + mg \\Rightarrow p = p_0 + \\frac{mg}{S}$. Chọn B."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-10",
+      "title": "Câu 10 (Phần I)",
+      "content": "Hãy chọn câu phát biểu sai trong các câu phát biểu sau. Khi sự truyền nhiệt xảy ra giữa hai vật thì:",
+      "options": [
+        { "optionId": "ly12-de11-i-10-a", "label": "A", "text": "Nhiệt chỉ tự truyền từ vật có nhiệt độ cao sang vật nhiệt độ thấp hơn." },
+        { "optionId": "ly12-de11-i-10-b", "label": "B", "text": "Sự truyền nhiệt xảy ra cho tới khi nhiệt độ của hai vật bằng nhau." },
+        { "optionId": "ly12-de11-i-10-c", "label": "C", "text": "Sự truyền nhiệt xảy ra cho tới khi nhiệt năng của hai vật bằng nhau." },
+        { "optionId": "ly12-de11-i-10-d", "label": "D", "text": "Nhiệt lượng của vật này tỏa ra bằng nhiệt lượng của vật kia thu vào." }
+      ],
+      "correctOptionId": "ly12-de11-i-10-c",
+      "explanation": "Sự truyền nhiệt xảy ra cho tới khi nhiệt độ của hai vật bằng nhau. Chọn C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-11",
+      "title": "Câu 11 (Phần I)",
+      "content": "Vào buổi sáng, sương trên lá hóa hơi thành hơi nước dưới ánh nắng mặt trời. Trong quá trình này, giữa các phân tử nước có",
+      "options": [
+        { "optionId": "ly12-de11-i-11-a", "label": "A", "text": "lực hút và lực đẩy phân tử đều yếu đi." },
+        { "optionId": "ly12-de11-i-11-b", "label": "B", "text": "lực hút phân tử mạnh lên còn lực đẩy phân tử yếu đi." },
+        { "optionId": "ly12-de11-i-11-c", "label": "C", "text": "lực hút và lực đẩy phân tử đều mạnh lên." },
+        { "optionId": "ly12-de11-i-11-d", "label": "D", "text": "lực hút phân tử yếu đi còn lực đẩy phân tử mạnh lên." }
+      ],
+      "correctOptionId": "ly12-de11-i-11-a",
+      "explanation": "Trong quá trình nước chuyển thành hơi nước thì khoảng cách giữa các phân tử tăng nên lực hút và lực đẩy phân tử đều yếu đi. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-12",
+      "title": "Câu 12 (Phần I)",
+      "content": "Như hình vẽ, một bình hình trụ thẳng đứng chứa khí và piston có khối lượng m , diện tích S được thả rơi tự do theo phương thẳng đứng xuống dưới với gia tốc rơi tự do g (đã bỏ qua lực cản của không khí). Gọi áp suất khí quyển là $p_0$. Áp suất của khí trong bình là:\n\n![Hình minh họa](public/exams/ly12/de11/p02-1.png)",
+      "image": "public/exams/ly12/de11/p02-1.png",
+      "options": [
+        { "optionId": "ly12-de11-i-12-a", "label": "A", "text": "$p_0$." },
+        { "optionId": "ly12-de11-i-12-b", "label": "B", "text": "$p_0 + \\frac{mg}{S}$." },
+        { "optionId": "ly12-de11-i-12-c", "label": "C", "text": "$p_0 - \\frac{mg}{S}$." },
+        { "optionId": "ly12-de11-i-12-d", "label": "D", "text": "$\\frac{mg}{S}$." }
+      ],
+      "correctOptionId": "ly12-de11-i-12-a",
+      "explanation": "Định luật II Newton cho piston: $mg + pS - p_0 S = ma \\Rightarrow p = p_0$ (do $a = g$). Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-13",
+      "title": "Câu 13 (Phần I)",
+      "content": "Một khối khí nhận một công bằng 1000 J đồng thời nó truyền cho môi trường xung quanh một nhiệt lượng 200 calo. Nội năng của chất khí đó đã:",
+      "options": [
+        { "optionId": "ly12-de11-i-13-a", "label": "A", "text": "Tăng khoảng 800 J ." },
+        { "optionId": "ly12-de11-i-13-b", "label": "B", "text": "Giảm khoảng 40 J ." },
+        { "optionId": "ly12-de11-i-13-c", "label": "C", "text": "Tăng khoảng 160 J." },
+        { "optionId": "ly12-de11-i-13-d", "label": "D", "text": "Giảm khoảng 800 J." }
+      ],
+      "correctOptionId": "ly12-de11-i-13-c",
+      "explanation": "$ΔU = A + Q ≈ 1000 - 200 · 4,2 = 160$ J. Chọn C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-14",
+      "title": "Câu 14 (Phần I)",
+      "content": "Áp suất của khí trong bình có khả năng đỡ cột thủy ngân cao $h = 50$ cm. Biết áp suất khí quyển là $p_0 = 76$ cmHg. Áp suất của khí trong bình là:\n\n![Hình minh họa](public/exams/ly12/de11/p02-2.png)",
+      "image": "public/exams/ly12/de11/p02-2.png",
+      "options": [
+        { "optionId": "ly12-de11-i-14-a", "label": "A", "text": "26 cmHg ." },
+        { "optionId": "ly12-de11-i-14-b", "label": "B", "text": "576 cmHg ." },
+        { "optionId": "ly12-de11-i-14-c", "label": "C", "text": "81 cmHg ." },
+        { "optionId": "ly12-de11-i-14-d", "label": "D", "text": "126 cmHg ." }
+      ],
+      "correctOptionId": "ly12-de11-i-14-d",
+      "explanation": "![Hình minh họa](public/exams/ly12/de11/p06-1.png)\n\nÁp suất điểm màu xanh bằng điểm màu đỏ: $p = p_0 + h = 76 + 50 = 126$ cmHg. Chọn D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-15",
+      "title": "Câu 15 (Phần I)",
+      "content": "Lấy $N_A = 6,02 · 10^23$ mol⁻¹. Không khí có khối lượng mol 29 g / mol và khối lượng riêng 1,29 kg / m³. Nếu một người hít sâu, hít khoảng 150 cm³ không khí thì số phân tử khí đã hít vào là",
+      "options": [
+        { "optionId": "ly12-de11-i-15-a", "label": "A", "text": "$2,4 · 10^21$." },
+        { "optionId": "ly12-de11-i-15-b", "label": "B", "text": "$2,4 · 10^18$." },
+        { "optionId": "ly12-de11-i-15-c", "label": "C", "text": "$4,0 · 10^21$." },
+        { "optionId": "ly12-de11-i-15-d", "label": "D", "text": "$4,0 · 10^18$." }
+      ],
+      "correctOptionId": "ly12-de11-i-15-c",
+      "explanation": "$m = V · D = 150 · 10^-6 · 1,29 = 0,1935 · 10^-3$ kg $= 0,1935$ g\n$n = \\frac{m}{M} = \\frac{0,1935}{29}$ (mol)\n$N = n · N_A = \\frac{0,1935}{29} · 6,02 · 10^23 ≈ 4 · 10^21$. Chọn C."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-16",
+      "title": "Câu 16 (Phần I)",
+      "content": "Một bếp điện được sử dụng với hiệu điện thế 220 V thì dòng điện có cường độ 8 A . Dùng bếp này thì đun sôi được 2 lít nước từ nhiệt độ ban đầu 25°C trong thời gian 10 phút. Cho nhiệt dung riêng của nước là $c = 4200$ J · kg⁻¹ · K⁻¹. Hiệu suất của bếp xấp xỉ bằng:\n\n![Hình minh họa](public/exams/ly12/de11/p02-3.png)",
+      "image": "public/exams/ly12/de11/p02-3.png",
+      "options": [
+        { "optionId": "ly12-de11-i-16-a", "label": "A", "text": "60% ." },
+        { "optionId": "ly12-de11-i-16-b", "label": "B", "text": "80%." },
+        { "optionId": "ly12-de11-i-16-c", "label": "C", "text": "70%." },
+        { "optionId": "ly12-de11-i-16-d", "label": "D", "text": "90%." }
+      ],
+      "correctOptionId": "ly12-de11-i-16-a",
+      "explanation": "$Q = mcΔt = 2 · 4200 · (100 - 25) = 0,63 · 10^6$ J\n$A = UIt = 220 · 8 · 10 · 60 = 1,056 · 10^6$ J\n$H = \\frac{Q}{A} = \\frac{0,63}{1,056} ≈ 0,6 = 60%$. Chọn A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-17",
+      "title": "Câu 17 (Phần I)",
+      "content": "Như hình minh họa, một ống thủy tinh có chiều dài 20 cm , tiết diện là 0,4 cm² và đầu hở được cắm thẳng đứng vào trong nước, nước đi vào ống 2 cm . Độ cao chênh lệch giữa mặt nước trong và ngoài ống là 100 cm . Biết áp suất khí quyển là $10^5$ Pa , khối lượng riêng của nước là 1000 kg / m³ và $g = 10$ m / s². Thể tích và áp suất của khí trong ống lần lượt là:\n\n![Hình minh họa](public/exams/ly12/de11/p02-4.png)",
+      "image": "public/exams/ly12/de11/p02-4.png",
+      "options": [
+        { "optionId": "ly12-de11-i-17-a", "label": "A", "text": "8,2 cm³ và $1,1 · 10^5$ Pa ." },
+        { "optionId": "ly12-de11-i-17-b", "label": "B", "text": "7,2 cm³ và $0,9 · 10^5$ Pa ." },
+        { "optionId": "ly12-de11-i-17-c", "label": "C", "text": "8,2 cm³ và $0,9 · 10^5$ Pa ." },
+        { "optionId": "ly12-de11-i-17-d", "label": "D", "text": "7,2 cm³ và $1,1 · 10^5$ Pa ." }
+      ],
+      "correctOptionId": "ly12-de11-i-17-d",
+      "explanation": "![Hình minh họa](public/exams/ly12/de11/p06-4.png)\n\n$V = Sl = 0,4 · (20 - 2) = 7,2$ cm³\n$p = p_0 + Dgh = 10^5 + 1000 · 10 · 1 = 1,1 · 10^5$ Pa. Chọn D."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ly12-de11-i-18",
+      "title": "Câu 18 (Phần I)",
+      "content": "Thả vào 0,5 kg nước ở nhiệt độ $t_1 = 20$°C một cục nước đá khối lượng 0,5 kg và nhiệt độ $t_2 = -15$°C. Cho biết nhiệt dung riêng của nước $c_1 = 4200$ J / kgK , của nước đá $c_2 = 2100$ J / kgK . Nhiệt nóng chảy riêng của nước đá $λ = 3,4 · 10^5$ J / kg . Hãy tìm nhiệt độ của hỗn hợp sau khi cân bằng nhiệt được thiết lập.",
+      "options": [
+        { "optionId": "ly12-de11-i-18-a", "label": "A", "text": "5°C ." },
+        { "optionId": "ly12-de11-i-18-b", "label": "B", "text": "10°C ." },
+        { "optionId": "ly12-de11-i-18-c", "label": "C", "text": "0°C ." },
+        { "optionId": "ly12-de11-i-18-d", "label": "D", "text": "2°C." }
+      ],
+      "correctOptionId": "ly12-de11-i-18-c",
+      "explanation": "Nhiệt lượng nước tỏa ra khi giảm nhiệt độ xuống 0°C là: $Q_1 = m_1 c_1 Δt_1 = 0,5 · 4200 · 20 = 42000$ J\nNhiệt lượng nước đá thu vào để tăng nhiệt độ lên 0°C là: $Q_2 = m_2 c_2 Δt_2 = 0,5 · 2100 · 15 = 15750$ J\nNhiệt nóng chảy hoàn toàn nước đá là: $Q_nc = m_2 λ = 0,5 · 3,4 · 10^5 = 170000$ J\nVì $Q_2 < Q_1 < Q_2 + Q_nc$ nên đá không tan hết ⇒ nhiệt độ cân bằng là 0°C. Chọn C."
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de11-ii-01",
+      "title": "Câu 19 (Phần II - Đúng / Sai)",
+      "content": "Khi nói về nội năng.",
+      "statements": [
+        {
+          "statementId": "ly12-de11-ii-01-a",
+          "label": "a",
+          "text": "Nội năng là 1 dạng của năng lượng nên có thể chuyển hóa thành các dạng năng lượng khác",
+          "answer": true,
+          "explanation": "Đúng. Nội năng là một dạng năng lượng nên có thể chuyển hóa thành các dạng năng lượng khác."
+        },
+        {
+          "statementId": "ly12-de11-ii-01-b",
+          "label": "b",
+          "text": "Nội năng của 1 vật phụ thuộc vào nhiệt độ và thể tích của vật",
+          "answer": true,
+          "explanation": "Đúng. Nội năng của một vật phụ thuộc vào nhiệt độ và thể tích của vật."
+        },
+        {
+          "statementId": "ly12-de11-ii-01-c",
+          "label": "c",
+          "text": "Nội năng chính là nhiệt lượng của vật",
+          "answer": false,
+          "explanation": "Sai. Nội năng khác với nhiệt lượng."
+        },
+        {
+          "statementId": "ly12-de11-ii-01-d",
+          "label": "d",
+          "text": "Nội năng của vật có thể tăng lên hoặc giảm xuống",
+          "answer": true,
+          "explanation": "Đúng. Nội năng của vật có thể thay đổi (tăng lên hoặc giảm xuống)."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de11-ii-02",
+      "title": "Câu 20 (Phần II - Đúng / Sai)",
+      "content": "Thả một miếng chì ở nhiệt độ 100°C vào 250 g nước ở nhiệt độ 58,5°C làm nước nóng lên tới 60°C. Biết nhiệt dung riêng của chì là 130 J / kgK , nhiệt dung riêng của nước là 4200 J / kgK",
+      "statements": [
+        {
+          "statementId": "ly12-de11-ii-02-a",
+          "label": "a",
+          "text": "Nhiệt độ của chì ngay khi có cân bằng nhiệt là 60°C",
+          "answer": true,
+          "explanation": "Đúng. Khi có cân bằng nhiệt, nhiệt độ của chì bằng nhiệt độ của nước là 60°C."
+        },
+        {
+          "statementId": "ly12-de11-ii-02-b",
+          "label": "b",
+          "text": "Nhiệt lượng nước thu vào là 1575 J",
+          "answer": true,
+          "explanation": "Đúng. $Q_n = m_n c_n Δt_n = 0,25 · 4200 · (60 - 58,5) = 1575$ J."
+        },
+        {
+          "statementId": "ly12-de11-ii-02-c",
+          "label": "c",
+          "text": "Nhiệt lượng chì tỏa ra là 5200 J",
+          "answer": false,
+          "explanation": "Sai. Theo phương trình cân bằng nhiệt thì nhiệt lượng chì tỏa ra là 1575 J."
+        },
+        {
+          "statementId": "ly12-de11-ii-02-d",
+          "label": "d",
+          "text": "Khối lượng của chì là 0,3 kg",
+          "answer": true,
+          "explanation": "Đúng. $Q_c = m_c c_c Δt_c \\Rightarrow 1575 = m_c · 130 · (100 - 60) \\Rightarrow m_c ≈ 0,3$ kg."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de11-ii-03",
+      "title": "Câu 21 (Phần II - Đúng / Sai)",
+      "content": "Một động cơ xăng mỗi chu trình thu nhiệt lượng từ nguồn nóng là 28571 J và thực hiện công 8571 J . Biết rằng: năng suất tỏa nhiệt của xăng là $4,48 · 10^4$ J / g và động cơ thực hiện 50 chu trình mỗi giây.",
+      "statements": [
+        {
+          "statementId": "ly12-de11-ii-03-a",
+          "label": "a",
+          "text": "Động cơ có hiệu suất là 30%.",
+          "answer": true,
+          "explanation": "Đúng. $H = \\frac{A}{Q_1} = \\frac{8571}{28571} ≈ 0,3 = 30%$."
+        },
+        {
+          "statementId": "ly12-de11-ii-03-b",
+          "label": "b",
+          "text": "Mỗi chu trình, động cơ tỏa ra nhiệt lượng là $2 · 10^4$ J .",
+          "answer": true,
+          "explanation": "Đúng. $Q_2 = Q_1 - A = 28571 - 8571 = 2 · 10^4$ J."
+        },
+        {
+          "statementId": "ly12-de11-ii-03-c",
+          "label": "c",
+          "text": "Khối lượng xăng bị đốt cháy mỗi giây là 17,4 g.",
+          "answer": false,
+          "explanation": "Sai. $m = \\frac{50 Q_1}{q} = \\frac{50 · 28571}{4,48 · 10^4} ≈ 31,9$ g."
+        },
+        {
+          "statementId": "ly12-de11-ii-03-d",
+          "label": "d",
+          "text": "Công suất cơ học của động cơ là 200 kW .",
+          "answer": false,
+          "explanation": "Sai. $P = \\frac{50 A}{t} = 50 · 8571 = 428550$ W $≈ 429$ kW."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ly12-de11-ii-04",
+      "title": "Câu 22 (Phần II - Đúng / Sai)",
+      "content": "Như minh họa ở hình bên, một ống thủy tinh hình chữ U đặt thẳng đứng, hai đầu để hở hướng lên, có chứa cột khí A, B và các cột thủy ngân. Biết áp suất khí quyển là 76 cmHg và $h = 6$ cm.\n\n![Hình minh họa](public/exams/ly12/de11/p03-1.png)",
+      "image": "public/exams/ly12/de11/p03-1.png",
+      "statements": [
+        {
+          "statementId": "ly12-de11-ii-04-a",
+          "label": "a",
+          "text": "Áp suất tại điểm C và D trong thủy ngân bằng nhau.",
+          "answer": true,
+          "explanation": "Đúng. C và D cùng nằm trên một mặt ngang của thủy ngân nên áp suất bằng nhau."
+        },
+        {
+          "statementId": "ly12-de11-ii-04-b",
+          "label": "b",
+          "text": "Áp suất khí trong cột A là $p_A = 73$ cmHg .",
+          "answer": false,
+          "explanation": "Sai. Áp suất khí trong cột A là $p_A > p_0 = 76$ cmHg."
+        },
+        {
+          "statementId": "ly12-de11-ii-04-c",
+          "label": "c",
+          "text": "Áp suất khí trong cột B là $p_B = 82$ cmHg .",
+          "answer": true,
+          "explanation": "Đúng. Áp suất khí trong cột B là $p_B = p_0 + h = 76 + 6 = 82$ cmHg."
+        },
+        {
+          "statementId": "ly12-de11-ii-04-d",
+          "label": "d",
+          "text": "Giá trị của $h_0$ là 6 cm .",
+          "answer": false,
+          "explanation": "Sai. $p_A + h_0 = p_B \\Rightarrow h_0 = p_B - p_A < 82 - 76 = 6$ cm."
+        }
+      ]
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de11-iii-01",
+      "title": "Câu 23 (Phần III - Trả lời ngắn)",
+      "content": "Khi làm thí nghiệm một học sinh đã đo được nhiệt độ của một cốc nước là 55°C. Trong thang Fahrenheit thì nhiệt độ này ứng với bao nhiêu độ F?\n\n![Hình minh họa](public/exams/ly12/de11/p03-2.png)",
+      "image": "public/exams/ly12/de11/p03-2.png",
+      "answerKey": "131",
+      "explanation": "$t(°F) = 32 + 1,8 · t(°C) = 32 + 1,8 · 55 = 131(°F)$. Trả lời ngắn: 131."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de11-iii-02",
+      "title": "Câu 24 (Phần III - Trả lời ngắn)",
+      "content": "Động cơ nhiệt có hiệu suất là 36%. Động cơ thực hiện một công 73,6875 J thì trả nguồn lạnh một nhiệt lượng bằng bao nhiêu J ?",
+      "answerKey": "131",
+      "explanation": "$Q_1 = \\frac{A}{H} = \\frac{73,6875}{0,36} = 204,6875$ J\n$Q_2 = Q_1 - A = 204,6875 - 73,6875 = 131$ J.\nTrả lời ngắn: 131."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de11-iii-03",
+      "title": "Câu 25 (Phần III - Trả lời ngắn)",
+      "content": "Dùng ấm điện 1000 W để đun 1,5 kg nước từ 20°C cho đến lúc sôi. Cho biết hiệu suất của ấm điện là 75% , nhiệt dung riêng của nước là 4200 J / kg .K và nước sôi ở 100°C. Thời gian đun sôi nước là bao nhiêu giây?\n\n![Hình minh họa](public/exams/ly12/de11/p03-3.png)",
+      "image": "public/exams/ly12/de11/p03-3.png",
+      "answerKey": "672",
+      "explanation": "$Q = mcΔt = 1,5 · 4200 · (100 - 20) = 504000$ J\n$A = \\frac{Q}{H} = \\frac{504000}{0,75} = 672000$ J\n$t = \\frac{A}{P} = \\frac{672000}{1000} = 672$ s.\nTrả lời ngắn: 672."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de11-iii-04",
+      "title": "Câu 26 (Phần III - Trả lời ngắn)",
+      "content": "Một vật bằng chì được ném trượt trên một mặt sàn với vận tốc ban đầu là 10 m / s. Vật dừng lại sau khi đi được quãng đường nào đó. Cho nhiệt dung riêng của chì là $c = 128$ J / kgK . Nếu 50% nhiệt lượng tỏa ra do ma sát được dùng để làm nóng vật thì nhiệt độ tăng thêm của vật bằng bao nhiêu độ C (làm tròn đến 1 chữ số sau dấu phẩy thập phân)?\n\n![Hình minh họa](public/exams/ly12/de11/p03-4.png)",
+      "image": "public/exams/ly12/de11/p03-4.png",
+      "answerKey": "0,2",
+      "explanation": "$Q = 0,5 W \\Rightarrow mcΔt = 0,5 · \\frac{1}{2} m v^2 \\Rightarrow Δt = \\frac{0,25 v^2}{c} = \\frac{0,25 · 10^2}{128} ≈ 0,2(°C)$. Trả lời ngắn: 0,2."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de11-iii-05",
+      "title": "Câu 27 (Phần III - Trả lời ngắn)",
+      "content": "Bỏ 100 g nước đá ở -2°C vào 300 g nước ở 20°C. Cho biết nhiệt nóng chảy riêng của nước đá là $3,4 · 10^5$ J / kg , nhiệt dung riêng của nước là 4200 J / kgK và nhiệt dung riêng của đá là 2100 J / kgK . Khối lượng nước đá còn lại bằng bao nhiêu gam (làm tròn đến 1 chữ số sau dấu phẩy thập phân)?",
+      "answerKey": "27,1",
+      "explanation": "Nhiệt lượng nước tỏa ra để giảm nhiệt độ xuống 0°C là: $Q = m_n c_n Δt_n = 0,3 · 4200 · 20 = 25200$ J\n$Q = m_d c_d Δt_d + m_tan λ \\Rightarrow 25200 = 0,1 · 2100 · 2 + m_tan · 3,4 · 10^5 \\Rightarrow m_tan = (25200 - 0,1 · 2100 · 2)/(3,4 · 10^5) ≈ 0,07288$ kg $≈ 72,9$ g\nKhối lượng nước đá còn lại là: $100 - 72,9 = 27,1$ g.\nTrả lời ngắn: 27,1. (Đã đính chính so với đề gốc.)"
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ly12-de11-iii-06",
+      "title": "Câu 28 (Phần III - Trả lời ngắn)",
+      "content": "A và B là hai xilanh hình trụ đặt cố định trên mặt phẳng nằm ngang, trong mỗi xilanh có chứa một lượng khí lí tưởng nhất định. Pit-tông đặt trong hai xilanh được nối với nhau bằng một thanh cứng, tiết diện các xilanh lần lượt là $S_1 = 50$ cm² và $S_2 = 20$ cm². Cho biết áp suất khí trong A là 100 cmHg , áp suất khí quyển là 76 cmHg . Áp suất khí trong B là bao nhiêu cmHg ?\n\n![Hình minh họa](public/exams/ly12/de11/p03-5.png)",
+      "image": "public/exams/ly12/de11/p03-5.png",
+      "answerKey": "136",
+      "explanation": "![Hình minh họa](public/exams/ly12/de11/p09-2.png)\n\nĐiều kiện cân bằng pittong: $p_A S_1 + p_0 · S_2 = p_0 · S_1 + p_B · S_2 \\Rightarrow 100 · 50 + 76 · 20 = 76 · 50 + p_B · 20 \\Rightarrow p_B = 136$ cmHg.\nTrả lời ngắn: 136."
+    }
+  ]
+}

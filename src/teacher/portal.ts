@@ -26,6 +26,7 @@
 
 import { Icon } from "../ui/icons.ts";
 import type { IconName } from "../ui/icons.ts";
+import { parseFractionString, toDecimalString } from "../domain/index.ts";
 
 export type AsResult<T> =
   | { ok: true; value: T }
@@ -176,18 +177,42 @@ function formatViDateTime(isoStr?: string | null): string {
   }
 }
 
+function formatScoreD02(scoreVal: unknown): string {
+  if (scoreVal === null || scoreVal === undefined || scoreVal === '') return '0';
+  const str = String(scoreVal).trim();
+  try {
+    const r = parseFractionString(str);
+    if (r.den === BigInt(1)) {
+      return r.num.toString();
+    }
+    return toDecimalString(r, 2, 'half-up').replace('.', ',');
+  } catch {
+    const num = Number(str.replace(',', '.'));
+    if (!isNaN(num)) {
+      if (Number.isInteger(num)) return num.toString();
+      return num.toFixed(2).replace('.', ',');
+    }
+    return str;
+  }
+}
+
 function escapeCsvCell(val: unknown): string {
   if (val === null || val === undefined) return '""';
   let s = String(val);
-  // Anti formula injection: prefix with single quote if starts with = + - @
-  if (/^[=+\-@]/.test(s)) {
+  // Anti formula injection: prefix with single quote if starts with = + - @ or fullwidth equivalents
+  if (/^[\s\u0000-\u001f]*[=+\-@\uff1d\uff0b\uff0d\uff20]/.test(s)) {
     s = "'" + s;
   }
   return `"${s.replace(/"/g, '""')}"`;
 }
 
-function toVietnameseErrorMessage(code: string, serverMsg?: string): string {
-  if (code === 'UNAUTHORIZED') return 'Sai tên đăng nhập hoặc mật khẩu';
+function toVietnameseErrorMessage(code: string, serverMsg?: string, isLoginAttempt = false): string {
+  if (code === 'UNAUTHORIZED') {
+    if (serverMsg && /hết hạn|phiên|token/i.test(serverMsg)) {
+      return serverMsg.trim();
+    }
+    return isLoginAttempt ? 'Sai tên đăng nhập hoặc mật khẩu' : 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại';
+  }
   if (code === 'FORBIDDEN') return 'Bạn không có quyền thực hiện thao tác này';
   if (code === 'NOT_CONFIGURED') return 'Chức năng kết nối máy chủ chưa cấu hình';
   if (code === 'TIMEOUT') return 'Hết thời gian chờ kết nối máy chủ (15s)';
@@ -199,6 +224,80 @@ function toVietnameseErrorMessage(code: string, serverMsg?: string): string {
     return serverMsg.trim();
   }
   return 'Yêu cầu không thành công, vui lòng thử lại';
+}
+
+function setupModalA11y(
+  dialogBackdrop: HTMLElement,
+  dialogBox: HTMLElement,
+  firstFocusEl: HTMLElement | null,
+  restoreFocusEl: HTMLElement | null,
+  onClose: () => void
+): () => void {
+  if (firstFocusEl && typeof firstFocusEl.focus === 'function') {
+    setTimeout(() => firstFocusEl.focus(), 0);
+  }
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      onClose();
+      if (restoreFocusEl && typeof restoreFocusEl.focus === 'function') {
+        restoreFocusEl.focus();
+      }
+      return;
+    }
+
+    if (e.key === 'Tab') {
+      const focusable = Array.from(
+        dialogBox.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((el) => {
+        if (el.getAttribute('aria-hidden') === 'true') return false;
+        return true;
+      });
+
+      if (focusable.length === 0) {
+        if (typeof e.preventDefault === 'function') e.preventDefault();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        if (dialogBackdrop.ownerDocument.activeElement === first || !dialogBox.contains(dialogBackdrop.ownerDocument.activeElement)) {
+          if (typeof e.preventDefault === 'function') e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (dialogBackdrop.ownerDocument.activeElement === last || !dialogBox.contains(dialogBackdrop.ownerDocument.activeElement)) {
+          if (typeof e.preventDefault === 'function') e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+  };
+
+  dialogBackdrop.ownerDocument.addEventListener('keydown', handleKeyDown, true);
+
+  return () => {
+    dialogBackdrop.ownerDocument.removeEventListener('keydown', handleKeyDown, true);
+    if (restoreFocusEl && typeof restoreFocusEl.focus === 'function') {
+      restoreFocusEl.focus();
+    }
+  };
+}
+
+function parseNavFromHash(): 'lop' | 'de' | 'ket-qua' {
+  try {
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    if (hash.includes('/de')) return 'de';
+    if (hash.includes('/ket-qua')) return 'ket-qua';
+    if (hash.includes('/lop')) return 'lop';
+  } catch {}
+  return 'lop';
 }
 
 /**

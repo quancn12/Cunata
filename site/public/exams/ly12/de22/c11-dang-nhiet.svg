@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" width="100%" height="100%">
+  <!-- Background -->
+  <rect width="480" height="360" fill="#ffffff"/>
+
+  <!-- Rectangles S1 and S2 -->
+  <g id="rectangles">
+    <!-- Rectangle OAND (S1) -->
+    <rect x="80" y="84" width="100" height="216" fill="#3b82f6" fill-opacity="0.25" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <!-- Rectangle OBMC (S2) -->
+    <rect x="80" y="192" width="200" height="108" fill="#f59e0b" fill-opacity="0.25" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4 4"/>
+  </g>
+
+  <!-- Dashed projection lines -->
+  <g id="projections" stroke="#4b5563" stroke-width="1.5" stroke-dasharray="4 4">
+    <!-- N to A and D -->
+    <line x1="80" y1="84" x2="180" y2="84"/>
+    <line x1="180" y1="84" x2="180" y2="300"/>
+    <!-- M to B and C -->
+    <line x1="80" y1="192" x2="280" y2="192"/>
+    <line x1="280" y1="192" x2="280" y2="300"/>
+  </g>
+
+  <!-- Coordinate Axes -->
+  <g id="axes" stroke="#111827" stroke-width="2">
+    <!-- V axis -->
+    <line x1="70" y1="300" x2="435" y2="300"/>
+    <!-- p axis -->
+    <line x1="80" y1="310" x2="80" y2="28"/>
+  </g>
+
+  <!-- Arrowheads -->
+  <g id="arrowheads" fill="#111827">
+    <!-- V axis arrow -->
+    <path d="M 432 295 L 444 300 L 432 305 Z"/>
+    <!-- p axis arrow -->
+    <path d="M 75 32 L 80 20 L 85 32 Z"/>
+  </g>
+
+  <!-- Axis Ticks -->
+  <g id="ticks" stroke="#111827" stroke-width="1.5">
+    <line x1="75" y1="84" x2="85" y2="84"/>
+    <line x1="75" y1="192" x2="85" y2="192"/>
+    <line x1="180" y1="295" x2="180" y2="305"/>
+    <line x1="280" y1="295" x2="280" y2="305"/>
+  </g>
+
+  <!-- Hyperbola curve (Isotherm) -->
+  <path d="M 157.5 21.3 L 160.0 30.0 L 162.5 38.2 L 165.0 45.9 L 167.5 53.1 L 170.0 60.0 L 172.5 66.5 L 175.0 72.6 L 177.5 78.5 L 180.0 84.0 L 182.5 89.3 L 185.0 94.3 L 187.5 99.1 L 190.0 103.6 L 192.5 108.0 L 195.0 112.2 L 197.5 116.2 L 200.0 120.0 L 202.5 123.7 L 205.0 127.2 L 207.5 130.6 L 210.0 133.8 L 212.5 137.0 L 215.0 140.0 L 217.5 142.9 L 220.0 145.7 L 222.5 148.4 L 225.0 151.0 L 227.5 153.6 L 230.0 156.0 L 232.5 158.4 L 235.0 160.6 L 237.5 162.9 L 240.0 165.0 L 242.5 167.1 L 245.0 169.1 L 247.5 171.0 L 250.0 172.9 L 252.5 174.8 L 255.0 176.6 L 257.5 178.3 L 260.0 180.0 L 262.5 181.6 L 265.0 183.2 L 267.5 184.8 L 270.0 186.3 L 272.5 187.8 L 275.0 189.2 L 277.5 190.6 L 280.0 192.0 L 282.5 193.3 L 285.0 194.6 L 287.5 195.9 L 290.0 197.1 L 292.5 198.4 L 295.0 199.5 L 297.5 200.7 L 300.0 201.8 L 302.5 202.9 L 305.0 204.0 L 307.5 205.1 L 310.0 206.1 L 312.5 207.1 L 315.0 208.1 L 317.5 209.1 L 320.0 210.0 L 322.5 210.9 L 325.0 211.8 L 327.5 212.7 L 330.0 213.6 L 332.5 214.5 L 335.0 215.3 L 337.5 216.1 L 340.0 216.9 L 342.5 217.7 L 345.0 218.5 L 347.5 219.3 L 350.0 220.0 L 352.5 220.7 L 355.0 221.5 L 357.5 222.2 L 360.0 222.9 L 362.5 223.5 L 365.0 224.2 L 367.5 224.9 L 370.0 225.5 L 372.5 226.2 L 375.0 226.8 L 377.5 227.4 L 380.0 228.0 L 382.5 228.6 L 385.0 229.2 L 387.5 229.8 L 390.0 230.3 L 392.5 230.9 L 395.0 231.4" stroke="#111827" stroke-width="2.5" fill="none"/>
+
+  <!-- Points N and M -->
+  <circle cx="180" cy="84" r="4.5" fill="#111827"/>
+  <circle cx="280" cy="192" r="4.5" fill="#111827"/>
+
+  <!-- Labels -->
+  <g font-family="system-ui, -apple-system, sans-serif" font-weight="bold">
+    <!-- Axes and units -->
+    <text x="80" y="16" text-anchor="middle" font-size="16" fill="#111827">p (atm)</text>
+    <text x="445" y="305" text-anchor="start" font-size="16" fill="#111827">V (lít)</text>
+    
+    <!-- Origin -->
+    <text x="65" y="320" text-anchor="middle" font-size="16" fill="#111827">O</text>
+    
+    <!-- Points on p axis -->
+    <text x="65" y="89" text-anchor="middle" font-size="16" fill="#111827">A</text>
+    <text x="65" y="197" text-anchor="middle" font-size="16" fill="#111827">B</text>
+    
+    <!-- Points on V axis -->
+    <text x="180" y="324" text-anchor="middle" font-size="16" fill="#111827">D</text>
+    <text x="280" y="324" text-anchor="middle" font-size="16" fill="#111827">C</text>
+    
+    <!-- Points on curve -->
+    <text x="190" y="78" text-anchor="start" font-size="16" fill="#111827">N</text>
+    <text x="290" y="186" text-anchor="start" font-size="16" fill="#111827">M</text>
+
+    <!-- Area labels S1 and S2 -->
+    <text x="130" y="145" text-anchor="middle" font-size="16" fill="#1d4ed8">S₁</text>
+    <text x="230" y="252" text-anchor="middle" font-size="16" fill="#b45309">S₂</text>
+  </g>
+</svg>

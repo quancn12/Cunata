@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cunata — Nền Tảng Luyện Thi & Khảo Sát Năng Lực GDPT 2018</title>
+  <link rel="stylesheet" href="./styles/style.css">
+  <link rel="stylesheet" href="./ui/tokens.css">
+  <link rel="stylesheet" href="./ui/components.css">
+  <link rel="stylesheet" href="./styles/app.css">
+</head>
+<body>
+
+  <!-- ================= Header & Thanh Trạng Thái ================= -->
+  <header class="app-header" hidden>
+    <div class="header-container">
+      <div class="brand-section">
+        <span class="ui-brand">Cunata</span>
+        <div class="exam-meta-title" id="examTitle" title="Đề Khảo Sát Năng Lực Môn Toán">Đang tải đề thi...</div>
+      </div>
+
+      <div class="candidate-input-wrap">
+        <label for="candidateName">Thí sinh:</label>
+        <input type="text" id="candidateName" class="candidate-input" placeholder="Tên hoặc SBD..." value="Thí sinh tự do" autocomplete="off" readonly />
+      </div>
+
+      <div class="header-actions">
+        <button type="button" class="btn-secondary" id="btnOpenExamList" title="Chọn đề thi trong danh sách"> Chọn đề</button>
+        <div class="sync-status-badge" id="syncStatus">
+          <span class="sync-dot"></span> <span id="syncText">Chưa lưu</span>
+        </div>
+        <div class="timer-box" id="timerBox" aria-label="Thời gian làm bài còn lại">50:00</div>
+        <button type="button" class="btn-submit" id="btnSubmit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          Nộp bài
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= Giao Diện Làm Bài (Exam View) ================= -->
+  <!-- ================= Màn Vào Thi (Start Screen - WEB-contract §19) ================= -->
+  <div id="startScreen" class="start-screen ui-page ui-stack" style="display: none;"></div>
+
+  <!-- Authoring tools (ẩn trên màn làm bài học sinh nhưng có thể truy cập qua phím tắt / test Codex) -->
+  <div id="authoringTools" style="display: none;">
+    <button type="button" class="btn-secondary" id="btnLoadExam">📁 Nạp đề thi (JSON)</button>
+    <input type="file" id="examFileInput" accept=".json,application/json" style="display: none;" />
+    <button type="button" class="btn-secondary" id="btnOpenBuilder">🛠 Soạn đề thi mới</button>
+    <button type="button" class="btn-secondary" id="btnOpenBank">📚 Ngân hàng câu hỏi</button>
+  </div>
+
+  <div class="main-wrapper" id="examWrapper" style="display: none;">
+    <!-- Sidebar Bảng Điều Hướng (Palette) -->
+    <aside class="palette-card" aria-label="Bảng điều hướng câu hỏi">
+      <div class="palette-header">
+        <div class="palette-title">Danh sách câu hỏi</div>
+        <div class="palette-progress-text" id="paletteProgress">Đã làm: 0/8 câu</div>
+      </div>
+
+      <div class="palette-grid" id="paletteGrid">
+        <!-- Các nút câu hỏi 1..8 sẽ được render động -->
+      </div>
+
+      <div class="palette-legend">
+        <div class="legend-item">
+          <div class="legend-swatch swatch-answered"></div>
+          <span>Đã trả lời</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch swatch-partial"></div>
+          <span>Làm một phần</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-swatch swatch-unanswered"></div>
+          <span>Chưa làm</span>
+        </div>
+        <div class="legend-item">
+          <span class="swatch-flagged"></span>
+          <span>Đánh dấu</span>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Khu Vực Hiển Thị Đề Thi (Exam Pane) -->
+    <main class="exam-pane" id="examPane">
+      <!-- Nội dung các câu hỏi sẽ được render động theo 3 phần -->
+    </main>
+  </div>
+
+  <!-- ================= Giao Diện Báo Cáo Kết Quả (Report View) ================= -->
+  <div class="main-wrapper" id="reportWrapper" style="display: none;">
+    <div class="report-view" id="reportView">
+      <div class="report-header">
+        <h1 class="report-title">KẾT QUẢ KHẢO SÁT NĂNG LỰC TOÁN 12</h1>
+        <div class="report-subtitle" id="reportSubtitle">GDPT 2018 · Thời gian nộp bài: --:--:--</div>
+      </div>
+
+      <div class="summary-cards-grid">
+        <div class="summary-card">
+          <div class="summary-card-label">Phần I (4 lựa chọn)</div>
+          <div class="summary-card-score" id="scorePartI">-- / --</div>
+          <div class="summary-card-detail" id="detailPartI">--</div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-card-label">Phần II (Đúng / Sai)</div>
+          <div class="summary-card-score" id="scorePartII">-- / --</div>
+          <div class="summary-card-detail" id="detailPartII">--</div>
+        </div>
+
+        <div class="summary-card">
+          <div class="summary-card-label">Phần III (Trả lời ngắn)</div>
+          <div class="summary-card-score" id="scorePartIII">-- / --</div>
+          <div class="summary-card-detail" id="detailPartIII">--</div>
+        </div>
+
+        <div class="summary-card total-card">
+          <div class="summary-card-label">Tổng Điểm Đạt Được</div>
+          <div class="summary-card-score" id="scoreTotal">-- / --</div>
+          <div class="summary-card-detail" id="percentTotal">Tỷ lệ: --</div>
+        </div>
+      </div>
+
+      <div class="report-actions-bar">
+        <button type="button" class="btn-secondary" id="btnPrintReport">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+          </svg>
+          In / Lưu Báo Cáo (PDF)
+        </button>
+        <button type="button" class="btn-secondary" id="btnDownloadReportHtml">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Tải Báo Cáo Offline (.html)
+        </button>
+        <button type="button" class="btn-secondary" id="btnDownloadResultJson">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Tải Kết Quả (JSON)
+        </button>
+        <button type="button" class="btn-secondary" id="btnDownloadResultCsv">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Xuất Kết Quả (CSV)
+        </button>
+        <button type="button" class="btn-submit" id="btnRestart">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+          Làm Lại Đề Thi
+        </button>
+      </div>
+
+      <div class="max-attempts-notice" id="maxAttemptsNotice"></div>
+
+      <div id="attemptHistorySection" style="display: none;">
+        <h2>
+          Lịch Sử Các Lượt Làm Bài Của Đề Thi
+        </h2>
+        <div id="attemptHistoryTableContainer"></div>
+      </div>
+
+      <h2>
+        Chi Tiết Bài Làm & Lời Giải Từng Câu
+      </h2>
+      <div id="reviewQuestionsList">
+        <!-- Render danh sách câu hỏi kèm đáp án của thí sinh, đáp án chuẩn và lời giải -->
+      </div>
+    </div>
+  </div>
+
+    <!-- ================= Modal Chọn Đề Thi Công Khai ================= -->
+  <div class="modal-overlay" id="examListModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="examListModalTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="examListModalTitle">Danh Sách Đề Thi Công Khai</h2>
+        <button type="button" class="btn-close" id="btnCloseExamList" aria-label="Đóng">&times;</button>
+      </div>
+      <div id="examListContainer" class="exam-list-container">
+        <div>Đang tải danh sách đề thi...</div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="btnCancelExamList">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+<!-- ================= Modal Xác Nhận Nộp Bài ================= -->
+  <div class="modal-overlay" id="submitModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-content">
+      <h3 class="modal-title" id="modalTitle">Xác nhận nộp bài thi</h3>
+      <div class="modal-body" id="modalBodyText">
+        Bạn đã làm 0/8 câu. Bạn có chắc chắn muốn nộp bài để chấm điểm ngay?
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="btnCancelSubmit">Tiếp tục làm bài</button>
+        <button type="button" class="btn-submit" id="btnConfirmSubmit">Xác nhận nộp bài</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal Soạn Đề Thi (Teacher Exam Builder) ================= -->
+  <div class="modal-overlay" id="builderModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="builderModalTitle">
+    <div class="modal-content builder-modal-content">
+      <div class="builder-header">
+        <div>
+          <h2 class="builder-title" id="builderModalTitle">Công Cụ Soạn Đề Thi GDPT 2018 (Teacher Exam Builder)</h2>
+          <div class="builder-subtitle">Soạn đề tùy chỉnh không cần server · Xuất JSON chuẩn domain · Thử nghiệm trực tiếp</div>
+        </div>
+        <button type="button" class="btn-close" id="btnCloseBuilder" aria-label="Đóng">&times;</button>
+      </div>
+
+      <!-- Settings Grid -->
+      <div class="builder-section">
+        <h3 class="builder-section-title">1. Thông Tin & Cài Đặt Đề Thi</h3>
+        <div class="builder-form-grid">
+          <div class="form-group">
+            <label for="builderExamTitle">Tiêu đề đề thi:</label>
+            <input type="text" id="builderExamTitle" class="form-input" value="Đề Thi Tùy Chỉnh GDPT 2018" />
+          </div>
+          <div class="form-group">
+            <label for="builderExamId">Mã đề (Exam ID):</label>
+            <input type="text" id="builderExamId" class="form-input" value="exam-custom-01" />
+          </div>
+          <div class="form-group">
+            <label for="builderExamVersionId">Phiên bản (Version ID):</label>
+            <input type="text" id="builderExamVersionId" class="form-input" value="v1.0.0" />
+          </div>
+          <div class="form-group">
+            <label for="builderSubject">Môn học:</label>
+            <input type="text" id="builderSubject" class="form-input" value="Toán học" />
+          </div>
+          <div class="form-group">
+            <label for="builderGrade">Khối lớp:</label>
+            <select id="builderGrade" class="form-input">
+              <option value="12" selected>Lớp 12</option>
+              <option value="11">Lớp 11</option>
+              <option value="10">Lớp 10</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="builderDuration">Thời gian làm bài (phút):</label>
+            <input type="number" id="builderDuration" class="form-input" value="50" min="5" max="300" />
+          </div>
+          <div class="form-group">
+            <label for="builderMaxAttempts">Giới hạn số lượt làm bài (0 = không giới hạn):</label>
+            <input type="number" id="builderMaxAttempts" class="form-input" value="0" min="0" max="100" />
+          </div>
+          <div class="form-group">
+            <label for="builderReleasePolicy">Chính sách công bố đáp án:</label>
+            <select id="builderReleasePolicy" class="form-input">
+              <option value="immediate" selected>Ngay sau khi nộp (immediate)</option>
+              <option value="after_deadline">Chỉ sau khi hết giờ (after_deadline)</option>
+            </select>
+          </div>
+          <div class="form-group checkbox-group">
+            <label><input type="checkbox" id="builderShuffleQuestions" /> Trộn thứ tự câu hỏi trong từng phần (Shuffle Questions)</label>
+            <label><input type="checkbox" id="builderShuffleOptions" /> Trộn lựa chọn Phần I (Shuffle Options)</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Max Score Summary -->
+      <div class="builder-section">
+        <h3 class="builder-section-title">2. Cấu Trúc Điểm Số Dự Tính (Công Thức Tùy Chỉnh GDPT 2018)</h3>
+        <div class="builder-score-summary" id="builderScoreSummary"></div>
+      </div>
+
+      <!-- Questions List -->
+      <div class="builder-section">
+        <div>
+          <h3 class="builder-section-title">3. Danh Sách Câu Hỏi (<span id="builderQuestionCount">0</span> câu)</h3>
+          <div>
+            <button type="button" class="btn-secondary" id="btnAddPartI">+ Câu Phần I</button>
+            <button type="button" class="btn-secondary" id="btnAddPartII">+ Câu Phần II</button>
+            <button type="button" class="btn-secondary" id="btnAddPartIII">+ Câu Phần III</button>
+            <button type="button" class="btn-secondary" id="btnLoadSampleToBuilder">Nạp đề mẫu</button>
+            <button type="button" class="btn-secondary" id="btnImportExamJson"> Nạp đề từ file</button>
+            <input type="file" id="builderFileInput" accept=".json,application/json" style="display: none;" />
+            <button type="button" class="btn-secondary" id="btnImportDocx"> Nhập từ DOCX</button>
+            <input type="file" id="docxFileInput" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display: none;" />
+          </div>
+        </div>
+        <div id="builderQuestionsContainer" class="builder-questions-list"></div>
+      </div>
+
+      <div id="builderValidationErrors" class="builder-errors" style="display: none;"></div>
+
+      <!-- Builder Actions -->
+      <div class="modal-actions">
+        <span id="teacherPublishStatus"></span>
+        <button type="button" class="btn-primary" id="btnPublishExam" style="display: none;">Xuất bản lên web</button>
+        <button type="button" class="btn-secondary" id="btnCancelBuilder">Đóng</button>
+        <button type="button" class="btn-secondary" id="btnExportExamJson"> Tải file JSON</button>
+        <button type="button" class="btn-submit" id="btnPublishToRunner"> Nạp vào phòng thi ngay</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal Ngân Hàng Câu Hỏi (Question Bank) ================= -->
+  <div class="modal-overlay" id="bankModal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="bankModalTitle">
+    <div class="modal-content builder-modal-content">
+      <div class="builder-header">
+        <div>
+          <h2 class="builder-title" id="bankModalTitle">Ngân Hàng Câu Hỏi Tái Sử Dụng (Question Bank)</h2>
+          <div class="builder-subtitle">Lưu trữ câu hỏi theo môn, khối lớp và mức độ · Tái sử dụng cho nhiều đề thi</div>
+        </div>
+        <button type="button" class="btn-close" id="btnCloseBank" aria-label="Đóng">&times;</button>
+      </div>
+
+      <div>
+        <div>
+          <button type="button" class="btn-secondary bank-filter-btn active" data-filter="all">Tất cả (<span id="bankCountAll">0</span>)</button>
+          <button type="button" class="btn-secondary bank-filter-btn" data-filter="I">Phần I (<span id="bankCountI">0</span>)</button>
+          <button type="button" class="btn-secondary bank-filter-btn" data-filter="II">Phần II (<span id="bankCountII">0</span>)</button>
+          <button type="button" class="btn-secondary bank-filter-btn" data-filter="III">Phần III (<span id="bankCountIII">0</span>)</button>
+          <input type="text" id="bankSearchInput" class="form-input" placeholder=" Tìm kiếm câu hỏi..." />
+          <select id="bankDifficultyFilter" class="form-input">
+            <option value="all">Mọi mức độ</option>
+            <option value="nhan_biet">Nhận biết</option>
+            <option value="thong_hieu">Thông hiểu</option>
+            <option value="van_dung">Vận dụng</option>
+          </select>
+          <select id="bankGradeFilter" class="form-input">
+            <option value="all">Mọi khối lớp</option>
+            <option value="12">Lớp 12</option>
+            <option value="11">Lớp 11</option>
+            <option value="10">Lớp 10</option>
+          </select>
+          <select id="bankSubjectFilter" class="form-input">
+            <option value="all">Mọi môn</option>
+            <option value="Toán học">Toán học</option>
+            <option value="Vật lí">Vật lí</option>
+            <option value="Hóa học">Hóa học</option>
+            <option value="Sinh học">Sinh học</option>
+            <option value="Lịch sử">Lịch sử</option>
+            <option value="Địa lí">Địa lí</option>
+            <option value="Tin học">Tin học</option>
+            <option value="Công nghệ">Công nghệ</option>
+          </select>
+          <select id="bankTopicFilter" class="form-input">
+            <option value="all">Mọi chủ đề / chương</option>
+          </select>
+          <select id="bankLessonFilter" class="form-input">
+            <option value="all">Mọi bài học</option>
+          </select>
+        </div>
+        <div>
+          <button type="button" class="btn-secondary" id="btnSeedBankSample">Khôi phục câu mẫu</button>
+          <button type="button" class="btn-secondary" id="btnImportBankJson"> Nạp từ JSON</button>
+          <input type="file" id="bankFileInput" accept=".json,application/json" style="display: none;" />
+          <button type="button" class="btn-secondary" id="btnExportBankJson">Xuất ngân hàng (JSON)</button>
+          <button type="button" class="btn-secondary" id="btnClearBank"> Xóa toàn bộ</button>
+        </div>
+      </div>
+
+      <div id="bankQuestionsContainer" class="builder-questions-list"></div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="btnCancelBank">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= Modal Xem Trước & Hiệu Đính Nhập (Import Preview) ================= -->
+  <div class="modal-overlay" id="previewModal" style="display: none;" role="dialog" aria-modal="true" aria-label="Xem trước đề nhập"></div>
+
+  <script type="module" src="./app/main.js"></script>
+</body>
+</html>
