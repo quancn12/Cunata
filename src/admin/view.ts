@@ -18,6 +18,8 @@ export interface AdminViewElements {
   readonly adminStats: HTMLElement;
   readonly btnCreateTeacher: HTMLButtonElement;
   readonly btnRefreshAdmin: HTMLButtonElement;
+  readonly adminError: HTMLElement;
+  readonly tableWrapper: HTMLElement;
   readonly teacherTableBody: HTMLElement;
   readonly teacherEmptyState: HTMLElement;
   // Create Teacher Dialog
@@ -174,7 +176,14 @@ export function createAdminView(container: HTMLElement, doc: Document = document
   toolbar.append(btnCreateTeacher, btnRefreshAdmin);
   adminPanel.append(toolbar);
 
-  // 4.3 Teacher Table
+  // 4.3 Error State: #adminError
+  const adminError = doc.createElement('div');
+  adminError.id = 'adminError';
+  adminError.className = 'admin-error-container';
+  adminError.style.display = 'none';
+  adminPanel.append(adminError);
+
+  // 4.4 Teacher Table
   const teachersSection = doc.createElement('section');
   teachersSection.className = 'admin-teachers-section';
 
@@ -279,8 +288,10 @@ export function createAdminView(container: HTMLElement, doc: Document = document
   newTeacherUsernameInput.setAttribute('autocomplete', 'off');
   newTeacherUsernameInput.required = true;
   const usernameHint = doc.createElement('div');
+  usernameHint.id = 'newTeacherUsernameHint';
   usernameHint.className = 'ui-field-hint';
   usernameHint.textContent = '3–32 ký tự bao gồm a-z, 0-9, dấu chấm, gạch dưới hoặc gạch nối';
+  newTeacherUsernameInput.setAttribute('aria-describedby', 'newTeacherUsernameHint');
   fieldUsername.append(labelUsername, newTeacherUsernameInput, usernameHint);
 
   // Field: Password
@@ -297,8 +308,10 @@ export function createAdminView(container: HTMLElement, doc: Document = document
   newTeacherPasswordInput.setAttribute('autocomplete', 'new-password');
   newTeacherPasswordInput.required = true;
   const passwordHint = doc.createElement('div');
+  passwordHint.id = 'newTeacherPasswordHint';
   passwordHint.className = 'ui-field-hint';
   passwordHint.textContent = 'Tối thiểu 8 ký tự';
+  newTeacherPasswordInput.setAttribute('aria-describedby', 'newTeacherPasswordHint');
   fieldPassword.append(labelPassword, newTeacherPasswordInput, passwordHint);
 
   const createTeacherError = doc.createElement('div');
@@ -377,8 +390,10 @@ export function createAdminView(container: HTMLElement, doc: Document = document
   resetPasswordInput.required = true;
 
   const resetPwHint = doc.createElement('div');
+  resetPwHint.id = 'resetPasswordHint';
   resetPwHint.className = 'ui-field-hint';
   resetPwHint.textContent = 'Mật khẩu mới tối thiểu 8 ký tự';
+  resetPasswordInput.setAttribute('aria-describedby', 'resetPasswordHint');
 
   fieldResetPw.append(labelResetPw, resetPasswordInput, resetPwHint);
 
@@ -431,6 +446,8 @@ export function createAdminView(container: HTMLElement, doc: Document = document
     adminStats,
     btnCreateTeacher,
     btnRefreshAdmin,
+    adminError,
+    tableWrapper,
     teacherTableBody,
     teacherEmptyState,
     createTeacherDialog,
