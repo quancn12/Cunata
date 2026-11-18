@@ -324,8 +324,28 @@ export function mountStudentArea(
     btn.setAttribute('aria-label', 'Bảng số câu');
     btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Số câu</span>';
     btn.addEventListener('click', () => {
-      const pal = doc.querySelector('.palette-card');
-      if (pal) pal.classList.toggle('is-open');
+      const pal = doc.querySelector('.palette-card') as HTMLElement | null;
+      if (pal) {
+        const willOpen = !pal.classList.contains('is-open');
+        pal.classList.toggle('is-open');
+        if (willOpen) {
+          pal.setAttribute('tabindex', '-1');
+          const firstFocusable = pal.querySelector<HTMLElement>('button, [tabindex="0"], a');
+          (firstFocusable || pal).focus();
+        } else {
+          btn.focus();
+        }
+      }
+    });
+    doc.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') {
+        const pal = doc.querySelector('.palette-card') as HTMLElement | null;
+        if (pal && pal.classList.contains('is-open')) {
+          ev.preventDefault();
+          pal.classList.remove('is-open');
+          btn.focus();
+        }
+      }
     });
     const submitBtn = doc.getElementById('btnSubmit');
     if (submitBtn) {
@@ -453,6 +473,12 @@ export function mountStudentArea(
   const joinRow = doc.createElement('div');
   joinRow.className = 'student-join-row';
 
+  const classCodeLabel = doc.createElement('label');
+  classCodeLabel.htmlFor = 'classCodeInput';
+  classCodeLabel.setAttribute('for', 'classCodeInput');
+  classCodeLabel.className = 'ui-field-label class-code-label';
+  classCodeLabel.textContent = 'Mã lớp học';
+
   const classCodeInput = doc.createElement('input');
   classCodeInput.id = 'classCodeInput';
   classCodeInput.type = 'text';
@@ -466,6 +492,16 @@ export function mountStudentArea(
   classCodeError.className = 'ui-field-error class-code-error';
   classCodeError.setAttribute('aria-live', 'polite');
 
+  const showClassCodeError = (msg: string) => {
+    classCodeError.textContent = msg;
+    classCodeInput.setAttribute('aria-invalid', 'true');
+    classCodeInput.setAttribute('aria-describedby', 'classCodeError');
+  };
+  const clearClassCodeError = () => {
+    classCodeError.textContent = '';
+    classCodeInput.removeAttribute('aria-invalid');
+  };
+
   const btnJoinClass = Button({
     id: 'btnJoinClass',
     label: 'Vào lớp',
@@ -473,16 +509,16 @@ export function mountStudentArea(
     onClick: async () => {
       const code = classCodeInput.value.trim().toUpperCase();
       if (!code) {
-        classCodeError.textContent = 'Vui lòng nhập mã lớp học.';
+        showClassCodeError('Vui lòng nhập mã lớp học.');
         return;
       }
-      classCodeError.textContent = '';
+      clearClassCodeError();
       btnJoinClass.setLoading(true);
       try {
         const ok = await joinClassByCode(code);
         if (ok) {
           classCodeInput.value = '';
-          classCodeError.textContent = '';
+          clearClassCodeError();
         }
       } finally {
         btnJoinClass.setLoading(false);
@@ -491,7 +527,7 @@ export function mountStudentArea(
   }, doc);
 
   appendChildren(joinRow, classCodeInput, btnJoinClass);
-  appendChildren(joinClassCard, joinTitle, joinDesc, joinRow, classCodeError);
+  appendChildren(joinClassCard, joinTitle, joinDesc, classCodeLabel, joinRow, classCodeError);
   mainArea.appendChild(joinClassCard);
 
   classCodeInput.addEventListener('keydown', (e) => {
@@ -501,7 +537,7 @@ export function mountStudentArea(
     }
   });
   classCodeInput.addEventListener('input', () => {
-    if (classCodeError.textContent) classCodeError.textContent = '';
+    clearClassCodeError();
   });
 
   // Mục "Lớp của em" (#myClasses)
@@ -516,10 +552,11 @@ export function mountStudentArea(
   appendChildren(myClassesWrapper, myClassesTitle, myClassesContainer);
   mainArea.appendChild(myClassesWrapper);
 
-  // Mục "Đề luyện tập" (#practiceExams)
+  // Mục "Đề luyện tập" (#practiceExams) - Ẩn theo WEB-contract §21
   const practiceWrapper = doc.createElement('div');
   practiceWrapper.id = 'practiceWrapper';
   practiceWrapper.className = 'ui-stack';
+  practiceWrapper.style.display = 'none';
   const practiceTitle = doc.createElement('h3');
   practiceTitle.textContent = 'Đề luyện tập';
   const practiceDesc = doc.createElement('p');
@@ -532,6 +569,7 @@ export function mountStudentArea(
   const practiceGrid = doc.createElement('div');
   practiceGrid.id = 'practiceExams';
   practiceGrid.className = 'ui-exam-grid practice-exams-grid';
+  practiceGrid.style.display = 'none';
   appendChildren(practiceWrapper, practiceTitle, practiceDesc, practiceNotice, practiceGrid);
   mainArea.appendChild(practiceWrapper);
 
@@ -541,6 +579,8 @@ export function mountStudentArea(
   examPreviewModal.className = 'ui-dialog-backdrop exam-preview-backdrop';
   examPreviewModal.setAttribute('role', 'dialog');
   examPreviewModal.setAttribute('aria-modal', 'true');
+  examPreviewModal.setAttribute('aria-labelledby', 'previewExamTitle');
+  examPreviewModal.setAttribute('aria-label', 'Xem trước đề thi');
   examPreviewModal.style.display = 'none';
   let previewReturnFocus: HTMLElement | null = null;
   // Esc hoặc bấm ra vùng nền ngoài thẻ thì đóng hộp thoại.
@@ -553,6 +593,8 @@ export function mountStudentArea(
   const previewHeading = doc.createElement('div');
   previewHeading.className = 'exam-preview-header';
   const previewTitle = doc.createElement('h2');
+  previewTitle.id = 'previewExamTitle';
+  previewTitle.className = 'exam-preview-title';
   previewTitle.className = 'exam-preview-title';
   const btnClosePreview = Button({
     label: 'Đóng',
@@ -631,7 +673,7 @@ export function mountStudentArea(
     examId: string,
     openAt?: string,
     dueAt?: string
-  ): { status: ExamStatus; score?: string; lockReason?: string } {
+  ): { status: ExamStatus; score?: string; lockReason?: string; record?: AttemptRecord } {
     const attempt = getLocalAttemptInfo(examId);
     const now = nowFn();
 
@@ -708,7 +750,10 @@ export function mountStudentArea(
       }
     }
 
-    previewReturnFocus = doc.activeElement instanceof HTMLElement ? doc.activeElement : null;
+    const activeEl = doc.activeElement;
+    previewReturnFocus = (typeof HTMLElement !== 'undefined' && activeEl instanceof HTMLElement)
+      ? activeEl
+      : (activeEl && typeof (activeEl as any).focus === 'function' ? (activeEl as any) : null);
     examPreviewModal.style.display = 'flex';
     // Hộp thoại phải nổi giữa khung nhìn và nhận focus (WEB-contract 19.1; lỗi thật 19/11/2026: rơi xuống cuối trang).
     (btnStartExam.disabled ? btnClosePreview : btnStartExam).focus();
@@ -733,42 +778,6 @@ export function mountStudentArea(
     }
 
     const eff = getEffectiveStatus(exam.id, exam.openAt, exam.dueAt);
-    if (eff.status === 'submitted') {
-      // Set active assignment metadata if any so report retains schedule context
-      try {
-        const win = doc.defaultView || (typeof window !== 'undefined' ? window : null);
-        const sess = (win && (win as any).sessionStorage) || (typeof sessionStorage !== 'undefined' ? sessionStorage : null);
-        const loc = (win && (win as any).localStorage) || (typeof localStorage !== 'undefined' ? localStorage : null);
-        if (exam.assignmentId || exam.classCode) {
-          const metaObj = {
-            classCode: exam.classCode,
-            assignmentId: exam.assignmentId,
-            class_code: exam.classCode,
-            assignment_id: exam.assignmentId,
-            openAt: exam.openAt,
-            dueAt: exam.dueAt,
-            open_at: exam.openAt,
-            due_at: exam.dueAt,
-            examId: exam.id,
-          };
-          const metaStr = JSON.stringify(metaObj);
-          sess?.setItem(STORAGE_ACTIVE_ASSIGNMENT_KEY, metaStr);
-          sess?.setItem('cunata_active_assignment', metaStr);
-          try {
-            loc?.setItem(STORAGE_ACTIVE_ASSIGNMENT_KEY, metaStr);
-            loc?.setItem('cunata_active_assignment', metaStr);
-          } catch {}
-        }
-      } catch {}
-
-      // Navigate to report
-      const repWrapper = doc.querySelector('#reportWrapper') as HTMLElement | null;
-      const exWrapper = doc.querySelector('#examWrapper') as HTMLElement | null;
-      if (repWrapper) repWrapper.style.display = '';
-      if (exWrapper) exWrapper.style.display = 'none';
-      container.style.display = 'none';
-      return;
-    }
 
     // Set active assignment metadata if any
     try {
@@ -808,6 +817,9 @@ export function mountStudentArea(
     btnStartExam.setLoading(true);
     try {
       let fullExam: WebExam | null = null;
+      if (eff.record?.examSnapshot) {
+        fullExam = eff.record.examSnapshot;
+      }
       let asClient = options.client;
       if (!asClient) {
         try {
@@ -902,10 +914,18 @@ export function mountStudentArea(
           options.onStartExam(startExamPayload, candidateName, undefined);
         }
       } else {
-        // Fallback: trigger standard bootstrap start if global callback exists
-        const exWrapper = doc.querySelector('#examWrapper') as HTMLElement | null;
-        if (exWrapper) exWrapper.style.display = '';
-        container.style.display = 'none';
+        if (eff.status === 'submitted') {
+          const repWrapper = doc.querySelector('#reportWrapper') as HTMLElement | null;
+          const exWrapper = doc.querySelector('#examWrapper') as HTMLElement | null;
+          if (repWrapper) repWrapper.style.display = '';
+          if (exWrapper) exWrapper.style.display = 'none';
+          container.style.display = 'none';
+        } else {
+          // Fallback: trigger standard bootstrap start if global callback exists
+          const exWrapper = doc.querySelector('#examWrapper') as HTMLElement | null;
+          if (exWrapper) exWrapper.style.display = '';
+          container.style.display = 'none';
+        }
       }
     } catch (err: any) {
       if (typeof alert === 'function') {
@@ -1007,27 +1027,9 @@ export function mountStudentArea(
       practiceNotice.textContent = '';
       practiceNotice.style.display = 'none';
     }
+    practiceWrapper.style.display = 'none';
+    practiceGrid.style.display = 'none';
     practiceGrid.textContent = '';
-    for (const e of publicExams) {
-      const eff = getEffectiveStatus(e.id);
-      const card = ExamCard(
-        {
-          id: e.id,
-          url: e.url,
-          source: e.source,
-          title: e.title,
-          subject: e.subject,
-          description: e.description || `Đề luyện tập ${e.questionCount} câu theo cấu trúc tốt nghiệp THPT`,
-          questionCount: e.questionCount,
-          durationMinutes: e.durationMinutes,
-          status: eff.status,
-          score: eff.score,
-          onClick: () => openPreview(e),
-        },
-        doc
-      );
-      practiceGrid.appendChild(card);
-    }
   }
 
   async function loadPublicExams(): Promise<void> {
@@ -1122,7 +1124,7 @@ export function mountStudentArea(
     const config = await loadAppConfig();
     const url = options.appsScriptUrl || config.appsScriptUrl;
     if (!url) {
-      classCodeError.textContent = 'Chức năng máy chủ Google Apps Script chưa cấu hình.';
+      showClassCodeError('Chức năng máy chủ Google Apps Script chưa cấu hình.');
       return false;
     }
 
@@ -1130,12 +1132,12 @@ export function mountStudentArea(
       const reqUrl = `${url}?action=getClass&code=${encodeURIComponent(code)}`;
       const res = await fetch(reqUrl, { cache: 'no-store' });
       if (!res.ok) {
-        classCodeError.textContent = 'Lỗi kết nối máy chủ.';
+        showClassCodeError('Lỗi kết nối máy chủ.');
         return false;
       }
       const data = await res.json();
       if (!data || !data.success || !data.class) {
-        classCodeError.textContent = data?.message || 'Mã lớp không chính xác hoặc không tồn tại.';
+        showClassCodeError(data?.message || 'Mã lớp không chính xác hoặc không tồn tại.');
         return false;
       }
 
@@ -1166,8 +1168,55 @@ export function mountStudentArea(
       renderClasses();
       return true;
     } catch (err: any) {
-      classCodeError.textContent = 'Lỗi kết nối: ' + (err?.message || String(err));
+      showClassCodeError('Lỗi kết nối: ' + (err?.message || String(err)));
       return false;
+    }
+  }
+
+  async function refreshClasses(): Promise<void> {
+    if (joinedClasses.length === 0) return;
+    const config = await loadAppConfig();
+    const url = options.appsScriptUrl || config.appsScriptUrl;
+    if (!url) return;
+
+    let updated = false;
+    await Promise.all(
+      joinedClasses.map(async (cls, idx) => {
+        try {
+          const reqUrl = `${url}?action=getClass&code=${encodeURIComponent(cls.code)}`;
+          const res = await fetch(reqUrl, { cache: 'no-store' });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (data && data.success && data.class) {
+            joinedClasses[idx] = {
+              code: data.class.code,
+              name: data.class.name,
+              teacherName: data.class.teacherName,
+              assignments: (data.assignments || []).map((a: any) => ({
+                assignmentId: a.assignmentId,
+                classCode: data.class.code,
+                className: data.class.name,
+                teacherName: data.class.teacherName,
+                examId: a.examId,
+                title: a.title,
+                subject: a.subject,
+                questionCount: Number(a.questionCount) || 0,
+                durationMinutes: Number(a.durationMinutes) || 50,
+                openAt: a.openAt,
+                dueAt: a.dueAt,
+              })),
+            };
+            updated = true;
+          }
+        } catch {}
+      })
+    );
+
+    if (updated) {
+      try {
+        localStorage.setItem(STORAGE_CLASSES_KEY, JSON.stringify(joinedClasses));
+      } catch {}
+      renderClasses();
     }
   }
 
@@ -1175,28 +1224,67 @@ export function mountStudentArea(
     await loadPublicExams();
     renderClasses();
     renderPracticeExams();
+    await refreshClasses();
   }
+
+  // Global listener for change name button (e.g. in TopBar)
+  const onDocClick = (e: Event) => {
+    const target = (e.target as HTMLElement | null)?.closest?.('#btnChangeName');
+    if (target) {
+      candidateName = '';
+      try {
+        localStorage.removeItem(STORAGE_NAME_KEY);
+        localStorage.removeItem('cunata:candidate_name');
+        localStorage.removeItem('cunata:last_candidate_name');
+      } catch {}
+      nameInput.value = '';
+      btnNameContinue.disabled = true;
+      syncNameState();
+      container.style.display = '';
+      const startScreen = doc.querySelector('#startScreen') as HTMLElement | null;
+      if (startScreen) startScreen.style.display = '';
+      const exWrapper = doc.querySelector('#examWrapper') as HTMLElement | null;
+      if (exWrapper) exWrapper.style.display = 'none';
+      const repWrapper = doc.querySelector('#reportWrapper') as HTMLElement | null;
+      if (repWrapper) repWrapper.style.display = 'none';
+      nameInput.focus();
+    }
+  };
+  doc.addEventListener('click', onDocClick);
 
   // Initial setup
   syncNameState();
   void refreshList().then(() => {
-    // If URL has ?exam=..., auto-open preview or resume
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const qExam = options.initialExamId || params.get('exam');
-      if (qExam) {
-        const found = publicExams.find((e) => e.id === qExam || e.url === qExam);
-        if (found) {
-          const attempt = getLocalAttemptInfo(found.id);
-          if (attempt.status === 'draft') {
-            // D03: In-progress draft goes straight into exam
-            void handleStartOrResumeExam(found);
-          } else {
-            openPreview(found);
+      const getParam = (key: string): string | null => {
+        try {
+          const sParams = new URLSearchParams(window.location.search);
+          if (sParams.has(key)) return sParams.get(key);
+          const hash = window.location.hash || '';
+          const qIdx = hash.indexOf('?');
+          if (qIdx !== -1) {
+            const hParams = new URLSearchParams(hash.slice(qIdx));
+            if (hParams.has(key)) return hParams.get(key);
           }
+        } catch {}
+        return null;
+      };
+
+      const qExam = options.initialExamId || getParam('exam');
+      if (qExam) {
+        // WEB-contract §21: Mở ?exam= KHÔNG mở #examPreview hay bài thi;
+        // vào khu học sinh và hiện thông báo có chữ "giáo viên giao"
+        let noticeEl = doc.querySelector('#examNotAllowedNotice') as HTMLElement | null;
+        if (!noticeEl) {
+          noticeEl = doc.createElement('div');
+          noticeEl.id = 'examNotAllowedNotice';
+          noticeEl.className = 'ui-alert ui-alert--info student-exam-notice';
+          noticeEl.textContent = 'Đề này chỉ làm được khi giáo viên giao cho lớp của em.';
+          mainArea.prepend(noticeEl);
         }
       }
-      const qLop = params.get('lop');
+
+      const qLop = getParam('lop');
       if (qLop) {
         classCodeInput.value = qLop;
         void joinClassByCode(qLop);
@@ -1227,6 +1315,7 @@ export function mountStudentArea(
     },
     dispose() {
       isDisposed = true;
+      doc.removeEventListener('click', onDocClick);
       closePreview();
     },
   };

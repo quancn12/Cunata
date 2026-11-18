@@ -5,3 +5,34 @@
 .role-chooser .ui-button { display: flex; flex-direction: column; align-items: flex-start; width: 100%; gap: var(--sp-3); padding: var(--sp-5); font-size: var(--fs-lg); }
 .role-description { font-size: var(--fs-md); font-weight: 400; color: var(--c-text-2); text-align: start; }
 @media (max-width: 639px) { .role-chooser .ui-exam-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* WEB-contract §21: khu học sinh không còn lưới Đề luyện tập #practiceExams công khai */
+#practiceExams, #practiceWrapper {
+  display: none !important;
+}
+
+/* CX-C05/A: Bảng Markdown trong đề thi và xem lại */
+.exam-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+.exam-table th, .exam-table td {
+  border: 1px solid var(--border, #e5e7eb);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.exam-table th {
+  background: var(--surface-2, #f9fafb);
+  font-weight: 600;
+}
+
+/* Review elements */
+:root {
+  --c-correct: #16a34a;
+  --c-wrong: #dc2626;
+  --c-correct-bg: #f0fdf4;
+  --c-wrong-bg: #fef2f2;
+}
+
+

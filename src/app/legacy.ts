@@ -460,8 +460,8 @@ export function scoreLegacyAttempt(
         correctCount: qRes.correctCount,
         stDetails: Object.freeze(stDetails),
         explanation: ((q.statements || []) as readonly { label?: string; explanation?: string }[])
-          .map((s) => `<strong>${s.label || ''})</strong> ${s.explanation || ''}`)
-          .join('<br/>'),
+          .map((s) => `**${s.label || ''})** ${s.explanation || ''}`)
+          .join('\n\n'),
       });
     } else if (q.kind === 'III') {
       const raw = (legacyResponses[q.questionVersionId] as string | null) || null;

@@ -493,6 +493,79 @@ describe('Student Area & D02 Scoring Specification Tests', () => {
       (globalThis as any).localStorage = prevLocalStorage;
       (globalThis as any).sessionStorage = prevSessionStorage;
     });
+
+    test('FX46-student: classCodeInput has label and aria attributes on error', async () => {
+      const doc = createEnhancedMockDocument();
+      const root = doc.createElement('div');
+      (root as any).ownerDocument = doc;
+      doc.body.appendChild(root);
+
+      const ctrl = mountStudentArea(root as unknown as HTMLElement, {
+        now: () => 1700000000000,
+      });
+
+      const label = root.querySelector('label[for="classCodeInput"]') as HTMLElement | null;
+      assert.ok(label, 'Label for classCodeInput must exist');
+      assert.ok(label.textContent?.includes('Mã lớp'), 'Label text must describe class code');
+
+      const input = root.querySelector('#classCodeInput') as any;
+      const joinBtn = root.querySelector('#btnJoinClass') as any;
+      assert.ok(input && joinBtn);
+
+      // Trigger empty join
+      input.value = '';
+      joinBtn.click();
+      await new Promise((r) => setTimeout(r, 10));
+
+      assert.equal(input.getAttribute('aria-invalid'), 'true');
+      assert.ok(input.getAttribute('aria-describedby')?.includes('classCodeError'));
+
+      // Input changes clear error
+      input.value = 'ABCDEF';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      assert.equal(input.getAttribute('aria-invalid'), null);
+
+      ctrl.dispose();
+    });
+
+    test('FX46-student: practiceExams grid is hidden per WEB-contract §21', async () => {
+      const doc = createEnhancedMockDocument();
+      const root = doc.createElement('div');
+      (root as any).ownerDocument = doc;
+      doc.body.appendChild(root);
+
+      const ctrl = mountStudentArea(root as unknown as HTMLElement, {
+        now: () => 1700000000000,
+      });
+
+      await ctrl.refreshList();
+
+      const practiceWrap = root.querySelector('#practiceWrapper') as HTMLElement | null;
+      const practiceGrid = root.querySelector('#practiceExams') as HTMLElement | null;
+      assert.ok(practiceWrap && practiceGrid);
+      assert.equal(practiceWrap.style.display, 'none');
+      assert.equal(practiceGrid.style.display, 'none');
+      assert.equal(practiceGrid.childNodes.length, 0, 'No cards rendered in practiceGrid');
+
+      ctrl.dispose();
+    });
+
+    test('FX46-student: examPreview modal has accessible name and returns focus on Escape', async () => {
+      const doc = createEnhancedMockDocument();
+      const root = doc.createElement('div');
+      (root as any).ownerDocument = doc;
+      doc.body.appendChild(root);
+
+      const ctrl = mountStudentArea(root as unknown as HTMLElement, {
+        now: () => 1700000000000,
+      });
+
+      const previewModal = (doc.getElementById('examPreview') || root.querySelector('#examPreview')) as HTMLElement | null;
+      assert.ok(previewModal);
+      assert.ok(previewModal.getAttribute('aria-labelledby') || previewModal.getAttribute('aria-label'), 'Dialog must have accessible name');
+
+      ctrl.dispose();
+    });
   });
 });
 

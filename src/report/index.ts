@@ -416,8 +416,6 @@ export function buildReport(
       points,
       maxPoints,
       ...(q.content ? { content: q.content } : {}),
-      ...(orderedOptions ? { options: orderedOptions } : {}),
-      ...(unreleasedStatements ? { statements: unreleasedStatements } : {}),
     };
 
     if (!released) {
@@ -460,6 +458,7 @@ export function buildReport(
         ...baseQ,
         answer,
         explanation: Object.freeze(expBlocks),
+        ...(orderedOptions ? { options: orderedOptions } : {}),
         ...(q.kind === "I" ? { correctOptionId: q.correctOptionId } : {}),
         ...(q.kind === "III" ? { rawAnswerKey: q.answerKey } : {}),
         ...(q.kind === "II" && q.statements ? { statements: Object.freeze([...q.statements]) } : {}),

@@ -1,5 +1,6 @@
 /// <reference lib="dom" />
 import { toFractionString, toDecimalString, parseFractionString, } from "../domain/index.js";
+import { parseMarkdownSegments } from "./table.js";
 function escapeHtml(str) {
     if (typeof str !== "string") {
         str = String(str ?? "");
@@ -116,8 +117,24 @@ function normalizeHistoryEntry(item, policy) {
 }
 function renderBlock(b, assetMap) {
     if (b.type === "text") {
-        const escaped = escapeHtml(b.text);
-        return `<p class="block-text">${escaped.replace(/\n\n+/g, "</p><p class=\"block-text\">").replace(/\n/g, "<br />")}</p>`;
+        const segments = parseMarkdownSegments(b.text);
+        return segments
+            .map((seg) => {
+            if (seg.type === "text") {
+                const escaped = escapeHtml(seg.text);
+                return `<p class="block-text">${escaped.replace(/\n\n+/g, "</p><p class=\"block-text\">").replace(/\n/g, "<br />")}</p>`;
+            }
+            else {
+                const headersHtml = seg.table.headers
+                    .map((h) => `<th>${escapeHtml(h)}</th>`)
+                    .join("");
+                const rowsHtml = seg.table.rows
+                    .map((r) => `<tr>${r.map((c) => `<td>${escapeHtml(c)}</td>`).join("")}</tr>`)
+                    .join("");
+                return `<table class="report-table"><thead><tr>${headersHtml}</tr></thead><tbody>${rowsHtml}</tbody></table>`;
+            }
+        })
+            .join("");
     }
     if (b.type === "image") {
         const dataUri = assetMap.get(b.assetId);
@@ -264,9 +281,50 @@ export function renderReportHtml(model, options) {
                     .join("");
                 expHtml = `<div class="explanation-box"><h4>Lời giải chi tiết:</h4><div class="explanation-content">${expBlocks}</div></div>`;
             }
+            let reviewDetailsHtml = "";
+            if (relQ.kind === "I" && relQ.options && relQ.options.length > 0) {
+                const correctId = typeof relQ.answer === "string" ? relQ.answer : relQ.correctOptionId;
+                const selectedId = q.response?.kind === "I" ? q.response.selectedOptionId : null;
+                const optHtml = relQ.options
+                    .map((o, optIdx) => {
+                    const isCorrect = o.optionId === correctId;
+                    const isChosen = selectedId === o.optionId;
+                    const letter = o.label || ["A", "B", "C", "D"][optIdx] || "";
+                    return `<div class="review-option" data-option-id="${escapeHtml(o.optionId)}" data-correct="${isCorrect ? "true" : "false"}" data-chosen="${isChosen ? "true" : "false"}"><strong>${escapeHtml(letter)}.</strong> ${escapeHtml(o.text)}${isChosen ? ' <span class="chosen-badge">(Bạn chọn)</span>' : ""}${isCorrect ? ' <span class="correct-badge">&#10004; Đáp án đúng</span>' : ""}</div>`;
+                })
+                    .join("");
+                const notChosenHtml = !selectedId ? '<div class="unanswered-notice">Chưa chọn</div>' : "";
+                reviewDetailsHtml = `<div class="review-options-container">${optHtml}${notChosenHtml}</div>`;
+            }
+            else if (relQ.kind === "II" && relQ.statements && relQ.statements.length > 0) {
+                const userRespMap = new Map();
+                if (q.response?.kind === "II") {
+                    for (const a of q.response.answers) {
+                        userRespMap.set(a.statementId, a.value);
+                    }
+                }
+                const stHtml = relQ.statements
+                    .map((s, stIdx) => {
+                    const userVal = userRespMap.get(s.statementId);
+                    const chosenVal = userVal === true ? "true" : userVal === false ? "false" : "none";
+                    const chosenText = userVal === true ? "Đúng" : userVal === false ? "Sai" : "Chưa chọn";
+                    const keyText = s.answer ? "Đúng" : "Sai";
+                    const letter = s.label || ["a", "b", "c", "d"][stIdx] || "";
+                    return `<div class="review-statement" data-statement-id="${escapeHtml(s.statementId)}" data-key="${s.answer ? "true" : "false"}" data-chosen="${chosenVal}"><strong>${escapeHtml(letter)})</strong> ${escapeHtml(s.text)} — Đáp án: <strong>${keyText}</strong> | Bạn chọn: <strong>${chosenText}</strong></div>`;
+                })
+                    .join("");
+                reviewDetailsHtml = `<div class="review-statements-container">${stHtml}</div>`;
+            }
+            else if (relQ.kind === "III") {
+                const raw = q.response?.kind === "III" ? q.response.raw : null;
+                const key = typeof relQ.answer === "string" ? relQ.answer : relQ.rawAnswerKey || "";
+                const userText = raw !== null && raw !== undefined && raw.trim() !== "" ? `Bạn điền: <strong>${escapeHtml(raw)}</strong>` : "Chưa làm";
+                reviewDetailsHtml = `<div class="review-short-answer">${userText} | Đáp án: <strong>${escapeHtml(key)}</strong></div>`;
+            }
             releaseHtml = `
         <div class="answer-key-box">
           <div class="key-line">Đáp án chuẩn: ${ansStr}</div>
+          ${reviewDetailsHtml}
           ${expHtml}
         </div>
       `;
@@ -284,7 +342,7 @@ export function renderReportHtml(model, options) {
       `;
         }
         questionsHtml += `
-      <section class="question-card" id="q-${escapeHtml(q.questionVersionId)}">
+      <section class="review-question-card question-card" id="q-${escapeHtml(q.questionVersionId)}" data-qid="${escapeHtml(q.questionVersionId)}">
         <header class="question-header">
           <div class="q-title-group">
             <span class="q-index">Câu ${i + 1}</span>
@@ -792,12 +850,12 @@ export function renderReportHtml(model, options) {
       </button>
     </div>
     <header class="report-header">
-      <h1 class="report-title">Báo Cáo Kết Quả Bài Làm</h1>
+      <h1 class="report-title">${escapeHtml(model.examTitle || "Báo Cáo Kết Quả Bài Làm")}</h1>
       <span class="report-badge-offline">Tài liệu báo cáo độc lập (Offline Self-contained Report)</span>
       <div class="meta-grid">
         <div class="meta-item"><span>Thí sinh:</span> <strong>${escapeHtml(model.candidateName)}</strong></div>
         <div class="meta-item"><span>Mã bài làm:</span> <strong>${escapeHtml(model.attempt.attemptId)}</strong></div>
-        <div class="meta-item"><span>Đề thi:</span> <strong>${escapeHtml(model.attempt.examId)} (${escapeHtml(model.attempt.examVersionId)})</strong></div>
+        <div class="meta-item"><span>Đề thi:</span> <strong>${escapeHtml(model.examTitle ? `${model.examTitle} [${model.attempt.examId}]` : model.attempt.examId)} (${escapeHtml(model.attempt.examVersionId)})</strong></div>
         <div class="meta-item"><span>Thời điểm bắt đầu:</span> <strong>${escapeHtml(startDate)}</strong></div>
         <div class="meta-item"><span>Thời điểm nộp bài:</span> <strong>${escapeHtml(submitDate)}</strong></div>
         <div class="meta-item"><span>Thời gian làm bài:</span> <strong>${escapeHtml(durationStr)}</strong></div>

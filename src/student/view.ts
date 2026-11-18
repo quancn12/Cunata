@@ -241,6 +241,92 @@ function ensureStudentStyles(doc: Document): void {
   }
 }
 
+function renderStemContent(content: string, stem: HTMLElement, doc: Document): void {
+  if (!content.includes('|') || !content.includes('\n')) {
+    stem.appendChild(renderText(content, { document: doc }));
+    return;
+  }
+
+  const isSeparatorLine = (line: string): boolean => {
+    const trimmed = line.trim();
+    if (!trimmed.includes('-')) return false;
+    const stripped = trimmed.replace(/^\|/, '').replace(/\|$/, '');
+    const parts = stripped.split('|');
+    if (parts.length === 0) return false;
+    return parts.every((p) => /^\s*:?-+:?\s*$/.test(p));
+  };
+
+  const parseRowCells = (line: string): string[] => {
+    const trimmed = line.trim();
+    const stripped = trimmed.replace(/^\|/, '').replace(/\|$/, '');
+    return stripped.split('|').map((c) => c.trim());
+  };
+
+  const lines = content.split('\n');
+  let textBuffer: string[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i]!;
+    if (line.includes('|') && i + 1 < lines.length && isSeparatorLine(lines[i + 1]!)) {
+      if (textBuffer.length > 0) {
+        const textChunk = textBuffer.join('\n');
+        if (textChunk.trim()) {
+          stem.appendChild(renderText(textChunk, { document: doc }));
+        }
+        textBuffer = [];
+      }
+
+      const headers = parseRowCells(line);
+      i += 2;
+      const dataRows: string[][] = [];
+
+      while (i < lines.length) {
+        const rowLine = lines[i]!;
+        if (!rowLine.trim() || !rowLine.includes('|')) {
+          break;
+        }
+        dataRows.push(parseRowCells(rowLine));
+        i++;
+      }
+
+      const table = doc.createElement('table');
+      const thead = doc.createElement('thead');
+      const headerTr = doc.createElement('tr');
+      headers.forEach((h) => {
+        const th = doc.createElement('th');
+        th.appendChild(renderText(h, { document: doc }));
+        headerTr.appendChild(th);
+      });
+      thead.appendChild(headerTr);
+      table.appendChild(thead);
+
+      const tbody = doc.createElement('tbody');
+      dataRows.forEach((row) => {
+        const tr = doc.createElement('tr');
+        row.forEach((cell) => {
+          const td = doc.createElement('td');
+          td.appendChild(renderText(cell, { document: doc }));
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      stem.appendChild(table);
+    } else {
+      textBuffer.push(line);
+      i++;
+    }
+  }
+
+  if (textBuffer.length > 0) {
+    const textChunk = textBuffer.join('\n');
+    if (textChunk.trim()) {
+      stem.appendChild(renderText(textChunk, { document: doc }));
+    }
+  }
+}
+
 /**
  * Mounts the Student Exam View into the provided container.
  * Conforms to WEB-contract.md §5 and §9.
@@ -518,6 +604,13 @@ export function mount(
     } else {
       btn.classList.remove("flagged");
     }
+
+    const isAnswered = btn.classList.contains("answered");
+    const isPartial = btn.classList.contains("partial");
+    const isFlagged = btn.classList.contains("flagged");
+    const statusText = isAnswered ? "Đã làm" : isPartial ? "Đang làm" : "Chưa làm";
+    btn.setAttribute("aria-pressed", isAnswered ? "true" : "false");
+    btn.setAttribute("aria-label", `Câu ${btn.textContent}${isFlagged ? " (Đã đánh dấu)" : ""} (${statusText})`);
   }
 
   function updateSyncStatus(state: string, isLocalSaveError = false): void {
@@ -937,6 +1030,8 @@ export function mount(
       card.className = "question-card";
       card.id = `qcard-${q.questionVersionId}`;
       card.setAttribute("data-qid", q.questionVersionId);
+      card.setAttribute("role", "group");
+      card.setAttribute("aria-label", q.title || `Câu ${idx + 1}`);
 
       // Meta bar: number tag, points badge, flag button
       const metaBar = doc.createElement("div");
@@ -993,7 +1088,7 @@ export function mount(
       if (q.blocks && q.blocks.length > 0) {
         stem.appendChild(renderBlocks(q.blocks, { document: doc, assets: currentExam?.assets }));
       } else if (q.content) {
-        stem.appendChild(renderText(q.content, { document: doc }));
+        renderStemContent(q.content, stem, doc);
       }
       card.appendChild(stem);
 
@@ -1123,6 +1218,8 @@ export function mount(
           const row = doc.createElement("div");
           row.className = "statement-row";
           row.setAttribute("data-statement-id", st.statementId);
+          row.setAttribute("role", "group");
+          row.setAttribute("aria-label", `Ý ${st.label || ["a", "b", "c", "d"][stIdx] || String(stIdx + 1)}: ${st.text}`);
 
           const labelDiv = doc.createElement("div");
           labelDiv.className = "statement-label";
@@ -1249,6 +1346,12 @@ export function mount(
         // Input wrap
         const inputWrap = doc.createElement("div");
         inputWrap.className = "short-answer-input-wrap";
+
+        const shortAnswerLabel = doc.createElement("label");
+        shortAnswerLabel.className = "short-answer-label ui-field-label";
+        shortAnswerLabel.htmlFor = `input-iii-${qIII.questionVersionId}`;
+        shortAnswerLabel.textContent = `Đáp án câu ${idx + 1}:`;
+        inputWrap.appendChild(shortAnswerLabel);
 
         const inputEl = doc.createElement("input");
         inputEl.type = "text";

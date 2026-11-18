@@ -18,6 +18,7 @@ import type {
 } from "./types.ts";
 import { downloadReport } from "./index.ts";
 import { renderBlocks } from "../ui/index.ts";
+import { parseMarkdownSegments } from "./table.ts";
 
 export interface AttemptHistoryItem {
   readonly attemptId: string;
@@ -622,7 +623,7 @@ export function mount(
   const titleEl = doc.createElement("h1");
   titleEl.className = "report-title";
   titleEl.id = "reportTitle";
-  titleEl.textContent = `KẾT QUẢ KHẢO SÁT BÀI THI: ${report.attempt.examId}`;
+  titleEl.textContent = report.examTitle || `KẾT QUẢ KHẢO SÁT BÀI THI: ${report.attempt.examId}`;
   headerEl.appendChild(titleEl);
 
   const subTitleEl = doc.createElement("div");
@@ -988,7 +989,8 @@ export function mount(
 
   report.questions.forEach((q: ReportQuestion | ReleasedReportQuestion, index: number) => {
     const item = doc.createElement("section");
-    item.className = "review-question-item question-card";
+    item.className = "review-question-card review-question-item question-card";
+    item.setAttribute("data-qid", q.questionVersionId);
     item.id = `q-${q.questionVersionId}`;
 
     // Header
@@ -1037,16 +1039,48 @@ export function mount(
     if (q.blocks && q.blocks.length > 0) {
       const blocksContainer = doc.createElement("div");
       blocksContainer.className = "blocks-container";
-      try {
-        const rendered = renderBlocks(q.blocks, { document: doc, assets: report.assets });
-        blocksContainer.appendChild(rendered);
-      } catch {
-        // Fallback plain text if renderer throws
-        for (const b of q.blocks) {
-          if (b.type === "text") {
-            const p = doc.createElement("p");
-            p.textContent = b.text;
-            blocksContainer.appendChild(p);
+      for (const b of q.blocks) {
+        if (b.type === "text") {
+          const segments = parseMarkdownSegments(b.text);
+          for (const seg of segments) {
+            if (seg.type === "text") {
+              const p = doc.createElement("p");
+              p.className = "block-text";
+              p.textContent = seg.text;
+              blocksContainer.appendChild(p);
+            } else {
+              const table = doc.createElement("table");
+              table.className = "cunata-table report-table";
+              const thead = doc.createElement("thead");
+              const trH = doc.createElement("tr");
+              for (const h of seg.table.headers) {
+                const th = doc.createElement("th");
+                th.textContent = h;
+                trH.appendChild(th);
+              }
+              thead.appendChild(trH);
+              table.appendChild(thead);
+
+              const tbody = doc.createElement("tbody");
+              for (const r of seg.table.rows) {
+                const tr = doc.createElement("tr");
+                for (const c of r) {
+                  const td = doc.createElement("td");
+                  td.textContent = c;
+                  tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+              }
+              table.appendChild(tbody);
+              blocksContainer.appendChild(table);
+            }
+          }
+        } else {
+          try {
+            const rendered = renderBlocks([b], { document: doc, assets: report.assets });
+            blocksContainer.appendChild(rendered);
+          } catch {
+            // fallback
           }
         }
       }
@@ -1191,6 +1225,67 @@ export function mount(
         keyLine.appendChild(ul);
       }
       keyBox.appendChild(keyLine);
+
+      if (relQ.kind === "I" && relQ.options && relQ.options.length > 0) {
+        const correctId = typeof relQ.answer === "string" ? relQ.answer : (relQ as any).correctOptionId;
+        const selectedId = q.response?.kind === "I" ? q.response.selectedOptionId : null;
+        const optsContainer = doc.createElement("div");
+        optsContainer.className = "review-options-container";
+
+        relQ.options.forEach((o, optIdx) => {
+          const optEl = doc.createElement("div");
+          optEl.className = "review-option";
+          optEl.setAttribute("data-option-id", o.optionId);
+          const isCorrect = o.optionId === correctId;
+          const isChosen = selectedId === o.optionId;
+          optEl.setAttribute("data-correct", String(isCorrect));
+          optEl.setAttribute("data-chosen", String(isChosen));
+          const letter = o.label || ["A", "B", "C", "D"][optIdx] || "";
+          optEl.textContent = `${letter}. ${o.text}${isChosen ? " (Bạn chọn)" : ""}${isCorrect ? " (Đáp án đúng)" : ""}`;
+          optsContainer.appendChild(optEl);
+        });
+
+        if (!selectedId) {
+          const unans = doc.createElement("div");
+          unans.className = "unanswered-notice";
+          unans.textContent = "Chưa chọn";
+          optsContainer.appendChild(unans);
+        }
+        keyBox.appendChild(optsContainer);
+      } else if (relQ.kind === "II" && relQ.statements && relQ.statements.length > 0) {
+        const userRespMap = new Map<string, boolean | null>();
+        if (q.response?.kind === "II") {
+          for (const a of q.response.answers) {
+            userRespMap.set(a.statementId, a.value);
+          }
+        }
+        const stContainer = doc.createElement("div");
+        stContainer.className = "review-statements-container";
+
+        relQ.statements.forEach((s, stIdx) => {
+          const stEl = doc.createElement("div");
+          stEl.className = "review-statement";
+          stEl.setAttribute("data-statement-id", s.statementId);
+          stEl.setAttribute("data-key", String(s.answer));
+          const userVal = userRespMap.get(s.statementId);
+          const chosenVal = userVal === true ? "true" : userVal === false ? "false" : "none";
+          stEl.setAttribute("data-chosen", chosenVal);
+          const letter = s.label || ["a", "b", "c", "d"][stIdx] || "";
+          const chosenText = userVal === true ? "Đúng" : userVal === false ? "Sai" : "Chưa chọn";
+          const keyText = s.answer ? "Đúng" : "Sai";
+          stEl.textContent = `${letter}) ${s.text} — Đáp án: ${keyText} | Bạn chọn: ${chosenText}`;
+          stContainer.appendChild(stEl);
+        });
+        keyBox.appendChild(stContainer);
+      } else if (relQ.kind === "III") {
+        const shortEl = doc.createElement("div");
+        shortEl.className = "review-short-answer";
+        const raw = q.response?.kind === "III" ? q.response.raw : null;
+        const key = typeof relQ.answer === "string" ? relQ.answer : (relQ as any).rawAnswerKey || "";
+        const userText = raw !== null && raw !== undefined && raw.trim() !== "" ? `Bạn điền: ${raw}` : "Chưa làm";
+        shortEl.textContent = `${userText} | Đáp án: ${key}`;
+        keyBox.appendChild(shortEl);
+      }
 
       if (relQ.explanation && relQ.explanation.length > 0) {
         const expBox = doc.createElement("div");

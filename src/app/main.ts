@@ -262,11 +262,13 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#39;');
 }
 
-function renderMathText(text?: string): string {
-  if (!text) return '';
+function renderInlineMath(text: string): string {
   let html = escapeHtml(text);
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, src) => {
     const cleanSrc = src.trim();
+    if (cleanSrc.startsWith('//') || cleanSrc.startsWith('http://') || cleanSrc.startsWith('https://')) {
+      return '';
+    }
     if (!/^[a-zA-Z0-9_./\-]+$/.test(cleanSrc) && !cleanSrc.startsWith('data:image/')) {
       return '';
     }
@@ -290,8 +292,72 @@ function renderMathText(text?: string): string {
     f = f.replace(/_([0-9a-zA-Z+-]+)/g, '<sub>$1</sub>');
     return '<span class="math-expr">' + f + '</span>';
   });
-  html = html.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br/>');
-  return '<p>' + html + '</p>';
+  return html;
+}
+
+function renderMathText(text?: string): string {
+  if (!text) return '';
+  const lines = text.split('\n');
+  const blocks: string[] = [];
+  let currentParagraph: string[] = [];
+
+  const flushParagraph = () => {
+    if (currentParagraph.length > 0) {
+      const pText = currentParagraph.join('<br/>');
+      if (pText.trim()) {
+        blocks.push('<p>' + pText + '</p>');
+      }
+      currentParagraph = [];
+    }
+  };
+
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i]!;
+    if (
+      line.includes('|') &&
+      i + 1 < lines.length &&
+      /^\s*\|?(\s*:?-+:?\s*\|)+\s*:?-+:?\s*\|?\s*$/.test(lines[i + 1]!)
+    ) {
+      flushParagraph();
+      const splitCells = (row: string) => {
+        let r = row.trim();
+        if (r.startsWith('|')) r = r.slice(1);
+        if (r.endsWith('|')) r = r.slice(0, -1);
+        return r.split('|').map((c) => c.trim());
+      };
+      const headers = splitCells(line);
+      i += 2; // skip header and separator
+      const dataRows: string[][] = [];
+      while (i < lines.length && lines[i]!.includes('|') && lines[i]!.trim().length > 0) {
+        dataRows.push(splitCells(lines[i]!));
+        i++;
+      }
+      let tableHtml = '<table class="exam-table"><thead><tr>';
+      for (const h of headers) {
+        tableHtml += `<th>${renderInlineMath(h)}</th>`;
+      }
+      tableHtml += '</tr></thead><tbody>';
+      for (const row of dataRows) {
+        tableHtml += '<tr>';
+        for (let c = 0; c < headers.length; c++) {
+          const val = row[c] ?? '';
+          tableHtml += `<td>${renderInlineMath(val)}</td>`;
+        }
+        tableHtml += '</tr>';
+      }
+      tableHtml += '</tbody></table>';
+      blocks.push(tableHtml);
+    } else if (line.trim() === '') {
+      flushParagraph();
+      i++;
+    } else {
+      currentParagraph.push(renderInlineMath(line));
+      i++;
+    }
+  }
+  flushParagraph();
+  return blocks.length > 0 ? blocks.join('') : '<p></p>';
 }
 
 function getStorageKey(exam: any, state: any): string {
@@ -349,6 +415,8 @@ function ensureShellStructure(root: HTMLElement): void {
   candInput.readOnly = true;
   candInput.setAttribute('readonly', 'readonly');
   const syncStatus = createEl('div', 'syncStatus', 'sync-status-badge');
+  syncStatus.setAttribute('role', 'status');
+  syncStatus.setAttribute('aria-live', 'polite');
   const syncText = createEl('span', 'syncText');
   syncText.textContent = 'Chưa lưu';
   syncStatus.appendChild(syncText);
@@ -2430,6 +2498,12 @@ export async function bootstrap(
         attemptId
       );
 
+      const gateName = root.querySelector<HTMLInputElement>('#startName')?.value.trim()
+        || (typeof localStorage !== 'undefined' ? localStorage.getItem('cunata:candidate_name') || localStorage.getItem('cunata:last_candidate_name') : null);
+      if (gateName && (candidateName === 'Thí sinh tự do' || !candidateName || candidateName === 'Học sinh')) {
+        candidateName = gateName;
+      }
+
       try {
         const startRes = await startAttempt(
           currentExam,
@@ -2470,6 +2544,8 @@ export async function bootstrap(
       candidateInput.setAttribute('readonly', 'readonly');
       candidateInput.disabled = false;
     }
+    const startScr = root.querySelector('#startScreen') as HTMLElement | null;
+    if (startScr) startScr.style.display = 'none';
     if (examWrapper) examWrapper.style.display = '';
     if (reportWrapper) reportWrapper.style.display = 'none';
     if (btnSubmit) btnSubmit.style.display = '';
@@ -2549,10 +2625,17 @@ export async function bootstrap(
       ? submittedAt
       : (activeReportModel ? activeReportModel.submittedAt : (finalRecord?.submittedAt ?? null));
 
+    const reportTitleEl = root.querySelector('#reportWrapper .report-title') as HTMLElement | null;
+    if (reportTitleEl && currentExam.title) {
+      reportTitleEl.textContent = currentExam.title;
+    }
+
     const reportSubtitle = root.querySelector('#reportSubtitle') as HTMLElement | null;
     if (reportSubtitle) {
       reportSubtitle.style.color = '';
-      reportSubtitle.textContent = `Thí sinh: ${candidateName} · Nộp bài lúc: ${subTime ? new Date(subTime).toLocaleTimeString() : new Date().toLocaleTimeString()}`;
+      const startStr = startedAt ? new Date(startedAt).toLocaleTimeString() : '';
+      const subStr = subTime ? new Date(subTime).toLocaleTimeString() : new Date().toLocaleTimeString();
+      reportSubtitle.textContent = `Thí sinh: ${candidateName} · Phiên bản: ${currentExam.examVersionId} · Bắt đầu lúc: ${startStr} · Nộp bài lúc: ${subStr}`;
     }
 
     const scorePartI = root.querySelector('#scorePartI') as HTMLElement | null;
@@ -2596,38 +2679,96 @@ export async function bootstrap(
       // Quyết định D08 (16/11/2026): sau khi nộp, luôn hiện lời giải chi tiết mọi câu
       const isAnswersReleased = true;
 
-      scoredResult.questionResults.forEach((qr) => {
+      const orderQIds = (presentationOrder && Array.isArray(presentationOrder.questionOrder) && presentationOrder.questionOrder.length > 0)
+        ? presentationOrder.questionOrder
+        : currentExam.questions.map((q) => q.questionVersionId);
+      const qMap = new Map(currentExam.questions.map((q) => [q.questionVersionId, q]));
+      const qrMap = new Map((scoredResult.questionResults || []).map((qr) => [qr.questionVersionId, qr]));
+
+      for (let idx = 0; idx < orderQIds.length; idx++) {
+        const qid = orderQIds[idx]!;
+        const q = qMap.get(qid);
+        const qr = qrMap.get(qid);
+        if (!q || !qr) continue;
+
         const item = (root.ownerDocument || document).createElement('div');
         item.className = 'review-question-card';
+        item.setAttribute('data-qid', q.questionVersionId);
+        item.id = `qcard-review-${q.questionVersionId}`;
 
-        const qTitle = escapeHtml(qr.title || `Câu hỏi ${qr.questionVersionId}`);
+        const qTitle = escapeHtml(q.title || `Câu ${idx + 1}`);
         const qPoints = `${formatRationalScore(qr.pointsFraction)} / ${formatRationalScore(qr.maxPointsFraction)} điểm`;
         let answerHtml = '';
 
-        if (isAnswersReleased) {
-          if (qr.kind === 'I') {
-            answerHtml = `<div>Bạn chọn: <strong>${escapeHtml(qr.userAnswer || 'Chưa chọn')}</strong> | Đáp án đúng: <strong>${escapeHtml(qr.correctAnswer || '')}</strong></div>`;
-          } else if (qr.kind === 'II') {
-            answerHtml = `<div class="statement-review-list">` + (qr.stDetails || []).map((st) => `<div>${escapeHtml(st.label || '')}) Bạn chọn: ${escapeHtml(st.userVal)} | Đáp án: ${escapeHtml(st.correctVal)}</div>`).join('') + `</div>`;
-          } else if (qr.kind === 'III') {
-            answerHtml = `<div>Bạn điền: <strong>${escapeHtml(qr.userAnswer || 'Chưa điền')}</strong> | Đáp án đúng: <strong>${escapeHtml(qr.correctAnswer || '')}</strong></div>`;
+        if (q.kind === 'I') {
+          const userOptionId = (responses && responses[q.questionVersionId]) || null;
+          const optOrderEntry = presentationOrder && Array.isArray(presentationOrder.optionOrder)
+            ? presentationOrder.optionOrder.find((e) => e.questionVersionId === q.questionVersionId)
+            : null;
+          const optionsOrder = optOrderEntry ? optOrderEntry.optionIds : q.options.map((o) => o.optionId);
+          const optMap = new Map(q.options.map((o) => [o.optionId, o]));
+
+          let optsHtml = '<div class="review-options-list" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem;">';
+          for (const optId of optionsOrder) {
+            const opt = optMap.get(optId);
+            if (!opt) continue;
+            const isCorrect = opt.optionId === q.correctOptionId;
+            const isChosen = userOptionId === opt.optionId;
+            optsHtml += `<div class="review-option" data-option-id="${escapeHtml(opt.optionId)}" data-correct="${isCorrect ? 'true' : 'false'}" data-chosen="${isChosen ? 'true' : 'false'}" style="padding:0.5rem; border-radius:6px; border:1px solid ${isCorrect ? 'var(--c-correct)' : isChosen ? 'var(--c-wrong)' : 'var(--c-border)'}; background:${isChosen ? (isCorrect ? 'var(--c-correct-bg)' : 'var(--c-wrong-bg)') : 'transparent'};">`;
+            optsHtml += `<strong class="review-option-label">${escapeHtml(opt.label ? opt.label + '.' : '')}</strong> `;
+            optsHtml += `<span class="review-option-text">${renderMathText(opt.text)}</span>`;
+            if (isChosen) {
+              optsHtml += isCorrect
+                ? ' <span class="badge-chosen-correct" style="color:var(--c-correct); font-weight:600;">✔ Bạn chọn đúng</span>'
+                : ' <span class="badge-chosen-wrong" style="color:var(--c-wrong); font-weight:600;">✖ Bạn chọn sai</span>';
+            } else if (isCorrect) {
+              optsHtml += ' <span class="badge-correct" style="color:var(--c-correct); font-weight:600;">✔ Đáp án đúng</span>';
+            }
+            optsHtml += '</div>';
           }
-          if (qr.explanation) {
-            answerHtml += `<div class="explanation-box"><strong>Lời giải:</strong> ${renderMathText(qr.explanation)}</div>`;
+          optsHtml += '</div>';
+          const chosenText = userOptionId ? (optMap.get(userOptionId)?.label ?? userOptionId) : 'Chưa chọn';
+          answerHtml = `<div>Bạn chọn: <strong>${escapeHtml(chosenText)}</strong> | Đáp án đúng: <strong>${escapeHtml(optMap.get(q.correctOptionId)?.label ?? q.correctOptionId)}</strong></div>` + optsHtml;
+        } else if (q.kind === 'II') {
+          const userSts = (responses && responses[q.questionVersionId]) || {};
+          let stListHtml = '<div class="statement-review-list" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem;">';
+          for (const st of q.statements) {
+            const uVal = Object.hasOwn(userSts, st.statementId) ? userSts[st.statementId] : undefined;
+            const hasAnswered = typeof uVal === 'boolean';
+            const chosenStr = hasAnswered ? (uVal ? 'true' : 'false') : 'none';
+            const chosenText = hasAnswered ? (uVal ? 'Đúng' : 'Sai') : 'Chưa chọn';
+            const correctText = st.answer ? 'Đúng' : 'Sai';
+            stListHtml += `<div class="review-statement" data-statement-id="${escapeHtml(st.statementId)}" data-key="${st.answer ? 'true' : 'false'}" data-chosen="${chosenStr}" style="padding:0.5rem; border-radius:6px; border:1px solid var(--c-border);">`;
+            stListHtml += `<strong class="review-statement-label">${escapeHtml(st.label ? st.label + ')' : '')}</strong> `;
+            stListHtml += `<span class="review-statement-text">${renderMathText(st.text)}</span>`;
+            stListHtml += ` — Bạn chọn: <strong>${escapeHtml(chosenText)}</strong> | Đáp án: <strong>${escapeHtml(correctText)}</strong>`;
+            stListHtml += '</div>';
           }
-        } else {
-          answerHtml = `<div><em>Đáp án và lời giải chi tiết sẽ được công bố sau khi hết giờ làm bài.</em></div>`;
+          stListHtml += '</div>';
+          answerHtml = stListHtml;
+        } else if (q.kind === 'III') {
+          const rawVal = responses && responses[q.questionVersionId];
+          const hasAns = rawVal !== undefined && rawVal !== null && String(rawVal).trim() !== '';
+          answerHtml = `<div class="review-short-answer">Bạn điền: <strong>${escapeHtml(hasAns ? String(rawVal) : 'Chưa làm')}</strong> | Đáp án: <strong>${escapeHtml(q.answerKey)}</strong></div>`;
+        }
+
+        let expl = q.explanation;
+        if (!expl && q.kind === 'II') {
+          expl = q.statements.map((s) => `**${s.label || ''})** ${s.explanation || ''}`).join('\n\n');
+        }
+        if (expl) {
+          answerHtml += `<div class="explanation-box" style="margin-top:0.75rem; padding:0.75rem; background:var(--c-surface-2); border-left:3px solid var(--c-primary); border-radius:4px;"><strong>Lời giải:</strong> ${renderMathText(expl)}</div>`;
         }
 
         item.innerHTML = `
           <div class="review-q-header">
             <h4>${qTitle} (${qPoints})</h4>
           </div>
-          <div class="review-q-content">${renderMathText(qr.content)}</div>
+          <div class="review-q-content">${renderMathText(q.content)}</div>
           <div class="review-q-answers">${answerHtml}</div>
         `;
         reviewList.appendChild(item);
-      });
+      }
     }
 
     // Download Report HTML Handler
@@ -2637,27 +2778,57 @@ export async function bootstrap(
         // Quyết định D08 (16/11/2026): sau khi nộp, luôn hiện lời giải chi tiết mọi câu
         const isAnswersReleased = true;
         const safeName = escapeHtml(candidateName);
+        const startStr = startedAt ? new Date(startedAt).toLocaleTimeString() : '';
+        const subStr = subTime ? new Date(subTime).toLocaleTimeString() : new Date().toLocaleTimeString();
         const reportHtmlDoc = `<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8">
   <title>Báo Cáo Kết Quả — ${safeName}</title>
-  <style>body{font-family:sans-serif;padding:2rem;line-height:1.6;color:var(--c-text)}h1,h2{color:var(--c-text)}</style>
+  <style>body{font-family:sans-serif;padding:2rem;line-height:1.6;color:inherit}h1,h2,h3{color:inherit}.exam-table{border-collapse:collapse;width:100%}.exam-table th,.exam-table td{border:1px solid currentColor;padding:6px 10px;text-align:left}</style>
 </head>
 <body>
-  <h1>Báo Cáo Kết Quả Thi</h1>
+  <h1 class="report-title">${escapeHtml(currentExam.title || 'Báo Cáo Kết Quả Thi')}</h1>
   <p><strong>Thí sinh:</strong> ${safeName}</p>
+  <p><strong>Phiên bản đề:</strong> ${escapeHtml(currentExam.examVersionId)}</p>
+  <p><strong>Bắt đầu lúc:</strong> ${startStr}</p>
+  <p><strong>Nộp bài lúc:</strong> ${subStr}</p>
   <p><strong>Điểm tổng:</strong> ${formatRationalScore(scoredResult!.totalFraction)} / ${formatRationalScore(scoredResult!.maxTotalFraction)}</p>
   <p><strong>Phần I:</strong> ${formatRationalScore(scoredResult!.scoreIFraction)} / ${formatRationalScore(scoredResult!.maxIFraction)}</p>
   <p><strong>Phần II:</strong> ${formatRationalScore(scoredResult!.scoreIIFraction)} / ${formatRationalScore(scoredResult!.maxIIFraction)}</p>
   <p><strong>Phần III:</strong> ${formatRationalScore(scoredResult!.scoreIIIFraction)} / ${formatRationalScore(scoredResult!.maxIIIFraction)}</p>
   <hr/>
-  ${(scoredResult!.questionResults || []).map((qr) => `
-    <div>
-      <h3>${escapeHtml(qr.title || '')} (${formatRationalScore(qr.pointsFraction)} / ${formatRationalScore(qr.maxPointsFraction)} điểm)</h3>
-      ${isAnswersReleased ? `<div>Bạn trả lời: ${escapeHtml(qr.userAnswer || '')} | Đáp án đúng: ${escapeHtml(qr.correctAnswer || '')}</div>${qr.explanation ? `<div>Lời giải: ${escapeHtml(qr.explanation)}</div>` : ''}` : `<div><em>Đáp án và lời giải chi tiết sẽ được công bố sau khi hết giờ làm bài.</em></div>`}
-    </div>
-  `).join('')}
+  ${currentExam.questions.map((q, idx) => {
+    let qAns = '';
+    if (q.kind === 'I') {
+      const uOptId = responses && responses[q.questionVersionId];
+      const optMap = new Map(q.options.map(o => [o.optionId, o]));
+      qAns = `<div>Bạn chọn: <strong>${escapeHtml(uOptId ? (optMap.get(uOptId)?.label ?? uOptId) : 'Chưa chọn')}</strong> | Đáp án đúng: <strong>${escapeHtml(optMap.get(q.correctOptionId)?.label ?? q.correctOptionId)}</strong></div>`;
+      qAns += '<ul>' + q.options.map(o => `<li><strong>${escapeHtml(o.label || '')}.</strong> ${renderMathText(o.text)}</li>`).join('') + '</ul>';
+    } else if (q.kind === 'II') {
+      const uSts = (responses && responses[q.questionVersionId]) || {};
+      qAns = '<ul>' + q.statements.map(s => {
+        const u = Object.hasOwn(uSts, s.statementId) ? uSts[s.statementId] : undefined;
+        const uStr = typeof u === 'boolean' ? (u ? 'Đúng' : 'Sai') : 'Chưa chọn';
+        return `<li><strong>${escapeHtml(s.label || '')})</strong> ${renderMathText(s.text)} — Bạn chọn: ${escapeHtml(uStr)} | Đáp án: ${s.answer ? 'Đúng' : 'Sai'}</li>`;
+      }).join('') + '</ul>';
+    } else if (q.kind === 'III') {
+      const val = responses && responses[q.questionVersionId];
+      qAns = `<div>Bạn điền: <strong>${escapeHtml(val ? String(val) : 'Chưa làm')}</strong> | Đáp án đúng: <strong>${escapeHtml(q.answerKey)}</strong></div>`;
+    }
+    let expl = q.explanation;
+    if (!expl && q.kind === 'II') {
+      expl = q.statements.map(s => `**${s.label || ''})** ${s.explanation || ''}`).join('\n\n');
+    }
+    return `
+      <div class="review-question-card" data-qid="${escapeHtml(q.questionVersionId)}">
+        <h3>${escapeHtml(q.title || `Câu ${idx + 1}`)}</h3>
+        <div>${renderMathText(q.content)}</div>
+        <div>${qAns}</div>
+        ${expl ? `<div><strong>Lời giải:</strong> ${renderMathText(expl)}</div>` : ''}
+      </div>
+    `;
+  }).join('')}
 </body>
 </html>`;
         const blob = new Blob([reportHtmlDoc], { type: 'text/html;charset=utf-8' });
@@ -2996,6 +3167,21 @@ export async function bootstrap(
         if (!ok) return;
       }
     }
+    const gateName = root.querySelector<HTMLInputElement>('#startName')?.value.trim()
+      || (typeof localStorage !== 'undefined' ? localStorage.getItem('cunata:candidate_name') || localStorage.getItem('cunata:last_candidate_name') : null);
+    if (gateName) {
+      candidateName = gateName;
+    }
+    if (candidateInput) {
+      candidateInput.value = candidateName;
+      candidateInput.readOnly = true;
+      candidateInput.setAttribute('readonly', 'readonly');
+      candidateInput.disabled = false;
+    }
+    const startScr = root.querySelector('#startScreen') as HTMLElement | null;
+    if (startScr) startScr.style.display = 'none';
+    if (examWrapper) examWrapper.style.display = '';
+    router.navigate('exam', { examId: parsed.examId });
     await loadOrResumeExam(parsed, false);
   };
 
@@ -3020,6 +3206,11 @@ export async function bootstrap(
         const parsed = JSON.parse(text);
         const v = parseExam(parsed);
         if (v.ok) {
+          const gateName = root.querySelector<HTMLInputElement>('#startName')?.value.trim()
+            || (typeof localStorage !== 'undefined' ? localStorage.getItem('cunata:candidate_name') || localStorage.getItem('cunata:last_candidate_name') : null);
+          if (gateName) {
+            candidateName = gateName;
+          }
           await switchExam(v.value, true);
         }
       } catch (_) {}
@@ -3150,7 +3341,19 @@ export async function bootstrap(
     if (state.route === 'student') {
       await startCtrl?.refreshList();
       if (generation !== routeGeneration) return;
-      if (state.params.exam) startCtrl?.selectExamId(state.params.exam);
+      if (state.params.exam) {
+        const preview = root.querySelector('#examPreview') as HTMLElement | null;
+        if (preview) preview.style.display = 'none';
+        let noticeEl = root.querySelector('#examNotAllowedNotice') as HTMLElement | null;
+        if (!noticeEl) {
+          noticeEl = document.createElement('div');
+          noticeEl.id = 'examNotAllowedNotice';
+          noticeEl.className = 'ui-alert ui-alert--info student-exam-notice';
+          noticeEl.textContent = 'Đề này chỉ làm được khi giáo viên giao cho lớp của em.';
+          const mainArea = root.querySelector('#studentMainArea') || root.querySelector('#startScreen');
+          if (mainArea) mainArea.prepend(noticeEl);
+        }
+      }
     }
     if (state.route === 'exam' && state.params.examId && state.params.examId !== loadedExamId) {
       const { exams } = await fetchAndMergeExams(appsScriptUrl, appsScriptClient);
