@@ -76,23 +76,31 @@ export class CdpClient {
       'about:blank',
     ];
 
-    client.proc = cp.spawn(browserExe, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    client.proc = cp.spawn(browserExe, args, { stdio: 'ignore', windowsHide: true });
+    let launchError: Error | undefined;
+    client.proc.once('error', (error: Error) => { launchError = error; });
 
-    // Poll for CDP readiness
-    const pageWsUrl = await client.pollForPageTarget(client.port, 6000);
-    await client.connectWebSocket(pageWsUrl);
+    try {
+      // Poll for CDP readiness; a failed launch must still dispose its process.
+      const pageWsUrl = await client.pollForPageTarget(client.port, 15000);
+      if (launchError) throw launchError;
+      await client.connectWebSocket(pageWsUrl);
 
-    // Enable essential domains
-    await client.send('Page.enable');
-    await client.send('DOM.enable');
-    await client.send('Runtime.enable');
-    await client.send('Network.enable');
+      // Enable essential domains
+      await client.send('Page.enable');
+      await client.send('DOM.enable');
+      await client.send('Runtime.enable');
+      await client.send('Network.enable');
 
-    if (options.width && options.height) {
-      await client.setViewport({ width: options.width, height: options.height });
+      if (options.width && options.height) {
+        await client.setViewport({ width: options.width, height: options.height });
+      }
+
+      return client;
+    } catch (error) {
+      await client.close();
+      throw launchError ?? error;
     }
-
-    return client;
   }
 
   private findFreePort(): Promise<number> {
@@ -109,6 +117,9 @@ export class CdpClient {
   private async pollForPageTarget(port: number, timeoutMs: number): Promise<string> {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
+      if (this.proc && (this.proc.exitCode !== null || this.proc.signalCode !== null)) {
+        throw new Error('Browser exited before DevTools became ready');
+      }
       try {
         const list = await this.httpGetJson<any[]>(`http://127.0.0.1:${port}/json/list`);
         const page = list.find((item: any) => item.type === 'page' && item.webSocketDebuggerUrl);
@@ -123,7 +134,7 @@ export class CdpClient {
 
   private httpGetJson<T>(url: string): Promise<T> {
     return new Promise((resolve, reject) => {
-      http.get(url, (res: any) => {
+      const request = http.get(url, (res: any) => {
         let body = '';
         res.on('data', (chunk: any) => (body += chunk));
         res.on('end', () => {
@@ -134,6 +145,7 @@ export class CdpClient {
           }
         });
       }).on('error', reject);
+      request.setTimeout(2000, () => request.destroy(new Error('CDP discovery request timed out')));
     });
   }
 
@@ -141,9 +153,23 @@ export class CdpClient {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket(url);
       this.ws = ws;
-
-      ws.onopen = () => resolve();
-      ws.onerror = (err) => reject(new Error(`WebSocket error: ${String(err)}`));
+      const timer = setTimeout(() => {
+        reject(new Error('CDP WebSocket connection timed out'));
+        ws.close();
+      }, 6000);
+      ws.onopen = () => { clearTimeout(timer); resolve(); };
+      ws.onerror = (err) => {
+        clearTimeout(timer);
+        reject(new Error(`WebSocket error: ${String(err)}`));
+      };
+      ws.onclose = () => {
+        clearTimeout(timer);
+        reject(new Error('CDP WebSocket closed'));
+        for (const request of this.pendingRequests.values()) {
+          request.reject(new Error('CDP WebSocket closed'));
+        }
+        this.pendingRequests.clear();
+      };
 
       ws.onmessage = (event) => {
         try {
@@ -171,8 +197,21 @@ export class CdpClient {
     }
     const id = this.nextId++;
     return new Promise<T>((resolve, reject) => {
-      this.pendingRequests.set(id, { resolve, reject });
-      this.ws!.send(JSON.stringify({ id, method, params }));
+      const timer = setTimeout(() => {
+        this.pendingRequests.delete(id);
+        reject(new Error(`CDP request timed out: ${method}`));
+      }, 15000);
+      const request = {
+        resolve: (value: T) => { clearTimeout(timer); resolve(value); },
+        reject: (error: Error) => { clearTimeout(timer); reject(error); },
+      };
+      this.pendingRequests.set(id, request);
+      try {
+        this.ws!.send(JSON.stringify({ id, method, params }));
+      } catch (error) {
+        this.pendingRequests.delete(id);
+        request.reject(error as Error);
+      }
     });
   }
 
@@ -191,15 +230,17 @@ export class CdpClient {
   public async navigate(url: string): Promise<void> {
     await new Promise<void>((resolve) => {
       let resolved = false;
+      let timer: ReturnType<typeof setTimeout>;
       const off = this.on('Page.loadEventFired', () => {
         if (!resolved) {
           resolved = true;
+          clearTimeout(timer);
           off();
           resolve();
         }
       });
       // Fallback timeout in case loadEvent already fired or doesn't fire
-      setTimeout(() => {
+      timer = setTimeout(() => {
         if (!resolved) {
           resolved = true;
           off();
@@ -267,12 +308,18 @@ export class CdpClient {
     tabClient.port = this.port;
     tabClient.proc = null;
     tabClient.tempDir = null;
-    await tabClient.connectWebSocket(page.webSocketDebuggerUrl);
-    await tabClient.send('Page.enable');
-    await tabClient.send('DOM.enable');
-    await tabClient.send('Runtime.enable');
-    await tabClient.send('Network.enable');
-    return tabClient;
+    try {
+      await tabClient.connectWebSocket(page.webSocketDebuggerUrl);
+      await tabClient.send('Page.enable');
+      await tabClient.send('DOM.enable');
+      await tabClient.send('Runtime.enable');
+      await tabClient.send('Network.enable');
+      return tabClient;
+    } catch (error) {
+      await tabClient.close();
+      await this.send('Target.closeTarget', { targetId }).catch(() => {});
+      throw error;
+    }
   }
 
   public async waitForSelector(selector: string, timeoutMs: number = 5000): Promise<boolean> {
@@ -371,8 +418,13 @@ export class CdpClient {
   }
 
   public async close(): Promise<void> {
+    for (const request of this.pendingRequests.values()) {
+      request.reject(new Error('CDP client closed'));
+    }
+    this.pendingRequests.clear();
+    this.eventHandlers.clear();
     try {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      if (this.ws && this.ws.readyState < WebSocket.CLOSING) {
         this.ws.close();
       }
     } catch {}
@@ -380,6 +432,12 @@ export class CdpClient {
     try {
       if (this.proc && !this.proc.killed) {
         this.proc.kill('SIGTERM');
+        await new Promise<void>((resolve) => {
+          if (this.proc.exitCode !== null || this.proc.signalCode !== null) return resolve();
+          const timer = setTimeout(resolve, 3000);
+          this.proc.once('exit', () => { clearTimeout(timer); resolve(); });
+        });
+        this.proc.unref();
       }
     } catch {}
 

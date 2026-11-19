@@ -3224,9 +3224,12 @@ export async function bootstrap(
   };
 
   // Exam File Upload Listener (#examFileInput)
+  let fileImportPending = false;
   const onFileInputChange = (e: any) => {
     const file = e.target?.files?.[0];
-    if (!file) return;
+    // A second change event can arrive before FileReader/storage completes.
+    // Keep one import in flight so both handlers cannot create a draft.
+    if (!file || fileImportPending) return;
     if (hasInProgressAttempt()) {
       if (typeof confirm === 'function') {
         const ok = confirm('Bạn có bài làm dở. Chuyển sang đề mới sẽ bỏ bài dở này. Tiếp tục?');
@@ -3236,7 +3239,14 @@ export async function bootstrap(
         }
       }
     }
+    fileImportPending = true;
+    const finishImport = () => {
+      fileImportPending = false;
+      if (examFileInput) examFileInput.value = '';
+    };
     const reader = new FileReader();
+    reader.onerror = finishImport;
+    reader.onabort = finishImport;
     reader.onload = async (evt) => {
       try {
         const text = evt.target?.result;
@@ -3251,10 +3261,16 @@ export async function bootstrap(
           }
           await switchExam(v.value, true);
         }
-      } catch (_) {}
-      if (examFileInput) examFileInput.value = '';
+      } catch (_) {
+      } finally {
+        finishImport();
+      }
     };
-    reader.readAsText(file);
+    try {
+      reader.readAsText(file);
+    } catch (_) {
+      finishImport();
+    }
   };
 
   // 1. Fetch appsScriptUrl configuration if available

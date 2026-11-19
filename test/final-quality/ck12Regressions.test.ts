@@ -160,6 +160,58 @@ class MockFileReader {
 }
 
 describe('CK12 & CK13 Audit Findings Regressions', () => {
+  it('FX52: overlapping file change events create one durable draft and allow a later import', { timeout: 10000 }, async () => {
+    const previous = {
+      localStorage: globalThis.localStorage,
+      window: (globalThis as any).window,
+      FileReader: (globalThis as any).FileReader,
+    };
+    (globalThis as any).localStorage = createMockLocalStorage();
+    (globalThis as any).window = createMockWindow();
+    (globalThis as any).FileReader = MockFileReader;
+    const adapter = new MemoryTransactionAdapter();
+    const storageResult = await openStorage({ adapter, approveD03: true });
+    assert.ok(storageResult.ok);
+    const storage = storageResult.value;
+    const doc = createMockDocument();
+    (doc as any).createElementNS = (_ns: string, tag: string) => doc.createElement(tag);
+    (doc as any).getElementById = (id: string) => doc.body.querySelector('#' + id);
+    const root = doc.createElement('div') as unknown as HTMLElement;
+    doc.body.appendChild(root as unknown as MockElement);
+    let cleanup: (() => void) | undefined;
+    try {
+      cleanup = await bootstrap(root, { storageAdapter: adapter, initialExam: SAMPLE_EXAM });
+      const input = root.querySelector('#examFileInput') as any;
+      let releaseRead!: (value: string) => void;
+      const contents = new Promise<string>((resolve) => { releaseRead = resolve; });
+      input.files = [{ name: 'new-exam.json', text: () => contents }];
+      input.dispatchEvent(new MockEvent('change', { target: input }));
+      input.dispatchEvent(new MockEvent('change', { target: input }));
+      releaseRead(JSON.stringify(NEW_EXAM));
+      const waitForTitle = async (title: string) => {
+        const deadline = Date.now() + 2000;
+        while (root.querySelector('#examTitle')?.textContent !== title && Date.now() < deadline) {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+        assert.equal(root.querySelector('#examTitle')?.textContent, title);
+      };
+      await waitForTitle(NEW_EXAM.title);
+      const attempts = await storage.listAttempts(NEW_EXAM.examId, NEW_EXAM.examVersionId);
+      assert.ok(attempts.ok);
+      assert.equal(attempts.value.length, 1, 'one selected file must create exactly one attempt');
+      const laterExam = { ...NEW_EXAM, examId: 'later-import', title: 'Đề nạp sau' };
+      input.files = [{ name: 'later.json', text: async () => JSON.stringify(laterExam) }];
+      input.dispatchEvent(new MockEvent('change', { target: input }));
+      await waitForTitle(laterExam.title);
+      const laterAttempts = await storage.listAttempts(laterExam.examId, laterExam.examVersionId);
+      assert.ok(laterAttempts.ok);
+      assert.equal(laterAttempts.value.length, 1);
+    } finally {
+      cleanup?.();
+      Object.assign(globalThis, previous);
+    }
+  });
+
   it('CK12-F01: Durable StoragePort final record cannot be mutated by corrupted localStorage mirror', async () => {
     const mockStorage = createMockLocalStorage();
     (globalThis as any).localStorage = mockStorage;

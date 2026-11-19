@@ -3190,9 +3190,12 @@ export async function bootstrap(root, options) {
         await loadOrResumeExam(parsed, false);
     };
     // Exam File Upload Listener (#examFileInput)
+    let fileImportPending = false;
     const onFileInputChange = (e) => {
         const file = e.target?.files?.[0];
-        if (!file)
+        // A second change event can arrive before FileReader/storage completes.
+        // Keep one import in flight so both handlers cannot create a draft.
+        if (!file || fileImportPending)
             return;
         if (hasInProgressAttempt()) {
             if (typeof confirm === 'function') {
@@ -3204,7 +3207,15 @@ export async function bootstrap(root, options) {
                 }
             }
         }
+        fileImportPending = true;
+        const finishImport = () => {
+            fileImportPending = false;
+            if (examFileInput)
+                examFileInput.value = '';
+        };
         const reader = new FileReader();
+        reader.onerror = finishImport;
+        reader.onabort = finishImport;
         reader.onload = async (evt) => {
             try {
                 const text = evt.target?.result;
@@ -3221,11 +3232,18 @@ export async function bootstrap(root, options) {
                     await switchExam(v.value, true);
                 }
             }
-            catch (_) { }
-            if (examFileInput)
-                examFileInput.value = '';
+            catch (_) {
+            }
+            finally {
+                finishImport();
+            }
         };
-        reader.readAsText(file);
+        try {
+            reader.readAsText(file);
+        }
+        catch (_) {
+            finishImport();
+        }
     };
     // 1. Fetch appsScriptUrl configuration if available
     appsScriptUrl = (await loadAppConfig()).appsScriptUrl;
