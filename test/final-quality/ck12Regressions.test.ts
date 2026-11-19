@@ -1273,6 +1273,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
         }
         await new Promise((r) => setTimeout(r, 100));
       }
+      console.log('ALL DRAFTS:', allDrafts.map((d: any) => ({ candidateName: d.candidateName, examId: d.examId, phase: d.phase, attemptId: d.attemptId })));
       assert.equal(allDrafts.length, 2, 'IndexedDB must contain two separate attempt records for Tab A and Tab B');
       assert.ok(draftBInitial, 'Draft B must exist in IndexedDB');
       assert.equal(draftBInitial.phase, 'draft');
