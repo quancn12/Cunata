@@ -418,6 +418,22 @@ export function mountStudentArea(
         localStorage.setItem('cunata:last_candidate_name', val);
       } catch {}
       syncNameState();
+      if (typeof window !== 'undefined') {
+        try {
+          const sParams = new URLSearchParams(window.location.search);
+          let qLop = sParams.get('lop');
+          if (!qLop && window.location.hash) {
+            const qIdx = window.location.hash.indexOf('?');
+            if (qIdx !== -1) {
+              const hParams = new URLSearchParams(window.location.hash.slice(qIdx));
+              qLop = hParams.get('lop');
+            }
+          }
+          if (qLop) {
+            void joinClassByCode(qLop);
+          }
+        } catch {}
+      }
     },
   }, doc);
 

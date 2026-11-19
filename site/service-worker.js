@@ -1,8 +1,8 @@
 // Cunata Web Native Service Worker
-// Build Digest: 45abeea1818e581e
-const BUILD_VERSION = 'v-45abeea1818e581e';
+// Build Digest: 22d7d11e5ea29c22
+const BUILD_VERSION = 'v-22d7d11e5ea29c22';
 const CACHE_NAME_PREFIX = 'cunata-cache-';
-const CACHE_NAME = 'cunata-cache-v-45abeea1818e581e';
+const CACHE_NAME = 'cunata-cache-v-22d7d11e5ea29c22';
 const DEFAULT_PRECACHE_ENTRIES = [
   {
     "url": "index.html",

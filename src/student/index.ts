@@ -548,12 +548,43 @@ class StudentControllerImpl implements StudentController {
         }
 
         const nextRevision = this.currentRecord.revision + 1;
+        const cur = this.currentRecord as any;
+        let curCode = cur.class_code || cur.classCode;
+        let curAssign = cur.assignment_id || cur.assignmentId;
+        let curOpen = cur.open_at || cur.openAt;
+        let curDue = cur.due_at || cur.dueAt;
+        if ((!curCode || !curAssign) && typeof sessionStorage !== 'undefined') {
+          try {
+            const raw = sessionStorage.getItem('cunata:active_assignment') || localStorage.getItem('cunata:active_assignment');
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed.examId && parsed.examId === this.currentRecord.examId) {
+                if (!curCode && (parsed.classCode || parsed.class_code)) {
+                  curCode = parsed.classCode || parsed.class_code;
+                }
+                if (!curAssign && (parsed.assignmentId || parsed.assignment_id)) {
+                  curAssign = parsed.assignmentId || parsed.assignment_id;
+                }
+                if (!curOpen && (parsed.openAt || parsed.open_at)) {
+                  curOpen = parsed.openAt || parsed.open_at;
+                }
+                if (!curDue && (parsed.dueAt || parsed.due_at)) {
+                  curDue = parsed.dueAt || parsed.due_at;
+                }
+              }
+            }
+          } catch {}
+        }
         const finalRecord: AttemptRecord = deepFreeze({
           ...this.currentRecord,
           revision: nextRevision,
           phase: "final",
           submittedAt: currentTime,
           scoreDTO,
+          ...(curCode ? { class_code: String(curCode).trim().toUpperCase(), classCode: String(curCode).trim().toUpperCase() } : {}),
+          ...(curAssign ? { assignment_id: String(curAssign).trim(), assignmentId: String(curAssign).trim() } : {}),
+          ...(curOpen ? { open_at: String(curOpen).trim(), openAt: String(curOpen).trim() } : {}),
+          ...(curDue ? { due_at: String(curDue).trim(), dueAt: String(curDue).trim() } : {}),
         });
 
         let finalizeResult = await this.deps.storage.finalize(

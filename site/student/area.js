@@ -335,6 +335,23 @@ export function mountStudentArea(container, options = {}) {
             }
             catch { }
             syncNameState();
+            if (typeof window !== 'undefined') {
+                try {
+                    const sParams = new URLSearchParams(window.location.search);
+                    let qLop = sParams.get('lop');
+                    if (!qLop && window.location.hash) {
+                        const qIdx = window.location.hash.indexOf('?');
+                        if (qIdx !== -1) {
+                            const hParams = new URLSearchParams(window.location.hash.slice(qIdx));
+                            qLop = hParams.get('lop');
+                        }
+                    }
+                    if (qLop) {
+                        void joinClassByCode(qLop);
+                    }
+                }
+                catch { }
+            }
         },
     }, doc);
     appendChildren(nameGateCard, nameGateHeader, nameFieldWrap, btnNameContinue);
@@ -362,20 +379,36 @@ export function mountStudentArea(container, options = {}) {
     greetingName.className = 'student-display-name';
     greetingName.textContent = candidateName;
     appendChildren(greetingEl, doc.createTextNode('Học sinh: '), greetingName);
+    function resetName() {
+        candidateName = '';
+        try {
+            localStorage.removeItem(STORAGE_NAME_KEY);
+            localStorage.removeItem('cunata:candidate_name');
+            localStorage.removeItem('cunata:student_name');
+            localStorage.removeItem('cunata:last_candidate_name');
+        }
+        catch { }
+        nameInput.value = '';
+        btnNameContinue.disabled = true;
+        syncNameState();
+        container.style.display = '';
+        const startScreen = doc.querySelector('#startScreen');
+        if (startScreen)
+            startScreen.style.display = '';
+        const exWrapper = doc.querySelector('#examWrapper');
+        if (exWrapper)
+            exWrapper.style.display = 'none';
+        const repWrapper = doc.querySelector('#reportWrapper');
+        if (repWrapper)
+            repWrapper.style.display = 'none';
+        nameInput.focus();
+    }
     const btnChangeName = Button({
         id: 'btnChangeName',
         label: 'Đổi tên',
         variant: 'ghost',
         onClick: () => {
-            candidateName = '';
-            try {
-                localStorage.removeItem(STORAGE_NAME_KEY);
-            }
-            catch { }
-            nameInput.value = '';
-            btnNameContinue.disabled = true;
-            syncNameState();
-            nameInput.focus();
+            resetName();
         },
     }, doc);
     appendChildren(studentTopBar, greetingEl, btnChangeName);
@@ -1036,20 +1069,33 @@ export function mountStudentArea(container, options = {}) {
         publicExams = merged;
     }
     async function joinClassByCode(code) {
-        const config = await loadAppConfig();
-        const url = options.appsScriptUrl || config.appsScriptUrl;
-        if (!url) {
-            showClassCodeError('Chức năng máy chủ Google Apps Script chưa cấu hình.');
-            return false;
-        }
         try {
-            const reqUrl = `${url}?action=getClass&code=${encodeURIComponent(code)}&_t=${Date.now()}`;
-            const res = await fetch(reqUrl, { cache: 'no-store' });
-            if (!res.ok) {
-                showClassCodeError('Lỗi kết nối máy chủ.');
-                return false;
+            let data = null;
+            if (options.client && options.client.configured) {
+                const res = await options.client.getClass(code);
+                if (res.ok) {
+                    data = { success: true, class: res.value.class || res.value, assignments: res.value.assignments || [] };
+                }
+                else {
+                    showClassCodeError(res.message || 'Mã lớp không chính xác hoặc không tồn tại.');
+                    return false;
+                }
             }
-            const data = await res.json();
+            else {
+                const config = await loadAppConfig();
+                const url = options.appsScriptUrl || config.appsScriptUrl;
+                if (!url) {
+                    showClassCodeError('Chức năng máy chủ Google Apps Script chưa cấu hình.');
+                    return false;
+                }
+                const reqUrl = `${url}?action=getClass&code=${encodeURIComponent(code)}&_t=${Date.now()}`;
+                const res = await fetch(reqUrl, { cache: 'no-store' });
+                if (!res.ok) {
+                    showClassCodeError('Lỗi kết nối máy chủ.');
+                    return false;
+                }
+                data = await res.json();
+            }
             if (!data || !data.success || !data.class) {
                 showClassCodeError(data?.message || 'Mã lớp không chính xác hoặc không tồn tại.');
                 return false;
@@ -1142,27 +1188,7 @@ export function mountStudentArea(container, options = {}) {
     const onDocClick = (e) => {
         const target = e.target?.closest?.('#btnChangeName');
         if (target) {
-            candidateName = '';
-            try {
-                localStorage.removeItem(STORAGE_NAME_KEY);
-                localStorage.removeItem('cunata:candidate_name');
-                localStorage.removeItem('cunata:last_candidate_name');
-            }
-            catch { }
-            nameInput.value = '';
-            btnNameContinue.disabled = true;
-            syncNameState();
-            container.style.display = '';
-            const startScreen = doc.querySelector('#startScreen');
-            if (startScreen)
-                startScreen.style.display = '';
-            const exWrapper = doc.querySelector('#examWrapper');
-            if (exWrapper)
-                exWrapper.style.display = 'none';
-            const repWrapper = doc.querySelector('#reportWrapper');
-            if (repWrapper)
-                repWrapper.style.display = 'none';
-            nameInput.focus();
+            resetName();
         }
     };
     doc.addEventListener('click', onDocClick);
@@ -1222,13 +1248,27 @@ export function mountStudentArea(container, options = {}) {
         setCandidateName(name) {
             candidateName = name;
             try {
-                localStorage.setItem(STORAGE_NAME_KEY, name);
+                if (!name) {
+                    localStorage.removeItem(STORAGE_NAME_KEY);
+                    localStorage.removeItem('cunata:candidate_name');
+                    localStorage.removeItem('cunata:student_name');
+                    localStorage.removeItem('cunata:last_candidate_name');
+                }
+                else {
+                    localStorage.setItem(STORAGE_NAME_KEY, name);
+                    localStorage.setItem('cunata:candidate_name', name);
+                }
             }
             catch { }
+            nameInput.value = name;
+            btnNameContinue.disabled = !name.trim();
             syncNameState();
         },
         getCandidateName() {
             return candidateName;
+        },
+        resetName() {
+            resetName();
         },
         dispose() {
             isDisposed = true;

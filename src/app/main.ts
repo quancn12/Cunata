@@ -675,7 +675,18 @@ export async function bootstrap(
   let loadedExamId: string | null = null;
   let candidateName = 'Thí sinh tự do';
   try { candidateName = localStorage.getItem('cunata:candidate_name') || candidateName; } catch { /* Optional preference. */ }
+  let startCtrl: any = null;
   const roleShell = doc && typeof root.prepend === 'function' ? mountRoleShell(root, router, () => {
+    try {
+      localStorage.removeItem('cunata:candidate_name');
+      localStorage.removeItem('cunata:student_name');
+      localStorage.removeItem('cunata:last_candidate_name');
+      localStorage.removeItem('cunata:student_area_name');
+    } catch {}
+    candidateName = 'Thí sinh tự do';
+    if (startCtrl && typeof startCtrl.resetName === 'function') {
+      try { startCtrl.resetName(); } catch {}
+    }
     router.navigate('student');
     root.querySelector<HTMLInputElement>('#startName')?.focus();
   }, (role) => {
@@ -2402,10 +2413,20 @@ export async function bootstrap(
         try {
           const listRes = await storage.listAttempts(examId, version);
           if (listRes.ok && listRes.value.length > 0) {
-            const drafts = listRes.value.filter((a) => a.phase === 'draft');
+            const matching = listRes.value.filter((a: any) => {
+              const aAssign = a.assignment_id || a.assignmentId;
+              if (currentAssignmentId) {
+                return aAssign === currentAssignmentId;
+              } else {
+                return !aAssign;
+              }
+            });
+            const drafts = matching.filter((a: any) => a.phase === 'draft');
             const target = drafts.length > 0
               ? [...drafts].sort((a, b) => b.startedAt - a.startedAt)[0]
-              : [...listRes.value].sort((a, b) => b.startedAt - a.startedAt)[0];
+              : matching.length > 0
+                ? [...matching].sort((a, b) => b.startedAt - a.startedAt)[0]
+                : null;
             if (target) {
               foundAttemptId = target.attemptId;
               resumedRecord = target;
@@ -2425,9 +2446,12 @@ export async function bootstrap(
             try {
               const parsed = JSON.parse(raw);
               if (parsed && !parsed.submitted && parsed.phase !== 'final') {
-                foundAttemptId = candidateId;
-                resumedRecord = parsed;
-                isDurableRecord = false;
+                const draftAssign = parsed.assignment_id || parsed.assignmentId;
+                if ((currentAssignmentId && draftAssign === currentAssignmentId) || (!currentAssignmentId && !draftAssign)) {
+                  foundAttemptId = candidateId;
+                  resumedRecord = parsed;
+                  isDurableRecord = false;
+                }
               }
             } catch (_) {}
           }
@@ -3397,7 +3421,6 @@ export async function bootstrap(
   const startScreen = root.querySelector('#startScreen') as HTMLElement | null;
 
   // Start screen controller (WEB-contract §19 student area)
-  let startCtrl: any = null;
   if (startScreen) {
     startCtrl = mountStudentArea(startScreen, {
       appsScriptUrl,
@@ -3495,6 +3518,12 @@ export async function bootstrap(
   const resolveAreaRoute = async (state: RouteState, generation: number) => {
     if (state.route === 'teacher') teacherCtrl?.open();
     if (state.route === 'student') {
+      const classCodeToJoin = state.params.lop || state.params.code;
+      if (classCodeToJoin && startCtrl && typeof startCtrl.joinClass === 'function') {
+        try {
+          await startCtrl.joinClass(classCodeToJoin);
+        } catch (_) {}
+      }
       await startCtrl?.refreshList();
       if (generation !== routeGeneration) return;
       if (state.params.exam) {
@@ -3601,7 +3630,9 @@ export async function bootstrap(
           renameSuccess = false;
         }
       }
-      await saveStateToStorage(undefined, isStorageAvailable ? (controller ? renameSuccess : undefined) : false);
+      if (controller) {
+        await saveStateToStorage(undefined, isStorageAvailable ? (controller ? renameSuccess : undefined) : false);
+      }
     } finally {
       isSyncingCandidateName = false;
     }
@@ -3680,14 +3711,16 @@ export async function bootstrap(
   } else if (entryRoute.route === 'exam' && entryRoute.params.examId && !resumableDraft) {
     applyRoute(entryRoute);
     await resolveAreaRoute(entryRoute, ++routeGeneration);
-  } else if (!shouldShowStartScreen) {
+  } else if (entryRoute.route === 'student') {
+    applyRoute(entryRoute);
+    await resolveAreaRoute(entryRoute, ++routeGeneration);
+  } else if (!shouldShowStartScreen && resumableDraft) {
     if (startScreen) startScreen.style.display = 'none';
     await loadOrResumeExam(resumableDraft?.examSnapshot ?? currentExam, false, resumableDraft?.attemptId);
   } else {
-    await loadOrResumeExam(currentExam, false);
     let rememberedRole: 'student' | 'teacher' | null = null;
     try { rememberedRole = readRememberedRole(doc?.defaultView?.localStorage); } catch { /* Optional preference. */ }
-    if (queryExamId || entryRoute.route === 'student' || entryRoute.route === 'exam' || entryRoute.route === 'report') {
+    if (queryExamId || entryRoute.route === 'exam' || entryRoute.route === 'report') {
       router.navigate('student', { ...entryRoute.params, ...(queryExamId ? { exam: queryExamId } : {}) });
       applyRoute(router.getState());
     } else {
