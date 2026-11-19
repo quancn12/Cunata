@@ -39,6 +39,7 @@ interface NodeFs {
 
 interface NodePath {
   dirname(p: string): string;
+  basename(p: string, ext?: string): string;
   resolve(...paths: string[]): string;
   join(...paths: string[]): string;
   relative(from: string, to: string): string;
@@ -281,12 +282,45 @@ export function prepareApiArtifacts(rootDir: string, stagingDir: string): void {
   const catalogPath = path.join(apiDir, 'catalog.json');
   fs.writeFileSync(catalogPath, JSON.stringify(catalogEntries, null, 2) + '\n', 'utf8');
 
+  // 2b. _node.js: self-contained Node builtin bridge for dist/api (WEB-contract §22 & build.test.mjs)
+  const nodeShimPath = path.join(apiDir, '_node.js');
+  const nodeShimContent = `// Self-contained Node builtin bridge for dist/api
+const _get = (m) => (typeof process !== 'undefined' && typeof process.getBuiltinModule === 'function') ? process.getBuiltinModule(m) : undefined;
+const _crypto = _get('node:crypto');
+const _fs = _get('node:fs');
+const _path = _get('node:path');
+const _url = _get('node:url');
+
+export const scryptSync = _crypto?.scryptSync;
+export const randomBytes = _crypto?.randomBytes;
+export const createHash = _crypto?.createHash;
+export const timingSafeEqual = _crypto?.timingSafeEqual;
+export const randomUUID = _crypto?.randomUUID;
+
+export const fs = _fs;
+export const path = _path;
+export const fileURLToPath = _url?.fileURLToPath;
+export const pathToFileURL = _url?.pathToFileURL;
+
+export default {
+  crypto: _crypto,
+  fs: _fs,
+  path: _path,
+  url: _url,
+  scryptSync,
+  randomBytes,
+  createHash,
+  timingSafeEqual,
+  randomUUID,
+  fileURLToPath,
+  pathToFileURL,
+};
+`;
+  fs.writeFileSync(nodeShimPath, nodeShimContent, 'utf8');
+
   // 3. rpc.js: Vercel serverless function entrypoint (CORS & RPC routing)
   const rpcPath = path.join(apiDir, 'rpc.js');
-  if (!fs.existsSync(rpcPath)) {
-    const rpcContent = `import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+  const rpcContent = `import { fs, path, fileURLToPath, pathToFileURL } from './_node.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let cachedHandler = null;
@@ -296,7 +330,7 @@ async function getBackendHandler() {
   try {
     const entries = fs.readdirSync(__dirname);
     for (const name of entries) {
-      if (name.endsWith('.js') && name !== 'rpc.js') {
+      if (name.endsWith('.js') && name !== 'rpc.js' && name !== '_node.js') {
         const full = path.join(__dirname, name);
         try {
           const mod = await import(pathToFileURL(full).href);
@@ -372,7 +406,19 @@ export default async function handler(req, res) {
   res.end(JSON.stringify({ success: false, error: 'NOT_IMPLEMENTED', message: 'API handle is being implemented by worker FX48-api' }));
 }
 `;
-    fs.writeFileSync(rpcPath, rpcContent, 'utf8');
+  fs.writeFileSync(rpcPath, rpcContent, 'utf8');
+
+  // 4. Transform compiled API modules to use relative bridge ./_node.js instead of bare node:* specifiers
+  const jsFiles = collectFiles(apiDir, '.js');
+  for (const jsFile of jsFiles) {
+    if (path.basename(jsFile) === '_node.js') continue;
+    let code = fs.readFileSync(jsFile, 'utf8');
+    const updated = code
+      .replace(/from\s+['"]node:(?:crypto|fs|path|url)['"]/g, "from './_node.js'")
+      .replace(/import\s*\(\s*['"]node:(?:crypto|fs|path|url)['"]\s*\)/g, "import('./_node.js')");
+    if (updated !== code) {
+      fs.writeFileSync(jsFile, updated, 'utf8');
+    }
   }
 }
 

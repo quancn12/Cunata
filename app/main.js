@@ -610,6 +610,13 @@ export async function bootstrap(root, options) {
     const roleShell = doc && typeof root.prepend === 'function' ? mountRoleShell(root, router, () => {
         router.navigate('student');
         root.querySelector('#startName')?.focus();
+    }, (role) => {
+        if (role === 'student') {
+            const startScr = root.querySelector('#startScreen');
+            if (startScr)
+                startScr.style.display = 'block';
+            root.querySelector('#startName')?.focus();
+        }
     }) : null;
     let teacherCtrl = null;
     let onAreaRoute = null;
@@ -3025,9 +3032,11 @@ export async function bootstrap(root, options) {
             clearInterval(reportRestartIntervalId);
             reportRestartIntervalId = null;
         }
+        const currentRememberedRole = readRememberedRole(doc?.defaultView?.localStorage);
+        const isStudentAwaitingRole = state.route === 'student' && currentRememberedRole !== 'student';
         roleShell?.show(state, state.route === 'teacher' ? '' : candidateName === 'Thí sinh tự do' ? '' : candidateName, Boolean(controller));
         const startScr = root.querySelector('#startScreen');
-        if (startScr && state.route !== 'student')
+        if (startScr && (state.route !== 'student' || isStudentAwaitingRole))
             startScr.style.display = 'none';
         if (state.route !== 'teacher')
             teacherCtrl?.close();
@@ -3044,7 +3053,7 @@ export async function bootstrap(root, options) {
                 if (bankModal)
                     bankModal.style.display = 'none';
                 if (startScr)
-                    startScr.style.display = state.route === 'student' ? 'block' : 'none';
+                    startScr.style.display = (state.route === 'student' && !isStudentAwaitingRole) ? 'block' : 'none';
                 break;
             case 'exam':
                 const isStartActive = startScr && startScr.style.display !== 'none';
@@ -3266,6 +3275,24 @@ export async function bootstrap(root, options) {
     const hasExplicitHash = typeof window !== 'undefined' && Boolean(window.location?.hash && window.location.hash !== '#');
     const queryExamId = router.getState().params.examId ?? router.getState().params.exam ?? (!hasExplicitHash ? urlParams.get('exam') : null);
     const isTeacherQuery = urlParams.has('teacher') && !hasExplicitHash;
+    if (!options?.initialExam) {
+        try {
+            const { exams } = await fetchAndMergeExams(appsScriptUrl, appsScriptClient);
+            if (exams.length > 0) {
+                const target = queryExamId ? exams.find((e) => e.id === queryExamId) : (exams.length === 1 ? exams[0] : null);
+                if (target) {
+                    const loadedExam = await fetchExamData(target, appsScriptUrl, appsScriptClient);
+                    if (loadedExam && loadedExam.questions && loadedExam.questions.length > 0) {
+                        currentExam = loadedExam;
+                        if (examTitle) {
+                            examTitle.textContent = currentExam.title;
+                        }
+                    }
+                }
+            }
+        }
+        catch (_) { }
+    }
     let shouldShowStartScreen = !options?.initialExam && options?.initialRoute !== 'exam';
     let resumableDraft = null;
     if (!options?.initialExam && isStorageAvailable && (!queryExamId || queryExamId === currentExam.examId)) {
@@ -3590,8 +3617,7 @@ export async function bootstrap(root, options) {
         await loadOrResumeExam(resumableDraft?.examSnapshot ?? currentExam, false, resumableDraft?.attemptId);
     }
     else {
-        if (examPane)
-            examPane.innerHTML = '';
+        await loadOrResumeExam(currentExam, false);
         let rememberedRole = null;
         try {
             rememberedRole = readRememberedRole(doc?.defaultView?.localStorage);
@@ -3599,6 +3625,7 @@ export async function bootstrap(root, options) {
         catch { /* Optional preference. */ }
         if (queryExamId || entryRoute.route === 'student' || entryRoute.route === 'exam' || entryRoute.route === 'report') {
             router.navigate('student', { ...entryRoute.params, ...(queryExamId ? { exam: queryExamId } : {}) });
+            applyRoute(router.getState());
         }
         else {
             router.navigate(rememberedRole ?? 'chooser');

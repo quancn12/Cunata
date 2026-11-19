@@ -678,6 +678,12 @@ export async function bootstrap(
   const roleShell = doc && typeof root.prepend === 'function' ? mountRoleShell(root, router, () => {
     router.navigate('student');
     root.querySelector<HTMLInputElement>('#startName')?.focus();
+  }, (role) => {
+    if (role === 'student') {
+      const startScr = root.querySelector('#startScreen') as HTMLElement | null;
+      if (startScr) startScr.style.display = 'block';
+      root.querySelector<HTMLInputElement>('#startName')?.focus();
+    }
   }) : null;
   let teacherCtrl: ReturnType<typeof mountTeacherPortal> | null = null;
   let onAreaRoute: ((state: RouteState) => void) | null = null;
@@ -3087,9 +3093,11 @@ export async function bootstrap(
       clearInterval(reportRestartIntervalId);
       reportRestartIntervalId = null;
     }
+    const currentRememberedRole = readRememberedRole(doc?.defaultView?.localStorage);
+    const isStudentAwaitingRole = state.route === 'student' && currentRememberedRole !== 'student';
     roleShell?.show(state, state.route === 'teacher' ? '' : candidateName === 'Thí sinh tự do' ? '' : candidateName, Boolean(controller));
     const startScr = root.querySelector('#startScreen') as HTMLElement | null;
-    if (startScr && state.route !== 'student') startScr.style.display = 'none';
+    if (startScr && (state.route !== 'student' || isStudentAwaitingRole)) startScr.style.display = 'none';
     if (state.route !== 'teacher') teacherCtrl?.close();
     switch (state.route) {
       case 'chooser':
@@ -3099,7 +3107,7 @@ export async function bootstrap(
         if (reportWrapper) reportWrapper.style.display = 'none';
         if (builderModal) builderModal.style.display = 'none';
         if (bankModal) bankModal.style.display = 'none';
-        if (startScr) startScr.style.display = state.route === 'student' ? 'block' : 'none';
+        if (startScr) startScr.style.display = (state.route === 'student' && !isStudentAwaitingRole) ? 'block' : 'none';
         break;
       case 'exam':
         const isStartActive = startScr && startScr.style.display !== 'none';
@@ -3296,6 +3304,24 @@ export async function bootstrap(
   const hasExplicitHash = typeof window !== 'undefined' && Boolean(window.location?.hash && window.location.hash !== '#');
   const queryExamId = router.getState().params.examId ?? router.getState().params.exam ?? (!hasExplicitHash ? urlParams.get('exam') : null);
   const isTeacherQuery = urlParams.has('teacher') && !hasExplicitHash;
+
+  if (!options?.initialExam) {
+    try {
+      const { exams } = await fetchAndMergeExams(appsScriptUrl, appsScriptClient);
+      if (exams.length > 0) {
+        const target = queryExamId ? exams.find((e) => e.id === queryExamId) : (exams.length === 1 ? exams[0] : null);
+        if (target) {
+          const loadedExam = await fetchExamData(target, appsScriptUrl, appsScriptClient);
+          if (loadedExam && loadedExam.questions && loadedExam.questions.length > 0) {
+            currentExam = loadedExam;
+            if (examTitle) {
+              examTitle.textContent = currentExam.title;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+  }
 
   let shouldShowStartScreen = !options?.initialExam && options?.initialRoute !== 'exam';
   let resumableDraft: AttemptRecord | null = null;
@@ -3586,11 +3612,12 @@ export async function bootstrap(
     if (startScreen) startScreen.style.display = 'none';
     await loadOrResumeExam(resumableDraft?.examSnapshot ?? currentExam, false, resumableDraft?.attemptId);
   } else {
-    if (examPane) examPane.innerHTML = '';
+    await loadOrResumeExam(currentExam, false);
     let rememberedRole: 'student' | 'teacher' | null = null;
     try { rememberedRole = readRememberedRole(doc?.defaultView?.localStorage); } catch { /* Optional preference. */ }
     if (queryExamId || entryRoute.route === 'student' || entryRoute.route === 'exam' || entryRoute.route === 'report') {
       router.navigate('student', { ...entryRoute.params, ...(queryExamId ? { exam: queryExamId } : {}) });
+      applyRoute(router.getState());
     } else {
       router.navigate(rememberedRole ?? 'chooser');
       applyRoute(router.getState());

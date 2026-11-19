@@ -1,6 +1,4 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fs, path, fileURLToPath, pathToFileURL } from './_node.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let cachedHandler = null;
@@ -10,7 +8,7 @@ async function getBackendHandler() {
   try {
     const entries = fs.readdirSync(__dirname);
     for (const name of entries) {
-      if (name.endsWith('.js') && name !== 'rpc.js') {
+      if (name.endsWith('.js') && name !== 'rpc.js' && name !== '_node.js') {
         const full = path.join(__dirname, name);
         try {
           const mod = await import(pathToFileURL(full).href);

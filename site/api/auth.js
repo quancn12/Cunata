@@ -1,4 +1,4 @@
-import { scryptSync, randomBytes, createHash, timingSafeEqual } from 'node:crypto';
+import { scryptSync, randomBytes, createHash, timingSafeEqual } from './_node.js';
 export function hashPassword(password, salt) {
     return scryptSync(password, salt, 64).toString('hex');
 }

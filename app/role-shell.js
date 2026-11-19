@@ -10,7 +10,7 @@ export function readRememberedRole(storage) {
     }
 }
 /** The composition shell owns navigation only; each area retains its own DOM and lifecycle. */
-export function mountRoleShell(root, router, onChangeName) {
+export function mountRoleShell(root, router, onChangeName, onRoleSelected) {
     const doc = root.ownerDocument;
     const host = doc.createElement('div');
     host.id = 'appTopBar';
@@ -30,6 +30,9 @@ export function mountRoleShell(root, router, onChangeName) {
             doc.defaultView?.localStorage.setItem(ROLE_STORAGE_KEY, role);
         }
         catch { /* Navigation still works without preference storage. */ }
+        chooser.hidden = true;
+        if (onRoleSelected)
+            onRoleSelected(role);
         router.navigate(role, router.getState().params);
     };
     for (const [role, id, label, detail] of [
@@ -55,7 +58,13 @@ export function mountRoleShell(root, router, onChangeName) {
     host.after(reportStatus);
     const show = (state, name = '', examActive = true) => {
         const exam = state.route === 'exam' && examActive;
-        chooser.hidden = state.route !== 'chooser';
+        let rememberedRole = null;
+        try {
+            rememberedRole = readRememberedRole(doc.defaultView?.localStorage);
+        }
+        catch { }
+        const isStudentAwaitingRole = state.route === 'student' && rememberedRole !== 'student';
+        chooser.hidden = !(state.route === 'chooser' || isStudentAwaitingRole);
         host.hidden = exam;
         if (oldHeader)
             oldHeader.hidden = !exam;

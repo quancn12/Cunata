@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID } from './_node.js';
 import { hashPassword, verifyPassword, generateToken, hashToken, generateClassCode, } from './auth.js';
 import { validatePublishedExam } from './examValidation.js';
 import { parseRational, ratCmp, ratAdd, toCanonicalStr } from './rational.js';

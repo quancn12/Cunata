@@ -9,7 +9,7 @@ export function readRememberedRole(storage: Pick<Storage, 'getItem'> | undefined
 }
 
 /** The composition shell owns navigation only; each area retains its own DOM and lifecycle. */
-export function mountRoleShell(root: HTMLElement, router: Router, onChangeName?: () => void) {
+export function mountRoleShell(root: HTMLElement, router: Router, onChangeName?: () => void, onRoleSelected?: (role: Role) => void) {
   const doc = root.ownerDocument;
   const host = doc.createElement('div'); host.id = 'appTopBar';
   const chooser = doc.createElement('main'); chooser.id = 'roleChooser'; chooser.className = 'ui-page ui-stack role-chooser';
@@ -19,6 +19,8 @@ export function mountRoleShell(root: HTMLElement, router: Router, onChangeName?:
   const choices = doc.createElement('div'); choices.className = 'ui-exam-grid';
   const choose = (role: Role) => {
     try { doc.defaultView?.localStorage.setItem(ROLE_STORAGE_KEY, role); } catch { /* Navigation still works without preference storage. */ }
+    chooser.hidden = true;
+    if (onRoleSelected) onRoleSelected(role);
     router.navigate(role, router.getState().params);
   };
   for (const [role, id, label, detail] of [
@@ -36,7 +38,10 @@ export function mountRoleShell(root: HTMLElement, router: Router, onChangeName?:
   const reportStatus = doc.createElement('div'); reportStatus.className = 'ui-page'; reportStatus.hidden = true; host.after(reportStatus);
   const show = (state: RouteState, name = '', examActive = true) => {
     const exam = state.route === 'exam' && examActive;
-    chooser.hidden = state.route !== 'chooser';
+    let rememberedRole: Role | null = null;
+    try { rememberedRole = readRememberedRole(doc.defaultView?.localStorage); } catch {}
+    const isStudentAwaitingRole = state.route === 'student' && rememberedRole !== 'student';
+    chooser.hidden = !(state.route === 'chooser' || isStudentAwaitingRole);
     host.hidden = exam;
     if (oldHeader) oldHeader.hidden = !exam;
     if (syncStatus && syncParent) syncParent.append(syncStatus);
