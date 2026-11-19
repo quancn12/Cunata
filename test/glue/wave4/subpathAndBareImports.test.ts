@@ -14,6 +14,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { resolve, join } from 'node:path';
+import { assertRuntimeImport } from '../assert-runtime-import.ts';
 
 import { validateBrowserEmit, collectFiles, buildWeb } from '../../../scripts/web-build.ts';
 
@@ -47,14 +48,7 @@ describe('WEB-W4-GLUE — Subpath & Browser Emit Hardening', () => {
 
       const checkSpec = (spec: string) => {
         const trimmed = spec.trim();
-        assert.ok(
-          trimmed.startsWith('./') || trimmed.startsWith('../'),
-          `File ${relFile} has non-relative import: "${trimmed}"`
-        );
-        assert.ok(
-          !trimmed.startsWith('node:'),
-          `File ${relFile} imports node module: "${trimmed}"`
-        );
+        assertRuntimeImport(distDir, file, trimmed);
       };
 
       let match: RegExpExecArray | null;

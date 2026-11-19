@@ -1,0 +1,30 @@
+﻿[
+    {
+        "Path":  "D:\\Cunata\\src\\collect\\appsScript.ts",
+        "Hash":  "476BC64DEF50A3ED8CF667913E51DFD912D43819C94C1D1ED302A0C4D4894B83"
+    },
+    {
+        "Path":  "D:\\Cunata\\src\\collect\\index.ts",
+        "Hash":  "0C7AE3471622CE5F6495AE36BA11CC0127E7454599F2CDE5D52D51A52A5D0199"
+    },
+    {
+        "Path":  "D:\\Cunata\\src\\admin\\main.ts",
+        "Hash":  "176E8E88E743976BF0DE3642973216763B5419379B7F8B59ADF0F660EEC27F63"
+    },
+    {
+        "Path":  "D:\\Cunata\\src\\app\\main.ts",
+        "Hash":  "261E9EAAAB0EF77A3F82926E3D53E798983DEB31C909E4A41F61988F12F57EF4"
+    },
+    {
+        "Path":  "D:\\Cunata\\src\\app\\authoring.ts",
+        "Hash":  "B79BED8D6F2F1B786CED4CDEFA2781EAA115E1EF4570CD386FAA40853E0F1E3B"
+    },
+    {
+        "Path":  "D:\\Cunata\\test\\collect\\apiBase.test.ts",
+        "Hash":  "2A322D7E0F9C39F4B784C467EFDD0BDDD78C0A9F1F393D9F9C41A7D3A467450C"
+    },
+    {
+        "Path":  "D:\\Cunata\\test\\glue\\fx52ApiBrowser.test.ts",
+        "Hash":  "5423372D1BB445B022994A3160AFAE9DA8D5E80A60C72B34A60FC0BEED36390C"
+    }
+]

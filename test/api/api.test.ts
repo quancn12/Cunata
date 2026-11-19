@@ -328,3 +328,67 @@ test('Handle: Public GET actions and method restrictions', async () => {
   assert.equal(adminGet.body.success, false);
   assert.equal(adminGet.body.error, 'METHOD_NOT_ALLOWED');
 });
+
+test('Handle: GET getClass returns class details and assignments for student access (API19 backend)', async () => {
+  const { ctx } = createTestCtx();
+
+  // Create teacher and class
+  const adminRes = await handle({ method: 'POST', body: { action: 'adminLogin', password: ADMIN_PASS } }, ctx);
+  const adminToken = adminRes.body.token as string;
+  await handle(
+    {
+      method: 'POST',
+      body: { action: 'adminCreateTeacher', token: adminToken, username: 'gv_hoa', name: 'Thầy Hòa', password: 'Password123' },
+    },
+    ctx
+  );
+  const tLoginRes = await handle(
+    { method: 'POST', body: { action: 'teacherLogin', username: 'gv_hoa', password: 'Password123' } },
+    ctx
+  );
+  const teacherToken = tLoginRes.body.token as string;
+
+  const classRes = await handle(
+    { method: 'POST', body: { action: 'createClass', token: teacherToken, name: '12 Lí Khóa 2026' } },
+    ctx
+  );
+  const classCode = classRes.body.code as string;
+  const classId = classRes.body.classId as string;
+
+  // Assign catalog exam
+  const assignRes = await handle(
+    {
+      method: 'POST',
+      body: {
+        action: 'assignExam',
+        token: teacherToken,
+        classId,
+        examId: 'static-de10',
+        openAt: new Date(EPOCH - 60000).toISOString(),
+        dueAt: new Date(EPOCH + 3600000).toISOString(),
+      },
+    },
+    ctx
+  );
+  const assignmentId = assignRes.body.assignmentId as string;
+
+  // Student looks up class by code via GET getClass
+  const getClsRes = await handle({ method: 'GET', query: { action: 'getClass', code: classCode } }, ctx);
+  assert.equal(getClsRes.body.success, true);
+  const clsData = getClsRes.body.class as any;
+  assert.equal(clsData.code, classCode);
+  assert.equal(clsData.name, '12 Lí Khóa 2026');
+  assert.equal(clsData.teacherName, 'Thầy Hòa');
+
+  const assignments = getClsRes.body.assignments as any[];
+  assert.equal(assignments.length, 1);
+  assert.equal(assignments[0].assignmentId, assignmentId);
+  assert.equal(assignments[0].examId, 'static-de10');
+  assert.equal(assignments[0].title, 'Đề thi Vật lí 12 — Đề 10');
+  assert.equal(assignments[0].durationMinutes, 50);
+
+  // Nonexistent code -> NOT_FOUND
+  const notFoundRes = await handle({ method: 'GET', query: { action: 'getClass', code: 'NONEXIST' } }, ctx);
+  assert.equal(notFoundRes.body.success, false);
+  assert.equal(notFoundRes.body.error, 'NOT_FOUND');
+});

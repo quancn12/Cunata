@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import { assertRuntimeImport } from '../glue/assert-runtime-import.ts';
 
 import { validateExamVersion, computeExamMax } from '../../src/domain/index.ts';
 
@@ -232,10 +233,7 @@ describe('WEB-FINAL-DOCS — Build Wrapper (scripts/build.js) & Output Verificat
       let match: RegExpExecArray | null;
       while ((match = bareImportRegex.exec(code)) !== null) {
         const spec = match[1]!;
-        if (!spec.startsWith('.') && !spec.startsWith('/')) {
-          assert.ok(false, `File ${path.relative(distDir, file)} contains bare import: ${spec}`);
-        }
-        assert.ok(!spec.startsWith('/'), `File ${path.relative(distDir, file)} contains root-absolute import: ${spec}`);
+        assertRuntimeImport(distDir, file, spec);
       }
     }
   });

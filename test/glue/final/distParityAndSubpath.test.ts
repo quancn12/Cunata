@@ -15,6 +15,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { resolve, join } from 'node:path';
+import { assertRuntimeImport } from '../assert-runtime-import.ts';
 
 import {
   validateBrowserEmit,
@@ -54,14 +55,7 @@ describe('WEB-FINAL-INTEGRATE — Distribution, Subpath & Module Emit Verificati
 
       const checkSpec = (spec: string) => {
         const trimmed = spec.trim();
-        assert.ok(
-          trimmed.startsWith('./') || trimmed.startsWith('../'),
-          `File ${relFile} has non-relative import: "${trimmed}"`
-        );
-        assert.ok(
-          !trimmed.startsWith('node:'),
-          `File ${relFile} imports node module: "${trimmed}"`
-        );
+        assertRuntimeImport(distDir, file, trimmed);
       };
 
       let match: RegExpExecArray | null;

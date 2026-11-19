@@ -15,7 +15,7 @@ import { mountStudentArea } from '../student/index.js';
 import { initAuthoring } from './authoring.js';
 import { mountRoleShell, readRememberedRole } from './role-shell.js';
 import { mountTeacherPortal } from '../teacher/portal.js';
-import { createAppsScriptClient, loadAppConfig, createAppsScriptCollectorPort, enqueue, drainOutbox, resumeOutbox, } from '../collect/index.js';
+import { createAppsScriptClient, loadAppConfig, resolveBackend, createAppsScriptCollectorPort, enqueue, drainOutbox, resumeOutbox, } from '../collect/index.js';
 import { ErrorState } from '../ui/components.js';
 function formatDisplayScore(val) {
     return formatRationalScore(val);
@@ -577,6 +577,7 @@ export async function bootstrap(root, options) {
     const examFileInput = root.querySelector('#examFileInput');
     // Student State
     let appsScriptUrl = '';
+    let backendContentType = 'text/plain;charset=utf-8';
     let currentExam = options?.initialExam ?? DEFAULT_SAMPLE_EXAM;
     if (typeof localStorage !== 'undefined' && !options?.initialExam) {
         try {
@@ -1016,7 +1017,7 @@ export async function bootstrap(root, options) {
         }
         if (isCurrent() && syncText)
             syncText.textContent = 'Đang gửi...';
-        const transport = createAppsScriptCollectorPort(appsScriptUrl.trim(), options?.fetch);
+        const transport = createAppsScriptCollectorPort(appsScriptUrl.trim(), options?.fetch, backendContentType);
         const drainRes = await drainOutbox(key, {
             storage,
             transport,
@@ -3246,8 +3247,10 @@ export async function bootstrap(root, options) {
         }
     };
     // 1. Fetch appsScriptUrl configuration if available
-    appsScriptUrl = (await loadAppConfig()).appsScriptUrl;
-    const appsScriptClient = createAppsScriptClient(appsScriptUrl);
+    const backend = resolveBackend(await loadAppConfig(options?.fetch));
+    appsScriptUrl = backend.url;
+    backendContentType = backend.contentType;
+    const appsScriptClient = createAppsScriptClient(appsScriptUrl, options?.fetch, backendContentType);
     const urlParams = (typeof window !== 'undefined' && window.location && window.location.search)
         ? new URLSearchParams(window.location.search)
         : new URLSearchParams();
@@ -3324,6 +3327,7 @@ export async function bootstrap(root, options) {
         onPublish: (exam) => switchExam(exam, true),
         idGen,
         getAppsScriptUrl: () => appsScriptUrl,
+        getBackendContentType: () => backendContentType,
         getTeacherPassword: () => {
             try {
                 return sessionStorage.getItem('cunata_teacher_pw');

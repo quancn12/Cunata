@@ -39,6 +39,7 @@ import { mountTeacherPortal } from '../teacher/portal.ts';
 import {
   createAppsScriptClient,
   loadAppConfig,
+  resolveBackend,
   createAppsScriptCollectorPort,
   enqueue,
   drainOutbox,
@@ -647,6 +648,7 @@ export async function bootstrap(
 
   // Student State
   let appsScriptUrl = '';
+  let backendContentType: 'application/json' | 'text/plain;charset=utf-8' = 'text/plain;charset=utf-8';
   let currentExam: WebExam = options?.initialExam ?? DEFAULT_SAMPLE_EXAM;
   if (typeof localStorage !== 'undefined' && !options?.initialExam) {
     try {
@@ -1083,7 +1085,7 @@ export async function bootstrap(
 
     if (isCurrent() && syncText) syncText.textContent = 'Đang gửi...';
 
-    const transport = createAppsScriptCollectorPort(appsScriptUrl.trim(), options?.fetch);
+    const transport = createAppsScriptCollectorPort(appsScriptUrl.trim(), options?.fetch, backendContentType);
     const drainRes = await drainOutbox(key, {
       storage,
       transport,
@@ -3274,8 +3276,10 @@ export async function bootstrap(
   };
 
   // 1. Fetch appsScriptUrl configuration if available
-  appsScriptUrl = (await loadAppConfig()).appsScriptUrl;
-  const appsScriptClient = createAppsScriptClient(appsScriptUrl);
+  const backend = resolveBackend(await loadAppConfig(options?.fetch));
+  appsScriptUrl = backend.url;
+  backendContentType = backend.contentType;
+  const appsScriptClient = createAppsScriptClient(appsScriptUrl, options?.fetch, backendContentType);
 
   const urlParams = (typeof window !== 'undefined' && window.location && window.location.search)
     ? new URLSearchParams(window.location.search)
@@ -3352,6 +3356,7 @@ export async function bootstrap(
     onPublish: (exam) => switchExam(exam, true),
     idGen,
     getAppsScriptUrl: () => appsScriptUrl,
+    getBackendContentType: () => backendContentType,
     getTeacherPassword: () => {
       try {
         return sessionStorage.getItem('cunata_teacher_pw');

@@ -1150,6 +1150,9 @@ function classBy(key, value) {
     return tableRows('Lop').find(function (r) { return String(r[key]) === value; }) || null;
 }
 function classResults(code, assignmentId) {
+    // Sheets can return an existing all-digit class code as a number.
+    // Compare the stored identity as text on both sides.
+    code = String(code);
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('KetQua');
     if (!sheet || sheet.getLastRow() <= 1 || sheet.getLastColumn() < 19) return [];
     return sheet.getRange(2, 1, sheet.getLastRow() - 1, 19).getValues().filter(function (r) {

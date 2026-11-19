@@ -8,6 +8,18 @@ import { buildWebResultPayload, resolveScoreDTO } from './export.ts';
  */
 export interface AppConfig {
   appsScriptUrl: string;
+  apiBase?: string;
+}
+
+/** Transport is selected by owner configuration, never by an imported exam. */
+export function resolveBackend(config: AppConfig): {
+  url: string;
+  contentType: 'application/json' | 'text/plain;charset=utf-8';
+} {
+  const apiBase = config.apiBase?.trim();
+  return apiBase
+    ? { url: apiBase, contentType: 'application/json' }
+    : { url: config.appsScriptUrl.trim(), contentType: 'text/plain;charset=utf-8' };
 }
 
 /**
@@ -26,8 +38,10 @@ export async function loadAppConfig(fetchImpl?: typeof fetch): Promise<AppConfig
       return { appsScriptUrl: '' };
     }
     const data = await res.json();
-    if (data && typeof data === 'object' && typeof (data as any).appsScriptUrl === 'string') {
-      return { appsScriptUrl: (data as any).appsScriptUrl.trim() };
+    if (data && typeof data === 'object') {
+      const appsScriptUrl = typeof data.appsScriptUrl === 'string' ? data.appsScriptUrl.trim() : '';
+      const apiBase = typeof data.apiBase === 'string' ? data.apiBase.trim() : '';
+      return apiBase ? { appsScriptUrl, apiBase } : { appsScriptUrl };
     }
     return { appsScriptUrl: '' };
   } catch {
@@ -527,7 +541,8 @@ async function executeAppsScriptRequest<T>(
  */
 export function createAppsScriptClient(
   url: string,
-  fetchImpl?: typeof fetch
+  fetchImpl?: typeof fetch,
+  contentType: 'application/json' | 'text/plain;charset=utf-8' = 'text/plain;charset=utf-8'
 ): AppsScriptClient {
   const trimmedUrl = (url ?? '').trim();
   const configured = trimmedUrl.length > 0;
@@ -705,7 +720,7 @@ export function createAppsScriptClient(
           trimmedUrl,
           {
             method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            headers: { 'Content-Type': contentType },
             body: JSON.stringify({ action: 'teacherLogin', password: arg1 }),
             redirect: 'follow',
           },
@@ -726,7 +741,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify({ action: 'teacherLogin', username: arg1, password: arg2 }),
           redirect: 'follow',
         },
@@ -753,7 +768,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify({ action: 'publishExam', token: tok, password: tok, exam }),
           redirect: 'follow',
         },
@@ -774,7 +789,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify({ action: 'unpublishExam', token: tok, password: tok, examId }),
           redirect: 'follow',
         },
@@ -807,7 +822,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify({ action: 'createClass', token, name }),
           redirect: 'follow',
         },
@@ -828,7 +843,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify({ action: 'listMyClasses', token: tok }),
           redirect: 'follow',
         },
@@ -887,7 +902,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify({ action: 'assignExam', token, classId, examId, openAt, dueAt }),
           redirect: 'follow',
         },
@@ -917,7 +932,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify({ action: 'listAssignments', token, classId }),
           redirect: 'follow',
         },
@@ -1030,7 +1045,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify(body),
           redirect: 'follow',
         },
@@ -1047,7 +1062,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify({ action: 'adminLogin', password }),
           redirect: 'follow',
         },
@@ -1101,7 +1116,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify({ action: 'adminCreateTeacher', token, name, username, password }),
           redirect: 'follow',
         },
@@ -1116,7 +1131,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify({ action: 'adminListTeachers', token: tok }),
           redirect: 'follow',
         },
@@ -1164,7 +1179,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify({ action: 'adminResetPassword', token, username, password }),
           redirect: 'follow',
         },
@@ -1203,7 +1218,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify({ action: 'adminSetTeacherActive', token, username, active }),
           redirect: 'follow',
         },
@@ -1218,7 +1233,7 @@ export function createAppsScriptClient(
         trimmedUrl,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': contentType },
           body: JSON.stringify({ action: 'adminStats', token: tok }),
           redirect: 'follow',
         },
@@ -1260,7 +1275,8 @@ export function createAppsScriptClient(
  */
 export function createAppsScriptCollectorPort(
   url: string,
-  fetchImpl?: typeof fetch
+  fetchImpl?: typeof fetch,
+  contentType: 'application/json' | 'text/plain;charset=utf-8' = 'text/plain;charset=utf-8'
 ): AppsScriptCollectorPort {
   const trimmedUrl = (url ?? '').trim();
   const configured = trimmedUrl.length > 0;
@@ -1345,7 +1361,7 @@ export function createAppsScriptCollectorPort(
         response = await fetchFn(trimmedUrl, {
           method: 'POST',
           headers: {
-            'Content-Type': 'text/plain;charset=utf-8',
+            'Content-Type': contentType,
           },
           body: JSON.stringify(payload),
           signal,

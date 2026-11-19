@@ -1,5 +1,12 @@
 import { CollectorError, computePayloadHash } from './index.js';
 import { buildWebResultPayload, resolveScoreDTO } from './export.js';
+/** Transport is selected by owner configuration, never by an imported exam. */
+export function resolveBackend(config) {
+    const apiBase = config.apiBase?.trim();
+    return apiBase
+        ? { url: apiBase, contentType: 'application/json' }
+        : { url: config.appsScriptUrl.trim(), contentType: 'text/plain;charset=utf-8' };
+}
 /**
  * Nạp cấu hình ứng dụng từ đường dẫn tương đối 'public/config.json'.
  * Theo WEB-contract 17.6: luôn dùng cache: 'no-store' để không bị kẹt bản cũ trong service worker.
@@ -16,8 +23,10 @@ export async function loadAppConfig(fetchImpl) {
             return { appsScriptUrl: '' };
         }
         const data = await res.json();
-        if (data && typeof data === 'object' && typeof data.appsScriptUrl === 'string') {
-            return { appsScriptUrl: data.appsScriptUrl.trim() };
+        if (data && typeof data === 'object') {
+            const appsScriptUrl = typeof data.appsScriptUrl === 'string' ? data.appsScriptUrl.trim() : '';
+            const apiBase = typeof data.apiBase === 'string' ? data.apiBase.trim() : '';
+            return apiBase ? { appsScriptUrl, apiBase } : { appsScriptUrl };
         }
         return { appsScriptUrl: '' };
     }
@@ -264,7 +273,7 @@ async function executeAppsScriptRequest(url, init, fetchFn, transform) {
  * - GET: đọc danh sách / đọc chi tiết đề / tra cứu lớp học theo mã.
  * - POST: text/plain;charset=utf-8, token/mật khẩu trong body, redirect: 'follow', timeout: 15s.
  */
-export function createAppsScriptClient(url, fetchImpl) {
+export function createAppsScriptClient(url, fetchImpl, contentType = 'text/plain;charset=utf-8') {
     const trimmedUrl = (url ?? '').trim();
     const configured = trimmedUrl.length > 0;
     const fetchFn = fetchImpl ?? globalThis.fetch;
@@ -394,7 +403,7 @@ export function createAppsScriptClient(url, fetchImpl) {
             if (arg2 === undefined) {
                 return executeAppsScriptRequest(trimmedUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    headers: { 'Content-Type': contentType },
                     body: JSON.stringify({ action: 'teacherLogin', password: arg1 }),
                     redirect: 'follow',
                 }, fetchFn, () => {
@@ -410,7 +419,7 @@ export function createAppsScriptClient(url, fetchImpl) {
             // New 2-arg call: teacherLogin(username, password)
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify({ action: 'teacherLogin', username: arg1, password: arg2 }),
                 redirect: 'follow',
             }, fetchFn, (data) => {
@@ -428,7 +437,7 @@ export function createAppsScriptClient(url, fetchImpl) {
             const tok = (tokenOrPassword || getTeacherToken() || '').trim();
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify({ action: 'publishExam', token: tok, password: tok, exam }),
                 redirect: 'follow',
             }, fetchFn, (data) => ({
@@ -443,7 +452,7 @@ export function createAppsScriptClient(url, fetchImpl) {
             const tok = (tokenOrPassword || getTeacherToken() || '').trim();
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify({ action: 'unpublishExam', token: tok, password: tok, examId }),
                 redirect: 'follow',
             }, fetchFn, () => ({ ok: true, value: true }));
@@ -469,7 +478,7 @@ export function createAppsScriptClient(url, fetchImpl) {
                 token = getTeacherToken() || '';
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify({ action: 'createClass', token, name }),
                 redirect: 'follow',
             }, fetchFn, (data) => ({
@@ -484,7 +493,7 @@ export function createAppsScriptClient(url, fetchImpl) {
             const tok = (token || getTeacherToken() || '').trim();
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify({ action: 'listMyClasses', token: tok }),
                 redirect: 'follow',
             }, fetchFn, (data) => {
@@ -532,7 +541,7 @@ export function createAppsScriptClient(url, fetchImpl) {
                 token = getTeacherToken() || '';
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify({ action: 'assignExam', token, classId, examId, openAt, dueAt }),
                 redirect: 'follow',
             }, fetchFn, (data) => ({
@@ -557,7 +566,7 @@ export function createAppsScriptClient(url, fetchImpl) {
                 token = getTeacherToken() || '';
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify({ action: 'listAssignments', token, classId }),
                 redirect: 'follow',
             }, fetchFn, (data) => {
@@ -662,7 +671,7 @@ export function createAppsScriptClient(url, fetchImpl) {
             };
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify(body),
                 redirect: 'follow',
             }, fetchFn, (data) => {
@@ -673,7 +682,7 @@ export function createAppsScriptClient(url, fetchImpl) {
         async adminLogin(password) {
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify({ action: 'adminLogin', password }),
                 redirect: 'follow',
             }, fetchFn, (data) => {
@@ -717,7 +726,7 @@ export function createAppsScriptClient(url, fetchImpl) {
                 token = getAdminToken() || '';
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify({ action: 'adminCreateTeacher', token, name, username, password }),
                 redirect: 'follow',
             }, fetchFn, () => ({ ok: true, value: true }));
@@ -726,7 +735,7 @@ export function createAppsScriptClient(url, fetchImpl) {
             const tok = (token || getAdminToken() || '').trim();
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify({ action: 'adminListTeachers', token: tok }),
                 redirect: 'follow',
             }, fetchFn, (data) => {
@@ -765,7 +774,7 @@ export function createAppsScriptClient(url, fetchImpl) {
                 token = getAdminToken() || '';
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify({ action: 'adminResetPassword', token, username, password }),
                 redirect: 'follow',
             }, fetchFn, () => ({ ok: true, value: true }));
@@ -795,7 +804,7 @@ export function createAppsScriptClient(url, fetchImpl) {
                 token = getAdminToken() || '';
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify({ action: 'adminSetTeacherActive', token, username, active }),
                 redirect: 'follow',
             }, fetchFn, () => ({ ok: true, value: true }));
@@ -804,7 +813,7 @@ export function createAppsScriptClient(url, fetchImpl) {
             const tok = (token || getAdminToken() || '').trim();
             return executeAppsScriptRequest(trimmedUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                headers: { 'Content-Type': contentType },
                 body: JSON.stringify({ action: 'adminStats', token: tok }),
                 redirect: 'follow',
             }, fetchFn, (data) => {
@@ -837,7 +846,7 @@ export function createAppsScriptClient(url, fetchImpl) {
  * - Khi server trả success: true (NEWLY_RECORDED hoặc ALREADY_RECORDED), trả về receipt hợp lệ
  *   khớp với validateReceipt trong outbox state machine.
  */
-export function createAppsScriptCollectorPort(url, fetchImpl) {
+export function createAppsScriptCollectorPort(url, fetchImpl, contentType = 'text/plain;charset=utf-8') {
     const trimmedUrl = (url ?? '').trim();
     const configured = trimmedUrl.length > 0;
     const fetchFn = fetchImpl ?? globalThis.fetch;
@@ -901,7 +910,7 @@ export function createAppsScriptCollectorPort(url, fetchImpl) {
                 response = await fetchFn(trimmedUrl, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'text/plain;charset=utf-8',
+                        'Content-Type': contentType,
                     },
                     body: JSON.stringify(payload),
                     signal,

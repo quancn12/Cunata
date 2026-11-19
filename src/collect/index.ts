@@ -32,6 +32,7 @@ import {
 
 import {
   loadAppConfig,
+  resolveBackend,
   createAppsScriptClient,
   createAppsScriptCollectorPort,
   TEACHER_TOKEN_STORAGE_KEY,
@@ -117,6 +118,7 @@ export {
   HttpCollectorTransport,
   createHttpTransport,
   loadAppConfig,
+  resolveBackend,
   createAppsScriptClient,
   createAppsScriptCollectorPort,
   TEACHER_TOKEN_STORAGE_KEY,

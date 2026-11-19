@@ -1,5 +1,5 @@
 /// <reference lib="dom" />
-import { createAppsScriptClient, loadAppConfig, mapErrorToVietnamese, getAdminToken, clearAdminToken } from '../collect/appsScript.js';
+import { createAppsScriptClient, loadAppConfig, resolveBackend, mapErrorToVietnamese, getAdminToken, clearAdminToken } from '../collect/appsScript.js';
 import { Toast, ErrorState } from '../ui/components.js';
 import { createAdminView, renderAdminStats, renderTeacherRows } from './view.js';
 export async function bootstrap(rootElement, clientOverride, doc = document) {
@@ -15,8 +15,8 @@ export async function bootstrap(rootElement, clientOverride, doc = document) {
         doc.head.append(link);
     }
     const client = clientOverride ?? (await (async () => {
-        const config = await loadAppConfig();
-        return createAppsScriptClient(config.appsScriptUrl);
+        const backend = resolveBackend(await loadAppConfig());
+        return createAppsScriptClient(backend.url, undefined, backend.contentType);
     })());
     const view = createAdminView(root, doc);
     let state = {

@@ -603,7 +603,7 @@ export function initAuthoring(root, options) {
                 }
                 const res = await fetch(appsScriptUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    headers: { 'Content-Type': options.getBackendContentType?.() ?? 'text/plain;charset=utf-8' },
                     body: JSON.stringify({
                         action: 'publishExam',
                         password,

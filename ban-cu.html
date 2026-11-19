@@ -3975,7 +3975,8 @@
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        // The browser consumes the Blob asynchronously after the click.
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
       }
     }
 
@@ -5086,7 +5087,7 @@
           } else {
             a.click();
           }
-          URL.revokeObjectURL(url);
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
         }
       } catch (err) {
         if (typeof alert === 'function') alert(err && err.message ? err.message : String(err));
@@ -5613,7 +5614,7 @@
           } else {
             a.click();
           }
-          URL.revokeObjectURL(url);
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
         }
       });
     }

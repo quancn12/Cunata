@@ -7,6 +7,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { assertRuntimeImport } from '../assert-runtime-import.ts';
 
 import { validateBrowserEmit, collectFiles } from '../../../scripts/web-build.ts';
 
@@ -63,10 +64,7 @@ describe('WEB-W3-GLUE — Dist & Subpath (/Cunata/) Compatibility', () => {
       let match: RegExpExecArray | null;
       while ((match = importExportRegex.exec(content)) !== null) {
         const specifier = match[1]!;
-        assert.ok(
-          specifier.startsWith('./') || specifier.startsWith('../'),
-          `File ${relFile} has non-relative import: "${specifier}"`
-        );
+        assertRuntimeImport(distDir, file, specifier);
       }
     }
   });

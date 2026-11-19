@@ -21,6 +21,7 @@ export interface AuthoringOptions {
   readonly onPublish: (exam: WebExam) => void;
   readonly idGen?: () => string;
   readonly getAppsScriptUrl?: () => string;
+  readonly getBackendContentType?: () => 'application/json' | 'text/plain;charset=utf-8';
   readonly getTeacherPassword?: () => string | null;
   readonly onPublishedToWeb?: (exam: WebExam) => void;
 }
@@ -656,7 +657,7 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): Aut
 
         const res = await fetch(appsScriptUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': options.getBackendContentType?.() ?? 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'publishExam',
             password,
