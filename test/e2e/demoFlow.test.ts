@@ -3540,6 +3540,7 @@ describe('E2E & UI Flow Verification — Cunata Web Demo (index.html)', () => {
     const rows: any[][] = [];
     const sheet = {
       getLastRow: () => rows.length,
+      getLastColumn: () => (rows.length > 0 && rows[0] ? rows[0].length : 0),
       appendRow: (r: any[]) => rows.push(r),
       getRange: (start: number, col: number, count: number) => ({
         getValues: () => rows.slice(start - 1, start - 1 + count).map(r => [r[col - 1]])
@@ -3599,6 +3600,7 @@ describe('E2E & UI Flow Verification — Cunata Web Demo (index.html)', () => {
     const rows: any[][] = [];
     const sheet = {
       getLastRow: () => rows.length,
+      getLastColumn: () => (rows.length > 0 && rows[0] ? rows[0].length : 0),
       appendRow: (r: any[]) => rows.push(r),
       getRange: (start: number, col: number, count: number) => ({
         getValues: () => rows.slice(start - 1, start - 1 + count).map(r => [r[col - 1]])
@@ -3681,6 +3683,7 @@ describe('E2E & UI Flow Verification — Cunata Web Demo (index.html)', () => {
     const rows: any[][] = [];
     const sheet = {
       getLastRow: () => rows.length,
+      getLastColumn: () => (rows.length > 0 && rows[0] ? rows[0].length : 0),
       appendRow: (r: any[]) => rows.push(r),
       getRange: (start: number, col: number, count: number) => ({
         getValues: () => rows.slice(start - 1, start - 1 + count).map(r => [r[col - 1]])

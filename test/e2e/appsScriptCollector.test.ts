@@ -119,6 +119,7 @@ describe('Apps Script Collector — CWE-1236 Formula Injection & Idempotency', (
       const rows: any[][] = [];
       const mockSheet = {
         getLastRow: () => rows.length,
+        getLastColumn: () => (rows.length > 0 && rows[0] ? rows[0].length : 0),
         getRange: (startRow: number, startCol: number, numRows: number, numCols: number) => {
           const sCol = (typeof startCol === 'number' && startCol > 0) ? startCol - 1 : 0;
           const nCols = (typeof numCols === 'number' && numCols > 0) ? numCols : 1;
@@ -128,7 +129,7 @@ describe('Apps Script Collector — CWE-1236 Formula Injection & Idempotency', (
           };
         },
         appendRow: (row: any[]) => {
-          rows.push(row);
+          rows.push(row.map(v => typeof v === 'string' && v.startsWith("'") ? v.slice(1) : v));
         }
       };
 
@@ -156,6 +157,7 @@ describe('Apps Script Collector — CWE-1236 Formula Injection & Idempotency', (
 
       const mockSheet = {
         getLastRow: () => rows.length,
+        getLastColumn: () => (rows.length > 0 && rows[0] ? rows[0].length : 0),
         getRange: (startRow: number, startCol: number, numRows: number, numCols: number) => {
           const sCol = (typeof startCol === 'number' && startCol > 0) ? startCol - 1 : 0;
           const nCols = (typeof numCols === 'number' && numCols > 0) ? numCols : 1;
@@ -165,7 +167,7 @@ describe('Apps Script Collector — CWE-1236 Formula Injection & Idempotency', (
           };
         },
         appendRow: (row: any[]) => {
-          rows.push(row);
+          rows.push(row.map(v => typeof v === 'string' && v.startsWith("'") ? v.slice(1) : v));
         }
       };
 
@@ -445,6 +447,7 @@ describe('Apps Script Collector — CWE-1236 Formula Injection & Idempotency', (
 
       const mockSheet = {
         getLastRow: () => rows.length,
+        getLastColumn: () => (rows.length > 0 && rows[0] ? rows[0].length : 0),
         getRange: (startRow: number, startCol: number, numRows: number, numCols: number) => {
           const sCol = (typeof startCol === 'number' && startCol > 0) ? startCol - 1 : 0;
           const nCols = (typeof numCols === 'number' && numCols > 0) ? numCols : 1;
@@ -519,6 +522,7 @@ describe('Apps Script Collector — CWE-1236 Formula Injection & Idempotency', (
       ];
       const mockSheet = {
         getLastRow: () => rows.length,
+        getLastColumn: () => (rows.length > 0 && rows[0] ? rows[0].length : 0),
         getRange: (startRow: number, startCol: number, numRows: number, numCols: number) => {
           if (startCol === 1 && numCols === 1) {
             // findRowByAttemptId uses column 1

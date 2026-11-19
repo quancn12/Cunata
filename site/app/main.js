@@ -1874,8 +1874,57 @@ export async function bootstrap(root, options) {
             showReport();
             return;
         }
-        if (candidateInput && typeof candidateInput.value === 'string' && candidateInput.value.trim()) {
-            candidateName = candidateInput.value.trim();
+        const startNameVal = root.querySelector('#startName')?.value.trim();
+        let storedName = null;
+        try {
+            storedName = localStorage.getItem('cunata:candidate_name') || localStorage.getItem('cunata:last_candidate_name') || localStorage.getItem('cunata_candidate_name');
+        }
+        catch { }
+        const candidateInputVal = (candidateInput && typeof candidateInput.value === 'string' && candidateInput.value.trim()) ? candidateInput.value.trim() : null;
+        const effectiveName = startNameVal
+            || (candidateInputVal && candidateInputVal !== 'Thí sinh tự do' ? candidateInputVal : null)
+            || (storedName && storedName.trim() ? storedName.trim() : null)
+            || candidateInputVal
+            || candidateName;
+        if (effectiveName) {
+            candidateName = effectiveName;
+            if (candidateInput) {
+                candidateInput.value = effectiveName;
+            }
+            try {
+                localStorage.setItem('cunata:candidate_name', effectiveName);
+                localStorage.setItem('cunata:last_candidate_name', effectiveName);
+            }
+            catch { }
+        }
+        if (controller && candidateName) {
+            try {
+                await controller.rename(candidateName);
+            }
+            catch { }
+        }
+        if (!currentClassCode || !currentAssignmentId) {
+            try {
+                const raw = sessionStorage.getItem('cunata:active_assignment') || localStorage.getItem('cunata:active_assignment');
+                if (raw) {
+                    const act = JSON.parse(raw);
+                    if (act && (act.examId === currentExam.examId || !act.examId)) {
+                        if (!currentClassCode && (act.classCode || act.class_code)) {
+                            currentClassCode = (act.classCode || act.class_code).trim().toUpperCase();
+                        }
+                        if (!currentAssignmentId && (act.assignmentId || act.assignment_id)) {
+                            currentAssignmentId = act.assignmentId || act.assignment_id;
+                        }
+                        if (!currentDueAt && (act.dueAt || act.due_at)) {
+                            currentDueAt = act.dueAt || act.due_at;
+                        }
+                        if (!currentOpenAt && (act.openAt || act.open_at)) {
+                            currentOpenAt = act.openAt || act.open_at;
+                        }
+                    }
+                }
+            }
+            catch { }
         }
         // Flush all active short-answer inputs from DOM to ensure responses are up-to-date
         if (root) {
@@ -2164,10 +2213,25 @@ export async function bootstrap(root, options) {
             currentOpenAt = examData.openAt || examData.open_at;
         }
         else if (!requestedAttemptId) {
-            currentClassCode = undefined;
-            currentAssignmentId = undefined;
-            currentDueAt = undefined;
-            currentOpenAt = undefined;
+            let activeAssignment = null;
+            try {
+                const raw = sessionStorage.getItem('cunata:active_assignment') || localStorage.getItem('cunata:active_assignment');
+                if (raw)
+                    activeAssignment = JSON.parse(raw);
+            }
+            catch { }
+            if (activeAssignment && (activeAssignment.examId === examId || !activeAssignment.examId)) {
+                currentClassCode = (activeAssignment.classCode || activeAssignment.class_code)?.trim().toUpperCase();
+                currentAssignmentId = activeAssignment.assignmentId || activeAssignment.assignment_id;
+                currentDueAt = activeAssignment.dueAt || activeAssignment.due_at;
+                currentOpenAt = activeAssignment.openAt || activeAssignment.open_at;
+            }
+            else {
+                currentClassCode = undefined;
+                currentAssignmentId = undefined;
+                currentDueAt = undefined;
+                currentOpenAt = undefined;
+            }
         }
         // Reset previous attempt finalRecord and activeReportModel if switching exam or assignment context
         if (finalRecord &&
@@ -2491,7 +2555,7 @@ export async function bootstrap(root, options) {
             }, attemptId);
             const gateName = root.querySelector('#startName')?.value.trim()
                 || (typeof localStorage !== 'undefined' ? localStorage.getItem('cunata:candidate_name') || localStorage.getItem('cunata:last_candidate_name') : null);
-            if (gateName && (candidateName === 'Thí sinh tự do' || !candidateName || candidateName === 'Học sinh')) {
+            if (gateName) {
                 candidateName = gateName;
             }
             try {
@@ -3180,7 +3244,7 @@ export async function bootstrap(root, options) {
         }
         return false;
     };
-    const switchExam = async (parsed, alreadyConfirmed = false) => {
+    const switchExam = async (parsed, alreadyConfirmed = false, meta) => {
         if (!alreadyConfirmed && hasInProgressAttempt()) {
             if (typeof confirm === 'function') {
                 const ok = confirm('Bạn có bài làm dở. Chuyển sang đề mới sẽ bỏ bài dở này. Tiếp tục?');
@@ -3206,7 +3270,7 @@ export async function bootstrap(root, options) {
             examWrapper.style.display = '';
         loadedExamId = parsed.examId;
         router.navigate('exam', { examId: parsed.examId });
-        await loadOrResumeExam(parsed, false);
+        await loadOrResumeExam(parsed, false, undefined, meta);
     };
     // Exam File Upload Listener (#examFileInput)
     let fileImportPending = false;

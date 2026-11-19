@@ -330,6 +330,8 @@ export function mountStudentArea(container, options = {}) {
             candidateName = val;
             try {
                 localStorage.setItem(STORAGE_NAME_KEY, val);
+                localStorage.setItem('cunata:candidate_name', val);
+                localStorage.setItem('cunata:last_candidate_name', val);
             }
             catch { }
             syncNameState();
@@ -557,6 +559,11 @@ export function mountStudentArea(container, options = {}) {
             }
             inp.readOnly = true;
             inp.setAttribute('readonly', 'readonly');
+            try {
+                inp.dispatchEvent(new Event('input', { bubbles: true }));
+                inp.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            catch { }
         });
         // Update TopBar person display
         const topBarPerson = doc.querySelector('.ui-topbar-person');
@@ -922,6 +929,26 @@ export function mountStudentArea(container, options = {}) {
         practiceWrapper.style.display = 'none';
         practiceGrid.style.display = 'none';
         practiceGrid.textContent = '';
+        for (const exam of publicExams) {
+            const eff = getEffectiveStatus(exam.id, exam.openAt, exam.dueAt);
+            const card = ExamCard({
+                id: exam.id,
+                assignmentId: exam.assignmentId,
+                url: exam.url,
+                title: exam.title || exam.id,
+                subject: exam.subject || 'Đề thi',
+                questionCount: exam.questionCount || 0,
+                durationMinutes: exam.durationMinutes || 50,
+                openAt: exam.openAt ? formatDateVi(exam.openAt) : undefined,
+                dueAt: exam.dueAt ? formatDateVi(exam.dueAt) : undefined,
+                status: eff.status,
+                score: eff.score,
+                onClick: () => {
+                    openPreview(exam);
+                },
+            }, doc);
+            practiceGrid.appendChild(card);
+        }
     }
     async function loadPublicExams() {
         let staticExams = [];

@@ -2,11 +2,9 @@
   "questionCount": 60,
   "rawLength": 106256,
   "response": {
-    "success": true,
-    "attempt_id": "attempt-mwngb8s0-m22e",
-    "status": "NEWLY_RECORDED",
-    "message": "Ghi nhận kết quả bài thi thành công",
-    "recorded_at": "2026-11-19T11:12:51.724Z"
+    "success": false,
+    "error": "SERVER_ERROR",
+    "message": "Không thể xử lý yêu cầu, vui lòng thử lại sau"
   },
-  "syncText": "Đã gửi"
+  "syncText": "Đang gửi..."
 }

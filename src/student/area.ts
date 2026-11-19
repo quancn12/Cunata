@@ -19,6 +19,9 @@ export interface StudentAreaExamEntry {
   url?: string;
   source?: 'static' | 'teacher';
   description?: string;
+  assignmentId?: string;
+  openAt?: string;
+  dueAt?: string;
 }
 
 export interface StudentAssignment {
@@ -410,6 +413,8 @@ export function mountStudentArea(
       candidateName = val;
       try {
         localStorage.setItem(STORAGE_NAME_KEY, val);
+        localStorage.setItem('cunata:candidate_name', val);
+        localStorage.setItem('cunata:last_candidate_name', val);
       } catch {}
       syncNameState();
     },
@@ -659,6 +664,10 @@ export function mountStudentArea(
       }
       inp.readOnly = true;
       inp.setAttribute('readonly', 'readonly');
+      try {
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+        inp.dispatchEvent(new Event('change', { bubbles: true }));
+      } catch {}
     });
 
     // Update TopBar person display
@@ -1030,6 +1039,30 @@ export function mountStudentArea(
     practiceWrapper.style.display = 'none';
     practiceGrid.style.display = 'none';
     practiceGrid.textContent = '';
+
+    for (const exam of publicExams) {
+      const eff = getEffectiveStatus(exam.id, exam.openAt, exam.dueAt);
+      const card = ExamCard(
+        {
+          id: exam.id,
+          assignmentId: exam.assignmentId,
+          url: exam.url,
+          title: exam.title || exam.id,
+          subject: exam.subject || 'Đề thi',
+          questionCount: exam.questionCount || 0,
+          durationMinutes: exam.durationMinutes || 50,
+          openAt: exam.openAt ? formatDateVi(exam.openAt) : undefined,
+          dueAt: exam.dueAt ? formatDateVi(exam.dueAt) : undefined,
+          status: eff.status,
+          score: eff.score,
+          onClick: () => {
+            openPreview(exam);
+          },
+        },
+        doc
+      );
+      practiceGrid.appendChild(card);
+    }
   }
 
   async function loadPublicExams(): Promise<void> {
