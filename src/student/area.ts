@@ -73,6 +73,7 @@ export interface StudentAreaController {
   joinClass(code: string): Promise<boolean>;
   setCandidateName(name: string): void;
   getCandidateName(): string;
+  resetName(): void;
   dispose(): void;
 }
 
@@ -449,17 +450,33 @@ export function mountStudentArea(
   greetingName.textContent = candidateName;
   appendChildren(greetingEl, doc.createTextNode('Học sinh: '), greetingName);
 
+  function resetName(): void {
+    candidateName = '';
+    try {
+      localStorage.removeItem(STORAGE_NAME_KEY);
+      localStorage.removeItem('cunata:candidate_name');
+      localStorage.removeItem('cunata:student_name');
+      localStorage.removeItem('cunata:last_candidate_name');
+    } catch {}
+    nameInput.value = '';
+    btnNameContinue.disabled = true;
+    syncNameState();
+    container.style.display = '';
+    const startScreen = doc.querySelector('#startScreen') as HTMLElement | null;
+    if (startScreen) startScreen.style.display = '';
+    const exWrapper = doc.querySelector('#examWrapper') as HTMLElement | null;
+    if (exWrapper) exWrapper.style.display = 'none';
+    const repWrapper = doc.querySelector('#reportWrapper') as HTMLElement | null;
+    if (repWrapper) repWrapper.style.display = 'none';
+    nameInput.focus();
+  }
+
   const btnChangeName = Button({
     id: 'btnChangeName',
     label: 'Đổi tên',
     variant: 'ghost',
     onClick: () => {
-      candidateName = '';
-      try { localStorage.removeItem(STORAGE_NAME_KEY); } catch {}
-      nameInput.value = '';
-      btnNameContinue.disabled = true;
-      syncNameState();
-      nameInput.focus();
+      resetName();
     },
   }, doc);
 
@@ -1154,21 +1171,31 @@ export function mountStudentArea(
   }
 
   async function joinClassByCode(code: string): Promise<boolean> {
-    const config = await loadAppConfig();
-    const url = options.appsScriptUrl || config.appsScriptUrl;
-    if (!url) {
-      showClassCodeError('Chức năng máy chủ Google Apps Script chưa cấu hình.');
-      return false;
-    }
-
     try {
-      const reqUrl = `${url}?action=getClass&code=${encodeURIComponent(code)}&_t=${Date.now()}`;
-      const res = await fetch(reqUrl, { cache: 'no-store' });
-      if (!res.ok) {
-        showClassCodeError('Lỗi kết nối máy chủ.');
-        return false;
+      let data: any = null;
+      if (options.client && options.client.configured) {
+        const res = await options.client.getClass(code);
+        if (res.ok) {
+          data = { success: true, class: (res.value as any).class || res.value, assignments: (res.value as any).assignments || [] };
+        } else {
+          showClassCodeError(res.message || 'Mã lớp không chính xác hoặc không tồn tại.');
+          return false;
+        }
+      } else {
+        const config = await loadAppConfig();
+        const url = options.appsScriptUrl || config.appsScriptUrl;
+        if (!url) {
+          showClassCodeError('Chức năng máy chủ Google Apps Script chưa cấu hình.');
+          return false;
+        }
+        const reqUrl = `${url}?action=getClass&code=${encodeURIComponent(code)}&_t=${Date.now()}`;
+        const res = await fetch(reqUrl, { cache: 'no-store' });
+        if (!res.ok) {
+          showClassCodeError('Lỗi kết nối máy chủ.');
+          return false;
+        }
+        data = await res.json();
       }
-      const data = await res.json();
       if (!data || !data.success || !data.class) {
         showClassCodeError(data?.message || 'Mã lớp không chính xác hoặc không tồn tại.');
         return false;
@@ -1264,23 +1291,7 @@ export function mountStudentArea(
   const onDocClick = (e: Event) => {
     const target = (e.target as HTMLElement | null)?.closest?.('#btnChangeName');
     if (target) {
-      candidateName = '';
-      try {
-        localStorage.removeItem(STORAGE_NAME_KEY);
-        localStorage.removeItem('cunata:candidate_name');
-        localStorage.removeItem('cunata:last_candidate_name');
-      } catch {}
-      nameInput.value = '';
-      btnNameContinue.disabled = true;
-      syncNameState();
-      container.style.display = '';
-      const startScreen = doc.querySelector('#startScreen') as HTMLElement | null;
-      if (startScreen) startScreen.style.display = '';
-      const exWrapper = doc.querySelector('#examWrapper') as HTMLElement | null;
-      if (exWrapper) exWrapper.style.display = 'none';
-      const repWrapper = doc.querySelector('#reportWrapper') as HTMLElement | null;
-      if (repWrapper) repWrapper.style.display = 'none';
-      nameInput.focus();
+      resetName();
     }
   };
   doc.addEventListener('click', onDocClick);
@@ -1340,11 +1351,26 @@ export function mountStudentArea(
     },
     setCandidateName(name: string) {
       candidateName = name;
-      try { localStorage.setItem(STORAGE_NAME_KEY, name); } catch {}
+      try {
+        if (!name) {
+          localStorage.removeItem(STORAGE_NAME_KEY);
+          localStorage.removeItem('cunata:candidate_name');
+          localStorage.removeItem('cunata:student_name');
+          localStorage.removeItem('cunata:last_candidate_name');
+        } else {
+          localStorage.setItem(STORAGE_NAME_KEY, name);
+          localStorage.setItem('cunata:candidate_name', name);
+        }
+      } catch {}
+      nameInput.value = name;
+      btnNameContinue.disabled = !name.trim();
       syncNameState();
     },
     getCandidateName() {
       return candidateName;
+    },
+    resetName() {
+      resetName();
     },
     dispose() {
       isDisposed = true;
