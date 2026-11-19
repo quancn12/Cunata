@@ -182,6 +182,10 @@ export function validateBrowserEmit(targetDir: string): EmitValidationResult {
       if (trimmed.startsWith('./') || trimmed.startsWith('../')) {
         return;
       }
+      // In dist/api, standard Node built-in imports are permitted
+      if (relFile.startsWith('api/') && trimmed.startsWith('node:')) {
+        return;
+      }
       // Bare import or absolute or node: module
       bareImports.push(`${relFile} -> "${trimmed}"`);
     };
@@ -245,6 +249,134 @@ export function validateBrowserEmit(targetDir: string): EmitValidationResult {
 }
 
 /**
+ * Prepares serverless API artifacts in staging/api (WEB-contract §22)
+ * - package.json: Vercel ES module declaration
+ * - catalog.json: server-side catalog derived from public/exams/index.json
+ * - rpc.js: Vercel serverless function entrypoint (CORS & RPC routing)
+ */
+export function prepareApiArtifacts(rootDir: string, stagingDir: string): void {
+  const apiDir = path.join(stagingDir, 'api');
+  fs.mkdirSync(apiDir, { recursive: true });
+
+  // 1. package.json: Vercel ES module declaration
+  const pkgPath = path.join(apiDir, 'package.json');
+  fs.writeFileSync(pkgPath, JSON.stringify({ type: 'module' }, null, 2) + '\n', 'utf8');
+
+  // 2. catalog.json: server-side catalog derived from public/exams/index.json
+  const manifestPath = path.join(rootDir, 'public/exams/index.json');
+  let catalogEntries: any[] = [];
+  if (fs.existsSync(manifestPath)) {
+    try {
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      const rawList = Array.isArray(manifest) ? manifest : (manifest.exams || []);
+      catalogEntries = rawList.map((e: any) => ({
+        id: String(e.id || ''),
+        title: String(e.title || ''),
+        subject: String(e.subject || ''),
+        questionCount: Number(e.questionCount) || 0,
+        durationMinutes: Number(e.durationMinutes) || 50,
+      }));
+    } catch {}
+  }
+  const catalogPath = path.join(apiDir, 'catalog.json');
+  fs.writeFileSync(catalogPath, JSON.stringify(catalogEntries, null, 2) + '\n', 'utf8');
+
+  // 3. rpc.js: Vercel serverless function entrypoint (CORS & RPC routing)
+  const rpcPath = path.join(apiDir, 'rpc.js');
+  if (!fs.existsSync(rpcPath)) {
+    const rpcContent = `import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+let cachedHandler = null;
+
+async function getBackendHandler() {
+  if (cachedHandler !== null) return cachedHandler;
+  try {
+    const entries = fs.readdirSync(__dirname);
+    for (const name of entries) {
+      if (name.endsWith('.js') && name !== 'rpc.js') {
+        const full = path.join(__dirname, name);
+        try {
+          const mod = await import(pathToFileURL(full).href);
+          if (typeof mod.handle === 'function') {
+            cachedHandler = mod.handle;
+            return cachedHandler;
+          }
+        } catch {}
+      }
+    }
+  } catch {}
+  cachedHandler = false;
+  return null;
+}
+
+export default async function handler(req, res) {
+  const origin = req.headers?.origin || req.headers?.Origin || '*';
+  res.setHeader('access-control-allow-origin', origin);
+  res.setHeader('access-control-allow-methods', 'GET, POST, OPTIONS');
+  res.setHeader('access-control-allow-headers', req.headers?.['access-control-request-headers'] || 'content-type, authorization');
+  res.setHeader('access-control-max-age', '86400');
+
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 204;
+    res.end();
+    return;
+  }
+
+  const backend = await getBackendHandler();
+  if (backend) {
+    try {
+      let body = req.body;
+      if (!body && req.method === 'POST') {
+        let raw = '';
+        for await (const chunk of req) raw += chunk;
+        try { body = JSON.parse(raw); } catch { body = {}; }
+      }
+      const u = new URL(req.url || '/', 'http://127.0.0.1');
+      const query = Object.fromEntries(u.searchParams);
+      const ctx = {
+        now: () => Date.now(),
+        adminPassword: process.env.ADMIN_PASSWORD,
+        env: process.env,
+      };
+      const result = await backend({ method: req.method, query, body, headers: req.headers }, ctx);
+      res.statusCode = result.status || 200;
+      res.setHeader('content-type', 'application/json; charset=utf-8');
+      res.end(JSON.stringify(result.body));
+      return;
+    } catch (err) {
+      res.statusCode = 500;
+      res.setHeader('content-type', 'application/json; charset=utf-8');
+      res.end(JSON.stringify({ success: false, error: 'SERVER_ERROR', message: err.message }));
+      return;
+    }
+  }
+
+  const u = new URL(req.url || '/', 'http://127.0.0.1');
+  if (req.method === 'GET' && u.searchParams.get('action') === 'listExams') {
+    try {
+      const catPath = path.join(__dirname, 'catalog.json');
+      if (fs.existsSync(catPath)) {
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json; charset=utf-8');
+        res.end(fs.readFileSync(catPath, 'utf8'));
+        return;
+      }
+    } catch {}
+  }
+
+  res.statusCode = 200;
+  res.setHeader('content-type', 'application/json; charset=utf-8');
+  res.end(JSON.stringify({ success: false, error: 'NOT_IMPLEMENTED', message: 'API handle is being implemented by worker FX48-api' }));
+}
+`;
+    fs.writeFileSync(rpcPath, rpcContent, 'utf8');
+  }
+}
+
+/**
  * Prepares the shell and static assets inside the staging directory:
  * - Adapts src/app/shell.html to staging/index.html with relative links
  * - Copies styles/style.css to staging/styles/style.css
@@ -299,6 +431,9 @@ export function prepareShellAndAssets(rootDir: string, stagingDir: string): void
     copyDirectoryRecursive(publicSrcDir, publicDestDir);
   }
 
+  // 3b. Prepare serverless API artifacts in dist/api (WEB-contract §22)
+  prepareApiArtifacts(rootDir, stagingDir);
+
   // 4. Compute deterministic build digest and prepare versioned Service Worker
   const buildDigest = computeBuildDigest(stagingDir);
   const cacheVersion = 'v-' + buildDigest;
@@ -315,7 +450,7 @@ export function prepareShellAndAssets(rootDir: string, stagingDir: string): void
 
   for (const filePath of allStagedFiles) {
     const rel = path.relative(stagingDir, filePath).replace(/\\/g, '/');
-    if (rel === 'service-worker.js') continue;
+    if (rel === 'service-worker.js' || rel.startsWith('api/')) continue;
     if (seenUrls.has(rel)) continue;
     seenUrls.add(rel);
 

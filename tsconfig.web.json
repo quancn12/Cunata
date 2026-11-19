@@ -9,5 +9,6 @@
     "allowImportingTsExtensions": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["src", "scripts", "test"]
+  "include": ["src", "scripts", "test"],
+  "exclude": ["src/app/ambient-node.d.ts"]
 }

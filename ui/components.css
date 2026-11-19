@@ -107,31 +107,42 @@ textarea.ui-control { min-height: calc(var(--target) * 3); resize: vertical; }
 
 /* Normalized font sizes for exam view & shared components (DESIGN.md token scale) */
 .candidate-input-wrap label { font-size: var(--fs-sm); }
+.candidate-input { font-size: var(--fs-md); }
 .timer-box { font-size: var(--fs-md); }
+.exam-meta-title, #examTitle { font-size: var(--fs-md); }
+.section-desc { font-size: var(--fs-sm); }
+.section-count { font-size: var(--fs-xs); }
 .palette-title { font-size: var(--fs-md); }
-.palette-progress-text { font-size: var(--fs-xs); }
-.palette-item.flagged::after, .swatch-flagged { font-size: var(--fs-xs); }
+.palette-progress, .palette-progress-text { font-size: var(--fs-xs); }
+.palette-btn, .palette-item { font-size: var(--fs-sm); }
+.palette-btn.flagged::after, .palette-item.flagged::after, .swatch-flagged { font-size: var(--fs-xs) !important; }
+.palette-legend, .legend-item { font-size: var(--fs-xs); }
 .section-banner h2 { font-size: var(--fs-lg); }
 .question-num-tag { font-size: var(--fs-sm); }
+.point-badge, .flag-toggle-btn { font-size: var(--fs-xs); }
+.question-title, span.question-title { font-size: var(--fs-md); }
 .option-letter { font-size: var(--fs-xs); }
-.statement-label { font-size: var(--fs-sm); }
+.statement-label, .statement-col-header { font-size: var(--fs-sm); }
 .question-stem, .question-stem p, .question-stem span { font-size: var(--fs-md); }
 .option-text, .option-text p, .option-text span { font-size: var(--fs-md); }
 .statement-text, .statement-text p, .statement-text span { font-size: var(--fs-md); }
 .tf-btn { font-size: var(--fs-xs); }
 .quick-keys-bar span, .quick-keys-bar button, .quick-key-btn { font-size: var(--fs-xs) !important; }
+.explanation-box, .explanation-content, .explanation-content p { font-size: var(--fs-sm); }
+.explanation-title { font-size: var(--fs-sm); font-weight: 600; }
 .report-subtitle { font-size: var(--fs-sm); }
 .summary-card-label { font-size: var(--fs-xs); }
 .summary-card-score { font-size: var(--fs-xl); }
 .modal-title { font-size: var(--fs-lg); }
 .modal-body { font-size: var(--fs-md); }
+#btnCancelSubmit, #btnConfirmSubmit { font-size: var(--fs-md); }
 .builder-section-title { font-size: var(--fs-md); }
 .form-group label { font-size: var(--fs-sm); }
 .builder-score-card .value { font-size: var(--fs-lg); }
 
 /* Touch target minimum 44x44px for interactive elements (DESIGN.md / WCAG) */
 .candidate-input { min-height: var(--target); }
-#btnOpenExamList, #btnSubmit, #btnCancelSubmit, #btnConfirmSubmit, .modal-actions button, .modal-actions .btn-secondary, .modal-actions .btn-submit { min-height: var(--target); min-width: var(--target); }
+#btnOpenExamList, #btnSubmit, #btnCancelSubmit, #btnConfirmSubmit, #btnDownloadReportHtml, #btnRestart, .modal-actions button, .modal-actions .btn-secondary, .modal-actions .btn-submit, .report-actions button, .report-actions a { min-height: var(--target) !important; min-width: var(--target) !important; box-sizing: border-box !important; }
 .palette-btn, .palette-item { min-height: var(--target); min-width: var(--target); }
 .tf-btn { min-height: var(--target); min-width: var(--target); }
 .quick-key-btn { min-height: var(--target); min-width: var(--target); }
@@ -144,7 +155,7 @@ textarea.ui-control { min-height: calc(var(--target) * 3); resize: vertical; }
   border: var(--border-width) solid var(--c-border);
 }
 .question-card .question-title, span.question-title {
-  color: var(--c-text);
+  color: var(--c-text) !important;
 }
 .question-stem, .question-stem p {
   color: var(--c-text);
@@ -216,25 +227,36 @@ textarea.ui-control { min-height: calc(var(--target) * 3); resize: vertical; }
 }
 @media (max-width: 639px) {
   .modal-overlay {
-    padding: var(--sp-2);
-    align-items: flex-end;
+    padding: var(--sp-2) !important;
+    align-items: flex-end !important;
+    box-sizing: border-box !important;
   }
   .modal-content {
-    width: 100%;
-    padding: var(--sp-4);
-    border-radius: var(--r-lg) var(--r-lg) 0 0;
-    padding-bottom: max(var(--sp-4), env(safe-area-inset-bottom));
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: var(--sp-4) !important;
+    border-radius: var(--r-lg) var(--r-lg) 0 0 !important;
+    padding-bottom: max(var(--sp-4), env(safe-area-inset-bottom)) !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
   }
   .modal-actions {
-    flex-direction: column-reverse;
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    gap: var(--sp-2) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .modal-actions button,
   .modal-actions .btn-secondary,
   .modal-actions .btn-submit,
   #btnCancelSubmit,
   #btnConfirmSubmit {
-    width: 100%;
-    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: var(--target) !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
   }
 }
 

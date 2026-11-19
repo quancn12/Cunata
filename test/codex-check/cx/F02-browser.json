@@ -1,0 +1,10 @@
+{
+  "questionCount": 60,
+  "rawLength": 106256,
+  "response": {
+    "success": false,
+    "error": "SERVER_ERROR",
+    "message": "Không thể xử lý yêu cầu, vui lòng thử lại sau"
+  },
+  "syncText": "Đang gửi..."
+}

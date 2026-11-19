@@ -11,5 +11,6 @@
     "verbatimModuleSyntax": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["src", "test"]
+  "include": ["src", "test"],
+  "exclude": ["src/app/ambient-node.d.ts"]
 }
