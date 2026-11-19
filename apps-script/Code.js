@@ -226,15 +226,7 @@ function formatRecordRow(data) {
     const maxTotal = sanitizeSheetCell((_3 = (_2 = data.maxTotal) !== null && _2 !== void 0 ? _2 : data.max_total) !== null && _3 !== void 0 ? _3 : '0');
     const policyVersion = sanitizeSheetCell(String(data.policy_version || data.ruleSetId || 'custom-v1'));
     // Toàn bộ đáp án thô được làm sạch
-    let rawJson = '';
-    if (data.raw_answers_json) {
-        rawJson = typeof data.raw_answers_json === 'string'
-            ? data.raw_answers_json
-            : JSON.stringify(data.raw_answers_json);
-    }
-    else if (data.responses) {
-        rawJson = JSON.stringify(data.responses);
-    }
+    const rawJson = resultAnswersJson(data);
     const sanitizedRawJson = sanitizeSheetCell(rawJson);
     return [
         attemptId,
@@ -257,9 +249,33 @@ function formatRecordRow(data) {
     ];
 }
 // Force literal text, including numeric strings and leading apostrophes.
-// Keep the existing result collector's encoding separate for compatibility.
 function examTextCell(value) {
     return "'" + String(value);
+}
+function resultAnswersJson(data) {
+    var raw = data.raw_answers_json || data.responses || '';
+    return typeof raw === 'string' ? raw : JSON.stringify(raw);
+}
+// Keep A-S compatible with existing result sheets. Q stores the first chunk;
+// T records the chunk count and U onward store continuations for large answers.
+function resultAnswerChunks(data) {
+    var raw = resultAnswersJson(data);
+    var chunks = [];
+    for (var offset = 0; offset < raw.length; offset += 40000) chunks.push(raw.slice(offset, offset + 40000));
+    return chunks.length ? chunks : [''];
+}
+function readResultAnswers(sheet, row, firstChunk) {
+    if (sheet.getLastColumn() < 20) return firstChunk;
+    var count = sheet.getRange(row, 20, 1, 1).getValues()[0][0];
+    if (count === '' || count === undefined || count === null) return firstChunk;
+    if (!Number.isInteger(count) || count < 2 || count > sheet.getLastColumn() - 18) {
+        throw new Error('Số khúc đáp án không hợp lệ');
+    }
+    var tail = sheet.getRange(row, 21, 1, count - 1).getValues()[0];
+    if (!tail || tail.length !== count - 1 || tail.some(function (part) { return typeof part !== 'string' || !part.length; })) {
+        throw new Error('Thiếu khúc đáp án');
+    }
+    return firstChunk + tail.join('');
 }
 function jsonOutput(value) {
     return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
@@ -829,7 +845,7 @@ function doPost(e) {
                     const exTotal = getColVal(14);
                     const exMax = getColVal(15);
                     const exPolicy = getColVal(16);
-                    const exRaw = getColVal(17);
+                    const exRaw = readResultAnswers(sheet, existingRow, getColVal(17));
                     const newRaw = cleanCell(expectedRow[16]);
                     if (classCode || (typeof sheet.getLastColumn === 'function' && sheet.getLastColumn() >= 19)) {
                         if (getColVal(18) !== classCode || getColVal(19) !== assignmentId) conflict = true;
@@ -907,7 +923,16 @@ function doPost(e) {
             var assignmentError = validateSubmissionAssignment(classCode, assignmentId, examId);
             if (assignmentError) return jsonOutput(assignmentError);
             const row = formatRecordRow(canonicalPayload);
-            sheet.appendRow(row.concat([examTextCell(classCode), examTextCell(assignmentId)]));
+            // A literal leading apostrophe belongs to the student's name.
+            row[3] = examTextCell(canonicalPayload.candidate_display);
+            var chunks = resultAnswerChunks(canonicalPayload);
+            row[16] = examTextCell(chunks[0]);
+            var storedRow = row.concat([examTextCell(classCode), examTextCell(assignmentId)]);
+            if (chunks.length > 1) {
+                sheet.getRange(1, 20, 1, chunks.length).setValues([['raw_answers_chunks'].concat(chunks.slice(1).map(function (_, index) { return 'raw_answers_chunk_' + (index + 2); }))]);
+                storedRow = storedRow.concat([chunks.length], chunks.slice(1).map(examTextCell));
+            }
+            sheet.appendRow(storedRow);
             SpreadsheetApp.flush();
             return ContentService.createTextOutput(JSON.stringify({
                 success: true,

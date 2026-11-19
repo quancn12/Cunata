@@ -280,7 +280,8 @@ function renderInlineMath(text: string): string {
     let f = formula;
     f = f.replace(/\\vec\{([a-zA-Z])\}/g, '$1&#8407;');
     f = f.replace(/\\int_\{([^}]+)\}\^\{([^}]+)\}/g, '&int;<sub>$1</sub><sup>$2</sup> ');
-    f = f.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)');
+    // Both operands must retain their grouping when a fraction becomes inline text.
+    f = f.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '(($1)/($2))');
     f = f.replace(/\\sqrt\{([^}]+)\}/g, '&radic;($1)');
     f = f.replace(/\\pm/g, '&plusmn;');
     f = f.replace(/\\neq/g, '&ne;');
@@ -289,8 +290,13 @@ function renderInlineMath(text: string): string {
     f = f.replace(/\\infty/g, '&#8734;');
     f = f.replace(/\\in(?![a-zA-Z])/g, ' &isin; ');
     f = f.replace(/\\Omega/g, '&Omega;');
+    f = f.replace(/\\%/g, '%');
     f = f.replace(/\^([0-9a-zA-Z+-]+)/g, '<sup>$1</sup>');
     f = f.replace(/_([0-9a-zA-Z+-]+)/g, '<sub>$1</sub>');
+    // Keep unsupported notation intact instead of presenting a partial conversion as math.
+    if (/\\[a-zA-Z]/.test(f)) {
+      return '<span class="math-expr">LaTeX (nguồn): ' + formula + '</span>';
+    }
     return '<span class="math-expr">' + f + '</span>';
   });
   return html;
@@ -1795,15 +1801,18 @@ export async function bootstrap(
         };
         if (inputEl) {
           updateAria(inputEl.value);
-          const handleInputCommit = async (val: string) => {
+          let truncatedInput = false;
+          const handleInputCommit = async (val: string, edited = false) => {
             if (isSubmitted) return;
             if (val.length > 4) {
+              truncatedInput = true;
               setAttr(inputEl, 'aria-invalid', 'true');
               warningEl.textContent = 'Đã cắt còn tối đa 4 ký tự';
               warningEl.style.display = '';
               val = val.slice(0, 4);
               inputEl.value = val;
-            } else {
+            } else if (!truncatedInput || edited) {
+              truncatedInput = false;
               const isValid = /^[0-9,-]{0,4}$/.test(val);
               if (isValid) {
                 removeAttr(inputEl, 'aria-invalid');
@@ -1824,7 +1833,7 @@ export async function bootstrap(
             updatePalette();
           };
           inputEl.addEventListener('input', (e: any) => {
-            handleInputCommit(e.target.value);
+            handleInputCommit(e.target.value, true);
           });
           inputEl.addEventListener('change', (e: any) => {
             handleInputCommit(e.target.value);
