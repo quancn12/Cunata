@@ -1502,6 +1502,8 @@ export async function bootstrap(
         else if (q.kind === 'II' && res && Object.keys(res).length === 4) isDone = true;
         else if (q.kind === 'III' && typeof res === 'string' && res.length > 0) isDone = true;
         if (isDone) btn.classList.add('answered');
+        btn.setAttribute('aria-pressed', isDone ? 'true' : 'false');
+        btn.setAttribute('aria-label', `Câu ${idx + 1} (${isDone ? 'Đã làm' : 'Chưa làm'})`);
         btn.addEventListener('click', () => {
           const card = root.querySelector(`[id="qcard-${q.questionVersionId}"]`);
           if (card && typeof (card as HTMLElement).scrollIntoView === 'function') {
@@ -1551,6 +1553,8 @@ export async function bootstrap(
       if (q.kind === 'I') {
         const optGrid = docObj.createElement('div');
         optGrid.className = 'option-grid';
+        optGrid.setAttribute('role', 'radiogroup');
+        optGrid.setAttribute('aria-label', `Câu hỏi ${qIdx + 1}: ${q.title || ''}`);
         let opts = (q as any).options || [];
         if (presentationOrder && Array.isArray(presentationOrder.optionOrder)) {
           const entry = presentationOrder.optionOrder.find((e) => e.questionVersionId === q.questionVersionId);
@@ -1662,7 +1666,7 @@ export async function bootstrap(
           const isTrueSelected = userVal === true;
           const isFalseSelected = userVal === false;
 
-          row.innerHTML = `<div class="statement-label">${escapeHtml(st.label || '')})</div><div class="statement-text">${renderMathText(st.text || '')}</div><div class="tf-toggle-group"><button type="button" class="tf-btn ${isTrueSelected ? 'selected-true selected' : ''}" data-val="true" aria-pressed="${isTrueSelected ? 'true' : 'false'}">Đúng</button><button type="button" class="tf-btn ${isFalseSelected ? 'selected-false selected' : ''}" data-val="false" aria-pressed="${isFalseSelected ? 'true' : 'false'}">Sai</button></div>`;
+          row.innerHTML = `<div class="statement-label">${escapeHtml(st.label || '')})</div><div class="statement-text">${renderMathText(st.text || '')}</div><div class="tf-toggle-group" role="group" aria-label="Ý ${escapeHtml(st.label || '')}: ${escapeHtml(st.text || '')}"><button type="button" class="tf-btn ${isTrueSelected ? 'selected-true selected' : ''}" data-val="true" aria-pressed="${isTrueSelected ? 'true' : 'false'}">Đúng</button><button type="button" class="tf-btn ${isFalseSelected ? 'selected-false selected' : ''}" data-val="false" aria-pressed="${isFalseSelected ? 'true' : 'false'}">Sai</button></div>`;
 
           const btnT = row.querySelector('.tf-btn[data-val="true"]') as HTMLElement | null;
           const btnF = row.querySelector('.tf-btn[data-val="false"]') as HTMLElement | null;
@@ -1723,15 +1727,31 @@ export async function bootstrap(
 
         const inputWrap = docObj.createElement('div');
         inputWrap.className = 'short-answer-input-wrap';
+        const inputId = `input-iii-${q.questionVersionId}`;
+        const shortAnswerLabel = docObj.createElement('label');
+        shortAnswerLabel.className = 'short-answer-label ui-field-label';
+        shortAnswerLabel.htmlFor = inputId;
+        shortAnswerLabel.textContent = `Đáp án câu ${qIdx + 1}:`;
+        inputWrap.appendChild(shortAnswerLabel);
+
         const inputEl = docObj.createElement('input') as HTMLInputElement;
         inputEl.type = 'text';
-        inputEl.maxLength = 4;
+        inputEl.id = inputId;
         inputEl.className = 'short-answer-input';
         inputEl.placeholder = 'Ví dụ: -0,5';
         inputEl.value = curVal;
         inputEl.setAttribute('autocomplete', 'off');
         inputWrap.appendChild(inputEl);
         wrap.appendChild(inputWrap);
+
+        const warningEl = docObj.createElement('div');
+        warningEl.className = 'short-answer-error';
+        warningEl.setAttribute('role', 'alert');
+        warningEl.style.color = 'var(--c-danger)';
+        warningEl.style.fontSize = '0.8125rem';
+        warningEl.style.marginTop = '0.25rem';
+        warningEl.style.display = 'none';
+        wrap.appendChild(warningEl);
 
         const quickKeysBar = docObj.createElement('div');
         quickKeysBar.className = 'quick-keys-bar';
@@ -1775,7 +1795,24 @@ export async function bootstrap(
           updateAria(inputEl.value);
           const handleInputCommit = async (val: string) => {
             if (isSubmitted) return;
-            updateAria(val);
+            if (val.length > 4) {
+              setAttr(inputEl, 'aria-invalid', 'true');
+              warningEl.textContent = 'Đã cắt còn tối đa 4 ký tự';
+              warningEl.style.display = '';
+              val = val.slice(0, 4);
+              inputEl.value = val;
+            } else {
+              const isValid = /^[0-9,-]{0,4}$/.test(val);
+              if (isValid) {
+                removeAttr(inputEl, 'aria-invalid');
+                warningEl.textContent = '';
+                warningEl.style.display = 'none';
+              } else {
+                setAttr(inputEl, 'aria-invalid', 'true');
+                warningEl.textContent = 'Ký tự không hợp lệ';
+                warningEl.style.display = '';
+              }
+            }
             responses[q.questionVersionId] = val;
             await saveStateToStorage({
               kind: 'III',
