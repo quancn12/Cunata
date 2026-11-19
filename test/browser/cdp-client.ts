@@ -174,6 +174,9 @@ export class CdpClient {
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(String(event.data));
+          if (msg.method === 'Runtime.consoleAPICalled') {
+            console.log('[BROWSER]', ...msg.params.args.map((a: any) => a.value ?? a.description ?? ''));
+          }
           if (msg.id && this.pendingRequests.has(msg.id)) {
             const req = this.pendingRequests.get(msg.id)!;
             this.pendingRequests.delete(msg.id);
@@ -199,7 +202,8 @@ export class CdpClient {
     return new Promise<T>((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pendingRequests.delete(id);
-        reject(new Error(`CDP request timed out: ${method}`));
+        const details = params?.expression ? ` expression: ${params.expression.slice(0, 100)}` : '';
+        reject(new Error(`CDP request timed out: ${method}${details}`));
       }, 15000);
       const request = {
         resolve: (value: T) => { clearTimeout(timer); resolve(value); },

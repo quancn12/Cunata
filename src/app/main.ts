@@ -1916,15 +1916,16 @@ export async function bootstrap(
       return;
     }
 
+    const candidateInputVal = (candidateInput && typeof candidateInput.value === 'string' && candidateInput.value.trim()) ? candidateInput.value.trim() : null;
     const startNameVal = root.querySelector<HTMLInputElement>('#startName')?.value.trim();
     let storedName: string | null = null;
     try {
       storedName = localStorage.getItem('cunata:candidate_name') || localStorage.getItem('cunata:last_candidate_name') || localStorage.getItem('cunata_candidate_name');
     } catch {}
-    const candidateInputVal = (candidateInput && typeof candidateInput.value === 'string' && candidateInput.value.trim()) ? candidateInput.value.trim() : null;
 
-    const effectiveName = startNameVal
-      || (candidateInputVal && candidateInputVal !== 'Thí sinh tự do' ? candidateInputVal : null)
+    const effectiveName = (candidateInputVal && candidateInputVal !== 'Thí sinh tự do' ? candidateInputVal : null)
+      || (candidateName && candidateName !== 'Thí sinh tự do' ? candidateName : null)
+      || startNameVal
       || (storedName && storedName.trim() ? storedName.trim() : null)
       || candidateInputVal
       || candidateName;
@@ -3573,27 +3574,37 @@ export async function bootstrap(
   };
 
   // Candidate Name Input Listener
+  let isSyncingCandidateName = false;
   const onCandidateNameInput = async (e: any) => {
-    candidateName = e.target.value;
+    if (isSyncingCandidateName) return;
+    isSyncingCandidateName = true;
     try {
-      localStorage.setItem('cunata:candidate_name', candidateName);
-      localStorage.setItem('cunata:last_candidate_name', candidateName);
-    } catch {}
-    if (startCtrl && typeof startCtrl.setCandidateName === 'function') {
-      try { startCtrl.setCandidateName(candidateName); } catch {}
-    }
-    let renameSuccess = false;
-    if (isStorageAvailable && controller) {
+      candidateName = e.target.value;
       try {
-        const res = await controller.rename(candidateName);
-        if (res.ok) {
-          renameSuccess = true;
+        localStorage.setItem('cunata:candidate_name', candidateName);
+        localStorage.setItem('cunata:last_candidate_name', candidateName);
+      } catch {}
+      if (startCtrl && typeof startCtrl.setCandidateName === 'function') {
+        const currentStudentName = typeof startCtrl.getCandidateName === 'function' ? startCtrl.getCandidateName() : undefined;
+        if (currentStudentName !== candidateName) {
+          try { startCtrl.setCandidateName(candidateName); } catch {}
         }
-      } catch {
-        renameSuccess = false;
       }
+      let renameSuccess = false;
+      if (isStorageAvailable && controller) {
+        try {
+          const res = await controller.rename(candidateName);
+          if (res.ok) {
+            renameSuccess = true;
+          }
+        } catch {
+          renameSuccess = false;
+        }
+      }
+      await saveStateToStorage(undefined, isStorageAvailable ? (controller ? renameSuccess : undefined) : false);
+    } finally {
+      isSyncingCandidateName = false;
     }
-    await saveStateToStorage(undefined, isStorageAvailable ? (controller ? renameSuccess : undefined) : false);
   };
 
   // Window Storage Event Listener (Two-tab synchronization)
