@@ -1,17 +1,17 @@
 {
   "code": "222222",
   "classText": "Lớp mã số222222Sĩ số: 1 học sinhSao chép mãLink mời",
-  "table": "Học sinhLớpThời gian nộpPhần IPhần IIPhần IIITổng điểmHọc sinhHọc sinh lớp mã sốLớp222222Thời gian nộp05:31, 22/11/2026Phần I0 / 0,25Phần II0 / 0Phần III0 / 0Tổng điểm0 / 0,25",
+  "table": "Học sinhLớpThời gian nộpPhần IPhần IIPhần IIITổng điểmHọc sinhHọc sinh lớp mã sốLớp222222Thời gian nộp06:14, 22/11/2026Phần I0 / 0,25Phần II0 / 0Phần III0 / 0Tổng điểm0 / 0,25",
   "api": {
     "success": true,
     "results": [
       {
-        "attempt_id": "attempt-mwqzfm16-0vhs",
+        "attempt_id": "attempt-mwr0zpir-b9d7",
         "exam_id": "browser-numeric-class",
         "exam_version_id": "v1.0.0",
         "candidate_display": "Học sinh lớp mã số",
-        "started_at": "2026-11-21T22:31:20.395Z",
-        "submitted_at": "2026-11-21T22:31:20.505Z",
+        "started_at": "2026-11-21T23:14:57.652Z",
+        "submitted_at": "2026-11-21T23:14:57.758Z",
         "duration_seconds": 0,
         "sections": {
           "I": {
@@ -36,7 +36,7 @@
         "total": "0",
         "maxTotal": "1/4",
         "class_code": "222222",
-        "assignment_id": "714393c1-9481-4d07-ae80-0313a2d11251"
+        "assignment_id": "7011b737-b44d-4724-8728-554b2883254b"
       }
     ]
   },
