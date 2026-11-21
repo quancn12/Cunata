@@ -1789,7 +1789,7 @@ export async function bootstrap(root, options) {
                             truncatedInput = true;
                             setAttr(inputEl, 'aria-invalid', 'true');
                             warningEl.textContent = 'Đã cắt còn tối đa 4 ký tự';
-                            warningEl.style.display = '';
+                            warningEl.style.display = 'block';
                             val = val.slice(0, 4);
                             inputEl.value = val;
                         }
@@ -1804,7 +1804,7 @@ export async function bootstrap(root, options) {
                             else {
                                 setAttr(inputEl, 'aria-invalid', 'true');
                                 warningEl.textContent = 'Ký tự không hợp lệ';
-                                warningEl.style.display = '';
+                                warningEl.style.display = 'block';
                             }
                         }
                         responses[q.questionVersionId] = val;

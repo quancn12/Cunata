@@ -1746,7 +1746,6 @@ export function mountTeacherPortal(root, deps) {
         const tableWrap = doc.createElement('div');
         tableWrap.className = 'teacher-table-wrap';
         const table = doc.createElement('table');
-        table.id = 'resultsTable';
         table.className = 'teacher-table';
         const thead = doc.createElement('thead');
         const headerRow = doc.createElement('tr');
@@ -1792,6 +1791,7 @@ export function mountTeacherPortal(root, deps) {
             }, 500);
         });
         function renderTableRows(items) {
+            table.id = 'resultsTable';
             clearChildren(tbody);
             if (items.length === 0) {
                 const tr = doc.createElement('tr');
@@ -1918,6 +1918,7 @@ export function mountTeacherPortal(root, deps) {
             const selectedExamOpt = examSelect.selectedOptions?.[0];
             const chosenAssignmentId = selectedExamOpt?.getAttribute('data-assignment-id') || '';
             if (!deps.client.listResults) {
+                table.id = 'resultsTable';
                 clearChildren(tbody);
                 const tr = doc.createElement('tr');
                 const td = doc.createElement('td');
@@ -1939,6 +1940,7 @@ export function mountTeacherPortal(root, deps) {
                         renderTableRows(currentResultsData);
                     }
                     else {
+                        table.id = 'resultsTable';
                         clearChildren(tbody);
                         const tr = doc.createElement('tr');
                         const td = doc.createElement('td');
@@ -2007,6 +2009,7 @@ export function mountTeacherPortal(root, deps) {
                 }
             }
             catch (err) {
+                table.id = 'resultsTable';
                 clearChildren(tbody);
                 const tr = doc.createElement('tr');
                 const td = doc.createElement('td');

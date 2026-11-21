@@ -1916,7 +1916,6 @@ export function mountTeacherPortal(
     tableWrap.className = 'teacher-table-wrap';
 
     const table = doc.createElement('table');
-    table.id = 'resultsTable';
     table.className = 'teacher-table';
 
     const thead = doc.createElement('thead');
@@ -1968,6 +1967,7 @@ export function mountTeacherPortal(
     });
 
     function renderTableRows(items: any[]) {
+      table.id = 'resultsTable';
       clearChildren(tbody);
       if (items.length === 0) {
         const tr = doc.createElement('tr');
@@ -2113,6 +2113,7 @@ export function mountTeacherPortal(
       const chosenAssignmentId = selectedExamOpt?.getAttribute('data-assignment-id') || '';
 
       if (!deps.client.listResults) {
+        table.id = 'resultsTable';
         clearChildren(tbody);
         const tr = doc.createElement('tr');
         const td = doc.createElement('td');
@@ -2133,6 +2134,7 @@ export function mountTeacherPortal(
             currentResultsData = items;
             renderTableRows(currentResultsData);
           } else {
+            table.id = 'resultsTable';
             clearChildren(tbody);
             const tr = doc.createElement('tr');
             const td = doc.createElement('td');
@@ -2198,6 +2200,7 @@ export function mountTeacherPortal(
           renderTableRows(currentResultsData);
         }
       } catch (err: any) {
+        table.id = 'resultsTable';
         clearChildren(tbody);
         const tr = doc.createElement('tr');
         const td = doc.createElement('td');

@@ -1,12 +1,10 @@
 {
   "questionCount": 60,
-  "rawLength": 104548,
+  "rawLength": 106256,
   "response": {
-    "success": true,
-    "attempt_id": "attempt-mwqgje8j-l0be",
-    "status": "NEWLY_RECORDED",
-    "message": "Ghi nhận kết quả bài thi thành công",
-    "recorded_at": "2026-11-21T13:42:31.096Z"
+    "success": false,
+    "error": "SERVER_ERROR",
+    "message": "Không thể xử lý yêu cầu, vui lòng thử lại sau"
   },
-  "syncText": "Đã gửi"
+  "syncText": "Đang gửi..."
 }
