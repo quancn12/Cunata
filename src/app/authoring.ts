@@ -730,7 +730,7 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): Aut
             alert(`Lỗi nạp file đề thi:\n${msg}`);
             return; // Retain valid draft!
           }
-          builderExamState = val.value;
+          builderExamState = JSON.parse(JSON.stringify(val.value));
           editingQuestionIdx = -1;
           renderBuilderForm();
         } catch (err: any) {
@@ -871,7 +871,7 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): Aut
             previewModal.innerHTML = '';
           }
           if (confirmedDraft && confirmedDraft.exam) {
-            builderExamState = confirmedDraft.exam;
+            builderExamState = JSON.parse(JSON.stringify(confirmedDraft.exam));
             renderBuilderForm();
           }
         },

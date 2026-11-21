@@ -916,7 +916,7 @@ export function mount(
       const contentArea = doc.createElement("div");
       contentArea.className = "draft-content-area";
 
-      if (q.content) {
+      if (q.content && !(Array.isArray(q.blocks) && q.blocks.length > 0)) {
         const p = doc.createElement("div");
         p.appendChild(renderText(q.content, { document: doc }));
         contentArea.appendChild(p);

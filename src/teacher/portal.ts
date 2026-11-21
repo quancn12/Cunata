@@ -1391,7 +1391,7 @@ export function mountTeacherPortal(
       form.appendChild(clsGroup);
     }
 
-    // Exam selection: select element AND item list for testing flexibility
+    // Exam selection
     const examGroup = doc.createElement('div');
     examGroup.className = 'teacher-field-group';
     const examLabel = doc.createElement('label');
@@ -1406,14 +1406,6 @@ export function mountTeacherPortal(
     examGroup.appendChild(examLabel);
     examGroup.appendChild(examSelect);
 
-    const examListDiv = doc.createElement('div');
-    examListDiv.style.maxHeight = '140px';
-    examListDiv.style.overflowY = 'auto';
-    examListDiv.style.marginTop = 'var(--sp-2, 8px)';
-    examListDiv.style.border = '1px solid var(--c-border)';
-    examListDiv.style.borderRadius = 'var(--r-sm, 8px)';
-    examListDiv.style.padding = 'var(--sp-1, 4px)';
-    examGroup.appendChild(examListDiv);
     form.appendChild(examGroup);
 
     // OpenAt field
@@ -1429,6 +1421,8 @@ export function mountTeacherPortal(
     openInput.type = 'datetime-local';
     openInput.className = 'teacher-control';
     openInput.required = true;
+    const now = new Date();
+    openInput.value = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
     openGroup.appendChild(openLabel);
     openGroup.appendChild(openInput);
     form.appendChild(openGroup);
@@ -1451,13 +1445,11 @@ export function mountTeacherPortal(
     form.appendChild(dueGroup);
 
     const noDueLabel = doc.createElement('label');
-    noDueLabel.className = 'teacher-field-label';
+    noDueLabel.className = 'teacher-field-label teacher-checkbox-label';
     noDueLabel.setAttribute('for', 'assignNoDue');
     const noDueInput = doc.createElement('input');
     noDueInput.id = 'assignNoDue';
     noDueInput.type = 'checkbox';
-    noDueInput.style.minWidth = 'var(--target)';
-    noDueInput.style.minHeight = 'var(--target)';
     noDueLabel.appendChild(noDueInput);
     noDueLabel.appendChild(doc.createTextNode('Không hạn nộp'));
     form.appendChild(noDueLabel);
@@ -1504,7 +1496,6 @@ export function mountTeacherPortal(
     try {
       const allExams = await deps.listAllExams();
       clearChildren(examSelect);
-      clearChildren(examListDiv);
 
       for (const e of allExams) {
         const opt = doc.createElement('option');
@@ -1518,21 +1509,6 @@ export function mountTeacherPortal(
         }
         examSelect.appendChild(opt);
 
-        const itemBtn = doc.createElement('button');
-        itemBtn.type = 'button';
-        itemBtn.className = 'class-btn-action';
-        itemBtn.setAttribute('data-exam-id', e.id);
-        if (itemBtn.dataset) itemBtn.dataset.examId = e.id;
-        itemBtn.style.width = '100%';
-        itemBtn.style.textAlign = 'left';
-        itemBtn.style.justifyContent = 'flex-start';
-        itemBtn.style.marginBottom = 'var(--sp-1, 4px)';
-        itemBtn.textContent = e.title;
-        itemBtn.addEventListener('click', () => {
-          examSelect.value = e.id;
-          examSelect.dispatchEvent(new Event('change', { bubbles: true }));
-        });
-        examListDiv.appendChild(itemBtn);
       }
     } catch {}
 
@@ -1552,8 +1528,12 @@ export function mountTeacherPortal(
         errDiv.textContent = 'Vui lòng chọn đề thi';
         return;
       }
-      if (!openVal || (!noDueInput.checked && !dueVal)) {
-        errDiv.textContent = 'Vui lòng nhập cả giờ mở và hạn nộp';
+      if (!openVal) {
+        errDiv.textContent = 'Vui lòng nhập thời gian mở đề';
+        return;
+      }
+      if (!noDueInput.checked && !dueVal) {
+        errDiv.textContent = 'Vui lòng nhập hạn nộp bài';
         return;
       }
 
@@ -1939,11 +1919,12 @@ export function mountTeacherPortal(
     tableWrap.className = 'teacher-table-wrap';
 
     const table = doc.createElement('table');
-    table.className = 'teacher-table';
+    table.className = 'teacher-table ui-table';
 
     const thead = doc.createElement('thead');
     const headerRow = doc.createElement('tr');
-    for (const hText of ['Học sinh', 'Lớp', 'Thời gian nộp', 'Phần I', 'Phần II', 'Phần III', 'Tổng điểm']) {
+    const resultLabels = ['Học sinh', 'Lớp', 'Thời gian nộp', 'Phần I', 'Phần II', 'Phần III', 'Tổng điểm'];
+    for (const hText of resultLabels) {
       const th = doc.createElement('th');
       th.setAttribute('scope', 'col');
       th.textContent = hText;
@@ -2045,6 +2026,17 @@ export function mountTeacherPortal(
         tdTotal.appendChild(strongTotal);
         tr.appendChild(tdTotal);
 
+        Array.from(tr.childNodes).forEach((td, index) => {
+          const label = doc.createElement('span');
+          label.className = 'ui-table-label';
+          label.setAttribute('aria-hidden', 'true');
+          label.textContent = resultLabels[index] || '';
+          const value = doc.createElement('span');
+          for (const child of Array.from(td.childNodes)) value.appendChild(child);
+          clearChildren(td as HTMLElement);
+          td.appendChild(label);
+          td.appendChild(value);
+        });
         tbody.appendChild(tr);
       }
     }
@@ -2104,7 +2096,6 @@ export function mountTeacherPortal(
               const opt = doc.createElement('option');
               opt.value = a.examId;
               opt.textContent = a.title || a.examId;
-              opt.setAttribute('data-assignment-id', a.assignmentId);
               if (a.examId === curExamVal) opt.selected = true;
               opts.push(opt);
             }
@@ -2142,8 +2133,6 @@ export function mountTeacherPortal(
       const tok = getStoredTeacherToken() || '';
       const chosenClassId = clsSelect.value || '';
       const chosenExamId = examSelect.value || '';
-      const selectedExamOpt = examSelect.selectedOptions?.[0] as HTMLElement | undefined;
-      const chosenAssignmentId = selectedExamOpt?.getAttribute('data-assignment-id') || '';
 
       if (!deps.client.listResults) {
         table.id = 'resultsTable';
@@ -2158,11 +2147,11 @@ export function mountTeacherPortal(
       }
       try {
         if (chosenClassId) {
-          const res = await deps.client.listResults(tok, chosenClassId, chosenAssignmentId || undefined);
+          const res = await deps.client.listResults(tok, chosenClassId);
           if (res.ok) {
             let items = res.value || [];
             if (chosenExamId) {
-              items = items.filter((x: any) => !x.assignment_id || !chosenAssignmentId || x.assignment_id === chosenAssignmentId);
+              items = items.filter((x: any) => x.exam_id === chosenExamId);
             }
             currentResultsData = items;
             renderTableRows(currentResultsData);
@@ -2199,7 +2188,7 @@ export function mountTeacherPortal(
               if (directRes.ok && Array.isArray(directRes.value) && directRes.value.length > 0) {
                 let items = directRes.value;
                 if (chosenExamId) {
-                  items = items.filter((x: any) => !x.assignment_id || !chosenAssignmentId || x.assignment_id === chosenAssignmentId);
+                  items = items.filter((x: any) => x.exam_id === chosenExamId);
                 }
                 currentResultsData = items;
                 renderTableRows(currentResultsData);
@@ -2213,7 +2202,7 @@ export function mountTeacherPortal(
 
           const fetchPromises = classes.map(async (c) => {
             try {
-              const res = await deps.client.listResults!(tok, c.classId, chosenAssignmentId || undefined);
+              const res = await deps.client.listResults!(tok, c.classId);
               return res.ok && Array.isArray(res.value) ? res.value : [];
             } catch {
               return [];
@@ -2222,7 +2211,7 @@ export function mountTeacherPortal(
           const perClass = await Promise.all(fetchPromises);
           let allResults = perClass.flat();
           if (chosenExamId) {
-            allResults = allResults.filter((x: any) => !x.assignment_id || !chosenAssignmentId || x.assignment_id === chosenAssignmentId);
+            allResults = allResults.filter((x: any) => x.exam_id === chosenExamId);
           }
           allResults.sort((a, b) => {
             const tA = Date.parse(a.submitted_at || '') || 0;
