@@ -217,12 +217,13 @@ export function mountStudentArea(
       @media (min-width: 1024px) {
         #examWrapper:not([style*="display: none"]), .cunata-student-view .main-wrapper:not([style*="display: none"]) {
           display: grid !important;
-          grid-template-columns: 1fr 280px !important;
+          grid-template-columns: minmax(0, 1fr) 280px !important;
           gap: var(--sp-4, 16px) !important;
           align-items: start !important;
         }
         #examPane, #examWrapper #examPane {
           order: 1 !important;
+          min-width: 0 !important; /* lỗi thật 21/11: thiếu dòng này thì khung câu không co, danh sách câu bị đẩy ra ngoài mép phải trên laptop < 1650px */
         }
         .palette-card, #examWrapper .palette-card {
           order: 2 !important;
@@ -1136,6 +1137,8 @@ export function mountStudentArea(
       } catch {}
     }
 
+    publicExams = staticExams.slice();
+    const teacherPart = (async () => {
     if (asClient && asClient.configured) {
       try {
         const res = await asClient.listExams();
@@ -1184,6 +1187,9 @@ export function mountStudentArea(
     }
 
     publicExams = merged;
+    })();
+    // Đề giáo viên qua Apps Script mất 2–3 giây: chạy nền, không chặn hiển thị lớp và thẻ đề (đo thật 21/11/2026); xong thì vẽ lại thẻ lớp.
+    void teacherPart.then(() => { try { renderClasses(); } catch { /* bỏ qua */ } });
   }
 
   async function joinClassByCode(code: string): Promise<boolean> {

@@ -859,6 +859,36 @@ export function promoteStagedDist(stagingDir: string, distDir: string): void {
  * - Validates browser emit
  * - Atomically promotes to dist (if promote !== false)
  */
+/**
+ * Tải song song mọi module tĩnh của app/main.js bằng <link rel="modulepreload"> (đo thật 21/11/2026: ~60 module tải
+ * lần lượt theo chuỗi import, mất ~1,1 giây trước khi trang chạy). Chỉ thêm thẻ link — không đổi mã.
+ */
+export function addModulePreload(stagingDir: string): void {
+  const indexPath = path.join(stagingDir, 'index.html');
+  const entry = path.join(stagingDir, 'app/main.js');
+  if (!fs.existsSync(indexPath) || !fs.existsSync(entry)) return;
+  const seen = new Set<string>();
+  const queue = [entry];
+  while (queue.length) {
+    const file = queue.shift()!;
+    if (seen.has(file)) continue;
+    seen.add(file);
+    const code = fs.readFileSync(file, 'utf8');
+    const re = /(?:^|[;\n}])\s*(?:import|export)\s+(?:[^'";]*?\sfrom\s+)?['"](\.{1,2}\/[^'"]+\.js)['"]/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(code))) {
+      const dep = path.resolve(path.dirname(file), m[1] ?? '');
+      if (fs.existsSync(dep) && !seen.has(dep)) queue.push(dep);
+    }
+  }
+  seen.delete(entry);
+  const links = [...seen].map((f) => '  <link rel="modulepreload" href="./' + path.relative(stagingDir, f).replace(/\\/g, '/') + '">').join('\n');
+  let html = fs.readFileSync(indexPath, 'utf8');
+  if (html.includes('rel="modulepreload"') || !links) return;
+  html = html.replace('</head>', links + '\n</head>');
+  fs.writeFileSync(indexPath, html, 'utf8');
+}
+
 export async function buildWeb(options?: BuildWebOptions): Promise<BuildResult> {
   const rootDir = path.resolve(options?.rootDir ?? '.');
   const distDir = path.resolve(rootDir, options?.outDir ?? 'dist');
@@ -897,6 +927,7 @@ export async function buildWeb(options?: BuildWebOptions): Promise<BuildResult> 
 
   // 3. Prepare shell and assets
   prepareShellAndAssets(rootDir, stagingDir);
+  addModulePreload(stagingDir);
 
   // 4. Validate emitted browser modules and assets
   const validation = validateBrowserEmit(stagingDir);

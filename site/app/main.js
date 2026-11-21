@@ -7,6 +7,7 @@ import { parseExam } from '../schema/index.js';
 import { startAttempt, resumeAttempt, toDomainExam } from '../student/index.js';
 import { buildReport, renderReportHtml } from '../report/index.js';
 import { createStatusAnnouncer, announceStatus, openModal } from '../ui/index.js';
+import { latexToMathML } from '../ui/math.js';
 import { createRouter } from './routes.js';
 import { scoreAttempt, scoreResultToDTO, computeExamMax, toFractionString, parseFractionString, rational, createPresentationOrder, validatePresentationOrder, validateExamVersion, } from '../domain/index.js';
 import { formatRationalScore, scoreLegacyAttempt, } from './legacy.js';
@@ -225,6 +226,11 @@ function renderInlineMath(text) {
     });
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\$([^$]+)\$/g, (_match, formula) => {
+        // Phân số dọc, căn, chỉ số như đề giấy: MathML gốc của trình duyệt (Trưởng phòng 21/11/2026). Không hỗ trợ -> cách cũ bên dưới.
+        const raw = formula.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+        const ml = latexToMathML(raw);
+        if (ml)
+            return '<span class="math-expr">' + ml + '</span>';
         let f = formula;
         f = f.replace(/\\vec\{([a-zA-Z])\}/g, '$1&#8407;');
         f = f.replace(/\\int_\{([^}]+)\}\^\{([^}]+)\}/g, '&int;<sub>$1</sub><sup>$2</sup> ');

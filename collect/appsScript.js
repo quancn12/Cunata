@@ -179,7 +179,15 @@ function buildGetUrl(baseUrl, params) {
 /**
  * Thực thi một HTTP request tới Apps Script có quản lý timeout 15s và ánh xạ lỗi chuẩn.
  */
+/**
+ * Bộ nhớ đệm ngắn cho listExams (chậm 2–3 giây mỗi lần qua Apps Script; trang từng gọi 2 lần liền khi mở — đo thật 21/11/2026).
+ * Hết hạn sau LIST_TTL_MS và bị xóa ngay khi có bất kỳ yêu cầu POST nào (xuất bản/sửa/gỡ đề) để thư viện luôn mới.
+ */
+const LIST_TTL_MS = 20000;
+const listCache = new Map();
 async function executeAppsScriptRequest(url, init, fetchFn, transform) {
+    if (String(init.method || 'GET').toUpperCase() !== 'GET')
+        listCache.clear();
     const controller = new AbortController();
     const timer = setTimeout(() => {
         controller.abort(new Error('TIMEOUT'));
@@ -348,7 +356,10 @@ export function createAppsScriptClient(url, fetchImpl, contentType = 'text/plain
         configured: true,
         async listExams() {
             const getUrl = buildGetUrl(trimmedUrl, { action: 'listExams' });
-            return executeAppsScriptRequest(getUrl, { method: 'GET', redirect: 'follow', cache: 'no-store' }, fetchFn, (data) => {
+            const hit = listCache.get(getUrl);
+            if (hit && Date.now() - hit.at < LIST_TTL_MS)
+                return hit.p;
+            const p = executeAppsScriptRequest(getUrl, { method: 'GET', redirect: 'follow', cache: 'no-store' }, fetchFn, (data) => {
                 const rawList = Array.isArray(data.exams) ? data.exams : [];
                 const exams = rawList.map((e) => ({
                     id: String(e.id ?? ''),
@@ -363,6 +374,10 @@ export function createAppsScriptClient(url, fetchImpl, contentType = 'text/plain
                 }));
                 return { ok: true, value: exams };
             });
+            listCache.set(getUrl, { at: Date.now(), p });
+            p.then((r) => { if (!r.ok)
+                listCache.delete(getUrl); }, () => listCache.delete(getUrl));
+            return p;
         },
         async getExam(id) {
             const getUrl = buildGetUrl(trimmedUrl, { action: 'getExam', id });

@@ -1,8 +1,8 @@
 // Cunata Web Native Service Worker
-// Build Digest: 0151f534a71411e0
-const BUILD_VERSION = 'v-0151f534a71411e0';
+// Build Digest: d4dfe4c94ec75912
+const BUILD_VERSION = 'v-d4dfe4c94ec75912';
 const CACHE_NAME_PREFIX = 'cunata-cache-';
-const CACHE_NAME = 'cunata-cache-v-0151f534a71411e0';
+const CACHE_NAME = 'cunata-cache-v-d4dfe4c94ec75912';
 const DEFAULT_PRECACHE_ENTRIES = [
   {
     "url": "index.html",
@@ -1278,6 +1278,10 @@ const DEFAULT_PRECACHE_ENTRIES = [
   },
   {
     "url": "ui/layout.js",
+    "critical": true
+  },
+  {
+    "url": "ui/math.js",
     "critical": true
   },
   {

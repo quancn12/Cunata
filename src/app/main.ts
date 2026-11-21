@@ -12,6 +12,7 @@ import { startAttempt, resumeAttempt, toDomainExam } from '../student/index.ts';
 import type { ReportModel } from '../report/index.ts';
 import { buildReport, renderReportHtml } from '../report/index.ts';
 import { createStatusAnnouncer, announceStatus, openModal } from '../ui/index.ts';
+import { latexToMathML } from '../ui/math.ts';
 import type { AppRoute, Router, RouteState } from './routes.ts';
 import { createRouter } from './routes.ts';
 import type { Response, AttemptResponses, PresentationOrder } from '../domain/index.ts';
@@ -277,6 +278,10 @@ function renderInlineMath(text: string): string {
   });
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\$([^$]+)\$/g, (_match, formula) => {
+    // Phân số dọc, căn, chỉ số như đề giấy: MathML gốc của trình duyệt (Trưởng phòng 21/11/2026). Không hỗ trợ -> cách cũ bên dưới.
+    const raw = formula.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+    const ml = latexToMathML(raw);
+    if (ml) return '<span class="math-expr">' + ml + '</span>';
     let f = formula;
     f = f.replace(/\\vec\{([a-zA-Z])\}/g, '$1&#8407;');
     f = f.replace(/\\int_\{([^}]+)\}\^\{([^}]+)\}/g, '&int;<sub>$1</sub><sup>$2</sup> ');

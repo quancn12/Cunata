@@ -264,7 +264,7 @@
   margin: 1.5rem auto;
   padding: 0 1rem;
   display: grid;
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: minmax(0, 1fr) 280px;
   gap: 1.5rem;
   align-items: start;
 }
@@ -276,7 +276,7 @@
 @media (min-width: 1024px) {
   .cunata-student-view .main-wrapper:not([style*="display: none"]), #examWrapper:not([style*="display: none"]) {
     display: grid !important;
-    grid-template-columns: 1fr 280px !important;
+    grid-template-columns: minmax(0, 1fr) 280px !important;
     gap: var(--sp-4, 16px) !important;
     align-items: start !important;
   }

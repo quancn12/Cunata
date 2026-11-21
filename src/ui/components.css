@@ -315,3 +315,7 @@ textarea.ui-control { min-height: calc(var(--target) * 3); resize: vertical; }
 }
 .exam-preview-header { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
 .exam-preview-header h2 { margin: 0; }
+
+/* Công thức MathML (src/ui/math.ts): phân số dọc như đề giấy, cỡ chữ bằng chữ thường. */
+math.math-ml { font-size: 1.08em; }
+math.math-ml mfrac { padding-inline: 0.1em; }

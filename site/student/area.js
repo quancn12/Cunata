@@ -136,12 +136,13 @@ export function mountStudentArea(container, options = {}) {
       @media (min-width: 1024px) {
         #examWrapper:not([style*="display: none"]), .cunata-student-view .main-wrapper:not([style*="display: none"]) {
           display: grid !important;
-          grid-template-columns: 1fr 280px !important;
+          grid-template-columns: minmax(0, 1fr) 280px !important;
           gap: var(--sp-4, 16px) !important;
           align-items: start !important;
         }
         #examPane, #examWrapper #examPane {
           order: 1 !important;
+          min-width: 0 !important; /* lỗi thật 21/11: thiếu dòng này thì khung câu không co, danh sách câu bị đẩy ra ngoài mép phải trên laptop < 1650px */
         }
         .palette-card, #examWrapper .palette-card {
           order: 2 !important;
@@ -1020,53 +1021,61 @@ export function mountStudentArea(container, options = {}) {
             }
             catch { }
         }
-        if (asClient && asClient.configured) {
-            try {
-                const res = await asClient.listExams();
-                if (res.ok && Array.isArray(res.value)) {
-                    teacherExams = res.value.map((e) => ({
-                        id: String(e.id || ''),
-                        title: String(e.title || ''),
-                        subject: String(e.subject || ''),
-                        grade: Number(e.grade) || 12,
-                        durationMinutes: Number(e.durationMinutes) || 50,
-                        questionCount: Number(e.questionCount) || 0,
-                        source: 'teacher',
-                        description: e.description || `Đề giáo viên xuất bản · ${Number(e.questionCount) || 0} câu`,
-                    }));
+        publicExams = staticExams.slice();
+        const teacherPart = (async () => {
+            if (asClient && asClient.configured) {
+                try {
+                    const res = await asClient.listExams();
+                    if (res.ok && Array.isArray(res.value)) {
+                        teacherExams = res.value.map((e) => ({
+                            id: String(e.id || ''),
+                            title: String(e.title || ''),
+                            subject: String(e.subject || ''),
+                            grade: Number(e.grade) || 12,
+                            durationMinutes: Number(e.durationMinutes) || 50,
+                            questionCount: Number(e.questionCount) || 0,
+                            source: 'teacher',
+                            description: e.description || `Đề giáo viên xuất bản · ${Number(e.questionCount) || 0} câu`,
+                        }));
+                    }
+                    else {
+                        teacherError = res?.error?.message || res?.message || 'Không thể tải danh sách đề từ giáo viên';
+                    }
+                }
+                catch (err) {
+                    teacherError = err?.message || 'Không thể tải danh sách đề từ giáo viên';
+                }
+            }
+            const teacherMap = new Map();
+            for (const te of teacherExams) {
+                if (te.id)
+                    teacherMap.set(te.id, te);
+            }
+            const merged = [];
+            const handledIds = new Set();
+            for (const se of staticExams) {
+                if (teacherMap.has(se.id)) {
+                    merged.push(teacherMap.get(se.id));
+                    handledIds.add(se.id);
                 }
                 else {
-                    teacherError = res?.error?.message || res?.message || 'Không thể tải danh sách đề từ giáo viên';
+                    merged.push(se);
+                    handledIds.add(se.id);
                 }
             }
-            catch (err) {
-                teacherError = err?.message || 'Không thể tải danh sách đề từ giáo viên';
+            for (const te of teacherExams) {
+                if (!handledIds.has(te.id)) {
+                    merged.push(te);
+                    handledIds.add(te.id);
+                }
             }
+            publicExams = merged;
+        })();
+        // Đề giáo viên qua Apps Script mất 2–3 giây: chạy nền, không chặn hiển thị lớp và thẻ đề (đo thật 21/11/2026); xong thì vẽ lại thẻ lớp.
+        void teacherPart.then(() => { try {
+            renderClasses();
         }
-        const teacherMap = new Map();
-        for (const te of teacherExams) {
-            if (te.id)
-                teacherMap.set(te.id, te);
-        }
-        const merged = [];
-        const handledIds = new Set();
-        for (const se of staticExams) {
-            if (teacherMap.has(se.id)) {
-                merged.push(teacherMap.get(se.id));
-                handledIds.add(se.id);
-            }
-            else {
-                merged.push(se);
-                handledIds.add(se.id);
-            }
-        }
-        for (const te of teacherExams) {
-            if (!handledIds.has(te.id)) {
-                merged.push(te);
-                handledIds.add(te.id);
-            }
-        }
-        publicExams = merged;
+        catch { /* bỏ qua */ } });
     }
     async function joinClassByCode(code) {
         try {
