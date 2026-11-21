@@ -403,12 +403,15 @@ export function segmentDocument(
           allAnswered = false;
         }
 
-        statements.push({
+        const stmtItem: any = {
           statementId: stmt.statementId,
           label: stmt.label,
           text: stmt.text,
-          answer: ans ?? false,
-        });
+        };
+        if (typeof ans === "boolean") {
+          stmtItem.answer = ans;
+        }
+        statements.push(stmtItem);
       }
 
       if (!allAnswered || statements.length < 4) {

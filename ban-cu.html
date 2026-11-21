@@ -3335,7 +3335,21 @@
 
       // LC36-F03, LC38-F02: Guard against duplicate concurrent chains
       if (inFlightDispatches.has(sentAttemptId)) {
-        return inFlightDispatches.get(sentAttemptId);
+        const inFlightPromise = inFlightDispatches.get(sentAttemptId);
+        const startedAt = (inFlightPromise && inFlightPromise.startedAt) ? inFlightPromise.startedAt : 0;
+        const now = Date.now();
+        const timeoutMs = (typeof window !== 'undefined' && typeof window.COLLECTOR_REQUEST_TIMEOUT_MS === 'number')
+          ? window.COLLECTOR_REQUEST_TIMEOUT_MS
+          : COLLECTOR_REQUEST_TIMEOUT_MS;
+        if (startedAt > 0 && (now - startedAt >= timeoutMs)) {
+          if (inFlightPromise && typeof inFlightPromise.abort === 'function') {
+            try { inFlightPromise.abort(); } catch (_) {}
+          }
+          inFlightDispatches.delete(sentAttemptId);
+          inFlightGenerationMap.set(sentAttemptId, (inFlightGenerationMap.get(sentAttemptId) || 0) + 1);
+        } else {
+          return inFlightPromise;
+        }
       }
 
       // LC38-F02, LC39-F02: Strict per-job budget resolution & exhaustion guard
@@ -3501,6 +3515,8 @@
       let abortController = null;
       let requestSignal = null;
       let customTimeoutId = null;
+      let requestTimeoutTimer = null;
+      let isSettled = false;
 
       const requestTimeoutMs = (typeof window !== 'undefined' && typeof window.COLLECTOR_REQUEST_TIMEOUT_MS === 'number')
         ? window.COLLECTOR_REQUEST_TIMEOUT_MS
@@ -3520,19 +3536,44 @@
         requestSignal = abortController.signal;
       }
 
+      function cleanupTimeoutTimer() {
+        isSettled = true;
+        if (requestTimeoutTimer && typeof clearTimeout === 'function') {
+          try { clearTimeout(requestTimeoutTimer); } catch (_) {}
+          requestTimeoutTimer = null;
+        }
+        if (customTimeoutId && typeof window !== 'undefined' && typeof window.clearCollectorRequestTimeout === 'function') {
+          try { window.clearCollectorRequestTimeout(customTimeoutId); } catch (_) {}
+          customTimeoutId = null;
+        }
+      }
+
       const dispatchPromise = (async () => {
         try {
-          let timeoutPromise = null;
-          if (typeof window !== 'undefined' && typeof window.scheduleCollectorRequestTimeout === 'function') {
-            timeoutPromise = new Promise((_, reject) => {
-              customTimeoutId = window.scheduleCollectorRequestTimeout(() => {
-                if (abortController && typeof abortController.abort === 'function') {
-                  try { abortController.abort(); } catch (_) {}
+          let timeoutReject = null;
+          const timeoutPromise = new Promise((_, reject) => {
+            timeoutReject = reject;
+          });
+
+          Promise.resolve().then(() => {
+            if (!isSettled) {
+              const handleTimeout = () => {
+                if (!isSettled) {
+                  if (abortController && typeof abortController.abort === 'function') {
+                    try { abortController.abort(); } catch (_) {}
+                  }
+                  if (timeoutReject) {
+                    timeoutReject(new Error('COLLECTOR_TIMEOUT: Request timed out'));
+                  }
                 }
-                reject(new Error('COLLECTOR_TIMEOUT: Request timed out'));
-              }, requestTimeoutMs);
-            });
-          }
+              };
+              if (typeof window !== 'undefined' && typeof window.scheduleCollectorRequestTimeout === 'function') {
+                customTimeoutId = window.scheduleCollectorRequestTimeout(handleTimeout, requestTimeoutMs);
+              } else if (typeof setTimeout === 'function') {
+                requestTimeoutTimer = setTimeout(handleTimeout, requestTimeoutMs);
+              }
+            }
+          });
 
           const networkWork = (async () => {
             const fetchOpts = {
@@ -3550,11 +3591,8 @@
             return null;
           })();
 
-          const result = timeoutPromise ? await Promise.race([networkWork, timeoutPromise]) : await networkWork;
-          if (customTimeoutId && typeof window !== 'undefined' && typeof window.clearCollectorRequestTimeout === 'function') {
-            try { window.clearCollectorRequestTimeout(customTimeoutId); } catch (_) {}
-            customTimeoutId = null;
-          }
+          const result = await Promise.race([networkWork, timeoutPromise]);
+          cleanupTimeoutTimer();
 
           // Guard against superseded generation
           if (inFlightGenerationMap.get(sentAttemptId) !== dispatchGeneration) {
@@ -3622,10 +3660,7 @@
           }
           scheduleNextRetryOrExhaust();
         } catch (err) {
-          if (customTimeoutId && typeof window !== 'undefined' && typeof window.clearCollectorRequestTimeout === 'function') {
-            try { window.clearCollectorRequestTimeout(customTimeoutId); } catch (_) {}
-            customTimeoutId = null;
-          }
+          cleanupTimeoutTimer();
           if (inFlightGenerationMap.get(sentAttemptId) !== dispatchGeneration) {
             return;
           }
@@ -3638,10 +3673,7 @@
           }
           scheduleNextRetryOrExhaust();
         } finally {
-          if (customTimeoutId && typeof window !== 'undefined' && typeof window.clearCollectorRequestTimeout === 'function') {
-            try { window.clearCollectorRequestTimeout(customTimeoutId); } catch (_) {}
-            customTimeoutId = null;
-          }
+          cleanupTimeoutTimer();
           if (inFlightGenerationMap.get(sentAttemptId) === dispatchGeneration) {
             inFlightDispatches.delete(sentAttemptId);
           }
@@ -4358,7 +4390,7 @@
     }
 
     function saveQuestionToBank(q) {
-      if (!q || !q.kind || !q.questionVersionId) return;
+      if (!q || !q.kind || !q.questionVersionId) return false;
       const bank = getQuestionBank();
       const existingIdx = bank.findIndex(item => item && item.questionVersionId === q.questionVersionId);
       const clone = JSON.parse(JSON.stringify(q));
@@ -4371,16 +4403,14 @@
       } else {
         bank.push(clone);
       }
-      try {
-        localStorage.setItem(QUESTION_BANK_STORAGE_KEY, JSON.stringify(bank));
-      } catch (_) {}
+      localStorage.setItem(QUESTION_BANK_STORAGE_KEY, JSON.stringify(bank));
+      return true;
     }
 
     function removeQuestionFromBank(questionVersionId) {
       const bank = getQuestionBank().filter(item => item && item.questionVersionId !== questionVersionId);
-      try {
-        localStorage.setItem(QUESTION_BANK_STORAGE_KEY, JSON.stringify(bank));
-      } catch (_) {}
+      localStorage.setItem(QUESTION_BANK_STORAGE_KEY, JSON.stringify(bank));
+      return true;
     }
 
     function seedDefaultQuestionBank() {
@@ -4414,14 +4444,15 @@
           else if (q.questionVersionId.includes('ung-dung') || q.questionVersionId.includes('van-toc')) enriched.lesson = 'Ứng dụng hình học và vật lý của tích phân';
           else enriched.lesson = 'Bài tập tổng hợp';
         }
-        saveQuestionToBank(enriched);
+        try {
+          saveQuestionToBank(enriched);
+        } catch (_) {}
       }
     }
 
     function clearQuestionBank() {
-      try {
-        localStorage.removeItem(QUESTION_BANK_STORAGE_KEY);
-      } catch (_) {}
+      localStorage.removeItem(QUESTION_BANK_STORAGE_KEY);
+      return true;
     }
 
     function importQuestionsToBank(data) {
@@ -4437,7 +4468,7 @@
         throw new Error('Dữ liệu JSON không hợp lệ: phải là mảng câu hỏi hoặc đề thi có danh sách questions');
       }
 
-      let count = 0;
+      const validQuestions = [];
       for (const q of list) {
         if (!q || typeof q !== 'object') continue;
         if (!q.kind || (q.kind !== 'I' && q.kind !== 'II' && q.kind !== 'III')) continue;
@@ -4455,10 +4486,27 @@
           if (issues.length > 0) continue;
         }
 
-        saveQuestionToBank(q);
-        count++;
+        validQuestions.push(q);
       }
-      return count;
+
+      if (validQuestions.length === 0) return 0;
+
+      const bank = getQuestionBank();
+      for (const q of validQuestions) {
+        const existingIdx = bank.findIndex(item => item && item.questionVersionId === q.questionVersionId);
+        const clone = JSON.parse(JSON.stringify(q));
+        if (!clone.subject) clone.subject = (builderExamState && builderExamState.subject) || (currentExam && currentExam.subject) || 'Toán học';
+        if (!clone.grade) clone.grade = (builderExamState && builderExamState.grade) || (currentExam && currentExam.grade) || 12;
+        if (!clone.topic && clone.topic !== '') clone.topic = (builderExamState && builderExamState.topic) || (currentExam && currentExam.topic) || '';
+        if (!clone.lesson && clone.lesson !== '') clone.lesson = (builderExamState && builderExamState.lesson) || (currentExam && currentExam.lesson) || '';
+        if (existingIdx >= 0) {
+          bank[existingIdx] = clone;
+        } else {
+          bank.push(clone);
+        }
+      }
+      localStorage.setItem(QUESTION_BANK_STORAGE_KEY, JSON.stringify(bank));
+      return validQuestions.length;
     }
 
     let builderExamState = {
@@ -5045,8 +5093,12 @@
               btn.addEventListener('click', () => {
                 const idx = parseInt(btn.getAttribute('data-idx') || '-1', 10);
                 if (idx >= 0 && builderExamState.questions[idx]) {
-                  saveQuestionToBank(builderExamState.questions[idx]);
-                  if (typeof alert === 'function') alert('Đã lưu câu hỏi #' + (idx + 1) + ' vào Ngân hàng câu hỏi!');
+                  try {
+                    saveQuestionToBank(builderExamState.questions[idx]);
+                    if (typeof alert === 'function') alert('Đã lưu câu hỏi #' + (idx + 1) + ' vào Ngân hàng câu hỏi!');
+                  } catch (err) {
+                    if (typeof alert === 'function') alert('Lỗi khi lưu vào Ngân hàng: ' + (err && err.message ? err.message : String(err)));
+                  }
                 }
               });
             });
@@ -5441,8 +5493,12 @@
               btn.addEventListener('click', () => {
                 const qid = btn.getAttribute('data-qid');
                 if (qid) {
-                  removeQuestionFromBank(qid);
-                  renderBankList(bankActiveFilter, bankActiveSearch, bankActiveDifficulty, bankActiveGrade, bankActiveSubject);
+                  try {
+                    removeQuestionFromBank(qid);
+                    renderBankList(bankActiveFilter, bankActiveSearch, bankActiveDifficulty, bankActiveGrade, bankActiveSubject);
+                  } catch (err) {
+                    if (typeof alert === 'function') alert('Lỗi khi xóa câu hỏi: ' + (err && err.message ? err.message : String(err)));
+                  }
                 }
               });
             });
@@ -5655,9 +5711,13 @@
           ? confirm('Bạn có chắc chắn muốn xóa toàn bộ câu hỏi trong Ngân hàng không?')
           : true;
         if (confirmed) {
-          clearQuestionBank();
-          renderBankList('all');
-          if (typeof alert === 'function') alert('Đã làm trống Ngân hàng câu hỏi!');
+          try {
+            clearQuestionBank();
+            renderBankList('all');
+            if (typeof alert === 'function') alert('Đã làm trống Ngân hàng câu hỏi!');
+          } catch (err) {
+            if (typeof alert === 'function') alert('Lỗi khi xóa Ngân hàng: ' + (err && err.message ? err.message : String(err)));
+          }
         }
       });
     }

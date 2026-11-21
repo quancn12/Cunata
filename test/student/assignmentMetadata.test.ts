@@ -53,3 +53,95 @@ test('assignment with missing duration uses catalog duration in card and preview
     else Reflect.deleteProperty(globalThis, 'localStorage');
   }
 });
+
+test('assignment with empty dueAt (Không hạn nộp) allows startAttempt far in future without PAST_DUE', async () => {
+  const { startAttempt } = await import('../../src/student/index.ts');
+  const { InMemoryStoragePort } = await import('./core/inMemoryStorage.ts');
+  const storage = new InMemoryStoragePort();
+  let clockTime = 1700000000000;
+  const deps = { storage, now: () => clockTime, id: () => 'att-nodue-1' };
+
+  const exam = {
+    schemaVersion: 'web-exam-v1' as const,
+    examId: 'exam-no-due',
+    examVersionId: 'v1.0.0',
+    title: 'Đề không hạn nộp',
+    subject: 'Toán',
+    grade: 12 as const,
+    ruleSetId: 'custom-v1' as const,
+    inputPolicyId: 'sa-charset-v1' as const,
+    settings: {
+      durationMinutes: 45,
+      maxAttempts: null,
+      releasePolicy: 'immediate' as const,
+      shuffleQuestions: false,
+      shuffleOptions: false,
+    },
+    assets: [],
+    questions: [
+      {
+        kind: 'I' as const,
+        questionVersionId: 'q-no-due-1',
+        title: 'Câu 1',
+        correctOptionId: 'opt-a',
+        options: [
+          { optionId: 'opt-a', text: 'Đúng' },
+          { optionId: 'opt-b', text: 'Sai' },
+          { optionId: 'opt-c', text: 'Không rõ' },
+          { optionId: 'opt-d', text: 'Khác' },
+        ],
+      },
+    ],
+  };
+
+  // Advance clock by 30 days BEFORE starting: assignment without due date can be started anytime in future
+  clockTime += 30 * 24 * 3600 * 1000;
+
+  // Start attempt with empty string dueAt (Không hạn nộp) 30 days into the future
+  const res = await startAttempt(exam, 'Học sinh An', deps, {
+    assignmentId: 'asg-nodue-1',
+    classCode: 'LOP12',
+    openAt: '2023-01-01T00:00:00.000Z',
+    dueAt: '', // Empty string = Không hạn nộp
+  });
+
+  assert.equal(res.ok, true, 'Assignment with dueAt="" must start successfully in future');
+  if (!res.ok) return;
+
+  const controller = res.value;
+  const snap = controller.getSnapshot();
+  assert.equal(snap.dueAt, '', 'Snapshot must preserve dueAt as empty string');
+  assert.equal(snap.assignmentId, 'asg-nodue-1');
+  assert.equal(snap.classCode, 'LOP12');
+
+  // Answer 1 minute after starting (within 45-minute duration)
+  clockTime += 60 * 1000;
+  const ansRes = await controller.answer({
+    kind: 'I',
+    questionVersionId: 'q-no-due-1',
+    selectedOptionId: 'opt-a',
+  });
+  assert.equal(ansRes.ok, true, 'Answering must succeed within exam duration');
+
+  const subRes = await controller.submit('manual');
+  assert.equal(subRes.ok, true, 'Submitting must succeed for assignment without due date');
+  if (subRes.ok) {
+    assert.equal(subRes.value.phase, 'final');
+    assert.equal(subRes.value.dueAt, '');
+  }
+});
+
+test('StudentArea candidateName trims edge whitespace and preserves internal spacing', () => {
+  const doc = createEnhancedMockDocument();
+  const root = doc.createElement('div');
+  doc.body.appendChild(root);
+
+  const ctrl = mountStudentArea(root as unknown as HTMLElement, {
+    now: () => 1700000000000,
+  });
+
+  ctrl.setCandidateName('   Trần   Văn   Bình   ');
+  assert.equal(ctrl.getCandidateName(), 'Trần   Văn   Bình', 'Leading and trailing whitespace should be trimmed');
+
+  ctrl.dispose();
+});

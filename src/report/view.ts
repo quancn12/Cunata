@@ -417,6 +417,112 @@ function ensureScopedStyles(doc: Document): void {
       font-size: var(--fs-sm);
       margin-bottom: 1rem;
     }
+    .review-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 1rem 0;
+      padding: 0.5rem;
+      background: var(--c-surface-2);
+      border: 1px solid var(--c-border);
+      border-radius: 6px;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .btn-filter {
+      padding: 0.4rem 0.85rem;
+      font-size: var(--fs-sm);
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid var(--c-border);
+      background: var(--c-surface);
+      color: var(--c-text);
+      cursor: pointer;
+      transition: background-color 0.15s, border-color 0.15s;
+      min-height: 38px;
+    }
+    .btn-filter:hover {
+      background: var(--c-surface-2);
+    }
+    .btn-filter[aria-pressed="true"], .btn-filter.active {
+      background: var(--c-primary);
+      color: var(--c-surface);
+      border-color: var(--c-primary);
+    }
+    .review-nav-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 1rem 0 1.5rem 0;
+      padding: 0.75rem;
+      background: var(--c-surface-2);
+      border: 1px solid var(--c-border);
+      border-radius: 8px;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .review-nav-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid var(--c-border);
+      background: var(--c-surface);
+      color: var(--c-text);
+      font-size: var(--fs-xs);
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      box-sizing: border-box;
+      min-height: 40px;
+    }
+    .review-nav-item:hover, .review-nav-item:focus-visible {
+      border-color: var(--c-primary);
+      outline: 2px solid var(--c-primary);
+      outline-offset: 1px;
+    }
+    .review-nav-item.nav-status-full {
+      border-left: 3px solid var(--c-success);
+    }
+    .review-nav-item.nav-status-wrong {
+      border-left: 3px solid var(--c-danger);
+    }
+    .review-nav-item.nav-status-partial {
+      border-left: 3px solid var(--c-warning);
+    }
+    .review-nav-item.nav-status-unanswered {
+      border-left: 3px solid var(--c-text-2);
+    }
+    .nav-num {
+      font-weight: 700;
+      font-size: var(--fs-sm);
+    }
+    .nav-status-tag {
+      font-size: 0.7rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .nav-status-tag.tag-full {
+      background: var(--c-surface-2);
+      color: var(--c-success);
+    }
+    .nav-status-tag.tag-wrong {
+      background: var(--c-surface-2);
+      color: var(--c-danger);
+    }
+    .nav-status-tag.tag-partial {
+      background: var(--c-surface-2);
+      color: var(--c-warning);
+    }
+    .nav-status-tag.tag-unanswered {
+      background: var(--c-surface-2);
+      color: var(--c-text-2);
+    }
+    .cunata-report-view {
+      padding-bottom: 40vh;
+    }
   `;
   (doc.head || doc.body || doc.documentElement).appendChild(styleEl);
 }
@@ -812,6 +918,23 @@ export function mount(
   cleanupFns.push(() => btnRestart.removeEventListener("click", onRestartClick));
   actionsBar.appendChild(btnRestart);
 
+  // Retry Wrong Button (§24.5)
+  const btnRetryWrong = doc.createElement("button");
+  btnRetryWrong.type = "button";
+  btnRetryWrong.id = "btnRetryWrong";
+  btnRetryWrong.className = "btn-secondary btn-retry-wrong";
+  btnRetryWrong.textContent = "Luyện Lại Câu Sai";
+  btnRetryWrong.title = "Luyện lại câu sai — không gửi giáo viên";
+
+  const onRetryWrongClick = () => {
+    if (actions && typeof actions.retryWrong === "function") {
+      actions.retryWrong({ examId: report.attempt.examId });
+    }
+  };
+  btnRetryWrong.addEventListener("click", onRetryWrongClick);
+  cleanupFns.push(() => btnRetryWrong.removeEventListener("click", onRetryWrongClick));
+  actionsBar.appendChild(btnRetryWrong);
+
   // Print helper explanation without programmatic PDF generation claim
   const printHelp = doc.createElement("div");
   printHelp.className = "print-help-text no-print";
@@ -969,6 +1092,138 @@ export function mount(
   reviewHeading.textContent = "Chi Tiết Bài Làm & Lời Giải Từng Câu";
   container.appendChild(reviewHeading);
 
+  // R4 (§24.1): #reviewFilter
+  const filterWrap = doc.createElement("div");
+  filterWrap.id = "reviewFilter";
+  filterWrap.className = "review-filter-bar no-print";
+  filterWrap.setAttribute("role", "toolbar");
+  filterWrap.setAttribute("aria-label", "Bộ lọc câu hỏi");
+
+  const filterButtons: Record<string, HTMLButtonElement> = {};
+  const questionElements: { item: HTMLElement; q: ReportQuestion | ReleasedReportQuestion }[] = [];
+
+  const updateFilterUI = (filterKey: "all" | "wrong" | "blank") => {
+    for (const [key, btn] of Object.entries(filterButtons)) {
+      btn.setAttribute("aria-pressed", String(key === filterKey));
+      if (key === filterKey) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+    }
+    for (const { item, q } of questionElements) {
+      if (filterKey === "all") {
+        item.style.display = "";
+      } else if (filterKey === "wrong") {
+        const isWrong = q.status === "wrong" || q.status === "invalid";
+        item.style.display = isWrong ? "" : "none";
+      } else if (filterKey === "blank") {
+        const isBlank = q.status === "unanswered";
+        item.style.display = isBlank ? "" : "none";
+      }
+    }
+  };
+
+  const btnAll = doc.createElement("button");
+  btnAll.type = "button";
+  btnAll.className = "btn-filter active";
+  btnAll.setAttribute("data-filter", "all");
+  btnAll.setAttribute("aria-pressed", "true");
+  btnAll.textContent = "Tất cả";
+  filterButtons["all"] = btnAll;
+
+  const btnWrong = doc.createElement("button");
+  btnWrong.type = "button";
+  btnWrong.className = "btn-filter";
+  btnWrong.setAttribute("data-filter", "wrong");
+  btnWrong.setAttribute("aria-pressed", "false");
+  btnWrong.textContent = "Sai";
+  filterButtons["wrong"] = btnWrong;
+
+  const btnBlank = doc.createElement("button");
+  btnBlank.type = "button";
+  btnBlank.className = "btn-filter";
+  btnBlank.setAttribute("data-filter", "blank");
+  btnBlank.setAttribute("aria-pressed", "false");
+  btnBlank.textContent = "Bỏ trống";
+  filterButtons["blank"] = btnBlank;
+
+  const onAllClick = () => updateFilterUI("all");
+  const onWrongClick = () => updateFilterUI("wrong");
+  const onBlankClick = () => updateFilterUI("blank");
+
+  btnAll.addEventListener("click", onAllClick);
+  btnWrong.addEventListener("click", onWrongClick);
+  btnBlank.addEventListener("click", onBlankClick);
+
+  cleanupFns.push(() => btnAll.removeEventListener("click", onAllClick));
+  cleanupFns.push(() => btnWrong.removeEventListener("click", onWrongClick));
+  cleanupFns.push(() => btnBlank.removeEventListener("click", onBlankClick));
+
+  filterWrap.appendChild(btnAll);
+  filterWrap.appendChild(btnWrong);
+  filterWrap.appendChild(btnBlank);
+  container.appendChild(filterWrap);
+
+  // R4 (§24.1): #reviewNav
+  const navWrap = doc.createElement("nav");
+  navWrap.id = "reviewNav";
+  navWrap.className = "review-nav-bar no-print";
+  navWrap.setAttribute("aria-label", "Thanh điều hướng số câu");
+
+  report.questions.forEach((q: ReportQuestion | ReleasedReportQuestion, index: number) => {
+    const navLink = doc.createElement("a");
+    navLink.href = `#q-${q.questionVersionId}`;
+    navLink.setAttribute("href", `#q-${q.questionVersionId}`);
+    navLink.className = `review-nav-item nav-status-${q.status}`;
+    navLink.setAttribute("data-qid", q.questionVersionId);
+
+    let statusText = "Đúng";
+    if (q.status === "wrong" || q.status === "invalid") {
+      statusText = "Sai";
+    } else if (q.status === "unanswered") {
+      statusText = "Bỏ trống";
+    } else if (q.status === "partial") {
+      statusText = "Một phần";
+    }
+
+    navLink.setAttribute("aria-label", `Câu ${index + 1}: ${statusText}`);
+
+    const numSpan = doc.createElement("span");
+    numSpan.className = "nav-num";
+    numSpan.textContent = `${index + 1}`;
+    navLink.appendChild(numSpan);
+
+    const space = doc.createTextNode(" ");
+    navLink.appendChild(space);
+
+    const tagSpan = doc.createElement("span");
+    tagSpan.className = `nav-status-tag tag-${q.status}`;
+    tagSpan.textContent = statusText;
+    navLink.appendChild(tagSpan);
+
+    const onNavClick = (e: Event) => {
+      if (typeof (e as any).preventDefault === "function") {
+        (e as any).preventDefault();
+      }
+      const target = doc.getElementById(`q-${q.questionVersionId}`);
+      if (target) {
+        if (target.style.display === "none") {
+          updateFilterUI("all");
+        }
+        if (typeof target.scrollIntoView === "function") {
+          target.scrollIntoView({ behavior: "instant", block: "start" });
+        }
+      }
+    };
+
+    navLink.addEventListener("click", onNavClick);
+    cleanupFns.push(() => navLink.removeEventListener("click", onNavClick));
+    navWrap.appendChild(navLink);
+  });
+
+  container.appendChild(navWrap);
+
   const reviewList = doc.createElement("div");
   reviewList.id = "reviewQuestionsList";
 
@@ -992,6 +1247,7 @@ export function mount(
     item.className = "review-question-card review-question-item question-card";
     item.setAttribute("data-qid", q.questionVersionId);
     item.id = `q-${q.questionVersionId}`;
+    questionElements.push({ item, q });
 
     // Header
     const header = doc.createElement("header");

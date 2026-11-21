@@ -5347,4 +5347,245 @@ describe('E2E & UI Flow Verification — Cunata Web Demo (index.html)', () => {
     p.run('if (typeof resolveHangA === "function") resolveHangA({ ok: false, status: 500 });');
     await scan1;
   });
+
+  it('LC43-F01 regression: collector request deadline aborts hanging fetch/receipt, frees in-flight state, and schedules durable backoff retry', async () => {
+    const store = new Map<string, string>();
+    const p = createPageContext(store);
+    p.run('renderExamPane = () => {}; renderPalette = () => {};');
+
+    const scheduledTimers: { id: number; fn: Function; ms: number }[] = [];
+    let timerCounter = 1;
+    (p.c as any).setTimeout = (fn: Function, ms: number) => {
+      const entry = { id: timerCounter++, fn, ms };
+      scheduledTimers.push(entry);
+      return entry.id;
+    };
+    (p.c as any).clearTimeout = (id: number) => {
+      const idx = scheduledTimers.findIndex(t => t.id === id);
+      if (idx >= 0) scheduledTimers.splice(idx, 1);
+    };
+
+    p.c.fetch = async () => new Promise(() => {}); // hanging fetch
+
+    p.run(`
+      currentExam = {
+        examId: 'exam-timeout',
+        examVersionId: 'v1.0.0',
+        ruleSetId: 'custom-v1',
+        inputPolicyId: 'sa-charset-v1',
+        collectorUrl: 'https://example.invalid/collect',
+        questions: [{ kind: 'III', questionVersionId: 'q-timeout', answerKey: '1' }]
+      };
+      studentState.examId = 'exam-timeout';
+      studentState.examVersionId = 'v1.0.0';
+      studentState.attemptId = 'att-timeout';
+      studentState.responses['q-timeout'] = '1';
+
+      submitExam();
+    `);
+
+    await new Promise(r => setTimeout(r, 10));
+
+    // In-flight status true and request deadline timeout timer scheduled
+    assert.equal(p.run("inFlightDispatches.has('att-timeout')"), true, 'Job must be in-flight before deadline');
+    assert.equal(scheduledTimers.length, 1, 'Deadline timeout timer must be scheduled');
+    assert.equal(scheduledTimers[0]!.ms, 15000, 'Deadline timer must default to 15000ms');
+
+    // Fire the request timeout timer
+    const timeoutTimer = scheduledTimers.shift()!;
+    await timeoutTimer.fn();
+    await new Promise(r => setTimeout(r, 10));
+
+    // Job freed from inFlight and backoff retry timer scheduled
+    assert.equal(p.run("inFlightDispatches.has('att-timeout')"), false, 'Job must be freed from in-flight on deadline');
+    assert.equal(scheduledTimers.length, 1, 'Backoff retry timer must be scheduled');
+    assert.equal(scheduledTimers[0]!.ms, 1000, 'Initial backoff must be 1000ms');
+
+    // Simulate server recovery on retry
+    let retryPostSent = false;
+    p.c.fetch = async () => {
+      retryPostSent = true;
+      return { ok: true, json: async () => ({ success: true, attempt_id: 'att-timeout', status: 'NEWLY_RECORDED' }) };
+    };
+
+    const retryTimer = scheduledTimers.shift()!;
+    await retryTimer.fn();
+    await new Promise(r => setTimeout(r, 10));
+
+    assert.equal(retryPostSent, true, 'Retry must dispatch to collector after backoff elapses');
+    assert.equal(p.run("studentState.serverConfirmed"), true, 'Receipt on retry must confirm studentState');
+  });
+
+  it('LC43-F02 regression: page reload preserves pending 5th retry attempt and exact retry budget across active and archive restore without early exhaustion', async () => {
+    const store = new Map<string, string>();
+    const clock = { now: 100000 };
+
+    function makePage(clockObj: { now: number }) {
+      const p = createPageContext(store);
+      p.run('renderExamPane = () => {}; renderPalette = () => {};');
+      const posts: { url: string; opts: any }[] = [];
+      const timers: { id: number; fn: Function; ms: number; runAt: number }[] = [];
+      let timerSeq = 1;
+
+      const RealDate = Date;
+      function FakeDate(...args: any[]) {
+        if (args.length === 0) return new RealDate(clockObj.now);
+        return new RealDate(...args);
+      }
+      FakeDate.now = () => clockObj.now;
+      FakeDate.prototype = RealDate.prototype;
+      (p.c as any).Date = FakeDate;
+
+      (p.c as any).setTimeout = (fn: Function, ms: number) => {
+        const entry = { id: timerSeq++, fn, ms, runAt: clockObj.now + ms };
+        timers.push(entry);
+        return entry.id;
+      };
+      (p.c as any).clearTimeout = (id: number) => {
+        const idx = timers.findIndex(t => t.id === id);
+        if (idx >= 0) timers.splice(idx, 1);
+      };
+
+      p.c.fetch = async (url: string, opts: any) => {
+        posts.push({ url, opts });
+        return { ok: false, status: 500 };
+      };
+
+      return { p, posts, timers };
+    }
+
+    const { p: p1, posts: posts1, timers: timers1 } = makePage(clock);
+
+    p1.run(`
+      currentExam = {
+        examId: 'exam-f02',
+        examVersionId: 'v1.0.0',
+        ruleSetId: 'custom-v1',
+        inputPolicyId: 'sa-charset-v1',
+        collectorUrl: 'https://example.invalid/collect',
+        questions: [{ kind: 'III', questionVersionId: 'q1', answerKey: '1' }]
+      };
+      studentState.examId = 'exam-f02';
+      studentState.examVersionId = 'v1.0.0';
+      studentState.attemptId = 'att-f02';
+      studentState.responses['q1'] = '1';
+
+      submitExam();
+    `);
+
+    await new Promise(r => setTimeout(r, 10));
+    assert.equal(posts1.filter(x => x.opts && x.opts.method === 'POST').length, 1, 'Initial submit sends 1 POST');
+    assert.equal(timers1.length, 1, 'First retry timer scheduled');
+
+    // Run 4 retries (initial + 4 retries = 5 POSTs)
+    for (let i = 0; i < 4; i++) {
+      const t = timers1.shift()!;
+      clock.now = t.runAt;
+      await t.fn();
+      await new Promise(r => setTimeout(r, 5));
+    }
+
+    assert.equal(posts1.filter(x => x.opts && x.opts.method === 'POST').length, 5, 'Total 5 POSTs sent in initial page');
+    assert.equal(timers1.length, 1, 'Retry #5 timer is pending in page 1');
+
+    const finalKey = 'cunata:final:' + encodeURIComponent('exam-f02') + ':' + encodeURIComponent('v1.0.0') + ':' + encodeURIComponent('att-f02');
+    const storedFinal1 = JSON.parse(store.get(finalKey)!);
+    assert.equal(storedFinal1.retryCount, 5, 'Stored retryCount must be 5');
+    assert.notEqual(storedFinal1.retryExhausted, true, 'Must not be marked retryExhausted yet');
+
+    // Reload into page 2 at the deadline of retry 5
+    clock.now = storedFinal1.nextRetryAt;
+    const { p: p2, posts: posts2 } = makePage(clock);
+
+    p2.run(`
+      currentExam = {
+        examId: 'exam-f02',
+        examVersionId: 'v1.0.0',
+        ruleSetId: 'custom-v1',
+        inputPolicyId: 'sa-charset-v1',
+        collectorUrl: 'https://example.invalid/collect',
+        questions: [{ kind: 'III', questionVersionId: 'q1', answerKey: '1' }]
+      };
+      initExam();
+    `);
+
+    await new Promise(r => setTimeout(r, 10));
+
+    // Page 2 dispatches the 5th retry POST upon restore at deadline
+    assert.equal(posts2.filter(x => x.opts && x.opts.method === 'POST').length, 1, 'Page 2 executes the 1 remaining retry POST');
+    assert.equal(p2.run('studentState.retryExhausted'), true, 'Page 2 marks retryExhausted after 5th retry fails');
+
+    const storedFinal2 = JSON.parse(store.get(finalKey)!);
+    assert.equal(storedFinal2.retryCount, 6, 'Final record retryCount must be 6');
+    assert.equal(storedFinal2.retryExhausted, true, 'Final record must be marked retryExhausted');
+
+    // Subsequent reload into page 3 at future time must send 0 POSTs
+    clock.now += 60000;
+    const { p: p3, posts: posts3, timers: timers3 } = makePage(clock);
+    p3.run(`
+      currentExam = {
+        examId: 'exam-f02',
+        examVersionId: 'v1.0.0',
+        ruleSetId: 'custom-v1',
+        inputPolicyId: 'sa-charset-v1',
+        collectorUrl: 'https://example.invalid/collect',
+        questions: [{ kind: 'III', questionVersionId: 'q1', answerKey: '1' }]
+      };
+      initExam();
+    `);
+    await new Promise(r => setTimeout(r, 10));
+
+    assert.equal(posts3.filter(x => x.opts && x.opts.method === 'POST').length, 0, 'Exhausted attempt sends 0 POSTs on reload');
+    assert.equal(timers3.length, 0, 'Exhausted attempt schedules 0 retry timers');
+  });
+
+  it('LC43-F04 regression: question bank mutations strictly propagate storage errors, perform atomic batch import without inflating count, and prevent false success notifications', () => {
+    const store = new Map<string, string>();
+    let throwStorageError = false;
+
+    const p = createPageContext(store);
+    const origSetItem = (p.c.localStorage as any).setItem;
+    (p.c.localStorage as any).setItem = (k: string, v: string) => {
+      if (throwStorageError && k === 'cunata:question_bank') {
+        const err = new Error('The quota has been exceeded.');
+        err.name = 'QuotaExceededError';
+        throw err;
+      }
+      return origSetItem(k, v);
+    };
+
+    // 1. Initial valid question saved
+    p.run(`saveQuestionToBank({ kind: 'III', questionVersionId: 'q-existing', answerKey: '1', lesson: 'Bài 1' })`);
+    const initialBank = JSON.parse(store.get('cunata:question_bank')!);
+    assert.equal(initialBank.length, 1);
+    assert.equal(initialBank[0].questionVersionId, 'q-existing');
+
+    // 2. Enable quota exceeded error
+    throwStorageError = true;
+
+    // saveQuestionToBank must strictly throw error, not return silently
+    assert.throws(() => {
+      p.run(`saveQuestionToBank({ kind: 'III', questionVersionId: 'q-new-1', answerKey: '2', lesson: 'Bài 2' })`);
+    }, /QuotaExceededError/);
+
+    // importQuestionsToBank must strictly throw error and NOT return count
+    assert.throws(() => {
+      p.run(`importQuestionsToBank([{ kind: 'III', questionVersionId: 'q-new-2', answerKey: '3', lesson: 'Bài 3' }])`);
+    }, /QuotaExceededError/);
+
+    // Bank in storage must remain untouched with only original question
+    const bankAfterError = JSON.parse(store.get('cunata:question_bank')!);
+    assert.equal(bankAfterError.length, 1);
+    assert.equal(bankAfterError[0].questionVersionId, 'q-existing');
+
+    // 3. Disable quota error (storage recovered) and retry import
+    throwStorageError = false;
+    const importedCount = p.run(`importQuestionsToBank([{ kind: 'III', questionVersionId: 'q-new-2', answerKey: '3', lesson: 'Bài 3' }])`);
+    assert.equal(importedCount, 1, 'Recovered import must record exact written count');
+
+    const bankRecovered = JSON.parse(store.get('cunata:question_bank')!);
+    assert.equal(bankRecovered.length, 2);
+    assert.equal(bankRecovered[1].questionVersionId, 'q-new-2');
+    assert.equal(bankRecovered[1].lesson, 'Bài 3');
+  });
 });

@@ -205,13 +205,16 @@ export function buildManualPartII(options: {
   readonly statementItems: readonly { readonly text: string; readonly answer?: boolean; readonly label?: string }[];
 }): Partial<WebQuestion> {
   const letters = ["a", "b", "c", "d"];
-  const statements: WebStatement[] = options.statementItems.map((item, idx) => {
-    return {
+  const statements = options.statementItems.map((item, idx) => {
+    const s: any = {
       statementId: `stmt-${idx + 1}`,
       label: item.label ?? letters[idx] ?? `${idx + 1}`,
       text: item.text,
-      answer: item.answer ?? false,
     };
+    if (typeof item.answer === "boolean") {
+      s.answer = item.answer;
+    }
+    return s;
   });
 
   const q: Record<string, unknown> = {
