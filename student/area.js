@@ -637,7 +637,7 @@ export function mountStudentArea(container, options = {}) {
         }
         currentPreviewExam = exam;
         previewTitle.textContent = exam.title;
-        previewDesc.textContent = exam.description || `Đề luyện tập ${exam.questionCount} câu theo cấu trúc tốt nghiệp THPT`;
+        previewDesc.textContent = exam.description || `Đề luyện tập ${exam.questionCount} câu`;
         previewMeta.textContent = `${exam.questionCount} câu · ${exam.durationMinutes} phút`;
         previewDates.textContent = '';
         if (exam.openAt) {
@@ -1002,7 +1002,7 @@ export function mountStudentArea(container, options = {}) {
                         questionCount: Number(e.questionCount) || 0,
                         url: String(e.url || ''),
                         source: 'static',
-                        description: e.description || `Đề luyện tập ${Number(e.questionCount) || 0} câu theo cấu trúc tốt nghiệp THPT`,
+                        description: e.description || `Đề luyện tập ${Number(e.questionCount) || 0} câu`,
                     }));
                 }
             }
@@ -1122,7 +1122,7 @@ export function mountStudentArea(container, options = {}) {
                     title: a.title,
                     subject: a.subject,
                     questionCount: Number(a.questionCount) || 0,
-                    durationMinutes: Number(a.durationMinutes) || 50,
+                    durationMinutes: Number(a.durationMinutes) || null,
                     openAt: a.openAt,
                     dueAt: a.dueAt,
                 })),
@@ -1169,7 +1169,7 @@ export function mountStudentArea(container, options = {}) {
                             title: a.title,
                             subject: a.subject,
                             questionCount: Number(a.questionCount) || 0,
-                            durationMinutes: Number(a.durationMinutes) || 50,
+                            durationMinutes: Number(a.durationMinutes) || null,
                             openAt: a.openAt,
                             dueAt: a.dueAt,
                         })),

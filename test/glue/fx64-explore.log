@@ -1,0 +1,14 @@
+✔ dist: [ui] EX-HS-01 điện thoại 390px: màn làm bài không rộng hơn màn hình (không thanh cuộn ngang) (WEB-contract §9, §19.1) (11207.0699ms)
+✔ dist: [student] EX-HS-02 mỗi câu có nút đánh dấu (.btn-flag); bấm thì ô số câu trong #paletteGrid có lớp "flagged", bấm lại thì bỏ (WEB-contract §19.1) (4453.9518ms)
+✔ dist: [ui] EX-HS-03 điện thoại: bấm số câu trong danh sách thì thấy ĐẦU câu đó (tiêu đề + đề dẫn) ngay dưới thanh trên, không rơi vào giữa các ý (WEB-contract §19.1) (6446.6454ms)
+✔ dist: [student] EX-HS-04 làm 3 câu, tải lại trang: hộp xác nhận nộp đếm đúng "3/8" câu đã làm (WEB-contract §19.1) (3454.2807ms)
+✔ dist: [student] EX-HS-05 thẻ đề và hộp xem trước hiện đúng thời gian của đề (15 phút), không mặc định 50 phút (WEB-contract §19.1, §21) (3429.3896ms)
+✔ dist: [student] EX-HS-06 đề ngắn (3 câu) không được tự mô tả là "theo cấu trúc tốt nghiệp THPT" (WEB-contract §19.1) (5239.479ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 87616.2829

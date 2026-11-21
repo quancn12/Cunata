@@ -1,0 +1,40 @@
+▶ WEB-FINAL-INTEGRATE — Full Application Integration & Lifecycle
+  ✔ verifies that root index.html remains usable directly via file:// without module CORS errors (6.7964ms)
+  ✔ verifies cutover gates enforce NEED_DECISION and preserve root legacy demo (1.0216ms)
+  ✔ verifies router supports all 5 official routes and preserves query params (2.7078ms)
+  ✔ bootstraps application and navigates cleanly across all 5 routes with modal isolation (54.7356ms)
+  ✔ verifies submit flow generates report and navigates to report view with clean disposal (64.6521ms)
+  ✔ CK32-F02 regression: #candidateName remains strictly readOnly in composition root during exam (31.7899ms)
+  ✔ CK34-F01 regression: clearing Part III answer persists raw: null to draft and scores 0 upon submission (252.0758ms)
+  ✔ CK32-F01 regression: syncText reports Chưa lưu on storage write failure and only recovers to Đã lưu upon durable confirmation (173.1739ms)
+  ✔ FX33-integrator regression: #btnSubmit opens submit modal immediately and confirm submits cleanly (125.0945ms)
+✔ WEB-FINAL-INTEGRATE — Full Application Integration & Lifecycle (714.3702ms)
+▶ WEB-W2-GLUE — Composition Root & Bootstrap Lifecycle
+  ✔ bootstrap throws an error when called with an invalid root element (6.795ms)
+  ✔ bootstrap injects semantic shell slots and initializes default views (42.3761ms)
+  ✔ bootstrap manages route transitions and modal displays cleanly (15.2962ms)
+  ✔ bootstrap coordinates submit modal confirmation workflow (3.6181ms)
+  ✔ bootstrap disposes cleanly and unsubscribes all listeners without memory leaks (3.329ms)
+✔ WEB-W2-GLUE — Composition Root & Bootstrap Lifecycle (73.1588ms)
+▶ WEB-W4-GLUE — Compatibility, Regressions & Policy Isolation
+  ✔ verifies root index.html is directly openable via file:// without module CORS errors (13.2906ms)
+  ✔ verifies cutover gates enforce NEED_DECISION and preserve root legacy demo (0.3462ms)
+  ✔ verifies generateFileOpenFallback generates valid fallback structure (0.667ms)
+  ✔ verifies BigInt Rational arithmetic invariants across edge cases (4.0593ms)
+  ✔ verifies Part III exact string comparison and negative number handling (-0,5) (4.2115ms)
+  ✔ verifies custom mode formula: when BASE >= 10, POINT_III = 0.25 (1/4) and total max is not clamped (0.8611ms)
+✔ WEB-W4-GLUE — Compatibility, Regressions & Policy Isolation (25.9573ms)
+▶ WEB-W4-GLUE — Integration & Lifecycle Hardening
+  ✔ verifies route parsing and serialization for all 5 valid routes (2.6771ms)
+  ✔ verifies router navigation and subscription notification (1.1487ms)
+  ✔ bootstraps application into container, populates shell and manages route views (59.3696ms)
+  ✔ verifies submission confirmation modal action flow and report display (3.5092ms)
+✔ WEB-W4-GLUE — Integration & Lifecycle Hardening (69.1878ms)
+ℹ tests 24
+ℹ suites 4
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1204.6771

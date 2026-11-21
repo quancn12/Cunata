@@ -1,0 +1,23 @@
+▶ [ui] quy chuẩn thiết kế — 375px
+  ✔ dist: [ui][app] 375px màn chọn vai: hai thẻ Học sinh / Giáo viên, đúng quy chuẩn (13412.0039ms)
+  ✔ dist: [ui][student] 375px trang học sinh: đề dạng thẻ có mô tả + trạng thái, đúng quy chuẩn (6883.5828ms)
+  ✔ dist: [ui][student] 375px màn làm bài: không có công cụ giáo viên, câu 1 thấy ngay, đúng quy chuẩn (5359.8583ms)
+  ✔ dist: [ui][teacher] 375px đăng nhập giáo viên: có tên đăng nhập + mật khẩu, đúng quy chuẩn (13150.5831ms)
+  ✔ dist: [ui][admin] 375px trang admin riêng (admin.html), đúng quy chuẩn (1390.0026ms)
+✔ [ui] quy chuẩn thiết kế — 375px (40572.9616ms)
+▶ [ui] quy chuẩn thiết kế — 1440px
+  ✔ dist: [ui][app] 1440px màn chọn vai: hai thẻ Học sinh / Giáo viên, đúng quy chuẩn (3856.3495ms)
+  ✔ dist: [ui][student] 1440px trang học sinh: đề dạng thẻ có mô tả + trạng thái, đúng quy chuẩn (12559.7865ms)
+  ✔ dist: [ui][student] 1440px màn làm bài: không có công cụ giáo viên, câu 1 thấy ngay, đúng quy chuẩn (5454.188ms)
+  ✔ dist: [ui][teacher] 1440px đăng nhập giáo viên: có tên đăng nhập + mật khẩu, đúng quy chuẩn (9064.2065ms)
+  ✔ dist: [ui][admin] 1440px trang admin riêng (admin.html), đúng quy chuẩn (3323.9375ms)
+✔ [ui] quy chuẩn thiết kế — 1440px (34259.0835ms)
+✔ dist: [ui] màu chỉ định nghĩa trong src/ui/tokens.css; dark mode có bộ token riêng (110.7328ms)
+ℹ tests 11
+ℹ suites 2
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 136467.842

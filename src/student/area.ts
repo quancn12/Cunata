@@ -33,7 +33,7 @@ export interface StudentAssignment {
   title: string;
   subject?: string;
   questionCount: number;
-  durationMinutes: number;
+  durationMinutes: number | null;
   openAt: string;
   dueAt: string;
 }
@@ -752,7 +752,7 @@ export function mountStudentArea(
     }
     currentPreviewExam = exam;
     previewTitle.textContent = exam.title;
-    previewDesc.textContent = exam.description || `Đề luyện tập ${exam.questionCount} câu theo cấu trúc tốt nghiệp THPT`;
+    previewDesc.textContent = exam.description || `Đề luyện tập ${exam.questionCount} câu`;
     previewMeta.textContent = `${exam.questionCount} câu · ${exam.durationMinutes} phút`;
 
     previewDates.textContent = '';
@@ -1118,7 +1118,7 @@ export function mountStudentArea(
             questionCount: Number(e.questionCount) || 0,
             url: String(e.url || ''),
             source: 'static' as const,
-            description: e.description || `Đề luyện tập ${Number(e.questionCount) || 0} câu theo cấu trúc tốt nghiệp THPT`,
+            description: e.description || `Đề luyện tập ${Number(e.questionCount) || 0} câu`,
           }));
         }
       }
@@ -1236,7 +1236,7 @@ export function mountStudentArea(
           title: a.title,
           subject: a.subject,
           questionCount: Number(a.questionCount) || 0,
-          durationMinutes: Number(a.durationMinutes) || 50,
+          durationMinutes: Number(a.durationMinutes) || null,
           openAt: a.openAt,
           dueAt: a.dueAt,
         })),
@@ -1283,7 +1283,7 @@ export function mountStudentArea(
                 title: a.title,
                 subject: a.subject,
                 questionCount: Number(a.questionCount) || 0,
-                durationMinutes: Number(a.durationMinutes) || 50,
+                durationMinutes: Number(a.durationMinutes) || null,
                 openAt: a.openAt,
                 dueAt: a.dueAt,
               })),

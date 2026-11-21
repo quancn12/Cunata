@@ -266,6 +266,17 @@ textarea.ui-control { min-height: calc(var(--target) * 3); resize: vertical; }
 }
 
 @media (max-width: 1023px) {
+  .app-header .brand-section {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .app-header #examTitle {
+    min-width: 0;
+  }
+  #examPane .statement-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
   #examWrapper, .main-wrapper {
     grid-template-columns: minmax(0, 1fr) !important;
   }
@@ -285,6 +296,15 @@ textarea.ui-control { min-height: calc(var(--target) * 3); resize: vertical; }
   }
   #btnOpenExamList, #btnSubmit {
     white-space: nowrap;
+  }
+}
+
+@media (max-width: 639px) {
+  #examPane .statement-row {
+    grid-template-columns: var(--sp-6) minmax(0, 1fr);
+  }
+  #examPane .tf-toggle-group {
+    grid-column: 2;
   }
 }
 

@@ -4,6 +4,19 @@
 .role-chooser .ui-exam-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .role-chooser .ui-button { display: flex; flex-direction: column; align-items: flex-start; width: 100%; gap: var(--sp-3); padding: var(--sp-5); font-size: var(--fs-lg); }
 .role-description { font-size: var(--fs-md); font-weight: 400; color: var(--c-text-2); text-align: start; }
+
+/* Keep the exam header and true/false rows within narrow viewports. */
+.app-header .brand-section { min-width: 0; max-width: 100%; }
+.app-header .exam-meta-title { min-width: 0; }
+#examPane .statement-row { grid-template-columns: var(--sp-6) minmax(0, 1fr) auto; }
+#examPane .statement-text { min-width: 0; overflow-wrap: anywhere; }
+#examPane .question-card-header { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+#examPane .btn-flag { min-height: var(--target); min-width: var(--target); border-radius: var(--r-sm); padding: var(--sp-2) var(--sp-3); font-size: var(--fs-sm); color: var(--c-primary); border-color: var(--c-border); }
+#examPane .btn-flag.flagged { color: var(--c-warning); background: var(--c-surface-2); border-color: var(--c-warning); }
+@media (max-width: 639px) {
+  #examPane .statement-row { grid-template-columns: var(--sp-6) minmax(0, 1fr); }
+  #examPane .tf-toggle-group { grid-column: 2; justify-self: start; }
+}
 @media (max-width: 639px) { .role-chooser .ui-exam-grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* WEB-contract §21: khu học sinh không còn lưới Đề luyện tập #practiceExams công khai */

@@ -1,0 +1,14 @@
+✔ FX64 exam: 375px light, keyboard flags and incomplete II count (1171.6187ms)
+✔ FX64 exam: 375px dark, keyboard flags and incomplete II count (749.3065ms)
+✔ FX64 exam: 768px light, keyboard flags and incomplete II count (765.5866ms)
+✔ FX64 exam: 768px dark, keyboard flags and incomplete II count (857.3908ms)
+✔ FX64 exam: 1440px light, keyboard flags and incomplete II count (1177.8434ms)
+✔ FX64 exam: 1440px dark, keyboard flags and incomplete II count (1232.0136ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6450.3016

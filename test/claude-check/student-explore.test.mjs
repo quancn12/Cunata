@@ -4,20 +4,20 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { launchBrowser } from './harness.mjs';
 import { TARGETS, enterStudentArea, joinClass, mouseClick, startFromCard, typeShort, waitBoot, waitSaved } from './app.mjs';
-import { classroomServer, seedClass } from './classroom.mjs';
+import { classroomServer, seedClass, seedTeacher } from './classroom.mjs';
 
 const dist = TARGETS.find((t) => t.name === 'dist');
 const TOAN = 'exam-thpt-toan-full-demo';   // 8 câu: I×4, II×2, III×2, 50 phút
 const HOA = 'exam-thpt-hoa-repeating-demo'; // 3 câu trả lời ngắn, 15 phút
-let browser, env;
-before(async () => { browser = await launchBrowser(); env = await classroomServer(dist.dir); });
+let browser, env, token;
+before(async () => { browser = await launchBrowser(); env = await classroomServer(dist.dir); token = seedTeacher(env.gas); });
 after(async () => { await env?.close(); await browser?.close(); });
 
 async function student(w, h, examId, { start = true } = {}) {
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
   await page.setViewport(w, h, w < 600);
-  const { code } = seedClass(env.gas, [examId]);
+  const { code } = seedClass(env.gas, [examId], { token });
   await page.goto(env.server.url + '#/hoc-sinh');
   await waitBoot(page);
   await enterStudentArea(page, { name: 'Học sinh thi thử' });

@@ -642,6 +642,7 @@ export async function bootstrap(root, options) {
     let teacherCtrl = null;
     let onAreaRoute = null;
     let responses = Object.create(null);
+    const flaggedQuestionIds = new Set();
     let presentationOrder = null;
     let isSubmitted = false;
     let scoredResult = null;
@@ -1458,6 +1459,13 @@ export async function bootstrap(root, options) {
             }
         }
     };
+    const isQuestionAnswered = (q) => {
+        const res = responses[q.questionVersionId];
+        if (q.kind === 'II') {
+            return !!res && q.statements.every((st) => typeof res[st.statementId] === 'boolean');
+        }
+        return typeof res === 'string' && res.length > 0;
+    };
     // Palette rendering
     const updatePalette = () => {
         if (!paletteProgress)
@@ -1474,16 +1482,7 @@ export async function bootstrap(root, options) {
             questionsToRender.push(...currentExam.questions);
         }
         const total = questionsToRender.length;
-        let answered = 0;
-        for (const q of questionsToRender) {
-            const res = responses[q.questionVersionId];
-            if (q.kind === 'I' && typeof res === 'string' && res)
-                answered++;
-            else if (q.kind === 'II' && res && typeof res === 'object' && Object.keys(res).length === 4)
-                answered++;
-            else if (q.kind === 'III' && typeof res === 'string' && res.length > 0)
-                answered++;
-        }
+        const answered = questionsToRender.filter(isQuestionAnswered).length;
         const isShuffled = !!(presentationOrder && presentationOrder.seed && presentationOrder.seed !== 'original');
         paletteProgress.textContent = `Đã làm: ${answered}/${total} câu${isShuffled ? ' · Trộn' : ''}`;
         if (paletteGrid) {
@@ -1494,22 +1493,22 @@ export async function bootstrap(root, options) {
                 btn.type = 'button';
                 btn.className = 'palette-btn';
                 btn.textContent = String(idx + 1);
-                const res = responses[q.questionVersionId];
-                let isDone = false;
-                if (q.kind === 'I' && res)
-                    isDone = true;
-                else if (q.kind === 'II' && res && Object.keys(res).length === 4)
-                    isDone = true;
-                else if (q.kind === 'III' && typeof res === 'string' && res.length > 0)
-                    isDone = true;
+                const isDone = isQuestionAnswered(q);
                 if (isDone)
                     btn.classList.add('answered');
+                const flagged = flaggedQuestionIds.has(q.questionVersionId);
+                if (flagged)
+                    btn.classList.add('flagged');
                 btn.setAttribute('aria-pressed', isDone ? 'true' : 'false');
-                btn.setAttribute('aria-label', `Câu ${idx + 1} (${isDone ? 'Đã làm' : 'Chưa làm'})`);
+                btn.setAttribute('aria-label', `Câu ${idx + 1} (${isDone ? 'Đã làm' : 'Chưa làm'}${flagged ? ', Đánh dấu' : ''})`);
                 btn.addEventListener('click', () => {
                     const card = root.querySelector(`[id="qcard-${q.questionVersionId}"]`);
                     if (card && typeof card.scrollIntoView === 'function') {
-                        card.scrollIntoView({ block: 'center' });
+                        root.querySelector('.palette-card')?.classList.remove('is-open');
+                        const header = root.querySelector('.app-header');
+                        card.style.scrollMarginTop = `${Math.max(0, header?.getBoundingClientRect().bottom ?? 0)}px`;
+                        card.focus({ preventScroll: true });
+                        card.scrollIntoView({ block: 'start' });
                     }
                 });
                 paletteGrid.appendChild(btn);
@@ -1537,12 +1536,31 @@ export async function bootstrap(root, options) {
             const card = docObj.createElement('section');
             card.className = 'question-card';
             card.id = `qcard-${q.questionVersionId}`;
+            card.setAttribute('tabindex', '-1');
             const cardHeader = docObj.createElement('div');
             cardHeader.className = 'question-card-header';
             const titleSpan = docObj.createElement('span');
             titleSpan.className = 'question-title';
             titleSpan.textContent = q.title || `Câu ${qIdx + 1}`;
             cardHeader.appendChild(titleSpan);
+            const flagButton = docObj.createElement('button');
+            flagButton.type = 'button';
+            flagButton.textContent = 'Đánh dấu';
+            const updateFlagButton = () => {
+                const flagged = flaggedQuestionIds.has(q.questionVersionId);
+                flagButton.className = `ui-button ui-button--ghost btn-flag${flagged ? ' flagged' : ''}`;
+                flagButton.setAttribute('aria-pressed', String(flagged));
+            };
+            updateFlagButton();
+            flagButton.addEventListener('click', () => {
+                if (flaggedQuestionIds.has(q.questionVersionId))
+                    flaggedQuestionIds.delete(q.questionVersionId);
+                else
+                    flaggedQuestionIds.add(q.questionVersionId);
+                updateFlagButton();
+                updatePalette();
+            });
+            cardHeader.appendChild(flagButton);
             card.appendChild(cardHeader);
             const stem = docObj.createElement('div');
             stem.className = 'question-stem';
@@ -2274,6 +2292,7 @@ export async function bootstrap(root, options) {
     const loadOrResumeExam = async (examData, forceNew = false, requestedAttemptId, meta) => {
         controller?.dispose();
         controller = null;
+        flaggedQuestionIds.clear();
         currentExam = examData;
         const examId = currentExam.examId;
         const version = currentExam.examVersionId;
@@ -3294,6 +3313,11 @@ export async function bootstrap(root, options) {
             return;
         }
         if (submitModal) {
+            const modalBody = root.querySelector('#modalBodyText');
+            if (modalBody) {
+                const answered = currentExam.questions.filter(isQuestionAnswered).length;
+                modalBody.textContent = `Bạn đã làm ${answered}/${currentExam.questions.length} câu. Bạn có chắc chắn muốn nộp bài để chấm điểm ngay?`;
+            }
             submitModal.style.display = 'flex';
             if (btnCancelSubmit && typeof btnCancelSubmit.focus === 'function') {
                 btnCancelSubmit.focus();
