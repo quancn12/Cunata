@@ -94,6 +94,35 @@ for (const target of TARGETS.filter((t) => t.name === 'dist')) {
       });
     }
 
+    // Trưởng phòng 21/11/2026: "làm bài xong chưa có nút về lại trang học sinh". Nộp xong, màn kết quả phải có nút "Về trang học sinh"
+    // nhìn thấy được (trong khung nhìn, không phải cuộn), bấm bằng chuột thật thì về lại khu học sinh có lớp vừa làm.
+    for (const [w, h] of [[1366, 768], [390, 844]]) {
+      run(`[student][report] nộp bài xong (${w}x${h}): màn kết quả có nút "Về trang học sinh" trong khung nhìn, bấm về lại lớp`, async ({ ctx, server, gas }) => {
+        const ids = manifest().slice(0, 1).map((e) => e.id);
+        const { code } = seedClass(gas, ids);
+        const page = await ctx.newPage();
+        await page.setViewport(w, h, w < 600);
+        await page.goto(server.url + target.path + '#/hoc-sinh');
+        await waitBoot(page);
+        await enterStudentArea(page, { name: 'Học sinh về trang' });
+        const card = await joinClass(page, code);
+        await startFromCard(page, card);
+        await submit(page);
+        const sel = await page.eval(() => {
+          const b = [...document.querySelectorAll('button, a')].find((e) => /Về trang học sinh/i.test(e.textContent || '') && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden');
+          if (!b) return null; b.setAttribute('data-cc-back', '1'); return '[data-cc-back="1"]';
+        });
+        assert.ok(sel, 'màn kết quả phải có nút/liên kết "Về trang học sinh" đang hiển thị');
+        assert.equal(await page.eval(() => innerWidth), w, `màn kết quả không được rộng hơn màn hình ${w}px (công thức/hình dài làm điện thoại tự thu nhỏ cả trang)`);
+        const inView = await page.eval((s) => { const r = document.querySelector(s).getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }, sel);
+        assert.equal(inView, true, 'nút "Về trang học sinh" phải nằm trong khung nhìn ngay khi hiện kết quả (không phải cuộn tìm)');
+        const hit = await mouseClick(page, sel);
+        assert.ok(hit.hitsTarget, `bấm chuột vào nút "Về trang học sinh" phải trúng nút, đang bị đè: ${hit.top}`);
+        await page.waitFor((c) => { const s = document.querySelector(`#myClasses .class-section[data-class-code="${c}"]`); return !!s && s.getClientRects().length > 0; },
+          'bấm "Về trang học sinh": về khu học sinh, thấy lớp vừa làm trong #myClasses', 10000, code);
+      });
+    }
+
     // Quyết định D03 (Codex CK08-F05) trên bản build: chuyển qua lại giữa hai đề được giao phải mở đúng bài dở, giữ đáp án và đồng hồ (§21: qua lớp).
     run('[student][storage] đề A → đề B → quay lại A (cùng lớp): mở lại đúng bài dở của A, giữ đáp án và hạn nộp', async ({ ctx, server, gas }) => {
       const ex = manifest();
@@ -154,6 +183,39 @@ for (const target of TARGETS.filter((t) => t.name === 'dist')) {
       assert.equal(gas.log.filter((l) => l.method === 'OPTIONS').length, 0, 'không được có preflight OPTIONS');
       await page.click('#btnTeacherLogout');
       await page.waitFor(() => !!document.querySelector('#teacherLogin input#teacherPassword'), 'đăng xuất: quay về màn đăng nhập', 8000);
+    });
+
+    // WEB-contract 19.2a (Trưởng phòng 21/11/2026: "lúc thầy giao bài ko có mục vô thời hạn").
+    run('[teacher][student][collect] giao đề "Không hạn nộp": tích #assignNoDue bằng chuột thật → ô hạn nộp bị vô hiệu; dòng bài giao và thẻ đề học sinh hiện "Không hạn nộp"; nộp được', async ({ ctx, server, gas }) => {
+      seedTeacher(gas);
+      const t = await open(ctx, server, '?teacher');
+      await toTeacher(t); await login(t); await loggedIn(t);
+      await nav(t, 'lop');
+      await t.click('#btnCreateClass');
+      await t.waitFor(() => !!document.querySelector('[role=dialog] input'), 'bấm Tạo lớp: hộp thoại nhập tên lớp', 5000);
+      await type(t, '[role=dialog] input', '12A2 Không hạn');
+      await t.press('Enter');
+      const code = await t.waitFor(() => { const c = document.querySelector('.class-card[data-class-id] .class-code'); return c ? c.textContent.trim() : null; }, 'lớp mới có mã', 10000);
+      await t.click('.class-card[data-class-id]');
+      await t.waitFor(() => !!document.getElementById('btnAssignExam'), 'chi tiết lớp có nút #btnAssignExam', 8000);
+      await t.click('#btnAssignExam');
+      await t.waitFor(() => { const d = document.getElementById('assignDialog'); return !!d && getComputedStyle(d).display !== 'none'; }, 'mở #assignDialog', 8000);
+      await t.eval(() => { const sel = document.querySelector('#assignDialog select'); if (sel && sel.options.length > 1) { sel.selectedIndex = 1; sel.dispatchEvent(new Event('change', { bubbles: true })); } else document.querySelector('#assignDialog [data-exam-id]')?.click(); });
+      await t.eval((v) => { const e = document.getElementById('assignOpenAt'); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); }, local(-60));
+      assert.ok(await t.eval(() => !!document.getElementById('assignNoDue')), 'WEB-contract 19.2a: #assignDialog phải có ô tích #assignNoDue "Không hạn nộp"');
+      const hit = await mouseClick(t, '#assignNoDue');
+      assert.ok(hit.hitsTarget, `ô #assignNoDue phải bấm được bằng chuột (đang bị đè: ${hit.top})`);
+      assert.equal(await t.eval(() => document.getElementById('assignNoDue').checked && document.getElementById('assignDueAt').disabled), true, 'tích "Không hạn nộp": ô #assignDueAt phải bị vô hiệu');
+      await t.click('#btnAssignConfirm');
+      await t.waitFor(() => document.querySelectorAll('.assignment-row[data-assignment-id]').length === 1, 'giao xong: có 1 dòng .assignment-row', 10000);
+      assert.match(await t.eval(() => document.querySelector('.assignment-row[data-assignment-id]').innerText), /Không hạn nộp/, 'dòng bài giao phải hiện "Không hạn nộp"');
+      const s = await open(ctx, server, '#/hoc-sinh');
+      await enterStudentArea(s, { name: 'Học sinh không hạn' });
+      const card = await joinClass(s, code);
+      assert.match(await s.eval((q) => document.querySelector(q).innerText, card), /Không hạn nộp/, 'thẻ đề của học sinh phải hiện "Không hạn nộp"');
+      await startFromCard(s, card);
+      await submit(s);
+      await s.waitFor(() => /Đã gửi/i.test(document.getElementById('syncText')?.textContent ?? ''), 'nộp bài không hạn nộp: #syncText "Đã gửi" (không PAST_DUE)', 20000);
     });
 
     run('[teacher][student][collect] trọn luồng lớp học: tạo lớp → giao đề có hạn → học sinh vào lớp bằng mã, làm, nộp → giáo viên thấy kết quả', async ({ ctx, server, gas }) => {

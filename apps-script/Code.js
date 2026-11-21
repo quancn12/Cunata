@@ -1222,7 +1222,7 @@ function validateSubmissionAssignment(code, id, examId) {
     var assignment = tableRows('GiaoDe').find(function (r) { return r[0] === id; });
     if (!cls || !assignment || assignment[1] !== cls[0] || assignment[2] !== examId) return failure('INVALID_ASSIGNMENT', 'Bài giao không thuộc lớp hoặc đề đã chọn');
     if (Date.now() < Date.parse(assignment[3])) return failure('NOT_OPEN', 'Bài giao chưa mở');
-    if (Date.now() > Date.parse(assignment[4]) + 120000) return failure('PAST_DUE', 'Nộp sau hạn — giáo viên chưa nhận');
+    if (assignment[4] !== '' && Date.now() > Date.parse(assignment[4]) + 120000) return failure('PAST_DUE', 'Nộp sau hạn — giáo viên chưa nhận');
     return null;
 }
 function accountAction(action, payload) {
@@ -1302,13 +1302,13 @@ function accountAction(action, payload) {
         if (action === 'listResults') return { success: true, results: classResults(cls[1], payload.assignmentId) };
         if (action === 'assignExam') {
             var isoDate = function (s) { return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/.test(s) && Number.isFinite(Date.parse(s)); };
-            if (!isoDate(payload.openAt) || !isoDate(payload.dueAt) || Date.parse(payload.dueAt) <= Date.parse(payload.openAt)) return failure('INVALID_DATES', 'Hạn nộp phải sau giờ mở, theo ISO 8601');
+            if (!isoDate(payload.openAt) || (payload.dueAt !== '' && (!isoDate(payload.dueAt) || Date.parse(payload.dueAt) <= Date.parse(payload.openAt)))) return failure('INVALID_DATES', 'Hạn nộp phải sau giờ mở, theo ISO 8601');
             if (typeof payload.examId !== 'string' || !payload.examId.trim()) return failure('INVALID_EXAM', 'Thiếu mã đề');
             var meta = examMetadata(payload.examId);
             if (meta && meta.owner !== principal.username && meta.owner !== '') return failure('FORBIDDEN', 'Đề thuộc giáo viên khác');
             // Static shared exams live on the frontend; no client-supplied title/key is persisted here.
             var assignmentId = Utilities.getUuid();
-            writeTable('GiaoDe', ['assignmentId', 'classId', 'examId', 'openAt', 'dueAt', 'createdAt']).appendRow([assignmentId, cls[0], examTextCell(payload.examId), new Date(payload.openAt).toISOString(), new Date(payload.dueAt).toISOString(), new Date().toISOString()]);
+            writeTable('GiaoDe', ['assignmentId', 'classId', 'examId', 'openAt', 'dueAt', 'createdAt']).appendRow([assignmentId, cls[0], examTextCell(payload.examId), new Date(payload.openAt).toISOString(), payload.dueAt === '' ? '' : new Date(payload.dueAt).toISOString(), new Date().toISOString()]);
             SpreadsheetApp.flush(); return { success: true, assignmentId: assignmentId };
         }
     } finally { lock.releaseLock(); }

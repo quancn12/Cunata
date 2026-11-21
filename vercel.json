@@ -4,6 +4,11 @@
   "installCommand": "echo khong-can-cai-dat",
   "buildCommand": "echo da-build-san",
   "outputDirectory": "site",
+  "functions": {
+    "api/rpc.js": {
+      "includeFiles": "api/_lib/**"
+    }
+  },
   "headers": [
     {
       "source": "/service-worker.js",

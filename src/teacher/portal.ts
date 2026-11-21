@@ -27,6 +27,7 @@
 import { Icon } from "../ui/icons.ts";
 import type { IconName } from "../ui/icons.ts";
 import { parseFractionString, toDecimalString } from "../domain/index.ts";
+import type { AssignExamInput } from "../collect/appsScript.ts";
 
 export type AsResult<T> =
   | { ok: true; value: T }
@@ -53,7 +54,7 @@ export interface AppsScriptClient {
   unpublishExam(tokenOrPassword: string, examId: string): Promise<AsResult<true>>;
   createClass?(tokenOrName: string, name?: string): Promise<AsResult<{ classId: string; code: string }>>;
   listMyClasses?(token?: string): Promise<AsResult<Array<{ classId: string; code: string; name: string; createdAt: string; studentCount: number }>>>;
-  assignExam?(tokenOrClassId: string, classIdOrExamId: string, examIdOrOpenAt?: string, openAtOrDueAt?: string, dueAt?: string): Promise<AsResult<{ assignmentId: string }>>;
+  assignExam?(tokenOrClassId: string | AssignExamInput, classIdOrExamId?: string, examIdOrOpenAt?: string, openAtOrDueAt?: string, dueAt?: string): Promise<AsResult<{ assignmentId: string }>>;
   listAssignments?(tokenOrClassId: string, classId?: string): Promise<AsResult<Array<{ assignmentId: string; classId: string; examId: string; openAt: string; dueAt: string; createdAt: string; title: string; questionCount: number; durationMinutes: number; submissionCount?: number }>>>;
   listResults?(tokenOrClassId: string, classIdOrAssignmentId?: string, assignmentId?: string): Promise<AsResult<any[]>>;
 }
@@ -1317,7 +1318,7 @@ export function mountTeacherPortal(
 
             const meta = doc.createElement('div');
             meta.className = 'assignment-meta-info';
-            meta.textContent = `Mở: ${formatViDateTime(a.openAt)} · Hạn nộp: ${formatViDateTime(a.dueAt)} · ${a.submissionCount || 0} bài đã nộp`;
+            meta.textContent = `Mở: ${formatViDateTime(a.openAt)} · ${a.dueAt ? `Hạn nộp: ${formatViDateTime(a.dueAt)}` : 'Không hạn nộp'} · ${a.submissionCount || 0} bài đã nộp`;
             info.appendChild(meta);
             row.appendChild(info);
 
@@ -1449,6 +1450,22 @@ export function mountTeacherPortal(
     dueGroup.appendChild(dueInput);
     form.appendChild(dueGroup);
 
+    const noDueLabel = doc.createElement('label');
+    noDueLabel.className = 'teacher-field-label';
+    noDueLabel.setAttribute('for', 'assignNoDue');
+    const noDueInput = doc.createElement('input');
+    noDueInput.id = 'assignNoDue';
+    noDueInput.type = 'checkbox';
+    noDueInput.style.minWidth = 'var(--target)';
+    noDueInput.style.minHeight = 'var(--target)';
+    noDueLabel.appendChild(noDueInput);
+    noDueLabel.appendChild(doc.createTextNode('Không hạn nộp'));
+    form.appendChild(noDueLabel);
+    noDueInput.addEventListener('change', () => {
+      dueInput.disabled = noDueInput.checked;
+      dueInput.required = !noDueInput.checked;
+    });
+
     // Error message
     const errDiv = doc.createElement('div');
     errDiv.className = 'teacher-error-text';
@@ -1525,7 +1542,7 @@ export function mountTeacherPortal(
       const chosenClassId = targetClassId || classSelect?.value || '';
       const chosenExamId = examSelect.value;
       const openVal = openInput.value;
-      const dueVal = dueInput.value;
+      const dueVal = noDueInput.checked ? '' : dueInput.value;
 
       if (!chosenClassId) {
         errDiv.textContent = 'Vui lòng chọn lớp học';
@@ -1535,14 +1552,14 @@ export function mountTeacherPortal(
         errDiv.textContent = 'Vui lòng chọn đề thi';
         return;
       }
-      if (!openVal || !dueVal) {
+      if (!openVal || (!noDueInput.checked && !dueVal)) {
         errDiv.textContent = 'Vui lòng nhập cả giờ mở và hạn nộp';
         return;
       }
 
       const openMs = new Date(openVal).getTime();
       const dueMs = new Date(dueVal).getTime();
-      if (isNaN(openMs) || isNaN(dueMs) || dueMs <= openMs) {
+      if (isNaN(openMs) || (!noDueInput.checked && (isNaN(dueMs) || dueMs <= openMs))) {
         errDiv.textContent = 'Hạn nộp bài phải sau thời gian mở đề';
         return;
       }
@@ -1551,7 +1568,13 @@ export function mountTeacherPortal(
       try {
         const tok = getStoredTeacherToken() || '';
         if (deps.client.assignExam) {
-          const res = await deps.client.assignExam(
+          const res = noDueInput.checked ? await deps.client.assignExam({
+            token: tok,
+            classId: chosenClassId,
+            examId: chosenExamId,
+            openAt: new Date(openVal).toISOString(),
+            dueAt: '',
+          }) : await deps.client.assignExam(
             tok,
             chosenClassId,
             chosenExamId,

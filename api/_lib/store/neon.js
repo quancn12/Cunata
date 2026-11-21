@@ -95,9 +95,10 @@ CREATE TABLE IF NOT EXISTS assignments (
   class_id TEXT NOT NULL,
   exam_id TEXT NOT NULL,
   open_at TIMESTAMPTZ NOT NULL,
-  due_at TIMESTAMPTZ NOT NULL,
+  due_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL
 );
+ALTER TABLE assignments ALTER COLUMN due_at DROP NOT NULL;
 CREATE TABLE IF NOT EXISTS exams (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
@@ -208,7 +209,7 @@ CREATE TABLE IF NOT EXISTS results (
         return this.memoryClasses.size;
     }
     async saveAssignment(assignment) {
-        await this.execute(`INSERT INTO assignments (assignment_id, class_id, exam_id, open_at, due_at, created_at) VALUES ('${assignment.assignmentId}', '${assignment.classId}', '${assignment.examId.replace(/'/g, "''")}', '${assignment.openAt}', '${assignment.dueAt}', '${assignment.createdAt}')`);
+        await this.execute(`INSERT INTO assignments (assignment_id, class_id, exam_id, open_at, due_at, created_at) VALUES ('${assignment.assignmentId}', '${assignment.classId}', '${assignment.examId.replace(/'/g, "''")}', '${assignment.openAt}', ${assignment.dueAt === '' ? 'NULL' : `'${assignment.dueAt}'`}, '${assignment.createdAt}')`);
         this.memoryAssignments.set(assignment.assignmentId, { ...assignment });
     }
     async getAssignment(assignmentId) {

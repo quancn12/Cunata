@@ -3653,6 +3653,7 @@ export async function bootstrap(
     returnButton.textContent = 'Về trang học sinh';
     returnButton.addEventListener('click', onReturnToStudent);
   }
+  root.querySelector<HTMLButtonElement>('#btnBackToStudent')?.addEventListener('click', onReturnToStudent);
   let routeGeneration = 0;
   const resolveAreaRoute = async (state: RouteState, generation: number) => {
     if (state.route === 'teacher') teacherCtrl?.open();

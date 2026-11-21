@@ -146,9 +146,13 @@ class Parser {
   }
 
   parseAll(): string {
+    return this.parseAtoms().join('');
+  }
+
+  parseAtoms(): string[] {
     const out = this.parseList();
     if (this.i < this.s.length) throw new Unsupported('thừa }');
-    return out.join('');
+    return out;
   }
 }
 
@@ -166,10 +170,21 @@ function isUnitOnly(latex: string): boolean {
 
 export function latexToMathML(latex: string, display = false): string | null {
   try {
-    let body = new Parser(latex.trim()).parseAll();
-    if (isUnitOnly(latex)) body = body.replace(/<mi>/g, '<mi mathvariant="normal">');
-    // displaystyle: phân số trong dòng to bằng chữ thường (đề giấy), không bị thu nhỏ kiểu chỉ số
-    return `<math${display ? ' display="block"' : ''} displaystyle="true" class="math-ml"><semantics><mrow>${body}</mrow><annotation encoding="application/x-tex">${esc(latex)}</annotation></semantics></math>`;
+    const unit = isUnitOnly(latex);
+    // MathML không tự xuống dòng: tách công thức dài sau mỗi dấu quan hệ ở mức ngoài cùng (=, ⇒, ≈…) thành nhiều <math>
+    // để trình duyệt xuống dòng được — nếu không, lời giải dài làm trang rộng hơn màn điện thoại (lỗi đo thật 21/11/2026).
+    const chunks: string[][] = [[]];
+    for (const atom of new Parser(latex.trim()).parseAtoms()) {
+      chunks[chunks.length - 1]!.push(atom);
+      if (/^<mo>(=|⇒|⇔|≈|≠|≤|≥|→|&lt;|&gt;)<\/mo>$/.test(atom)) chunks.push([]);
+    }
+    const parts = chunks.filter((c) => c.length).map((c) => {
+      let body = c.join('');
+      if (unit) body = body.replace(/<mi>/g, '<mi mathvariant="normal">');
+      // displaystyle: phân số trong dòng to bằng chữ thường (đề giấy), không bị thu nhỏ kiểu chỉ số
+      return `<math${display ? ' display="block"' : ''} displaystyle="true" class="math-ml"><mrow>${body}</mrow></math>`;
+    });
+    return `<span class="math-ml-group" title="${esc(latex)}">${parts.join(' ')}</span>`;
   } catch (e) {
     if (e instanceof Unsupported) return null;
     throw e;

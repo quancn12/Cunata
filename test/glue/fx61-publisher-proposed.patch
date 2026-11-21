@@ -1,0 +1,17 @@
+--- a/ops/publish.py
++++ b/ops/publish.py
+@@ -105,8 +105,13 @@
+     # Vercel (Trưởng phòng 19/11/2026): site/ = đúng bản web đã build (không mã nguồn, test, tài liệu); vercel.json bảo Vercel
+     # phục vụ thư mục này, KHÔNG npm install / build (repo có package.json, mặc định Vercel sẽ cố build và hỏng).
+     site = DST / "site"
+-    shutil.copytree(SRC / "dist", site, ignore=lambda _, names: [n for n in names if n in {"node_modules", "__pycache__", "public"}], dirs_exist_ok=True)
++    shutil.copytree(SRC / "dist", site, ignore=lambda _, names: [n for n in names if n in {"node_modules", "__pycache__", "public", "api"}], dirs_exist_ok=True)
+     shutil.copytree(DST / "public", site / "public", dirs_exist_ok=True)      # public đã lọc đề chưa đạt + config thật
++    # WEB-contract section 22: host-specific API transport configuration.
++    (site / "public" / "config.json").write_text(
++        json.dumps({"apiBase": "/api/rpc"}) + "\n", encoding="utf-8")
++    (DST / "public" / "config.json").write_text(
++        json.dumps({"apiBase": "https://cunata.vercel.app/api/rpc"}) + "\n", encoding="utf-8")
+     (DST / "vercel.json").write_text(json.dumps({
+         "$schema": "https://openapi.vercel.sh/vercel.json",
+         "framework": None,

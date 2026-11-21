@@ -3645,6 +3645,7 @@ export async function bootstrap(root, options) {
         returnButton.textContent = 'Về trang học sinh';
         returnButton.addEventListener('click', onReturnToStudent);
     }
+    root.querySelector('#btnBackToStudent')?.addEventListener('click', onReturnToStudent);
     let routeGeneration = 0;
     const resolveAreaRoute = async (state, generation) => {
         if (state.route === 'teacher')

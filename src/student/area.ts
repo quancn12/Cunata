@@ -761,9 +761,9 @@ export function mountStudentArea(
       openDiv.textContent = `Mở: ${formatDateVi(exam.openAt)}`;
       previewDates.appendChild(openDiv);
     }
-    if (exam.dueAt) {
+    if (exam.dueAt || exam.assignmentId) {
       const dueDiv = doc.createElement('div');
-      dueDiv.textContent = `Hạn nộp: ${formatDateVi(exam.dueAt)}`;
+      dueDiv.textContent = exam.dueAt ? `Hạn nộp: ${formatDateVi(exam.dueAt)}` : 'Không hạn nộp';
       previewDates.appendChild(dueDiv);
     }
 
@@ -1031,7 +1031,7 @@ export function mountStudentArea(
               questionCount: displayCount,
               durationMinutes: displayDuration,
               openAt: formatDateVi(a.openAt),
-              dueAt: formatDateVi(a.dueAt),
+              dueAt: a.dueAt ? formatDateVi(a.dueAt) : 'Không hạn nộp',
               status: eff.status,
               score: eff.score,
               onClick: () => {

@@ -179,7 +179,7 @@ export async function loadExam(page, exam) {
 export async function mouseClick(page, sel) {
   const p = await page.eval((s) => {
     const e = document.querySelector(s); if (!e) return null;
-    e.scrollIntoView({ block: 'center' });
+    e.scrollIntoView({ block: 'center', behavior: 'instant' }); // instant: trang có scroll-behavior: smooth thì toạ độ đo xong sẽ lệch khi trang còn đang trượt
     const r = e.getBoundingClientRect(); const x = r.left + r.width / 2, y = r.top + r.height / 2;
     const top = document.elementFromPoint(x, y);
     return { x, y, hitsTarget: !!top && e.contains(top), top: top ? top.tagName.toLowerCase() + (top.id ? '#' + top.id : '') + '.' + String(top.className).trim().split(/\s+/).join('.') : null };

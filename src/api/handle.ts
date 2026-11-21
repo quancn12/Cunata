@@ -391,7 +391,7 @@ export async function handle(request: ApiRequest, ctx: RequestContext): Promise<
           return failure('FORBIDDEN', 'Lớp thuộc giáo viên khác');
         }
 
-        if (!isoDate(payload.openAt) || !isoDate(payload.dueAt) || Date.parse(payload.dueAt as string) <= Date.parse(payload.openAt as string)) {
+        if (!isoDate(payload.openAt) || (payload.dueAt !== '' && (!isoDate(payload.dueAt) || Date.parse(payload.dueAt as string) <= Date.parse(payload.openAt as string)))) {
           return failure('INVALID_DATES', 'Hạn nộp phải sau giờ mở, theo ISO 8601');
         }
 
@@ -411,7 +411,7 @@ export async function handle(request: ApiRequest, ctx: RequestContext): Promise<
           classId: cls.classId,
           examId,
           openAt: new Date(payload.openAt as string).toISOString(),
-          dueAt: new Date(payload.dueAt as string).toISOString(),
+          dueAt: payload.dueAt === '' ? '' : new Date(payload.dueAt as string).toISOString(),
           createdAt: new Date(ctx.now()).toISOString(),
         });
         return success({ assignmentId });
@@ -816,7 +816,7 @@ async function doSubmitResult(
     if (ctx.now() < Date.parse(assignment.openAt)) {
       return failure('NOT_OPEN', 'Bài giao chưa mở');
     }
-    if (ctx.now() > Date.parse(assignment.dueAt) + 120000) {
+    if (assignment.dueAt !== '' && ctx.now() > Date.parse(assignment.dueAt) + 120000) {
       return failure('PAST_DUE', 'Nộp sau hạn — giáo viên chưa nhận');
     }
   }

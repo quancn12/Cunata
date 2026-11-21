@@ -319,3 +319,7 @@ textarea.ui-control { min-height: calc(var(--target) * 3); resize: vertical; }
 /* Công thức MathML (src/ui/math.ts): phân số dọc như đề giấy, cỡ chữ bằng chữ thường. */
 math.math-ml { font-size: 1.08em; }
 math.math-ml mfrac { padding-inline: 0.1em; }
+/* Nhóm công thức không được rộng hơn khung (điện thoại): các mảnh xuống dòng; mảnh nào vẫn quá dài thì cuộn ngang trong chính nó. */
+.math-ml-group { display: inline-block; max-width: 100%; overflow-x: auto; overflow-y: hidden; vertical-align: middle; }
+/* Hình trong đề/lời giải không rộng hơn khung (đo thật 21/11/2026: hình 398px làm trang điện thoại 390px bị thu nhỏ). */
+img.exam-figure { max-width: 100%; height: auto; }

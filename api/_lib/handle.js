@@ -326,7 +326,7 @@ export async function handle(request, ctx) {
                 if (cls.username !== auth.session.username) {
                     return failure('FORBIDDEN', 'Lớp thuộc giáo viên khác');
                 }
-                if (!isoDate(payload.openAt) || !isoDate(payload.dueAt) || Date.parse(payload.dueAt) <= Date.parse(payload.openAt)) {
+                if (!isoDate(payload.openAt) || (payload.dueAt !== '' && (!isoDate(payload.dueAt) || Date.parse(payload.dueAt) <= Date.parse(payload.openAt)))) {
                     return failure('INVALID_DATES', 'Hạn nộp phải sau giờ mở, theo ISO 8601');
                 }
                 const examId = typeof payload.examId === 'string' ? payload.examId.trim() : '';
@@ -343,7 +343,7 @@ export async function handle(request, ctx) {
                     classId: cls.classId,
                     examId,
                     openAt: new Date(payload.openAt).toISOString(),
-                    dueAt: new Date(payload.dueAt).toISOString(),
+                    dueAt: payload.dueAt === '' ? '' : new Date(payload.dueAt).toISOString(),
                     createdAt: new Date(ctx.now()).toISOString(),
                 });
                 return success({ assignmentId });
@@ -690,7 +690,7 @@ async function doSubmitResult(payload, attemptId, ctx) {
         if (ctx.now() < Date.parse(assignment.openAt)) {
             return failure('NOT_OPEN', 'Bài giao chưa mở');
         }
-        if (ctx.now() > Date.parse(assignment.dueAt) + 120000) {
+        if (assignment.dueAt !== '' && ctx.now() > Date.parse(assignment.dueAt) + 120000) {
             return failure('PAST_DUE', 'Nộp sau hạn — giáo viên chưa nhận');
         }
     }
