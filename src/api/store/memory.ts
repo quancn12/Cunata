@@ -1,4 +1,4 @@
-import type { Teacher, Session, ClassItem, Student, Assignment, ExamRecord, ResultRecord, Store } from '../types.ts';
+import type { Teacher, Session, ClassItem, Student, Assignment, ExamRecord, ResultRecord, Store, SaveExamResult, SaveResultOutcome } from '../types.ts';
 
 export class MemoryStore implements Store {
   teachers = new Map<string, Teacher>();
@@ -11,15 +11,15 @@ export class MemoryStore implements Store {
 
   async getTeacher(username: string): Promise<Teacher | null> {
     const t = this.teachers.get(username);
-    return t ? { ...t } : null;
+    return t ? { ...t, authGen: t.authGen ?? 1 } : null;
   }
 
   async saveTeacher(teacher: Teacher): Promise<void> {
-    this.teachers.set(teacher.username, { ...teacher });
+    this.teachers.set(teacher.username, { ...teacher, authGen: teacher.authGen ?? 1 });
   }
 
   async listTeachers(): Promise<Teacher[]> {
-    return Array.from(this.teachers.values()).map(t => ({ ...t }));
+    return Array.from(this.teachers.values()).map(t => ({ ...t, authGen: t.authGen ?? 1 }));
   }
 
   async deleteTeacherSessions(username: string): Promise<void> {
@@ -31,12 +31,12 @@ export class MemoryStore implements Store {
   }
 
   async createSession(session: Session): Promise<void> {
-    this.sessions.set(session.tokenHash, { ...session });
+    this.sessions.set(session.tokenHash, { ...session, authGen: session.authGen ?? 1 });
   }
 
   async getSession(tokenHash: string): Promise<Session | null> {
     const s = this.sessions.get(tokenHash);
-    return s ? { ...s } : null;
+    return s ? { ...s, authGen: s.authGen ?? 1 } : null;
   }
 
   async deleteSession(tokenHash: string): Promise<void> {
@@ -95,8 +95,18 @@ export class MemoryStore implements Store {
     return out;
   }
 
-  async saveExam(exam: ExamRecord): Promise<void> {
-    this.exams.set(exam.id, { ...exam });
+  async saveExam(exam: ExamRecord): Promise<SaveExamResult> {
+    const existing = this.exams.get(exam.id);
+    if (existing && existing.owner !== exam.owner) {
+      return { ok: false, revision: 0, error: 'FORBIDDEN' };
+    }
+    const revision = existing ? existing.revision + 1 : (exam.revision || 1);
+    const record: ExamRecord = {
+      ...exam,
+      revision,
+    };
+    this.exams.set(exam.id, record);
+    return { ok: true, revision };
   }
 
   async getExam(examId: string): Promise<ExamRecord | null> {
@@ -116,8 +126,14 @@ export class MemoryStore implements Store {
     return this.exams.size;
   }
 
-  async saveResult(result: ResultRecord): Promise<void> {
-    this.results.set(result.attempt_id, { ...result });
+  async saveResult(result: ResultRecord): Promise<SaveResultOutcome> {
+    const existing = this.results.get(result.attempt_id);
+    if (existing) {
+      return { inserted: false, record: { ...existing } };
+    }
+    const rec = { ...result };
+    this.results.set(result.attempt_id, rec);
+    return { inserted: true, record: rec };
   }
 
   async getResult(attemptId: string): Promise<ResultRecord | null> {

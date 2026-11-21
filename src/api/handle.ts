@@ -19,8 +19,6 @@ import {
 import { validatePublishedExam } from './examValidation.ts';
 import { parseRational, ratCmp, ratAdd, toCanonicalStr } from './rational.ts';
 
-const inFlightSubmissions = new Map<string, Promise<ApiResponse>>();
-
 function json(status: number, body: ApiResponsePayload): ApiResponse {
   return { status, body };
 }
@@ -66,6 +64,10 @@ async function authenticate(
     if (!teacher || !teacher.active) {
       await ctx.store.deleteSession(tokenHash);
       return { ok: false, response: failure('UNAUTHORIZED', 'Tài khoản đã bị khóa') };
+    }
+    if ((session.authGen ?? 1) !== (teacher.authGen ?? 1)) {
+      await ctx.store.deleteSession(tokenHash);
+      return { ok: false, response: failure('UNAUTHORIZED', 'Phiên đăng nhập đã bị thu hồi') };
     }
   }
   return { ok: true, session };
@@ -238,10 +240,12 @@ export async function handle(request: ApiRequest, ctx: RequestContext): Promise<
 
         const salt = generateToken().slice(0, 32);
         const hash = hashPassword(payload.password, salt);
+        const authGen = (teacher.authGen ?? 1) + 1;
         await ctx.store.saveTeacher({
           ...teacher,
           salt,
           hash,
+          authGen,
         });
         await ctx.store.deleteTeacherSessions(username);
         return success();
@@ -260,9 +264,11 @@ export async function handle(request: ApiRequest, ctx: RequestContext): Promise<
           return failure('INVALID_ACTIVE', 'Trạng thái không hợp lệ');
         }
 
+        const authGen = (teacher.authGen ?? 1) + 1;
         await ctx.store.saveTeacher({
           ...teacher,
           active: payload.active,
+          authGen,
         });
         await ctx.store.deleteTeacherSessions(username);
         return success();
@@ -287,6 +293,7 @@ export async function handle(request: ApiRequest, ctx: RequestContext): Promise<
           username: teacher.username,
           name: teacher.name,
           expiresAt,
+          authGen: teacher.authGen ?? 1,
         });
         return success({
           token,
@@ -434,6 +441,7 @@ export async function handle(request: ApiRequest, ctx: RequestContext): Promise<
         const list = await Promise.all(
           assignments.map(async a => {
             const meta = await findExamMeta(a.examId, ctx.store, ctx.catalog);
+            const results = await ctx.store.listResultsByClass(cls.code, a.assignmentId);
             return {
               assignmentId: a.assignmentId,
               classId: a.classId,
@@ -444,6 +452,7 @@ export async function handle(request: ApiRequest, ctx: RequestContext): Promise<
               title: meta ? meta.title : a.examId,
               questionCount: meta ? meta.questionCount : 0,
               durationMinutes: meta ? meta.durationMinutes : 50,
+              submissionCount: results.length,
             };
           })
         );
@@ -469,13 +478,12 @@ export async function handle(request: ApiRequest, ctx: RequestContext): Promise<
           return failure('FORBIDDEN', 'Đề thi thuộc giáo viên khác');
         }
 
-        const revision = existing ? existing.revision + 1 : 1;
         const rawDuration = (e.settings as any)?.durationMinutes ?? e.durationMinutes;
         const durationMinutes = typeof rawDuration === 'number' && Number.isFinite(rawDuration) ? rawDuration : null;
         const grade = typeof e.grade === 'number' && Number.isFinite(e.grade) ? e.grade : null;
         const group = String(e.group || (e.settings as any)?.group || 'Đề giáo viên xuất bản');
 
-        await ctx.store.saveExam({
+        const saveRes = await ctx.store.saveExam({
           id: pubExamId,
           title: String(e.title || ''),
           subject: String(e.subject || ''),
@@ -483,15 +491,19 @@ export async function handle(request: ApiRequest, ctx: RequestContext): Promise<
           durationMinutes,
           questionCount: Array.isArray(e.questions) ? e.questions.length : 0,
           group,
-          revision,
+          revision: 1,
           updatedAt: new Date(ctx.now()).toISOString(),
           owner: auth.session.username,
           examJson: JSON.stringify(exam),
         });
 
+        if (!saveRes.ok) {
+          return failure('FORBIDDEN', 'Đề thi thuộc giáo viên khác');
+        }
+
         return success({
           examId: pubExamId,
-          revision,
+          revision: saveRes.revision,
         });
       }
 
@@ -608,6 +620,94 @@ export async function handle(request: ApiRequest, ctx: RequestContext): Promise<
   }
 }
 
+function canonicalizeValue(val: unknown): string {
+  if (val === undefined || val === null) return 'null';
+  if (typeof val === 'string' || typeof val === 'number' || typeof val === 'boolean') {
+    return JSON.stringify(val);
+  }
+  if (Array.isArray(val)) {
+    return '[' + val.map(canonicalizeValue).join(',') + ']';
+  }
+  if (typeof val === 'object') {
+    const keys = Object.keys(val as Record<string, unknown>).sort();
+    return '{' + keys.map(k => JSON.stringify(k) + ':' + canonicalizeValue((val as Record<string, unknown>)[k])).join(',') + '}';
+  }
+  return JSON.stringify(val);
+}
+
+function canonicalAnswersJson(raw: unknown): string {
+  if (raw === undefined || raw === null || raw === '') return '';
+  let obj = raw;
+  if (typeof raw === 'string') {
+    try {
+      obj = JSON.parse(raw);
+    } catch {
+      return raw;
+    }
+  }
+  return canonicalizeValue(obj);
+}
+
+function isPayloadConflict(
+  existing: ResultRecord,
+  candidate: ResultRecord,
+  payload?: Record<string, unknown>
+): boolean {
+  if (existing.candidate_display !== candidate.candidate_display) return true;
+  if (existing.exam_id !== candidate.exam_id) return true;
+  if (existing.exam_version_id !== candidate.exam_version_id) return true;
+  if (existing.policy_version !== candidate.policy_version) return true;
+  if ((existing.class_code || '') !== (candidate.class_code || '')) return true;
+  if ((existing.assignment_id || '') !== (candidate.assignment_id || '')) return true;
+
+  if (payload) {
+    if ((payload.started_at !== undefined || payload.startedAt !== undefined) && existing.started_at !== candidate.started_at) {
+      return true;
+    }
+    if ((payload.submitted_at !== undefined || payload.submittedAt !== undefined) && existing.submitted_at !== candidate.submitted_at) {
+      return true;
+    }
+    if (payload.duration_seconds !== undefined && existing.duration_seconds !== candidate.duration_seconds) {
+      return true;
+    }
+  }
+
+  const exTotal = parseRational(existing.total);
+  const candTotal = parseRational(candidate.total);
+  if (!exTotal || !candTotal || ratCmp(exTotal, candTotal) !== 0) return true;
+
+  const exMax = parseRational(existing.maxTotal);
+  const candMax = parseRational(candidate.maxTotal);
+  if (!exMax || !candMax || ratCmp(exMax, candMax) !== 0) return true;
+
+  const exS1 = parseRational(existing.score_p1);
+  const candS1 = parseRational(candidate.score_p1);
+  if (!exS1 || !candS1 || ratCmp(exS1, candS1) !== 0) return true;
+  const exM1 = parseRational(existing.max_p1);
+  const candM1 = parseRational(candidate.max_p1);
+  if (!exM1 || !candM1 || ratCmp(exM1, candM1) !== 0) return true;
+
+  const exS2 = parseRational(existing.score_p2);
+  const candS2 = parseRational(candidate.score_p2);
+  if (!exS2 || !candS2 || ratCmp(exS2, candS2) !== 0) return true;
+  const exM2 = parseRational(existing.max_p2);
+  const candM2 = parseRational(candidate.max_p2);
+  if (!exM2 || !candM2 || ratCmp(exM2, candM2) !== 0) return true;
+
+  const exS3 = parseRational(existing.score_p3);
+  const candS3 = parseRational(candidate.score_p3);
+  if (!exS3 || !candS3 || ratCmp(exS3, candS3) !== 0) return true;
+  const exM3 = parseRational(existing.max_p3);
+  const candM3 = parseRational(candidate.max_p3);
+  if (!exM3 || !candM3 || ratCmp(exM3, candM3) !== 0) return true;
+
+  if (canonicalAnswersJson(existing.raw_answers_json) !== canonicalAnswersJson(candidate.raw_answers_json)) {
+    return true;
+  }
+
+  return false;
+}
+
 async function handleSubmitResult(
   payload: Record<string, unknown>,
   ctx: RequestContext
@@ -627,22 +727,7 @@ async function handleSubmitResult(
     return failure('CONFLICTING_ATTEMPT_ALIASES', 'Trường attempt_id và attemptId xung đột giá trị');
   }
   const attemptId = (rawAttemptId as string).trim();
-
-  const inFlight = inFlightSubmissions.get(attemptId);
-  if (inFlight) {
-    return inFlight;
-  }
-
-  const promise = (async () => {
-    try {
-      return await doSubmitResult(payload, attemptId, ctx);
-    } finally {
-      inFlightSubmissions.delete(attemptId);
-    }
-  })();
-
-  inFlightSubmissions.set(attemptId, promise);
-  return promise;
+  return await doSubmitResult(payload, attemptId, ctx);
 }
 
 async function doSubmitResult(
@@ -807,61 +892,6 @@ async function doSubmitResult(
     return failure('INVALID_ASSIGNMENT', 'Thiếu thông tin lớp hoặc bài giao');
   }
 
-  if (classCode && assignmentId) {
-    const cls = await ctx.store.getClassByCode(classCode);
-    const assignment = await ctx.store.getAssignment(assignmentId);
-    if (!cls || !assignment || assignment.classId !== cls.classId || assignment.examId !== examId) {
-      return failure('INVALID_ASSIGNMENT', 'Bài giao không thuộc lớp hoặc đề đã chọn');
-    }
-    if (ctx.now() < Date.parse(assignment.openAt)) {
-      return failure('NOT_OPEN', 'Bài giao chưa mở');
-    }
-    if (assignment.dueAt !== '' && ctx.now() > Date.parse(assignment.dueAt) + 120000) {
-      return failure('PAST_DUE', 'Nộp sau hạn — giáo viên chưa nhận');
-    }
-  }
-
-  const existing = await ctx.store.getResult(attemptId);
-  if (existing) {
-    let conflict = false;
-    if (existing.candidate_display !== candidateDisplay) conflict = true;
-    if (existing.exam_id !== examId) conflict = true;
-    if (existing.exam_version_id !== examVersionId) conflict = true;
-
-    const exTotal = parseRational(existing.total);
-    if (!exTotal || ratCmp(exTotal, totalRat) !== 0) conflict = true;
-    const exMax = parseRational(existing.maxTotal);
-    if (!exMax || ratCmp(exMax, maxTotalRat) !== 0) conflict = true;
-
-    const exS1 = parseRational(existing.score_p1);
-    const exM1 = parseRational(existing.max_p1);
-    const exS2 = parseRational(existing.score_p2);
-    const exM2 = parseRational(existing.max_p2);
-    const exS3 = parseRational(existing.score_p3);
-    const exM3 = parseRational(existing.max_p3);
-    if (!exS1 || ratCmp(exS1, s1) !== 0) conflict = true;
-    if (!exM1 || ratCmp(exM1, m1) !== 0) conflict = true;
-    if (!exS2 || ratCmp(exS2, s2) !== 0) conflict = true;
-    if (!exM2 || ratCmp(exM2, m2) !== 0) conflict = true;
-    if (!exS3 || ratCmp(exS3, s3) !== 0) conflict = true;
-    if (!exM3 || ratCmp(exM3, m3) !== 0) conflict = true;
-
-    if (classCode && (existing.class_code !== classCode || existing.assignment_id !== assignmentId)) {
-      conflict = true;
-    }
-
-    if (conflict) {
-      return failure('PAYLOAD_CONFLICT', 'Lượt thi đã tồn tại với kết quả hoặc nội dung đề thi khác, không thể ghi đè');
-    }
-
-    return success({
-      attempt_id: attemptId,
-      status: 'ALREADY_RECORDED',
-      message: 'Kết quả bài thi đã được ghi nhận trước đó',
-      recorded_at: existing.recorded_at,
-    });
-  }
-
   const recordedAt = new Date(ctx.now()).toISOString();
   const rawAnswers = payload.raw_answers_json || payload.raw_answers || payload.responses || '';
   const rawAnswersStr = typeof rawAnswers === 'string' ? rawAnswers : JSON.stringify(rawAnswers);
@@ -892,12 +922,51 @@ async function doSubmitResult(
     recorded_at: recordedAt,
   };
 
-  await ctx.store.saveResult(newResult);
+  const existing = await ctx.store.getResult(attemptId);
+  if (existing) {
+    if (isPayloadConflict(existing, newResult, payload)) {
+      return failure('PAYLOAD_CONFLICT', 'Lượt thi đã tồn tại với kết quả hoặc nội dung đề thi khác, không thể ghi đè');
+    }
+    return success({
+      attempt_id: attemptId,
+      status: 'ALREADY_RECORDED',
+      message: 'Kết quả bài thi đã được ghi nhận trước đó',
+      recorded_at: existing.recorded_at,
+    });
+  }
+
+  if (classCode && assignmentId) {
+    const cls = await ctx.store.getClassByCode(classCode);
+    const assignment = await ctx.store.getAssignment(assignmentId);
+    if (!cls || !assignment || assignment.classId !== cls.classId || assignment.examId !== examId) {
+      return failure('INVALID_ASSIGNMENT', 'Bài giao không thuộc lớp hoặc đề đã chọn');
+    }
+    if (ctx.now() < Date.parse(assignment.openAt)) {
+      return failure('NOT_OPEN', 'Bài giao chưa mở');
+    }
+    if (assignment.dueAt !== '' && ctx.now() > Date.parse(assignment.dueAt) + 120000) {
+      return failure('PAST_DUE', 'Nộp sau hạn — giáo viên chưa nhận');
+    }
+  }
+
+  const outcome = await ctx.store.saveResult(newResult);
+  if (outcome.inserted) {
+    return success({
+      attempt_id: attemptId,
+      status: 'NEWLY_RECORDED',
+      message: 'Ghi nhận kết quả bài thi thành công',
+      recorded_at: outcome.record.recorded_at,
+    });
+  }
+
+  if (isPayloadConflict(outcome.record, newResult, payload)) {
+    return failure('PAYLOAD_CONFLICT', 'Lượt thi đã tồn tại với kết quả hoặc nội dung đề thi khác, không thể ghi đè');
+  }
 
   return success({
     attempt_id: attemptId,
-    status: 'NEWLY_RECORDED',
-    message: 'Ghi nhận kết quả bài thi thành công',
-    recorded_at: recordedAt,
+    status: 'ALREADY_RECORDED',
+    message: 'Kết quả bài thi đã được ghi nhận trước đó',
+    recorded_at: outcome.record.recorded_at,
   });
 }

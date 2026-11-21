@@ -5,6 +5,7 @@ export interface Teacher {
   hash: string;
   active: boolean;
   createdAt: string;
+  authGen?: number;
 }
 
 export interface Session {
@@ -13,6 +14,7 @@ export interface Session {
   username: string;
   name: string;
   expiresAt: number;
+  authGen?: number;
 }
 
 export interface ClassItem {
@@ -88,6 +90,17 @@ export interface CatalogExam {
   [k: string]: unknown;
 }
 
+export interface SaveExamResult {
+  ok: boolean;
+  revision: number;
+  error?: string;
+}
+
+export interface SaveResultOutcome {
+  inserted: boolean;
+  record: ResultRecord;
+}
+
 export interface Store {
   getTeacher(username: string): Promise<Teacher | null>;
   saveTeacher(teacher: Teacher): Promise<void>;
@@ -108,13 +121,13 @@ export interface Store {
   getAssignment(assignmentId: string): Promise<Assignment | null>;
   listAssignmentsByClass(classId: string): Promise<Assignment[]>;
 
-  saveExam(exam: ExamRecord): Promise<void>;
+  saveExam(exam: ExamRecord): Promise<SaveExamResult>;
   getExam(examId: string): Promise<ExamRecord | null>;
   listExams(): Promise<ExamRecord[]>;
   deleteExam(examId: string): Promise<void>;
   countExams(): Promise<number>;
 
-  saveResult(result: ResultRecord): Promise<void>;
+  saveResult(result: ResultRecord): Promise<SaveResultOutcome>;
   getResult(attemptId: string): Promise<ResultRecord | null>;
   listResultsByClass(classCode: string, assignmentId?: string): Promise<ResultRecord[]>;
   countResults(): Promise<number>;

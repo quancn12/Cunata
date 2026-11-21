@@ -8,13 +8,13 @@ export class MemoryStore {
     results = new Map();
     async getTeacher(username) {
         const t = this.teachers.get(username);
-        return t ? { ...t } : null;
+        return t ? { ...t, authGen: t.authGen ?? 1 } : null;
     }
     async saveTeacher(teacher) {
-        this.teachers.set(teacher.username, { ...teacher });
+        this.teachers.set(teacher.username, { ...teacher, authGen: teacher.authGen ?? 1 });
     }
     async listTeachers() {
-        return Array.from(this.teachers.values()).map(t => ({ ...t }));
+        return Array.from(this.teachers.values()).map(t => ({ ...t, authGen: t.authGen ?? 1 }));
     }
     async deleteTeacherSessions(username) {
         for (const [tokenHash, session] of Array.from(this.sessions.entries())) {
@@ -24,11 +24,11 @@ export class MemoryStore {
         }
     }
     async createSession(session) {
-        this.sessions.set(session.tokenHash, { ...session });
+        this.sessions.set(session.tokenHash, { ...session, authGen: session.authGen ?? 1 });
     }
     async getSession(tokenHash) {
         const s = this.sessions.get(tokenHash);
-        return s ? { ...s } : null;
+        return s ? { ...s, authGen: s.authGen ?? 1 } : null;
     }
     async deleteSession(tokenHash) {
         this.sessions.delete(tokenHash);
@@ -78,7 +78,17 @@ export class MemoryStore {
         return out;
     }
     async saveExam(exam) {
-        this.exams.set(exam.id, { ...exam });
+        const existing = this.exams.get(exam.id);
+        if (existing && existing.owner !== exam.owner) {
+            return { ok: false, revision: 0, error: 'FORBIDDEN' };
+        }
+        const revision = existing ? existing.revision + 1 : (exam.revision || 1);
+        const record = {
+            ...exam,
+            revision,
+        };
+        this.exams.set(exam.id, record);
+        return { ok: true, revision };
     }
     async getExam(examId) {
         const e = this.exams.get(examId);
@@ -94,7 +104,13 @@ export class MemoryStore {
         return this.exams.size;
     }
     async saveResult(result) {
-        this.results.set(result.attempt_id, { ...result });
+        const existing = this.results.get(result.attempt_id);
+        if (existing) {
+            return { inserted: false, record: { ...existing } };
+        }
+        const rec = { ...result };
+        this.results.set(result.attempt_id, rec);
+        return { inserted: true, record: rec };
     }
     async getResult(attemptId) {
         const r = this.results.get(attemptId);
