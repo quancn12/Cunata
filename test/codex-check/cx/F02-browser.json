@@ -3,10 +3,10 @@
   "rawLength": 106256,
   "response": {
     "success": true,
-    "attempt_id": "attempt-mwqopq0z-tqse",
+    "attempt_id": "attempt-mwqq0tki-glwl",
     "status": "NEWLY_RECORDED",
     "message": "Ghi nhận kết quả bài thi thành công",
-    "recorded_at": "2026-11-21T17:31:28.696Z"
+    "recorded_at": "2026-11-21T18:08:13.752Z"
   },
-  "syncText": "Đang gửi..."
+  "syncText": "Đã gửi"
 }

@@ -480,6 +480,7 @@ Quyết định: (1) học sinh vào lớp bằng **mã lớp** + tự gõ tên;
 - Nộp bài: payload thêm `class_code`, `assignment_id` (nếu làm đề được giao). Server kiểm: bài giao chưa mở → `NOT_OPEN`; nộp sau `dueAt` + 2 phút (bù trễ mạng) → `PAST_DUE` (bài không hạn nộp — `dueAt` rỗng — không bao giờ `PAST_DUE`) (bài vẫn lưu trên máy, báo trung thực "Nộp sau hạn — giáo viên chưa nhận"). Idempotent theo `attempt_id` như cũ.
 
 #### 19.2a Không hạn nộp (Trưởng phòng 21/11/2026)
+- `#assignOpenAt` điền sẵn giờ hiện tại (giờ máy, theo phút) mỗi lần mở hộp giao đề; giáo viên đổi được (Trưởng phòng 22/11/2026: "mặc định chọn giờ hiện tại, thích đổi thì đổi"). Hộp giao đề chỉ có MỘT chỗ chọn đề: ô xổ xuống.
 - Hộp giao bài `#assignDialog` có ô tích `#assignNoDue` nhãn "Không hạn nộp". Tích vào: `#assignDueAt` bị vô hiệu (`disabled`), gửi `dueAt: ""`. Bỏ tích: như cũ (bắt buộc hạn nộp sau giờ mở).
 - Dòng bài giao bên giáo viên (`.assignment-row`) và thẻ đề bên học sinh hiện "Không hạn nộp" thay cho ngày hạn. Bài không hạn nộp đã mở thì luôn làm và nộp được.
 - Áp dụng như nhau cho Apps Script (`apps-script/Code.js`) và máy chủ Vercel (`src/api`, §22).
