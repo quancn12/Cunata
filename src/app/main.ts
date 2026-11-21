@@ -2132,12 +2132,32 @@ export async function bootstrap(
           submitOk = true;
         } else if (fRes.error.code === 'STORAGE_CONFLICT') {
           const loadRes = await storage.load(finalRec);
-          if (loadRes.ok && loadRes.value && loadRes.value.phase === 'final') {
-            finalRecord = loadRes.value;
-            if (finalRecord.submittedAt) {
-              submittedAt = finalRecord.submittedAt;
+          if (loadRes.ok) {
+            if (loadRes.value && loadRes.value.phase === 'final') {
+              finalRecord = loadRes.value;
+              if (finalRecord.submittedAt) {
+                submittedAt = finalRecord.submittedAt;
+              }
+              submitOk = true;
+            } else if (loadRes.value && loadRes.value.phase === 'draft') {
+              const retryRes = await storage.finalize(finalRec, loadRes.value.revision);
+              if (retryRes.ok) {
+                finalRecord = retryRes.value;
+                if (finalRecord.submittedAt) {
+                  submittedAt = finalRecord.submittedAt;
+                }
+                submitOk = true;
+              }
+            } else if (!loadRes.value) {
+              const fRes0 = await storage.finalize(finalRec, 0);
+              if (fRes0.ok) {
+                finalRecord = fRes0.value;
+                if (finalRecord.submittedAt) {
+                  submittedAt = finalRecord.submittedAt;
+                }
+                submitOk = true;
+              }
             }
-            submitOk = true;
           }
         }
       } catch {
@@ -3421,6 +3441,9 @@ export async function bootstrap(
       }
     } catch (_) {}
   }
+
+  // renderExamPane();
+  // updatePalette();
 
   let shouldShowStartScreen = !options?.initialExam && options?.initialRoute !== 'exam';
   let resumableDraft: AttemptRecord | null = null;

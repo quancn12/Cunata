@@ -2026,40 +2026,69 @@ export function mountTeacherPortal(
       }
     }
 
-    async function syncExamSelectOptions(targetClassId?: string) {
-      const curExamVal = examSelect.value;
-      clearChildren(examSelect);
-      const defaultOpt = doc.createElement('option');
-      defaultOpt.value = '';
-      defaultOpt.textContent = '-- Tất cả đề --';
-      examSelect.appendChild(defaultOpt);
+    let pendingExamSync: Promise<void> | null = null;
 
+    async function syncExamSelectOptions(targetClassId?: string): Promise<void> {
+      const curExamVal = examSelect.value;
       const tok = getStoredTeacherToken() || '';
-      if (!deps.client.listAssignments) return;
+      if (!deps.client.listAssignments) {
+        clearChildren(examSelect);
+        const defaultOpt = doc.createElement('option');
+        defaultOpt.value = '';
+        defaultOpt.textContent = '-- Tất cả đề --';
+        examSelect.appendChild(defaultOpt);
+        return;
+      }
 
       const classesToQuery = targetClassId
         ? cachedMyClasses.filter((c) => c.classId === targetClassId)
         : cachedMyClasses;
 
       const seenExamIds = new Set<string>();
-      for (const c of classesToQuery) {
-        try {
-          const res = await deps.client.listAssignments(tok, c.classId);
-          if (res.ok && Array.isArray(res.value)) {
-            for (const a of res.value) {
-              if (!seenExamIds.has(a.examId)) {
-                seenExamIds.add(a.examId);
-                const opt = doc.createElement('option');
-                opt.value = a.examId;
-                opt.textContent = a.title || a.examId;
-                opt.setAttribute('data-assignment-id', a.assignmentId);
-                if (a.examId === curExamVal) opt.selected = true;
-                examSelect.appendChild(opt);
-              }
+      const opts: HTMLOptionElement[] = [];
+
+      const defaultOpt = doc.createElement('option');
+      defaultOpt.value = '';
+      defaultOpt.textContent = '-- Tất cả đề --';
+      opts.push(defaultOpt);
+
+      try {
+        const assignmentLists = await Promise.all(
+          classesToQuery.map(async (c) => {
+            try {
+              const res = await deps.client.listAssignments!(tok, c.classId);
+              return res.ok && Array.isArray(res.value) ? res.value : [];
+            } catch {
+              return [];
+            }
+          })
+        );
+
+        for (const assignments of assignmentLists) {
+          for (const a of assignments) {
+            if (!seenExamIds.has(a.examId)) {
+              seenExamIds.add(a.examId);
+              const opt = doc.createElement('option');
+              opt.value = a.examId;
+              opt.textContent = a.title || a.examId;
+              opt.setAttribute('data-assignment-id', a.assignmentId);
+              if (a.examId === curExamVal) opt.selected = true;
+              opts.push(opt);
             }
           }
-        } catch {}
+        }
+      } catch {}
+
+      clearChildren(examSelect);
+      for (const opt of opts) {
+        examSelect.appendChild(opt);
       }
+    }
+
+    function doSyncExamSelectOptions(targetClassId?: string): Promise<void> {
+      const p = syncExamSelectOptions(targetClassId);
+      pendingExamSync = p;
+      return p;
     }
 
     async function loadResults() {
@@ -2070,6 +2099,12 @@ export function mountTeacherPortal(
       loadingTd.textContent = 'Đang nạp kết quả...';
       loadingTr.appendChild(loadingTd);
       tbody.appendChild(loadingTr);
+
+      if (pendingExamSync) {
+        try {
+          await pendingExamSync;
+        } catch {}
+      }
 
       const tok = getStoredTeacherToken() || '';
       const chosenClassId = clsSelect.value || '';
@@ -2117,7 +2152,7 @@ export function mountTeacherPortal(
                 classes = cRes.value;
                 cachedMyClasses = classes;
                 syncClassSelectOptions();
-                await syncExamSelectOptions();
+                await doSyncExamSelectOptions();
               }
             } catch {}
           }
@@ -2191,25 +2226,28 @@ export function mountTeacherPortal(
     }
 
     syncClassSelectOptions();
-    void syncExamSelectOptions(clsSelect.value);
+    const initDefaultOpt = doc.createElement('option');
+    initDefaultOpt.value = '';
+    initDefaultOpt.textContent = '-- Tất cả đề --';
+    examSelect.appendChild(initDefaultOpt);
 
-    const listMyClassesFn = deps.client.listMyClasses;
-    if (listMyClassesFn) {
-      void (async () => {
+    async function initResultsSection() {
+      const tok = getStoredTeacherToken() || '';
+      if (deps.client.listMyClasses) {
         try {
-          const tok = getStoredTeacherToken() || '';
-          const res = await listMyClassesFn(tok);
+          const res = await deps.client.listMyClasses(tok);
           if (res.ok && Array.isArray(res.value)) {
             cachedMyClasses = res.value;
             syncClassSelectOptions();
-            await syncExamSelectOptions(clsSelect.value);
           }
         } catch {}
-      })();
+      }
+      await doSyncExamSelectOptions(clsSelect.value);
+      await loadResults();
     }
 
     clsSelect.addEventListener('change', async () => {
-      await syncExamSelectOptions(clsSelect.value);
+      await doSyncExamSelectOptions(clsSelect.value);
       void loadResults();
     });
 
@@ -2217,7 +2255,7 @@ export function mountTeacherPortal(
       void loadResults();
     });
 
-    void loadResults();
+    void initResultsSection();
   }
 
   // --------------------------------------------------------------------------

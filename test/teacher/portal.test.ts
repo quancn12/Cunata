@@ -350,8 +350,85 @@ describe("FEAT-teacher: Teacher Portal Section 19.1", () => {
     assert.ok(table, "#resultsTable must exist");
     assert.match(table?.textContent ?? "", /Trần Học Sinh/);
 
+    const examSelect = root.querySelector("#resultsExamSelect") as any;
+    assert.ok(examSelect, "#resultsExamSelect must exist");
+    const optionValues = examSelect.querySelectorAll("option").map((o: any) => o.value);
+    assert.ok(optionValues.includes("exam-thpt-hoa"), "resultsExamSelect must contain assigned exam options");
+
     const exportBtn = root.querySelector("#btnExportResults");
     assert.ok(exportBtn, "#btnExportResults must exist");
+
+    portal.dispose();
+  });
+
+  it("results section coordinates exam select options and results table even with delayed assignments (no race condition)", async () => {
+    setStoredTeacherToken("valid-token");
+    const doc = createTestDocument();
+    const root = doc.createElement("div");
+    doc.body.appendChild(root);
+
+    let listAssignmentsResolved = false;
+    const client = createMockClient({
+      async listAssignments(_token: string, _classId: string): Promise<AsResult<any[]>> {
+        await new Promise((r) => setTimeout(r, 20));
+        listAssignmentsResolved = true;
+        return {
+          ok: true,
+          value: [
+            {
+              assignmentId: "assign-delayed-01",
+              classId: "class-12a1",
+              examId: "exam-delayed-id",
+              title: "Đề thi chậm",
+              openAt: "2026-11-16T08:00:00Z",
+              dueAt: "2026-11-16T12:00:00Z",
+              createdAt: "2026-11-16T07:00:00Z",
+              questionCount: 20,
+              durationMinutes: 45,
+              submissionCount: 5,
+            },
+          ],
+        };
+      },
+      async listResults(_token: string, _classId: string): Promise<AsResult<any[]>> {
+        // listResults returns immediately, but portal must coordinate with exam options
+        return {
+          ok: true,
+          value: [
+            {
+              candidateName: "Học Sinh Chậm",
+              class_code: "ABCDEF",
+              submitted_at: "2026-11-16T09:30:00Z",
+              sections: {
+                I: { score: "2.5", max: "5" },
+              },
+              total: "2.5",
+              maxTotal: "10",
+            },
+          ],
+        };
+      },
+    });
+
+    const deps: TeacherPortalDeps = {
+      client,
+      async listAllExams() { return []; },
+      openBuilder() {},
+    };
+
+    const portal = mountTeacherPortal(root as any, deps);
+    portal.open("ket-qua");
+
+    // Wait for the render to complete
+    await new Promise((r) => setTimeout(r, 60));
+
+    assert.equal(listAssignmentsResolved, true, "listAssignments must have resolved");
+    const table = root.querySelector("#resultsTable");
+    assert.match(table?.textContent ?? "", /Học Sinh Chậm/);
+
+    const examSelect = root.querySelector("#resultsExamSelect") as any;
+    const optionValues = examSelect.querySelectorAll("option").map((o: any) => o.value);
+    assert.ok(optionValues.includes("exam-delayed-id"), "Exam select options must be populated when results are rendered");
 
     portal.dispose();
   });
