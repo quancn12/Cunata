@@ -2040,6 +2040,16 @@ export function mountTeacherPortal(
         return;
       }
 
+      if ((!cachedMyClasses || cachedMyClasses.length === 0) && deps.client.listMyClasses) {
+        try {
+          const cRes = await deps.client.listMyClasses(tok);
+          if (cRes.ok && Array.isArray(cRes.value)) {
+            cachedMyClasses = cRes.value;
+            syncClassSelectOptions();
+          }
+        } catch {}
+      }
+
       const classesToQuery = targetClassId
         ? cachedMyClasses.filter((c) => c.classId === targetClassId)
         : cachedMyClasses;

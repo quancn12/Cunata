@@ -433,6 +433,60 @@ describe("FEAT-teacher: Teacher Portal Section 19.1", () => {
     portal.dispose();
   });
 
+  it("syncExamSelectOptions loads classes dynamically if cachedMyClasses is initially empty", async () => {
+    setStoredTeacherToken("valid-token");
+    const doc = createTestDocument();
+    const root = doc.createElement("div");
+    doc.body.appendChild(root);
+
+    let classesCalled = 0;
+    const client = createMockClient({
+      async listMyClasses(_token: string) {
+        classesCalled++;
+        return {
+          ok: true,
+          value: [{ classId: "class-dynamic", code: "DYN123", name: "Lớp Động", createdAt: "2026-11-16T00:00:00Z", studentCount: 1 }],
+        };
+      },
+      async listAssignments(_token: string, classId: string) {
+        return {
+          ok: true,
+          value: [{
+            assignmentId: "assign-dyn-01",
+            classId,
+            examId: "exam-dyn-id",
+            title: "Đề thi Động",
+            openAt: "2026-11-16T08:00:00Z",
+            dueAt: "2026-11-16T12:00:00Z",
+            createdAt: "2026-11-16T07:00:00Z",
+            questionCount: 10,
+            durationMinutes: 30,
+          }],
+        };
+      },
+    });
+
+    const deps: TeacherPortalDeps = {
+      client,
+      async listAllExams() { return []; },
+      openBuilder() {},
+    };
+
+    const portal = mountTeacherPortal(root as any, deps);
+    portal.open("ket-qua");
+
+    await new Promise((r) => setTimeout(r, 60));
+
+    const table = root.querySelector("#resultsTable");
+    assert.ok(table, "#resultsTable must exist after results loaded");
+
+    const examSelect = root.querySelector("#resultsExamSelect") as any;
+    const optionValues = examSelect.querySelectorAll("option").map((o: any) => o.value);
+    assert.ok(optionValues.includes("exam-dyn-id"), "Exam select must contain options from dynamically fetched classes");
+
+    portal.dispose();
+  });
+
   it("assigns exam to class via #assignDialog and verifies dueAt > openAt check", async () => {
     setStoredTeacherToken("valid-token");
     const doc = createTestDocument();

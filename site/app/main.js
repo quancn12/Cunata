@@ -2748,10 +2748,6 @@ export async function bootstrap(root, options) {
             candidateInput.setAttribute('readonly', 'readonly');
             candidateInput.disabled = true;
         }
-        if (examTitle && currentExam) {
-            examTitle.textContent = currentExam.title || 'Đề thi';
-        }
-        router.navigate('report', { attemptId });
         if (record) {
             if (record.phase === 'final') {
                 const repRes = buildReport(record, now());
@@ -2778,6 +2774,10 @@ export async function bootstrap(root, options) {
             if (typeof repModel.submittedAt === 'number')
                 submittedAt = repModel.submittedAt;
         }
+        if (examTitle && currentExam) {
+            examTitle.textContent = currentExam.title || 'Đề thi';
+        }
+        router.navigate('report', { attemptId });
         // Always recompute score deterministically from domain - NEVER trust stored score
         scoredResult = scoreLegacyAttempt(currentExam, responses);
         if (!scoredResult)
