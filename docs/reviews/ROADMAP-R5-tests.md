@@ -4,12 +4,12 @@ Phạm vi: WEB-contract §24.2, kế thừa nội dung xem bài §20, định d�
 
 ## Môi trường và cách chạy
 
-- Working tree chung `D:\Cunata`; HEAD khi bắt đầu: `58fc9d5704f62f02c7ab7be0b590cb3d12e7e797`. Có sẵn nhiều thay đổi của các công việc khác; không sửa hay hoàn tác chúng.
+- Working tree chung `D:\Cunata`; HEAD kiểm lại ngày 21/11/2026: `9a1b0e1eb3d52bb7e144a55b3901d4a359b09b41`. Có sẵn nhiều thay đổi của các công việc khác; không sửa hay hoàn tác chúng.
 - Node v24.14.0, Windows; Chrome/Edge headless thật qua CDP của `test/claude-check/harness.mjs`. UI phục vụ từ `dist/` hiện có, dưới `/Cunata/`; không chạy build vì build sẽ ghi ngoài scope.
 - `support.mjs` import harness/app và API bằng `pathToFileURL(process.cwd() + '/…')`. Chạy từ gốc dự án. Các import nội bộ R5 dùng đường dẫn tương đối, nên chuyển cả thư mục sang `test/codex-check/feat/R5/` vẫn giữ nguyên cách tìm harness/API. `index.js` nạp các `*.test.mjs` cho lệnh directory của Node 24.
 - Lõi API: production `handle` + production MemoryStore, clock được inject. Browser gọi một HTTP adapter Node cục bộ dùng chính `handle` và cùng store; không dựng đáp án API giả. Adapter xử lý OPTIONS/content-type cho POST JSON.
 - Mọi hành động bấm của bộ R5 dùng `app.mjs.mouseClick`, kiểm hit target và khung nhìn; nhập tài khoản bằng CDP Input.insertText, không gán `.value` hoặc gọi DOM `.click()`.
-- Hai tên học sinh là dữ liệu **mô phỏng**, được seed qua `submitResult` để kiểm màn giáo viên; không tạo danh tính thật, không giả đã chạy luồng nhập tên/PIN học sinh. Không mở khóa `candidateName`, không gán tên bằng JS. Kiểm định cổng tên/PIN thuộc R3.
+- Hai tên học sinh là dữ liệu **mô phỏng**, được seed qua `submitResult` để kiểm màn giáo viên. Ca TN nhập từng tên tại cổng `#startName` trong context mới, bằng bàn phím và chuột thật, rồi kiểm đã qua cổng. Không mở khóa `candidateName`, không gán tên bằng JS. Bài nộp được seed trực tiếp qua handle; chưa chạy luồng PIN/làm bài/nộp bài học sinh đầu cuối của R3.
 - Hai bài: An chọn sai I.1, bỏ I.2, II đúng 3 ý và bỏ 1 ý, III nhập `1,50` khác key `1,5`, bỏ câu có key `-0,5`; Bình bỏ toàn bộ. Điểm An `0,50/10`, II `0,50/1`, mỗi câu III tối đa `4,25`.
 - Fixture đề có công thức, bảng Markdown, ảnh nhúng và chuỗi HTML độc hại inert; câu I và lựa chọn có thứ tự hoán vị khác ID để bắt việc tự sắp lại. Đây là thứ tự đề đã giao trong fixture, chưa phải bằng chứng E2E về thao tác bật trộn ở máy học sinh.
 - Cấu hình web chỉ bị thay trong bộ nhớ HTTP thành loopback. Không đọc `ops/prod_config.json`, không gọi Google/Vercel/Neon thật, không install/dependency, không commit/deploy.
@@ -24,6 +24,7 @@ Tên đầy đủ trong mã theo dạng `dist: [api|teacher] R5: … (WEB-contra
 | A02 | api — giáo viên chỉ đọc bài lớp mình, không lộ thông tin xác thực | §19.2, §22 | Xanh: sai/thiếu token, giáo viên khác bị chặn |
 | A03 | api — dữ liệu bài làm nguyên văn đến được giáo viên | §24.2, §20 | Đỏ: listResults bỏ câu trả lời |
 | A04 | api — xem và gửi lại không sửa hay nhân đôi bài đã nộp | §22, §24.2 | Xanh: immutable, idempotent, token hết 8 giờ |
+| TN | teacher — đối chứng tên mô phỏng nhập tại cổng tên bằng bàn phím | §19.1 | Xanh: cả hai tên qua cổng tên bằng thao tác thật |
 | T00 | teacher — đối chứng bảng kết quả qua handle cục bộ bằng chuột thật | §22, §19.1 | Xanh: hai bài, đúng tên, không lỗi JS/mạng ngoài favicon, chỉ loopback |
 | T01 | teacher — mỗi dòng có nút xem và hộp thoại đúng bài | §24.2, §20 | Đỏ: thiếu `.btn-view-submission` |
 | T02 | teacher — đủ câu, thứ tự, nội dung, công thức, bảng, ảnh và lời giải | §24.2, §20, §14 D08 | Đỏ tại nút xem; assertions nội dung chờ hộp thoại |
@@ -38,15 +39,26 @@ Tên đầy đủ trong mã theo dạng `dist: [api|teacher] R5: … (WEB-contra
 
 ## Kết quả thực đo
 
-PENDING: đang hoàn tất hai lần chạy trên mã test cuối cùng; chỉ các log run-1/run-2 và exit tương ứng sau khi hoàn tất mới là kết quả bàn giao.
+Hai lượt chạy mã test cuối cùng, từ thư mục gốc; không skip/loại bỏ ca đỏ. Kết quả ngày 21/11/2026:
+
+| Lượt | Lệnh | Exit | Tổng | Pass | Fail | Skip / Cancel | Thời gian |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `node --test ops/roadmap/tests/R5/` | 1 | 16 | 5 | 11 | 0 / 0 | 38,734 giây |
+| 2 | `node --test ops/roadmap/tests/R5/` | 1 | 16 | 5 | 11 | 0 / 0 | 112,938 giây |
+
+Log: `ops/roadmap/tests/R5/run-1.log`, `run-2.log`; mã thoát ở `run-1.exit.txt`, `run-2.exit.txt`.
+
+Cả hai lượt: A01, A02, A04, TN và T00 xanh. A03 đỏ tại assertion `listResults phải cung cấp câu trả lời để giáo viên dựng bài, không chỉ điểm`; T01–T10 đỏ tại assertion thiếu `.btn-view-submission` (T01 đo 0/2 dòng có nút). Các ca browser đều đã đăng nhập và tải đủ hai dòng kết quả trước khi kiểm tính năng. Không có lỗi setup hay timeout thay thế lỗi thiếu R5. Thời gian chạy khác nhau nhưng kết quả và nguyên nhân đỏ giống nhau.
+
+Đối chiếu SHA-256 trước/sau không thay đổi ở `src/api/handle.ts`, `src/teacher/portal.ts`, `dist/teacher/portal.js`; hash cuối ở `ops/roadmap/tests/R5/snapshot-final.json`. `git diff --check` trên mã test và báo cáo: exit 0. Rollback phần bổ sung của lượt này: bỏ ca TN và thay đổi thứ tự teardown trong `teacher.test.mjs`, khôi phục báo cáo/log trong scope theo baseline của điều phối; không hoàn tác các thay đổi sản phẩm có sẵn.
 
 ## Phát hiện và giới hạn
 
-1. **R5-API-01 — MAJOR:** `src/api/handle.ts`, nhánh `listResults`, chiếu điểm/tên/thời gian nhưng bỏ `raw_answers_json` đã lưu. A01 đối chứng store giữ đủ câu trả lời; A03 buộc đầu ra cung cấp dữ liệu câu trả lời cho giáo viên. Sửa trong vùng api; không tự đặt RPC mới trong test.
-2. **R5-UI-01 — MAJOR:** `src/teacher/portal.ts`, `renderTableRows`, chưa tạo `.btn-view-submission`/`#submissionDialog`. Screenshot `ops/roadmap/tests/R5/evidence/teacher-1.png` đã được xem trực tiếp: hai dòng bài nộp và các cột điểm hiện đúng, không có nút xem.
+1. **R5-API-01 — MAJOR:** `src/api/handle.ts:554`, nhánh `listResults`, chiếu điểm/tên/thời gian nhưng bỏ `raw_answers_json` đã lưu. A01 đối chứng store giữ đủ câu trả lời; A03 buộc đầu ra cung cấp dữ liệu câu trả lời cho giáo viên. Sửa trong vùng api; không tự đặt RPC mới trong test.
+2. **R5-UI-01 — MAJOR:** `src/teacher/portal.ts:1969`, `renderTableRows`, chưa tạo `.btn-view-submission`/`#submissionDialog`. Screenshot `ops/roadmap/tests/R5/evidence/teacher-1.png` đã được xem trực tiếp trong lượt này: hai dòng bài nộp và các cột điểm hiện đúng, không có nút xem.
 3. Mọi assertion sau mở hộp thoại trong T02–T10 hiện **chưa được thực thi đến**. Test đỏ chứng minh entrypoint thiếu; không chứng nhận công thức/ảnh/điểm/focus/XSS trong một hộp thoại chưa tồn tại. Phải chạy lại toàn bộ sau triển khai.
 4. Chưa kiểm luồng R3 roster/PIN, runtime shuffle từ máy học sinh và snapshot cũ sau khi giáo viên sửa đề; chưa kiểm Google/Neon/Vercel live. Không dùng kết quả này thay nghiệm thu các luồng đó. §20 về file báo cáo tải về thuộc bộ xem lại bài; §24.2 không quy định nút tải báo cáo riêng cho giáo viên nên không tự thêm yêu cầu đó.
-5. Hai typecheck đã chạy thật, đều exit 1: `src/app/main.ts(2458,36)` TS2345, `string | null` không gán được cho `string`. Log: `typecheck-node.log`, `typecheck-web.log` trong R5. Lỗi ngoài scope, không sửa. Build/full regression/production: NOT_RUN (task chỉ viết kiểm định, chỉ được ghi hai vùng đã chỉ định).
+5. Hai typecheck kiểm lại ngày 21/11/2026: `npx --no-install tsc -p tsconfig.json` và `npx --no-install tsc -p tsconfig.web.json` đều exit 0; log trống, mã thoát trong `typecheck-node.exit.txt`, `typecheck-web.exit.txt` ở R5. Build: NOT_RUN vì phát sinh ghi `dist/` ngoài scope. Full regression/design suite: NOT_RUN vì task chỉ viết kiểm định R5 và các suite chung có thể ghi artifact ngoài scope. Production/IME thật: NOT_RUN, không được phép gọi dịch vụ thật và không có thao tác bộ gõ OS.
 6. Các log `diagnostic-*`, `teardown-*`, `probe.png` là dấu vết chẩn đoán/đợt trước, không phải bằng chứng hai lần chạy cuối. CORS của adapter đã được sửa trước hai lần bàn giao; không chấp nhận lỗi đăng nhập do helper làm bằng chứng R5 đỏ.
 
 Hành động tiếp theo: điều phối triển khai teacher/api, chạy lại bộ R5 hai lần và regression chung, rồi Codex review độc lập theo LO-TRINH-V2. Bộ test PRE không phải APPROVED cho sản phẩm.

@@ -1,8 +1,8 @@
 # R10-TESTS-PRE — kiểm định chế độ tối
 
-Ngày: 21/11/2026. Căn cứ: WEB-contract §24.7, §19, §21, §22; DESIGN.md; BANG-QUYET-DINH.md; LO-TRINH-V2.md. HEAD khi bắt đầu: `58fc9d5704f62f02c7ab7be0b590cb3d12e7e797`.
+Ngày: 21/11/2026. Căn cứ: Shared Product Contract v2.0; WEB-contract §24.7, §19, §21, §22; DESIGN.md; BANG-QUYET-DINH.md; LO-TRINH-V2.md. HEAD của lượt kiểm định hiện tại: `9a1b0e1eb3d52bb7e144a55b3901d4a359b09b41`.
 
-Đây là bàn giao **test trước khi làm R10**, không phải nghiệm thu sản phẩm. Chỉ sửa test và báo cáo trong phạm vi được giao. Không build lại vì build ghi ngoài scope; kiểm định chính bản `dist/` hiện có. Working tree đã có thay đổi của người khác, trong đó có `src/app/main.ts`; giữ nguyên các thay đổi đó.
+Đây là bàn giao **test trước khi làm R10**, không phải nghiệm thu sản phẩm. Lượt này đọc lại và kiểm chứng bộ test đã có trong thư mục R10, hoàn tất bằng chứng còn thiếu của bản nháp; không viết lại các ca đã phù hợp. Chỉ ghi bằng chứng và báo cáo trong phạm vi được giao. Không build lại vì build ghi ngoài scope; kiểm định chính bản `dist/` hiện có. Working tree đã có thay đổi của người khác, trong đó có `src/app/main.ts`; giữ nguyên các thay đổi đó.
 
 ## Cách chạy và kiến trúc
 
@@ -40,7 +40,47 @@ Các màn được đi qua trong 18 ca tương phản:
 
 ## Kết quả thực chạy
 
-Kết quả cuối được bổ sung sau khi hoàn tất hai lần chạy cùng bộ test.
+Hai lần chạy nguyên lệnh `node --test ops/roadmap/tests/R10/` tại gốc repo, cùng bộ test:
+
+| Lượt | Exit | Tổng | Pass | Fail | Skip | Cancelled | Thời gian | Log |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| 1 | 1 | 28 | 3 | 25 | 0 | 0 | 198,465 giây | `ops/roadmap/tests/R10/verification-1.txt` |
+| 2 | 1 | 28 | 3 | 25 | 0 | 0 | 99,950 giây | `ops/roadmap/tests/R10/verification-2.txt` |
+
+Môi trường: Windows, Node v24.14.0, Chrome 157.0.8103.79 headless thật qua CDP. Cả 28 trạng thái ca trùng nhau giữa hai lượt; 7 ca đỏ do thiếu nút theme, 18 ca đỏ do tương phản. Không có skip, cancelled, timeout hoặc hook failure. Ba ca xanh là token build, phản ứng theo OS, và core/HTTP với MemoryStore. Chưa thể kiểm chứng lưu lựa chọn vì UI chưa tồn tại.
+
+Các danh sách SHA-256 `verification-snapshot-start.txt`, `verification-snapshot-between.txt`, `verification-snapshot-end.txt` trùng nhau (dist JS/CSS/HTML, src/api TypeScript, src/ui/tokens.css); HEAD cũng giữ nguyên. Snapshot đầu được chụp sau khi lượt 1 bắt đầu, trước các ca tương phản; không tuyên bố đã khóa working tree. Hash `theme.test.mjs`: `60487091aff08b66026a091754d213a8861b96e7f2caea7e5fc448e72424bcaf`; `local-server.mjs`: `357a4327438a49b516b7f1ed777cc24239d2ec81fb0d1733b2ddbb091929a422`.
+
+| # | Test case | Run 1 | Run 2 |
+|---|---|---|---|
+| 1 | dist: [glue] R10: bản build giữ nguyên bộ token sáng và tối (WEB-contract §24.7) | PASS | PASS |
+| 2 | dist: [ui] R10: mặc định theo máy và đổi màu khi hệ điều hành đổi (WEB-contract §24.7) | PASS | PASS |
+| 3 | dist: [ui] R10: TopBar 375px có bộ chọn Sáng/Tối/Theo máy dùng được (WEB-contract §24.7) | FAIL | FAIL |
+| 4 | dist: [ui] R10: TopBar 768px có bộ chọn Sáng/Tối/Theo máy dùng được (WEB-contract §24.7) | FAIL | FAIL |
+| 5 | dist: [ui] R10: TopBar 1440px có bộ chọn Sáng/Tối/Theo máy dùng được (WEB-contract §24.7) | FAIL | FAIL |
+| 6 | dist: [ui] R10: TopBar teacher cũng có bộ chọn chủ đề (WEB-contract §24.7) | FAIL | FAIL |
+| 7 | dist: [ui] R10: TopBar admin cũng có bộ chọn chủ đề (WEB-contract §24.7) | FAIL | FAIL |
+| 8 | dist: [ui] R10: Sáng ghi đè theo máy, nhớ sau tải lại và mở trang mới (WEB-contract §24.7) | FAIL | FAIL |
+| 9 | dist: [ui] R10: Tối ghi đè theo máy, nhớ sau tải lại và mở trang mới (WEB-contract §24.7) | FAIL | FAIL |
+| 10 | dist: [glue] R10: fixture lõi và HTTP dùng cùng handle với MemoryStore (WEB-contract §22, §24.7) | PASS | PASS |
+| 11 | dist: [ui] R10: WCAG AA student light 375px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 12 | dist: [ui] R10: WCAG AA teacher light 375px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 13 | dist: [ui] R10: WCAG AA admin light 375px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 14 | dist: [ui] R10: WCAG AA student light 768px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 15 | dist: [ui] R10: WCAG AA teacher light 768px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 16 | dist: [ui] R10: WCAG AA admin light 768px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 17 | dist: [ui] R10: WCAG AA student light 1440px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 18 | dist: [ui] R10: WCAG AA teacher light 1440px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 19 | dist: [ui] R10: WCAG AA admin light 1440px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 20 | dist: [ui] R10: WCAG AA student dark 375px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 21 | dist: [ui] R10: WCAG AA teacher dark 375px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 22 | dist: [ui] R10: WCAG AA admin dark 375px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 23 | dist: [ui] R10: WCAG AA student dark 768px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 24 | dist: [ui] R10: WCAG AA teacher dark 768px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 25 | dist: [ui] R10: WCAG AA admin dark 768px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 26 | dist: [ui] R10: WCAG AA student dark 1440px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 27 | dist: [ui] R10: WCAG AA teacher dark 1440px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
+| 28 | dist: [ui] R10: WCAG AA admin dark 1440px trên các màn và hộp thoại (WEB-contract §24.7) | FAIL | FAIL |
 
 ## Lỗi sản phẩm được kiểm định
 
@@ -48,14 +88,15 @@ Kết quả cuối được bổ sung sau khi hoàn tất hai lần chạy cùng
 2. **Tương phản sáng:** nhãn chọn đúng trên báo cáo khoảng **3,148:1**, nhãn đáp án đúng **3,296:1** (đều cần 4,5:1); phần trăm tổng **3,862:1** trên dải nền tổng điểm. Nút đóng builder **2,564:1** (cần 3:1 cho chữ lớn). Biên nhiều ô nhập khoảng **1,2–1,5:1**, dưới 3:1.
 3. **Tương phản tối:** một số nội dung báo cáo kế thừa chữ sáng nhưng vẫn giữ nền trắng/xanh rất nhạt, ví dụ tiêu đề khoảng **1,174:1**, phương án đúng khoảng **1,122:1**. Placeholder tạo giáo viên khoảng **3,671:1**, cần 4,5:1; biên input tiếp tục dưới 3:1.
 
-Các con số chi tiết của từng màn/viewport xem log acceptance, không suy từ bảng màu token. Bộ token theo OS đã có không chứng minh mọi màn đã dùng đúng token.
+Các con số chi tiết của từng màn/viewport xem `verification-1.txt` và `verification-2.txt`, không suy từ bảng màu token. Bộ token theo OS đã có không chứng minh mọi màn đã dùng đúng token.
 
 ## Kiểm tra bổ sung và giới hạn
 
-- `npx --no-install tsc -p tsconfig.json`: **exit 1**; `src/app/main.ts(2458,36) TS2345`: `string | null` không gán được cho `string`.
-- `npx --no-install tsc -p tsconfig.web.json`: **exit 1**, cùng lỗi. Log: `typecheck.txt`, `typecheck-web.txt` trong thư mục test R10. Không sửa vì ngoài scope.
+- `npx --no-install tsc -p tsconfig.json`: **exit 0**. Log: `verification-typecheck-node.txt`.
+- `npx --no-install tsc -p tsconfig.web.json`: **exit 0**. Log: `verification-typecheck-web.txt`. Lỗi TS2345 trong log khảo sát cũ không còn ở snapshot kiểm định hiện tại; không dùng kết quả cũ thay cho lần chạy này.
+- `node --test test/claude-check/design.test.mjs`: **exit 0**, **11 pass / 0 fail / 0 skip / 0 cancelled**, 87.654 giây. Log: `verification-design.txt`. Bộ này xanh không thay thế phép đo tương phản của R10.
 - Không npm install, dependency, commit hoặc deploy. Không đánh giá trình duyệt/OS/mobile vật lý khác, IME thật hoặc AT bằng bộ này.
 - Đây là bộ đo contrast và hành vi theme trên các luồng hiện có, không phải chứng nhận WCAG toàn diện. Các màn tính năng R3–R9 chưa tồn tại đầy đủ trong snapshot phải được bổ sung vào lượt rà soát R10 sau khi các mục phụ thuộc hoàn thành; không gọi việc chưa thể mở các màn đó là PASS.
-- Các log `diagnostic*`, `student-diagnostic*`, `admin-diagnostic*`, `development-run*`, `run-1.txt`, `final-run-1.txt` là khảo sát/phát triển, không phải hai lần nghiệm chứng cuối. Đã sửa lỗi test bấm giữa thẻ lớp vào nút copy ở desktop bằng cách bấm đúng `.class-name`; log acceptance mới là căn cứ bàn giao.
+- Các log `diagnostic*`, `student-diagnostic*`, `admin-diagnostic*`, `development-run*`, `run-1.txt`, `final-run-1.txt`, `acceptance-1.txt`, `typecheck*.txt`, `design-check.txt` là khảo sát/bản chạy cũ, không phải hai lần nghiệm chứng của lượt này. Các log `verification-*` là căn cứ bàn giao hiện tại. Mọi thao tác thẻ lớp trong bộ test hiện tại bấm đúng `.class-name`, tránh nút copy nằm ở giữa thẻ trên desktop.
 
 Không cần quyết định nghiệp vụ mới để viết các ca §24.7 này. Không đánh dấu R10 hoàn thành khi các ca đỏ chưa được sửa.

@@ -1827,18 +1827,29 @@ export async function bootstrap(
         };
         if (inputEl) {
           updateAria(inputEl.value);
-          let truncatedInput = false;
+          let wasTruncated = false;
           const handleInputCommit = async (val: string, edited = false) => {
             if (isSubmitted) return;
             if (val.length > 4) {
-              truncatedInput = true;
+              wasTruncated = true;
+              val = val.slice(0, 4);
+              inputEl.value = val;
               setAttr(inputEl, 'aria-invalid', 'true');
               warningEl.textContent = 'Đã cắt còn tối đa 4 ký tự';
               warningEl.style.display = 'block';
-              val = val.slice(0, 4);
-              inputEl.value = val;
-            } else if (!truncatedInput || edited) {
-              truncatedInput = false;
+            } else if (edited) {
+              wasTruncated = false;
+              const isValid = /^[0-9,-]{0,4}$/.test(val);
+              if (isValid) {
+                removeAttr(inputEl, 'aria-invalid');
+                warningEl.textContent = '';
+                warningEl.style.display = 'none';
+              } else {
+                setAttr(inputEl, 'aria-invalid', 'true');
+                warningEl.textContent = 'Ký tự không hợp lệ';
+                warningEl.style.display = 'block';
+              }
+            } else if (!wasTruncated) {
               const isValid = /^[0-9,-]{0,4}$/.test(val);
               if (isValid) {
                 removeAttr(inputEl, 'aria-invalid');
