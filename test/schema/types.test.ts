@@ -108,4 +108,22 @@ describe("Schema Types — Structural & Discriminated Union Verification", () =>
     assert.equal(ev.type, "error");
     assert.equal(ev.error.code, "TEST_ERR");
   });
+
+  it("verifies AttemptRecord supports optional student_id and studentId fields (WEB §23)", () => {
+    const attempt: Partial<AttemptRecord> = {
+      examId: "exam-1",
+      examVersionId: "v1",
+      attemptId: "att-1",
+      schemaVersion: "web-attempt-v1",
+      revision: 1,
+      candidateName: "Nguyễn Văn A",
+      student_id: "stu-123",
+      studentId: "stu-123",
+      class_code: "12A1",
+      assignment_id: "asg-01",
+    };
+    assert.equal(attempt.student_id, "stu-123");
+    assert.equal(attempt.studentId, "stu-123");
+    assert.equal(attempt.class_code, "12A1");
+  });
 });

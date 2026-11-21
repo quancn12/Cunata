@@ -145,12 +145,15 @@ export function buildManualPartI(options) {
 export function buildManualPartII(options) {
     const letters = ["a", "b", "c", "d"];
     const statements = options.statementItems.map((item, idx) => {
-        return {
+        const s = {
             statementId: `stmt-${idx + 1}`,
             label: item.label ?? letters[idx] ?? `${idx + 1}`,
             text: item.text,
-            answer: item.answer ?? false,
         };
+        if (typeof item.answer === "boolean") {
+            s.answer = item.answer;
+        }
+        return s;
     });
     const q = {
         kind: "II",

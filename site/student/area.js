@@ -1255,22 +1255,23 @@ export function mountStudentArea(container, options = {}) {
             return joinClassByCode(code);
         },
         setCandidateName(name) {
-            candidateName = name;
+            const trimmed = (name || '').trim();
+            candidateName = trimmed;
             try {
-                if (!name) {
+                if (!trimmed) {
                     localStorage.removeItem(STORAGE_NAME_KEY);
                     localStorage.removeItem('cunata:candidate_name');
                     localStorage.removeItem('cunata:student_name');
                     localStorage.removeItem('cunata:last_candidate_name');
                 }
                 else {
-                    localStorage.setItem(STORAGE_NAME_KEY, name);
-                    localStorage.setItem('cunata:candidate_name', name);
+                    localStorage.setItem(STORAGE_NAME_KEY, trimmed);
+                    localStorage.setItem('cunata:candidate_name', trimmed);
                 }
             }
             catch { }
-            nameInput.value = name;
-            btnNameContinue.disabled = !name.trim();
+            nameInput.value = trimmed;
+            btnNameContinue.disabled = !trimmed;
             syncNameState();
         },
         getCandidateName() {

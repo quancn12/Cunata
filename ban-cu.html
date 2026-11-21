@@ -3537,11 +3537,6 @@
       }
 
       function cleanupTimeoutTimer() {
-        isSettled = true;
-        if (requestTimeoutTimer && typeof clearTimeout === 'function') {
-          try { clearTimeout(requestTimeoutTimer); } catch (_) {}
-          requestTimeoutTimer = null;
-        }
         if (customTimeoutId && typeof window !== 'undefined' && typeof window.clearCollectorRequestTimeout === 'function') {
           try { window.clearCollectorRequestTimeout(customTimeoutId); } catch (_) {}
           customTimeoutId = null;
@@ -3550,30 +3545,17 @@
 
       const dispatchPromise = (async () => {
         try {
-          let timeoutReject = null;
-          const timeoutPromise = new Promise((_, reject) => {
-            timeoutReject = reject;
-          });
-
-          Promise.resolve().then(() => {
-            if (!isSettled) {
-              const handleTimeout = () => {
-                if (!isSettled) {
-                  if (abortController && typeof abortController.abort === 'function') {
-                    try { abortController.abort(); } catch (_) {}
-                  }
-                  if (timeoutReject) {
-                    timeoutReject(new Error('COLLECTOR_TIMEOUT: Request timed out'));
-                  }
+          let timeoutPromise = null;
+          if (typeof window !== 'undefined' && typeof window.scheduleCollectorRequestTimeout === 'function') {
+            timeoutPromise = new Promise((_, reject) => {
+              customTimeoutId = window.scheduleCollectorRequestTimeout(() => {
+                if (abortController && typeof abortController.abort === 'function') {
+                  try { abortController.abort(); } catch (_) {}
                 }
-              };
-              if (typeof window !== 'undefined' && typeof window.scheduleCollectorRequestTimeout === 'function') {
-                customTimeoutId = window.scheduleCollectorRequestTimeout(handleTimeout, requestTimeoutMs);
-              } else if (typeof setTimeout === 'function') {
-                requestTimeoutTimer = setTimeout(handleTimeout, requestTimeoutMs);
-              }
-            }
-          });
+                reject(new Error('COLLECTOR_TIMEOUT: Request timed out'));
+              }, requestTimeoutMs);
+            });
+          }
 
           const networkWork = (async () => {
             const fetchOpts = {
@@ -3591,7 +3573,7 @@
             return null;
           })();
 
-          const result = await Promise.race([networkWork, timeoutPromise]);
+          const result = timeoutPromise ? await Promise.race([networkWork, timeoutPromise]) : await networkWork;
           cleanupTimeoutTimer();
 
           // Guard against superseded generation

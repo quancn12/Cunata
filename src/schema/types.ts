@@ -125,6 +125,8 @@ export interface AttemptRecord extends AttemptKey {
   readonly assignment_id?: string;
   readonly classCode?: string;
   readonly assignmentId?: string;
+  readonly student_id?: string;
+  readonly studentId?: string;
   readonly openAt?: string;
   readonly dueAt?: string;
   readonly open_at?: string;

@@ -5364,6 +5364,15 @@ describe('E2E & UI Flow Verification — Cunata Web Demo (index.html)', () => {
       const idx = scheduledTimers.findIndex(t => t.id === id);
       if (idx >= 0) scheduledTimers.splice(idx, 1);
     };
+    (p.c.window as any).scheduleCollectorRequestTimeout = (fn: Function, ms: number) => {
+      const entry = { id: timerCounter++, fn, ms };
+      scheduledTimers.push(entry);
+      return entry.id;
+    };
+    (p.c.window as any).clearCollectorRequestTimeout = (id: number) => {
+      const idx = scheduledTimers.findIndex(t => t.id === id);
+      if (idx >= 0) scheduledTimers.splice(idx, 1);
+    };
 
     p.c.fetch = async () => new Promise(() => {}); // hanging fetch
 
@@ -5430,7 +5439,7 @@ describe('E2E & UI Flow Verification — Cunata Web Demo (index.html)', () => {
       const RealDate = Date;
       function FakeDate(...args: any[]) {
         if (args.length === 0) return new RealDate(clockObj.now);
-        return new RealDate(...args);
+        return new (RealDate as any)(...args);
       }
       FakeDate.now = () => clockObj.now;
       FakeDate.prototype = RealDate.prototype;

@@ -329,12 +329,15 @@ export function segmentDocument(parsedDoc, sourceId) {
                 if (ans === undefined) {
                     allAnswered = false;
                 }
-                statements.push({
+                const stmtItem = {
                     statementId: stmt.statementId,
                     label: stmt.label,
                     text: stmt.text,
-                    answer: ans ?? false,
-                });
+                };
+                if (typeof ans === "boolean") {
+                    stmtItem.answer = ans;
+                }
+                statements.push(stmtItem);
             }
             if (!allAnswered || statements.length < 4) {
                 flags.push("KEY_MISSING");
