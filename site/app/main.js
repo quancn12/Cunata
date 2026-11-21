@@ -654,8 +654,6 @@ export async function bootstrap(root, options) {
     let timerIntervalId = null;
     let controller = null;
     let swRegistration = null;
-    let isSingleExamFixture = false;
-    let isSingleExamStarted = false;
     const notifyWorkerAttemptState = (active) => {
         try {
             if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
@@ -2725,7 +2723,7 @@ export async function bootstrap(root, options) {
             candidateInput.disabled = false;
         }
         const startScr = root.querySelector('#startScreen');
-        if (startScr && !isSingleExamFixture)
+        if (startScr)
             startScr.style.display = 'none';
         if (examWrapper)
             examWrapper.style.display = '';
@@ -3241,7 +3239,7 @@ export async function bootstrap(root, options) {
             case 'student':
             case 'teacher':
                 if (examWrapper)
-                    examWrapper.style.display = (isSingleExamFixture && isSingleExamStarted) ? '' : 'none';
+                    examWrapper.style.display = 'none';
                 if (reportWrapper)
                     reportWrapper.style.display = 'none';
                 if (builderModal)
@@ -3252,7 +3250,7 @@ export async function bootstrap(root, options) {
                     startScr.style.display = (state.route === 'student' && !isStudentAwaitingRole) ? 'block' : 'none';
                 break;
             case 'exam':
-                const isStartActive = startScr && startScr.style.display !== 'none' && !isSingleExamFixture;
+                const isStartActive = startScr && startScr.style.display !== 'none';
                 if (examWrapper)
                     examWrapper.style.display = isStartActive ? 'none' : '';
                 if (reportWrapper)
@@ -3485,14 +3483,6 @@ export async function bootstrap(root, options) {
                     const loadedExam = await fetchExamData(target, appsScriptUrl, appsScriptClient);
                     if (loadedExam && loadedExam.questions && loadedExam.questions.length > 0) {
                         currentExam = loadedExam;
-                        if (exams.length === 1 && !queryExamId) {
-                            isSingleExamFixture = true;
-                            isSingleExamStarted = true;
-                            if (examWrapper)
-                                examWrapper.style.display = '';
-                            renderExamPane();
-                            updatePalette();
-                        }
                         if (examTitle) {
                             examTitle.textContent = currentExam.title;
                         }
@@ -3587,43 +3577,6 @@ export async function bootstrap(root, options) {
                 await loadOrResumeExam(exam, false, undefined, meta);
             },
         });
-        const startSingleExamFixtureIfReady = async () => {
-            if (!isSingleExamFixture)
-                return;
-            isSingleExamStarted = true;
-            const nameVal = root.querySelector('#startName')?.value.trim() ||
-                root.querySelector('#candidateName')?.value.trim() ||
-                candidateName;
-            if (nameVal && nameVal !== 'Thí sinh tự do') {
-                candidateName = nameVal;
-            }
-            if (candidateInput) {
-                candidateInput.value = candidateName;
-                candidateInput.readOnly = true;
-                candidateInput.setAttribute('readonly', 'readonly');
-                candidateInput.disabled = false;
-            }
-            if (examWrapper)
-                examWrapper.style.display = '';
-            await loadOrResumeExam(currentExam, false);
-            if (startScreen)
-                startScreen.style.display = '';
-        };
-        const btnNameContinue = root.querySelector('#btnNameContinue');
-        if (btnNameContinue) {
-            btnNameContinue.addEventListener('click', () => {
-                void startSingleExamFixtureIfReady();
-            });
-        }
-        root.addEventListener('click', (e) => {
-            const target = e.target;
-            if (target && target.closest('#btnNameContinue')) {
-                void startSingleExamFixtureIfReady();
-            }
-        });
-        if (isSingleExamFixture && candidateName && candidateName !== 'Thí sinh tự do') {
-            void startSingleExamFixtureIfReady();
-        }
     }
     const authoringCtrl = initAuthoring(root, {
         getExam: () => currentExam,
