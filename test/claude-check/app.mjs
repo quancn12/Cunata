@@ -99,6 +99,23 @@ export async function joinClass(page, code) {
 
 /** Mở #examPreview của một thẻ đề rồi bấm #btnStartExam. */
 export async function startFromCard(page, sel) {
+  // WEB-contract 21: bản build không còn thẻ đề luyện tập công khai. Với selector [data-exam-id="X"] mà không có thẻ
+  // (học sinh chưa vào lớp), học sinh vẫn mở được đề bằng tệp (#examFileInput) — lấy đúng tệp đề X từ index.json của máy chủ test.
+  const m = /^\[data-exam-id="([^"]+)"\]$/.exec(sel);
+  if (m) {
+    let hasCard = false;
+    try { hasCard = !!(await page.waitFor((q) => !!document.querySelector(q), 'thẻ ' + sel, 3000, sel)); } catch { hasCard = false; }
+    if (!hasCard) {
+      const exam = await page.eval(async (id) => {
+        const idx = await (await fetch('public/exams/index.json', { cache: 'no-store' })).json();
+        const e = (idx.exams || []).find((x) => x.id === id);
+        return e ? await (await fetch(e.url, { cache: 'no-store' })).json() : null;
+      }, m[1]);
+      if (!exam) throw new Error(`startFromCard: không có thẻ ${sel} và index.json của máy chủ test không có đề "${m[1]}" (WEB-contract 21)`);
+      await loadExam(page, exam);
+      return;
+    }
+  }
   await page.waitFor((q) => !!document.querySelector(q), 'thẻ đề cần chọn có trên trang học sinh: ' + sel, 10000, sel);
   await page.click(sel);
   await page.waitFor(`(() => { const shown = ${shown}; const b = document.getElementById('btnStartExam'); return shown('examPreview') && !!b && !b.disabled; })()`,
@@ -112,11 +129,12 @@ export async function startFromCard(page, sel) {
  * Bản build: chọn vai → học sinh → cổng tên, dừng ở khu học sinh (WEB-contract 21: không còn đề luyện tập công khai; đề chỉ đến qua lớp).
  * Bản gốc (index.html, giữ nguyên theo mục 18): màn vào thi cũ (mục 16) nếu có.
  */
-export async function enterFromStart(page, { name = START_NAME, url } = {}) {
+export async function enterFromStart(page, { name = START_NAME, url, id } = {}) {
   const role = await onRoleChooser(page);
   if (!role && !(await onStartScreen(page))) return;
   if (role || await page.eval(() => !!document.getElementById('studentNameGate') || !!document.getElementById('classCodeInput'))) {
     await enterStudentArea(page, { name });
+    if (id) await startFromCard(page, `[data-exam-id="${id}"]`);
     return;
   }
   // bản cũ (mục 16): ô tên + danh sách + nút bắt đầu trên cùng một màn

@@ -8,14 +8,14 @@ const test=(name,...args)=>{const fn=args.pop();const opts=args.pop()??{};return
 import { before,after,test as nodeTest } from 'node:test';
 import assert from 'node:assert/strict';
 const { setup,newPage,waitBoot,enterStudentArea,measure }=await import(pathToFileURL(process.cwd()+'/ops/blitz/promoted/_support/design/support.mjs').href);
-const { startFromCard,submit } = await import((await import('node:url')).pathToFileURL(process.cwd() + '/test/claude-check/app.mjs').href);
+const { startFromCard,submit,joinClass } = await import((await import('node:url')).pathToFileURL(process.cwd() + '/test/claude-check/app.mjs').href);
 const { sleep } = await import((await import('node:url')).pathToFileURL(process.cwd() + '/test/claude-check/harness.mjs').href);
 let env;
 before(async()=>{env=await setup();});
 after(async()=>{await env?.close();});
 async function withExam(fn,{w=375,theme='light'}={}){
   const {ctx,page:p}=await newPage(env,w,theme);
-  try{await p.goto(env.server.url);await waitBoot(p);await enterStudentArea(p);await startFromCard(p,'[data-exam-id="cx-design-exam"]');await fn(p);}finally{await ctx.close();}
+  try{await p.goto(env.server.url);await waitBoot(p);await enterStudentArea(p);/* WEB-contract §21: đề chỉ đến qua lớp — vào lớp đã giao cx-design-exam */const card=await joinClass(p,env.cls.code);await startFromCard(p,card);await fn(p);}finally{await ctx.close();}
 }
 test("dist: [ui] CX-design-F01: chế độ tối: tiêu đề câu và lời giải phải tương phản ít nhất 4.5:1 (WEB-contract §9, §19.1)",async()=>{
   await withExam(async p=>{
