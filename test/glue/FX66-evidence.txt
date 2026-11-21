@@ -1,0 +1,59 @@
+task_id: FX66-glue
+base_commit: 2e92074f1ee4225d9ae1ef7c452015eb42085266
+environment: Windows / PowerShell / local Chrome CDP / HTTP
+
+Change: src/app/main.ts rejects edits longer than four code points, restores the
+previous answer and retains an explicit warning through change/blur. It no longer
+saves a four-character prefix that can accidentally equal the answer key.
+No scoring rules, dependencies, root HTML or independent tests were changed.
+
+Assumption: rejecting an overlength edit means retaining the previous answer,
+with a visible warning; it does not mean silently saving a truncated prefix.
+
+Regression evidence:
+node --test test/glue/fx66-short-answer.test.mjs
+Before: exit=1, pass=0, fail=1 (fx66-regression-red.log).
+Reproduction: enter 12, replace with -0,59; old product saves -0,5.
+After: exit=0, pass=1, fail=0 (fx66-regression-after.log).
+Checks include change/blur, durable save, reload and a subsequent valid correction.
+Browser/context/server teardown is in finally; the test has a 60-second timeout.
+
+Other checks:
+node scripts/web-build.ts
+exit=0; 339 emitted files (fx66-build.log).
+npx --no-install tsc -p tsconfig.json
+exit=0 (fx66-tsc.log).
+npx --no-install tsc -p tsconfig.web.json
+exit=0 (fx66-tsc-web.log).
+node --test test/glue/final/fullIntegration.test.ts test/glue/wave2/mainBootstrap.test.ts
+exit=0, pass=14, fail=0 (fx66-app.log).
+node --test --test-name-pattern="Phần III" test/claude-check/web.test.mjs
+exit=0, pass=4, fail=0 (fx66-short-parity.log).
+node --test --test-name-pattern="CX-scoring-F03|API16" test/codex-check/cx/report.test.mjs test/codex-check/feat/R1/api.test.mjs
+exit=0, pass=2, fail=0 both before and after the change
+(fx66-target-before.log, fx66-target-after.log).
+
+Startup timeout API16: NOT_REPRODUCED in targeted runs or the first full-suite
+run. No speculative startup change was made.
+
+First full-suite run: node --test "test/codex-check/**/*.test.mjs"
+exit=1, pass=197, fail=1 (fx66-codex-before.log).
+Both assigned cases passed. Failure was CX-AS-03 waiting for teacherUsername
+to become visible; no root cause has been established for that separate failure.
+This run overlapped the build; use the final post-build run for acceptance.
+
+First post-build full-suite run: exit=1, pass=197, fail=1
+(fx66-codex-after.log). Both assigned cases passed. The remaining failure was
+dist oracle golden-39-0-3-full: report visibility exceeded its five-second wait.
+Its isolated rerun passed: exit=0, pass=1, fail=0 (fx66-oracle-rerun.log).
+Command: node --test --test-name-pattern="^dist:.*golden-39-0-3-full" test/codex-check/browser.test.mjs
+
+Final full-suite run: node --test "test/codex-check/**/*.test.mjs"
+exit=0, tests=198, pass=198, fail=0, skipped=0, duration=138815.5897 ms
+(fx66-codex-final.log). Both CX-scoring-F03 and API16 passed.
+Historical timeout failures above remain recorded; their causes were not proven.
+Generated dist/app/main.js and dist/service-worker.js are restored to their
+pre-task tracked versions after verification to keep the final source diff
+within the authorized scope. Rebuild with node scripts/web-build.ts before
+rerunning browser tests or reviewing the generated app.
+No install, commit or deployment was performed.

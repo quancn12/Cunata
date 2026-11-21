@@ -1849,18 +1849,18 @@ export async function bootstrap(
         };
         if (inputEl) {
           updateAria(inputEl.value);
-          let wasTruncated = false;
+          let rejectedOverlength = false;
           const handleInputCommit = async (val: string, edited = false) => {
             if (isSubmitted) return;
-            if (val.length > 4) {
-              wasTruncated = true;
-              val = val.slice(0, 4);
-              inputEl.value = val;
+            if (Array.from(val).length > 4) {
+              rejectedOverlength = true;
+              inputEl.value = typeof responses[q.questionVersionId] === 'string' ? responses[q.questionVersionId] : '';
               setAttr(inputEl, 'aria-invalid', 'true');
-              warningEl.textContent = 'Đã cắt còn tối đa 4 ký tự';
+              warningEl.textContent = 'Không nhận câu trả lời quá 4 ký tự. Đã giữ đáp án trước đó.';
               warningEl.style.display = 'block';
+              return;
             } else if (edited) {
-              wasTruncated = false;
+              rejectedOverlength = false;
               const isValid = /^[0-9,-]{0,4}$/.test(val);
               if (isValid) {
                 removeAttr(inputEl, 'aria-invalid');
@@ -1871,7 +1871,7 @@ export async function bootstrap(
                 warningEl.textContent = 'Ký tự không hợp lệ';
                 warningEl.style.display = 'block';
               }
-            } else if (!wasTruncated) {
+            } else if (!rejectedOverlength) {
               const isValid = /^[0-9,-]{0,4}$/.test(val);
               if (isValid) {
                 removeAttr(inputEl, 'aria-invalid');
