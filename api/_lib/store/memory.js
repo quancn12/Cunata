@@ -10,6 +10,36 @@ export class MemoryStore {
         const t = this.teachers.get(username);
         return t ? { ...t, authGen: t.authGen ?? 1 } : null;
     }
+    async createTeacher(teacher) {
+        if (this.teachers.has(teacher.username)) {
+            return false;
+        }
+        this.teachers.set(teacher.username, { ...teacher, authGen: teacher.authGen ?? 1 });
+        return true;
+    }
+    async updateTeacherPassword(username, salt, hash) {
+        const t = this.teachers.get(username);
+        if (!t)
+            return false;
+        this.teachers.set(username, {
+            ...t,
+            salt,
+            hash,
+            authGen: (t.authGen ?? 1) + 1,
+        });
+        return true;
+    }
+    async setTeacherActive(username, active) {
+        const t = this.teachers.get(username);
+        if (!t)
+            return false;
+        this.teachers.set(username, {
+            ...t,
+            active,
+            authGen: (t.authGen ?? 1) + 1,
+        });
+        return true;
+    }
     async saveTeacher(teacher) {
         this.teachers.set(teacher.username, { ...teacher, authGen: teacher.authGen ?? 1 });
     }
@@ -97,8 +127,16 @@ export class MemoryStore {
     async listExams() {
         return Array.from(this.exams.values()).map(e => ({ ...e }));
     }
-    async deleteExam(examId) {
+    async deleteExam(examId, owner) {
+        const existing = this.exams.get(examId);
+        if (!existing) {
+            return { ok: false, error: 'NOT_FOUND' };
+        }
+        if (owner !== undefined && existing.owner !== owner) {
+            return { ok: false, error: 'FORBIDDEN' };
+        }
         this.exams.delete(examId);
+        return { ok: true };
     }
     async countExams() {
         return this.exams.size;

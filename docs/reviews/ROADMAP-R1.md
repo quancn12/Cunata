@@ -12,25 +12,26 @@ Verdict: CHANGES_REQUESTED
 ## Phạm vi và giả định
 
 1. R1 là lõi máy chủ và phần build API. Không kết luận R2–R11 hoàn thành; thiếu API PIN của §23 thuộc R3, không dùng làm finding R1.
-2. Working tree đã có nhiều thay đổi trước lúc kiểm, kể cả file báo cáo này đang bị xóa. Kiểm build/suite trên working tree thực tế; `src/api/**`, `scripts/web-build.ts` và hai bộ test được giao không có diff chưa commit tại lúc kiểm. Không gán các thay đổi sẵn có của module khác cho R1.
+2. Working tree đã có nhiều thay đổi trước lúc kiểm, kể cả báo cáo này đã có sửa đổi. Các finding có sẵn đã được tái hiện lại; không lấy kết quả chạy cũ làm bằng chứng mới. `src/api/**`, `scripts/web-build.ts` và hai bộ test được giao không có diff chưa commit tại lúc kiểm. Không gán thay đổi sẵn có của module khác cho R1.
 3. Kiểm đồng thời là cần thiết: §22 quy định Vercel chạy nhiều tiến trình. Tạm dừng tại ranh giới async Store để tạo một lịch xen kẽ hợp lệ, không thay thuật toán xử lý yêu cầu. Các probe chỉ thay method của MemoryStore trong tiến trình kiểm, không ghi file sản phẩm.
-4. Build và các test được yêu cầu có sinh lại artifact/runtime cục bộ. Danh sách file tracked bẩn trong `dist/` sau build vẫn là năm file đã bẩn lúc đầu: `import/docx/segmentation.js`, `import/pdf/manual.js`, `report/view.js`, `service-worker.js`, `student/area.js`.
+4. Để giữ scope chỉ sửa báo cáo trong repo, build và suite chạy tại bản sao kiểm thử `%USERPROFILE%\AppData\Local\Temp\cunata-r1-review-6zfczsp_` (không phải Git worktree/branch). Sao chép source, test, tài nguyên và dependency đã có; không cài gì, không sao chép/đọc cấu hình production. Đối chiếu SHA-256 của 1.193 đầu vào với D:\Cunata sau kiểm: không có đầu vào đổi. Build sinh 339 file trong dist của bản sao, không ghi dist gốc. Ba probe concurrency chạy bằng stdin tại D:\Cunata và chỉ dùng MemoryStore.
 5. Không có BLOCKED_QUESTION hoặc quyết định nghiệp vụ mới cần tự chọn cho ba finding dưới đây. Chúng vi phạm hành vi đã chốt: bảo vệ đề của giáo viên khác, mật khẩu mới sau reset và `USERNAME_TAKEN` khi trùng tài khoản.
 
 ## Kết quả kiểm định chạy thật
 
-Môi trường: Windows/PowerShell, Node `v24.14.0`, TypeScript `7.0.2`, thư mục `D:\Cunata`.
+Môi trường: Windows/PowerShell, Node `v24.14.0`, TypeScript `7.0.2`. CWD build/tsc/suite là bản sao kiểm thử nêu trên; CWD probe là `D:\Cunata`. Các kết quả dưới đây được chạy lại trong phiên này.
 
 | Lệnh | Exit | Kết quả |
 |---|---:|---|
 | `node scripts/build.js` | 0 | PASS; xuất và kiểm 339 file trong dist |
 | `npx --no-install tsc -p tsconfig.json` | 0 | PASS; không diagnostic |
 | `npx --no-install tsc -p tsconfig.web.json` | 0 | PASS; không diagnostic |
-| `node --test "test/codex-check/feat/R1/**/*.test.mjs"` | 0 | 31 pass, 0 fail, 0 skip/cancel/todo; 57.357 giây |
-| `node --test "test/claude-check/**/*.test.mjs"` | 0 | 104 pass, 0 fail, 5 suites, 0 skip/cancel/todo; 75.803 giây |
+| `node --test "test/codex-check/feat/R1/**/*.test.mjs"` (lần 1) | 0 | 31 pass, 0 fail, 0 skip/cancel/todo; 10,897 giây |
+| `node --test "test/codex-check/feat/R1/**/*.test.mjs"` (lần 2) | 0 | 31 pass, 0 fail, 0 skip/cancel/todo; 9,437 giây |
+| `node --test "test/claude-check/**/*.test.mjs"` | 0 | 104 pass, 0 fail, 5 suites, 0 skip/cancel/todo; 96,149 giây |
 | Probe stdin ở cuối báo cáo: `@'…'@ \| node --input-type=module` | 0 | Ba lịch xen kẽ đều tái hiện lỗi; mọi assertion xác nhận lỗi đều đạt |
 
-Build có cảnh báo Node DEP0190 về `shell: true`; không phải lỗi build. Output đầy đủ của các lệnh đã đọc trực tiếp trong phiên kiểm. Không ghi log mới ngoài scope; không dùng các file `run-1.tap`/`run-2.tap` cũ làm bằng chứng lần chạy này.
+Build có cảnh báo Node DEP0190 về `shell: true`; không phải lỗi build. Output đầy đủ đã được đọc trong phiên kiểm. Log mới nằm trong thư mục tạm nêu trên: `review-r1.tap`, `review-r1-second.tap`, `review-claude.tap`; manifest đối chiếu đầu vào là `snapshot-hashes.json`. Không ghi log mới vào repo và không dùng `run-1.tap`/`run-2.tap` cũ làm bằng chứng mới.
 
 Các suite có Chrome/Edge headless thật, HTTP cục bộ và dịch vụ giả lập. Neon/Vercel/Google thật: **NOT_RUN**, bị task cấm; test SQL-over-HTTP giả lập không chứng nhận tích hợp cơ sở dữ liệu thật. Không chạy lại full unit/oracle ngoài phạm vi lệnh của task.
 
@@ -50,7 +51,7 @@ Các suite có Chrome/Edge headless thật, HTTP cục bộ và dịch vụ gi�
 
 ### R1-F02 — CRITICAL — Cập nhật trạng thái từ bản đọc cũ khôi phục mật khẩu đã reset
 
-- affected_files: `src/api/handle.ts:233–250`, `src/api/handle.ts:259–273`; `src/api/store/neon.ts:147–150`; `src/api/store/memory.ts:19–20`.
+- affected_files: `src/api/handle.ts:233–250`, `src/api/handle.ts:259–273`; `src/api/store/neon.ts:147–150`; `src/api/store/memory.ts:17-18`.
 - Căn cứ: WEB-contract §22: reset mật khẩu vô hiệu phiên cũ; thao tác khóa/mở không được âm thầm hoàn tác mật khẩu mới.
 - Bằng chứng: reset và đổi active đều đọc toàn bộ teacher, tăng `authGen` ở handle rồi spread bản đọc cũ vào `saveTeacher`. UPSERT ghi lại tất cả salt/hash/active/auth_gen; không có CAS/giao dịch và không tăng generation dựa trên bản ghi hiện tại trong SQL.
 - Reproduction_steps: yêu cầu bật active đọc teacher cũ rồi dừng; reset sang mật khẩu mới hoàn tất; đăng nhập bằng mật khẩu mới thành công; tiếp tục yêu cầu active. Probe xác nhận mật khẩu cũ đăng nhập được trở lại, mật khẩu mới bị từ chối.
@@ -62,7 +63,7 @@ Các suite có Chrome/Edge headless thật, HTTP cục bộ và dịch vụ gi�
 
 ### R1-F03 — MAJOR — Hai yêu cầu tạo trùng username đều thành công và ghi đè tài khoản
 
-- affected_files: `src/api/handle.ts:168–190`; `src/api/store/neon.ts:147–150`; `src/api/store/memory.ts:19–20`.
+- affected_files: `src/api/handle.ts:168–190`; `src/api/store/neon.ts:147–150`; `src/api/store/memory.ts:17-18`.
 - Căn cứ: WEB-contract §19.2/§22: username trùng → `USERNAME_TAKEN`.
 - Bằng chứng: kiểm tồn tại và lưu là hai await riêng; `saveTeacher` dùng UPSERT cập nhật tài khoản tồn tại. Unique primary key không bảo vệ semantics tạo mới vì conflict đã bị biến thành UPDATE.
 - Reproduction_steps: hai yêu cầu Admin tạo cùng username, password khác nhau; cho cả hai `getTeacher` hoàn thành với null trước khi cho tiếp tục. Probe nhận `[true,true]`; mật khẩu của yêu cầu thành công đầu bị thay bằng mật khẩu yêu cầu thứ hai.

@@ -1,4 +1,4 @@
-import type { Teacher, Session, ClassItem, Assignment, ExamRecord, ResultRecord, Store, SaveExamResult, SaveResultOutcome } from '../types.ts';
+import type { Teacher, Session, ClassItem, Assignment, ExamRecord, ResultRecord, Store, SaveExamResult, SaveResultOutcome, DeleteExamResult } from '../types.ts';
 
 export interface NeonStoreOptions {
   connectionString?: string;
@@ -144,6 +144,31 @@ CREATE TABLE IF NOT EXISTS results (
     return rows[0] ? { ...rows[0], authGen: Number(rows[0].authGen ?? 1) } : null;
   }
 
+  async createTeacher(teacher: Teacher): Promise<boolean> {
+    const authGen = teacher.authGen ?? 1;
+    const rows = await this.execute(
+      `INSERT INTO teachers (username, name, salt, hash, active, created_at, auth_gen) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (username) DO NOTHING RETURNING username`,
+      [teacher.username, teacher.name, teacher.salt, teacher.hash, teacher.active, teacher.createdAt, authGen]
+    );
+    return rows.length > 0;
+  }
+
+  async updateTeacherPassword(username: string, salt: string, hash: string): Promise<boolean> {
+    const rows = await this.execute(
+      `UPDATE teachers SET salt = $2, hash = $3, auth_gen = auth_gen + 1 WHERE username = $1 RETURNING username`,
+      [username, salt, hash]
+    );
+    return rows.length > 0;
+  }
+
+  async setTeacherActive(username: string, active: boolean): Promise<boolean> {
+    const rows = await this.execute(
+      `UPDATE teachers SET active = $2, auth_gen = auth_gen + 1 WHERE username = $1 RETURNING username`,
+      [username, active]
+    );
+    return rows.length > 0;
+  }
+
   async saveTeacher(teacher: Teacher): Promise<void> {
     const authGen = teacher.authGen ?? 1;
     await this.execute(`INSERT INTO teachers (username, name, salt, hash, active, created_at, auth_gen) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (username) DO UPDATE SET name = EXCLUDED.name, salt = EXCLUDED.salt, hash = EXCLUDED.hash, active = EXCLUDED.active, auth_gen = EXCLUDED.auth_gen`,
@@ -237,8 +262,23 @@ CREATE TABLE IF NOT EXISTS results (
     return this.execute(`SELECT ${examColumns} FROM exams ORDER BY updated_at DESC`);
   }
 
-  async deleteExam(examId: string): Promise<void> {
-    await this.execute('DELETE FROM exams WHERE id = $1', [examId]);
+  async deleteExam(examId: string, owner?: string): Promise<DeleteExamResult> {
+    if (owner !== undefined) {
+      const rows = await this.execute(
+        `WITH deleted AS (DELETE FROM exams WHERE id = $1 AND owner = $2 RETURNING id) SELECT (SELECT id FROM deleted) AS "deletedId", (SELECT owner FROM exams WHERE id = $1) AS "currentOwner"`,
+        [examId, owner]
+      );
+      const row = rows[0];
+      if (row?.deletedId) {
+        return { ok: true };
+      }
+      if (row?.currentOwner) {
+        return { ok: false, error: 'FORBIDDEN' };
+      }
+      return { ok: false, error: 'NOT_FOUND' };
+    }
+    const rows = await this.execute('DELETE FROM exams WHERE id = $1 RETURNING id', [examId]);
+    return { ok: rows.length > 0, error: rows.length > 0 ? undefined : 'NOT_FOUND' };
   }
 
   async countExams(): Promise<number> {

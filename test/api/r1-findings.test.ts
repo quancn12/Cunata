@@ -544,3 +544,340 @@ test('R1-F08: listAssignments trả submissionCount phản ánh số bài đã n
   const publicAssignments = publicCls.body.assignments as any[];
   assert.equal(publicAssignments[0].submissionCount, undefined, 'getClass công khai không được chứa submissionCount');
 });
+
+test('R1-REVIEW1-F01: unpublish chậm không xóa đề mới của giáo viên khác (atomic owner predicate)', async () => {
+  const { ctx, store } = createTestCtx();
+  const teacherA = await createTeacher(ctx, 'teacher_a', 'Giáo viên A');
+  const teacherB = await createTeacher(ctx, 'teacher_b', 'Giáo viên B');
+
+  const exam = makeSampleExam('race-exam-f01', 'Đề Race F01');
+
+  // Teacher A publishes exam
+  const pubA = await handle(
+    { method: 'POST', body: { action: 'publishExam', token: teacherA.token, exam } },
+    ctx
+  );
+  assert.equal(pubA.body.success, true);
+  assert.equal((await store.getExam('race-exam-f01'))?.owner, 'teacher_a');
+
+  // Setup delay in deleteExam
+  let resolveDeleteGate: () => void = () => {};
+  const deleteGate = new Promise<void>(r => { resolveDeleteGate = r; });
+  let resolveReleaseGate: () => void = () => {};
+  const releaseGate = new Promise<void>(r => { resolveReleaseGate = r; });
+
+  const origDeleteExam = store.deleteExam.bind(store);
+  let firstCall = true;
+  store.deleteExam = async (...args) => {
+    if (firstCall) {
+      firstCall = false;
+      resolveDeleteGate();
+      await releaseGate;
+    }
+    return origDeleteExam(...args);
+  };
+
+  // Teacher A initiates unpublish A1 (which pauses inside deleteExam)
+  const unpublishA1Promise = handle(
+    { method: 'POST', body: { action: 'unpublishExam', token: teacherA.token, examId: 'race-exam-f01' } },
+    ctx
+  );
+
+  // Wait for A1 to reach deleteExam
+  await deleteGate;
+
+  // Now Teacher A completes unpublish A2 (second unpublish request)
+  const unpublishA2 = await handle(
+    { method: 'POST', body: { action: 'unpublishExam', token: teacherA.token, examId: 'race-exam-f01' } },
+    ctx
+  );
+  assert.equal(unpublishA2.body.success, true);
+  assert.equal(await store.getExam('race-exam-f01'), null);
+
+  // Teacher B publishes new exam with same examId
+  const pubB = await handle(
+    { method: 'POST', body: { action: 'publishExam', token: teacherB.token, exam } },
+    ctx
+  );
+  assert.equal(pubB.body.success, true);
+  assert.equal((await store.getExam('race-exam-f01'))?.owner, 'teacher_b');
+
+  // Now release A1 to proceed with its stale unpublish
+  resolveReleaseGate();
+  const unpublishA1 = await unpublishA1Promise;
+
+  // A1 must fail because owner is now teacher_b
+  assert.equal(unpublishA1.body.success, false);
+  assert.equal(unpublishA1.body.error, 'FORBIDDEN');
+
+  // Teacher B's exam must still exist!
+  const examAfter = await store.getExam('race-exam-f01');
+  assert.ok(examAfter, 'Đề của Thầy B không bị xóa');
+  assert.equal(examAfter?.owner, 'teacher_b');
+
+  // Restore store.deleteExam
+  store.deleteExam = origDeleteExam;
+
+  // Also verify Neon SQL has owner predicate and two params
+  const executedSqls: { query: string; params?: unknown[] }[] = [];
+  const fakeFetch = async (_url: string | URL | Request, init?: RequestInit) => {
+    const body = JSON.parse((init?.body as string) || '{}');
+    executedSqls.push({ query: body.query, params: body.params });
+    return new Response(JSON.stringify({ rows: [{ deletedId: 'race-exam-f01', currentOwner: null }] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+  const neon = new NeonStore({
+    connectionString: 'postgresql://u:p@fixture.neon.tech/db',
+    fetch: fakeFetch as any,
+  });
+  await neon.deleteExam('race-exam-f01', 'teacher_a');
+  const deleteSql = executedSqls.find(s => s.query.includes('DELETE FROM exams'));
+  assert.ok(deleteSql, 'Phải phát câu lệnh DELETE FROM exams');
+  assert.match(deleteSql.query, /WHERE\s+id\s*=\s*\$1\s+AND\s+owner\s*=\s*\$2/i, 'Phải có predicate owner trong WHERE');
+  assert.deepEqual(deleteSql.params, ['race-exam-f01', 'teacher_a'], 'Phải có 2 params: examId và owner');
+});
+
+test('R1-REVIEW1-F02: cập nhật active không khôi phục mật khẩu cũ đã reset (atomic authGen & partial updates)', async () => {
+  const { ctx, store } = createTestCtx();
+  const teacher = await createTeacher(ctx, 'teacher_f02', 'Giáo viên F02');
+
+  // Setup delay in setTeacherActive
+  let resolveActiveGate: () => void = () => {};
+  const activeGate = new Promise<void>(r => { resolveActiveGate = r; });
+  let resolveReleaseGate: () => void = () => {};
+  const releaseGate = new Promise<void>(r => { resolveReleaseGate = r; });
+
+  const origSetActive = store.setTeacherActive.bind(store);
+  let once = true;
+  store.setTeacherActive = async (username, active) => {
+    if (username === 'teacher_f02' && once) {
+      once = false;
+      resolveActiveGate();
+      await releaseGate;
+    }
+    return origSetActive(username, active);
+  };
+
+  // Start adminSetTeacherActive (pauses after being called)
+  const togglePromise = handle(
+    {
+      method: 'POST',
+      body: {
+        action: 'adminSetTeacherActive',
+        token: teacher.adminToken,
+        username: 'teacher_f02',
+        active: true,
+      },
+    },
+    ctx
+  );
+
+  // Wait for setTeacherActive to be reached
+  await activeGate;
+
+  // Meanwhile, Admin resets password to NewPassword123
+  const resetRes = await handle(
+    {
+      method: 'POST',
+      body: {
+        action: 'adminResetPassword',
+        token: teacher.adminToken,
+        username: 'teacher_f02',
+        password: 'NewPassword123',
+      },
+    },
+    ctx
+  );
+  assert.equal(resetRes.body.success, true);
+
+  // Teacher logs in with new password -> works
+  const loginNew1 = await handle(
+    {
+      method: 'POST',
+      body: {
+        action: 'teacherLogin',
+        username: 'teacher_f02',
+        password: 'NewPassword123',
+      },
+    },
+    ctx
+  );
+  assert.equal(loginNew1.body.success, true);
+
+  // Now release setTeacherActive
+  resolveReleaseGate();
+  const toggleRes = await togglePromise;
+  assert.equal(toggleRes.body.success, true);
+
+  // Verify: old password must be rejected, new password must still work!
+  const loginOld = await handle(
+    {
+      method: 'POST',
+      body: {
+        action: 'teacherLogin',
+        username: 'teacher_f02',
+        password: 'TeacherPassword123',
+      },
+    },
+    ctx
+  );
+  assert.equal(loginOld.body.success, false, 'Mật khẩu cũ không thể đăng nhập lại sau reset');
+  assert.equal(loginOld.body.error, 'UNAUTHORIZED');
+
+  const loginNew2 = await handle(
+    {
+      method: 'POST',
+      body: {
+        action: 'teacherLogin',
+        username: 'teacher_f02',
+        password: 'NewPassword123',
+      },
+    },
+    ctx
+  );
+  assert.equal(loginNew2.body.success, true, 'Mật khẩu mới vẫn hoạt động bình thường');
+
+  // Restore store.setTeacherActive
+  store.setTeacherActive = origSetActive;
+
+  // Also verify Neon SQL statements for password reset and set active
+  const executedSqls: { query: string; params?: unknown[] }[] = [];
+  const fakeFetch = async (_url: string | URL | Request, init?: RequestInit) => {
+    const body = JSON.parse((init?.body as string) || '{}');
+    executedSqls.push({ query: body.query, params: body.params });
+    return new Response(JSON.stringify({ rows: [{ username: 'teacher_f02', authGen: 2 }] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+  const neon = new NeonStore({
+    connectionString: 'postgresql://u:p@fixture.neon.tech/db',
+    fetch: fakeFetch as any,
+  });
+
+  await neon.updateTeacherPassword('teacher_f02', 'salt123', 'hash123');
+  const resetSql = executedSqls.find(s => s.query.includes('UPDATE teachers SET salt'));
+  assert.ok(resetSql, 'Phải phát câu lệnh UPDATE teachers SET salt');
+  assert.match(resetSql.query, /auth_gen\s*=\s*auth_gen\s*\+\s*1/i, 'Phải tăng auth_gen nguyên tử');
+  assert.ok(!/active\s*=/i.test(resetSql.query), 'Reset password không ghi đè cột active');
+
+  executedSqls.length = 0;
+  await neon.setTeacherActive('teacher_f02', false);
+  const activeSql = executedSqls.find(s => s.query.includes('UPDATE teachers SET active'));
+  assert.ok(activeSql, 'Phải phát câu lệnh UPDATE teachers SET active');
+  assert.match(activeSql.query, /auth_gen\s*=\s*auth_gen\s*\+\s*1/i, 'Phải tăng auth_gen nguyên tử');
+  assert.ok(!/hash\s*=|salt\s*=/i.test(activeSql.query), 'Set active không ghi đè salt hay hash');
+});
+
+test('R1-REVIEW1-F03: hai yêu cầu tạo trùng username không ghi đè tài khoản (insert-only ON CONFLICT DO NOTHING)', async () => {
+  const { ctx, store } = createTestCtx();
+  const adminLogin = await handle(
+    { method: 'POST', body: { action: 'adminLogin', password: ADMIN_PASS } },
+    ctx
+  );
+  const adminToken = adminLogin.body.token as string;
+
+  // Interleave two create calls with same username but different passwords
+  let resolveBoth: () => void = () => {};
+  const bothGate = new Promise<void>(r => { resolveBoth = r; });
+  let reads = 0;
+
+  const origGetTeacher = store.getTeacher.bind(store);
+  store.getTeacher = async (u: string) => {
+    const row = await origGetTeacher(u);
+    if (u === 'user_race_f03') {
+      if (++reads === 2) resolveBoth();
+      await bothGate;
+    }
+    return row;
+  };
+
+  const [res1, res2] = await Promise.all([
+    handle(
+      {
+        method: 'POST',
+        body: {
+          action: 'adminCreateTeacher',
+          token: adminToken,
+          username: 'user_race_f03',
+          name: 'First Teacher',
+          password: 'FirstPassword123',
+        },
+      },
+      ctx
+    ),
+    handle(
+      {
+        method: 'POST',
+        body: {
+          action: 'adminCreateTeacher',
+          token: adminToken,
+          username: 'user_race_f03',
+          name: 'Second Teacher',
+          password: 'SecondPassword123',
+        },
+      },
+      ctx
+    ),
+  ]);
+
+  store.getTeacher = origGetTeacher;
+
+  // Exactly one must succeed, one must be USERNAME_TAKEN
+  const results = [res1.body, res2.body];
+  const successes = results.filter(r => r.success === true);
+  const failures = results.filter(r => r.success === false);
+
+  assert.equal(successes.length, 1, 'Đúng một yêu cầu tạo tài khoản thành công');
+  assert.equal(failures.length, 1, 'Yêu cầu thứ hai phải thất bại');
+  assert.equal(failures[0]?.error, 'USERNAME_TAKEN', 'Lỗi phải là USERNAME_TAKEN');
+
+  // The winning password works, the losing password fails
+  const winningPass = res1.body.success ? 'FirstPassword123' : 'SecondPassword123';
+  const losingPass = res1.body.success ? 'SecondPassword123' : 'FirstPassword123';
+
+  const loginWin = await handle(
+    { method: 'POST', body: { action: 'teacherLogin', username: 'user_race_f03', password: winningPass } },
+    ctx
+  );
+  assert.equal(loginWin.body.success, true, 'Mật khẩu của tài khoản thắng đăng nhập thành công');
+
+  const loginLose = await handle(
+    { method: 'POST', body: { action: 'teacherLogin', username: 'user_race_f03', password: losingPass } },
+    ctx
+  );
+  assert.equal(loginLose.body.success, false, 'Mật khẩu của tài khoản thua không thể ghi đè');
+  assert.equal(loginLose.body.error, 'UNAUTHORIZED');
+
+  // Also verify Neon SQL statement is insert-only without DO UPDATE
+  const executedSqls: { query: string; params?: unknown[] }[] = [];
+  const fakeFetch = async (_url: string | URL | Request, init?: RequestInit) => {
+    const body = JSON.parse((init?.body as string) || '{}');
+    executedSqls.push({ query: body.query, params: body.params });
+    return new Response(JSON.stringify({ rows: [{ username: 'user_race_f03' }] }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+  const neon = new NeonStore({
+    connectionString: 'postgresql://u:p@fixture.neon.tech/db',
+    fetch: fakeFetch as any,
+  });
+
+  await neon.createTeacher({
+    username: 'user_race_f03',
+    name: 'First Teacher',
+    salt: 'salt123',
+    hash: 'hash123',
+    active: true,
+    createdAt: new Date(EPOCH).toISOString(),
+    authGen: 1,
+  });
+
+  const createSql = executedSqls.find(s => s.query.includes('INSERT INTO teachers'));
+  assert.ok(createSql, 'Phải phát câu lệnh INSERT INTO teachers');
+  assert.match(createSql.query, /ON\s+CONFLICT\s*\(username\)\s*DO\s+NOTHING\s+RETURNING\s+username/i, 'Phải dùng ON CONFLICT DO NOTHING');
+  assert.ok(!/DO\s+UPDATE/i.test(createSql.query), 'Không được có nhánh UPDATE trong đường createTeacher');
+});

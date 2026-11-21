@@ -1,4 +1,4 @@
-import type { Teacher, Session, ClassItem, Student, Assignment, ExamRecord, ResultRecord, Store, SaveExamResult, SaveResultOutcome } from '../types.ts';
+import type { Teacher, Session, ClassItem, Student, Assignment, ExamRecord, ResultRecord, Store, SaveExamResult, SaveResultOutcome, DeleteExamResult } from '../types.ts';
 
 export class MemoryStore implements Store {
   teachers = new Map<string, Teacher>();
@@ -12,6 +12,37 @@ export class MemoryStore implements Store {
   async getTeacher(username: string): Promise<Teacher | null> {
     const t = this.teachers.get(username);
     return t ? { ...t, authGen: t.authGen ?? 1 } : null;
+  }
+
+  async createTeacher(teacher: Teacher): Promise<boolean> {
+    if (this.teachers.has(teacher.username)) {
+      return false;
+    }
+    this.teachers.set(teacher.username, { ...teacher, authGen: teacher.authGen ?? 1 });
+    return true;
+  }
+
+  async updateTeacherPassword(username: string, salt: string, hash: string): Promise<boolean> {
+    const t = this.teachers.get(username);
+    if (!t) return false;
+    this.teachers.set(username, {
+      ...t,
+      salt,
+      hash,
+      authGen: (t.authGen ?? 1) + 1,
+    });
+    return true;
+  }
+
+  async setTeacherActive(username: string, active: boolean): Promise<boolean> {
+    const t = this.teachers.get(username);
+    if (!t) return false;
+    this.teachers.set(username, {
+      ...t,
+      active,
+      authGen: (t.authGen ?? 1) + 1,
+    });
+    return true;
   }
 
   async saveTeacher(teacher: Teacher): Promise<void> {
@@ -118,8 +149,16 @@ export class MemoryStore implements Store {
     return Array.from(this.exams.values()).map(e => ({ ...e }));
   }
 
-  async deleteExam(examId: string): Promise<void> {
+  async deleteExam(examId: string, owner?: string): Promise<DeleteExamResult> {
+    const existing = this.exams.get(examId);
+    if (!existing) {
+      return { ok: false, error: 'NOT_FOUND' };
+    }
+    if (owner !== undefined && existing.owner !== owner) {
+      return { ok: false, error: 'FORBIDDEN' };
+    }
     this.exams.delete(examId);
+    return { ok: true };
   }
 
   async countExams(): Promise<number> {

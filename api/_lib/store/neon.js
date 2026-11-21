@@ -134,6 +134,19 @@ CREATE TABLE IF NOT EXISTS results (
         const rows = await this.execute(`SELECT ${teacherColumns} FROM teachers WHERE username = $1`, [username]);
         return rows[0] ? { ...rows[0], authGen: Number(rows[0].authGen ?? 1) } : null;
     }
+    async createTeacher(teacher) {
+        const authGen = teacher.authGen ?? 1;
+        const rows = await this.execute(`INSERT INTO teachers (username, name, salt, hash, active, created_at, auth_gen) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (username) DO NOTHING RETURNING username`, [teacher.username, teacher.name, teacher.salt, teacher.hash, teacher.active, teacher.createdAt, authGen]);
+        return rows.length > 0;
+    }
+    async updateTeacherPassword(username, salt, hash) {
+        const rows = await this.execute(`UPDATE teachers SET salt = $2, hash = $3, auth_gen = auth_gen + 1 WHERE username = $1 RETURNING username`, [username, salt, hash]);
+        return rows.length > 0;
+    }
+    async setTeacherActive(username, active) {
+        const rows = await this.execute(`UPDATE teachers SET active = $2, auth_gen = auth_gen + 1 WHERE username = $1 RETURNING username`, [username, active]);
+        return rows.length > 0;
+    }
     async saveTeacher(teacher) {
         const authGen = teacher.authGen ?? 1;
         await this.execute(`INSERT INTO teachers (username, name, salt, hash, active, created_at, auth_gen) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (username) DO UPDATE SET name = EXCLUDED.name, salt = EXCLUDED.salt, hash = EXCLUDED.hash, active = EXCLUDED.active, auth_gen = EXCLUDED.auth_gen`, [teacher.username, teacher.name, teacher.salt, teacher.hash, teacher.active, teacher.createdAt, authGen]);
@@ -203,8 +216,20 @@ CREATE TABLE IF NOT EXISTS results (
     async listExams() {
         return this.execute(`SELECT ${examColumns} FROM exams ORDER BY updated_at DESC`);
     }
-    async deleteExam(examId) {
-        await this.execute('DELETE FROM exams WHERE id = $1', [examId]);
+    async deleteExam(examId, owner) {
+        if (owner !== undefined) {
+            const rows = await this.execute(`WITH deleted AS (DELETE FROM exams WHERE id = $1 AND owner = $2 RETURNING id) SELECT (SELECT id FROM deleted) AS "deletedId", (SELECT owner FROM exams WHERE id = $1) AS "currentOwner"`, [examId, owner]);
+            const row = rows[0];
+            if (row?.deletedId) {
+                return { ok: true };
+            }
+            if (row?.currentOwner) {
+                return { ok: false, error: 'FORBIDDEN' };
+            }
+            return { ok: false, error: 'NOT_FOUND' };
+        }
+        const rows = await this.execute('DELETE FROM exams WHERE id = $1 RETURNING id', [examId]);
+        return { ok: rows.length > 0, error: rows.length > 0 ? undefined : 'NOT_FOUND' };
     }
     async countExams() {
         const rows = await this.execute('SELECT COUNT(*) FROM exams');

@@ -127,10 +127,6 @@ export async function handle(request, ctx) {
                     /[^a-z0-9._-]/.test(username)) {
                     return failure('INVALID_USERNAME', 'Tên đăng nhập phải có 3–32 ký tự a-z0-9._-');
                 }
-                const existing = await ctx.store.getTeacher(username);
-                if (existing) {
-                    return failure('USERNAME_TAKEN', 'Tên đăng nhập đã được dùng');
-                }
                 if (typeof payload.password !== 'string' || payload.password.length < 8) {
                     return failure('INVALID_PASSWORD', 'Mật khẩu cần ít nhất 8 ký tự');
                 }
@@ -139,14 +135,18 @@ export async function handle(request, ctx) {
                 }
                 const salt = generateToken().slice(0, 32);
                 const hash = hashPassword(payload.password, salt);
-                await ctx.store.saveTeacher({
+                const created = await ctx.store.createTeacher({
                     username,
                     name: payload.name.trim(),
                     salt,
                     hash,
                     active: true,
                     createdAt: new Date(ctx.now()).toISOString(),
+                    authGen: 1,
                 });
+                if (!created) {
+                    return failure('USERNAME_TAKEN', 'Tên đăng nhập đã được dùng');
+                }
                 return success();
             }
             case 'adminListTeachers': {
@@ -185,22 +185,15 @@ export async function handle(request, ctx) {
                 if (!auth.ok)
                     return auth.response;
                 const username = typeof payload.username === 'string' ? payload.username : '';
-                const teacher = await ctx.store.getTeacher(username);
-                if (!teacher) {
-                    return failure('NOT_FOUND', 'Không tìm thấy giáo viên');
-                }
                 if (typeof payload.password !== 'string' || payload.password.length < 8) {
                     return failure('INVALID_PASSWORD', 'Mật khẩu cần ít nhất 8 ký tự');
                 }
                 const salt = generateToken().slice(0, 32);
                 const hash = hashPassword(payload.password, salt);
-                const authGen = (teacher.authGen ?? 1) + 1;
-                await ctx.store.saveTeacher({
-                    ...teacher,
-                    salt,
-                    hash,
-                    authGen,
-                });
+                const updated = await ctx.store.updateTeacherPassword(username, salt, hash);
+                if (!updated) {
+                    return failure('NOT_FOUND', 'Không tìm thấy giáo viên');
+                }
                 await ctx.store.deleteTeacherSessions(username);
                 return success();
             }
@@ -209,19 +202,13 @@ export async function handle(request, ctx) {
                 if (!auth.ok)
                     return auth.response;
                 const username = typeof payload.username === 'string' ? payload.username : '';
-                const teacher = await ctx.store.getTeacher(username);
-                if (!teacher) {
-                    return failure('NOT_FOUND', 'Không tìm thấy giáo viên');
-                }
                 if (typeof payload.active !== 'boolean') {
                     return failure('INVALID_ACTIVE', 'Trạng thái không hợp lệ');
                 }
-                const authGen = (teacher.authGen ?? 1) + 1;
-                await ctx.store.saveTeacher({
-                    ...teacher,
-                    active: payload.active,
-                    authGen,
-                });
+                const updated = await ctx.store.setTeacherActive(username, payload.active);
+                if (!updated) {
+                    return failure('NOT_FOUND', 'Không tìm thấy giáo viên');
+                }
                 await ctx.store.deleteTeacherSessions(username);
                 return success();
             }
@@ -437,14 +424,13 @@ export async function handle(request, ctx) {
                 if (!examId) {
                     return failure('MISSING_EXAM_ID', 'Thiếu examId cần gỡ xuất bản');
                 }
-                const existing = await ctx.store.getExam(examId);
-                if (!existing) {
+                const outcome = await ctx.store.deleteExam(examId, auth.session.username);
+                if (!outcome.ok) {
+                    if (outcome.error === 'FORBIDDEN') {
+                        return failure('FORBIDDEN', 'Đề thi thuộc giáo viên khác');
+                    }
                     return failure('NOT_FOUND', 'Không tìm thấy đề thi');
                 }
-                if (existing.owner !== auth.session.username) {
-                    return failure('FORBIDDEN', 'Đề thi thuộc giáo viên khác');
-                }
-                await ctx.store.deleteExam(examId);
                 return success();
             }
             case 'getExam': {

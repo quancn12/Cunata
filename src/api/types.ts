@@ -96,6 +96,11 @@ export interface SaveExamResult {
   error?: string;
 }
 
+export interface DeleteExamResult {
+  ok: boolean;
+  error?: 'NOT_FOUND' | 'FORBIDDEN';
+}
+
 export interface SaveResultOutcome {
   inserted: boolean;
   record: ResultRecord;
@@ -103,6 +108,9 @@ export interface SaveResultOutcome {
 
 export interface Store {
   getTeacher(username: string): Promise<Teacher | null>;
+  createTeacher(teacher: Teacher): Promise<boolean>;
+  updateTeacherPassword(username: string, salt: string, hash: string): Promise<boolean>;
+  setTeacherActive(username: string, active: boolean): Promise<boolean>;
   saveTeacher(teacher: Teacher): Promise<void>;
   listTeachers(): Promise<Teacher[]>;
   deleteTeacherSessions(username: string): Promise<void>;
@@ -124,7 +132,7 @@ export interface Store {
   saveExam(exam: ExamRecord): Promise<SaveExamResult>;
   getExam(examId: string): Promise<ExamRecord | null>;
   listExams(): Promise<ExamRecord[]>;
-  deleteExam(examId: string): Promise<void>;
+  deleteExam(examId: string, owner?: string): Promise<DeleteExamResult>;
   countExams(): Promise<number>;
 
   saveResult(result: ResultRecord): Promise<SaveResultOutcome>;
