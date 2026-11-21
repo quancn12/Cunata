@@ -55,7 +55,14 @@ async function run() {
     const card = `#myClasses [data-assignment-id="${assigned.assignmentId}"]`;
     await page.waitFor(sel => !!document.querySelector(sel), 'assigned exam card', 10000, card);
     await startFromCard(page, card); await submit(page);
-    await page.waitFor(() => /Đã gửi/i.test(document.getElementById('syncText')?.textContent ?? ''), 'confirmed numeric-code class submission', 20000);
+    try {
+      await page.waitFor(() => /Đã gửi/i.test(document.getElementById('syncText')?.textContent ?? ''), 'confirmed numeric-code class submission', 5000);
+    } catch (e) {
+      console.log('SYNC TEXT FAILED! Current text:', await page.eval(() => document.getElementById('syncText')?.textContent));
+      console.log('Page errors:', page.errors);
+      console.log('GAS log:', gas.log.map(e => ({ method: e.method, url: e.url, body: e.body })));
+      throw e;
+    }
     console.log('Student submitted!');
 
     const teacherPage = await ctx.newPage();

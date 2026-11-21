@@ -1,12 +1,12 @@
 {
   "questionCount": 60,
-  "rawLength": 106256,
+  "rawLength": 104548,
   "response": {
     "success": true,
-    "attempt_id": "attempt-mwqf4g5m-5k19",
+    "attempt_id": "attempt-mwqgje8j-l0be",
     "status": "NEWLY_RECORDED",
     "message": "Ghi nhận kết quả bài thi thành công",
-    "recorded_at": "2026-11-21T13:02:48.076Z"
+    "recorded_at": "2026-11-21T13:42:31.096Z"
   },
   "syncText": "Đã gửi"
 }

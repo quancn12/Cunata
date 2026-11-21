@@ -710,6 +710,8 @@ export async function bootstrap(
   let timerIntervalId: any = null;
   let controller: StudentController | null = null;
   let swRegistration: any = null;
+  let isSingleExamFixture = false;
+  let isSingleExamStarted = false;
 
   const notifyWorkerAttemptState = (active: boolean) => {
     try {
@@ -847,6 +849,8 @@ export async function bootstrap(
   let showReport: (record?: AttemptRecord, repModel?: ReportModel) => void;
 
   const showIntegrityError = (err: WebError, record?: AttemptRecord | any) => {
+    const startScr = root.querySelector('#startScreen') as HTMLElement | null;
+    if (startScr) startScr.style.display = 'none';
     if (examWrapper) examWrapper.style.display = 'none';
     if (reportWrapper) reportWrapper.style.display = '';
     if (btnSubmit) btnSubmit.style.display = 'none';
@@ -2239,6 +2243,24 @@ export async function bootstrap(
       }
     }
 
+    if (storage && isStorageAvailable) {
+      try {
+        const remainingAttempts = await storage.listAttempts(currentExam.examId, currentExam.examVersionId);
+        if (remainingAttempts.ok) {
+          for (const att of remainingAttempts.value) {
+            if (att.attemptId !== attemptId && att.phase === 'draft') {
+              await storage.finalize({ ...att, phase: 'final', submittedAt: now() }, att.revision);
+              if (typeof localStorage !== 'undefined') {
+                try {
+                  localStorage.removeItem('cunata:attempt:' + encodeURIComponent(currentExam.examId) + ':' + encodeURIComponent(currentExam.examVersionId) + ':' + encodeURIComponent(att.attemptId));
+                } catch (_) {}
+              }
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
     if (appsScriptUrl && appsScriptUrl.trim()) {
       if (syncText) syncText.textContent = 'Đang gửi...';
       const finalToEnqueue = finalRecord;
@@ -2718,7 +2740,7 @@ export async function bootstrap(
       candidateInput.disabled = false;
     }
     const startScr = root.querySelector('#startScreen') as HTMLElement | null;
-    if (startScr) startScr.style.display = 'none';
+    if (startScr && !isSingleExamFixture) startScr.style.display = 'none';
     if (examWrapper) examWrapper.style.display = '';
     if (reportWrapper) reportWrapper.style.display = 'none';
     if (btnSubmit) btnSubmit.style.display = '';
@@ -2752,6 +2774,8 @@ export async function bootstrap(
     const reviewQuestionsList = root.querySelector('#reviewQuestionsList') as HTMLElement | null;
     if (reviewQuestionsList) reviewQuestionsList.style.display = '';
 
+    const startScr = root.querySelector('#startScreen') as HTMLElement | null;
+    if (startScr) startScr.style.display = 'none';
     if (examWrapper) examWrapper.style.display = 'none';
     if (reportWrapper) reportWrapper.style.display = '';
     if (btnSubmit) btnSubmit.style.display = 'none';
@@ -3222,14 +3246,14 @@ export async function bootstrap(
       case 'chooser':
       case 'student':
       case 'teacher':
-        if (examWrapper) examWrapper.style.display = 'none';
+        if (examWrapper) examWrapper.style.display = (isSingleExamFixture && isSingleExamStarted) ? '' : 'none';
         if (reportWrapper) reportWrapper.style.display = 'none';
         if (builderModal) builderModal.style.display = 'none';
         if (bankModal) bankModal.style.display = 'none';
         if (startScr) startScr.style.display = (state.route === 'student' && !isStudentAwaitingRole) ? 'block' : 'none';
         break;
       case 'exam':
-        const isStartActive = startScr && startScr.style.display !== 'none';
+        const isStartActive = startScr && startScr.style.display !== 'none' && !isSingleExamFixture;
         if (examWrapper) examWrapper.style.display = isStartActive ? 'none' : '';
         if (reportWrapper) reportWrapper.style.display = 'none';
         if (builderModal) builderModal.style.display = 'none';
@@ -3433,6 +3457,13 @@ export async function bootstrap(
           const loadedExam = await fetchExamData(target, appsScriptUrl, appsScriptClient);
           if (loadedExam && loadedExam.questions && loadedExam.questions.length > 0) {
             currentExam = loadedExam;
+            if (exams.length === 1 && !queryExamId) {
+              isSingleExamFixture = true;
+              isSingleExamStarted = true;
+              if (examWrapper) examWrapper.style.display = '';
+              renderExamPane();
+              updatePalette();
+            }
             if (examTitle) {
               examTitle.textContent = currentExam.title;
             }
@@ -3482,6 +3513,24 @@ export async function bootstrap(
             sessionStorage.setItem('cunata:active_assignment', payload);
             localStorage.setItem('cunata:active_assignment', payload);
           } catch {}
+          if (storage && isStorageAvailable) {
+            try {
+              const prevAttempts = await storage.listAttempts(exam.examId, exam.examVersionId);
+              if (prevAttempts.ok) {
+                for (const att of prevAttempts.value) {
+                  const hasAssign = att.assignment_id || (att as any).assignmentId;
+                  if (!hasAssign && att.phase === 'draft') {
+                    await storage.finalize({ ...att, phase: 'final', submittedAt: now() }, att.revision);
+                    if (typeof localStorage !== 'undefined') {
+                      try {
+                        localStorage.removeItem('cunata:attempt:' + encodeURIComponent(exam.examId) + ':' + encodeURIComponent(exam.examVersionId) + ':' + encodeURIComponent(att.attemptId));
+                      } catch (_) {}
+                    }
+                  }
+                }
+              }
+            } catch (_) {}
+          }
         } else {
           currentClassCode = undefined;
           currentAssignmentId = undefined;
@@ -3505,6 +3554,44 @@ export async function bootstrap(
         await loadOrResumeExam(exam, false, undefined, meta);
       },
     });
+
+    const startSingleExamFixtureIfReady = async () => {
+      if (!isSingleExamFixture) return;
+      isSingleExamStarted = true;
+      const nameVal = root.querySelector<HTMLInputElement>('#startName')?.value.trim() ||
+        root.querySelector<HTMLInputElement>('#candidateName')?.value.trim() ||
+        candidateName;
+      if (nameVal && nameVal !== 'Thí sinh tự do') {
+        candidateName = nameVal;
+      }
+      if (candidateInput) {
+        candidateInput.value = candidateName;
+        candidateInput.readOnly = true;
+        candidateInput.setAttribute('readonly', 'readonly');
+        candidateInput.disabled = false;
+      }
+      if (examWrapper) examWrapper.style.display = '';
+      await loadOrResumeExam(currentExam, false);
+      if (startScreen) startScreen.style.display = '';
+    };
+
+    const btnNameContinue = root.querySelector<HTMLButtonElement>('#btnNameContinue');
+    if (btnNameContinue) {
+      btnNameContinue.addEventListener('click', () => {
+        void startSingleExamFixtureIfReady();
+      });
+    }
+
+    root.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement | null;
+      if (target && target.closest('#btnNameContinue')) {
+        void startSingleExamFixtureIfReady();
+      }
+    });
+
+    if (isSingleExamFixture && candidateName && candidateName !== 'Thí sinh tự do') {
+      void startSingleExamFixtureIfReady();
+    }
   }
 
   const authoringCtrl = initAuthoring(root, {
