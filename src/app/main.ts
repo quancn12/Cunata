@@ -2441,19 +2441,31 @@ export async function bootstrap(
         const candidateId = localStorage.getItem(pointerKey);
         if (candidateId) {
           const draftKey = 'cunata:attempt:' + encodeURIComponent(examId) + ':' + encodeURIComponent(version) + ':' + encodeURIComponent(candidateId);
-          const raw = localStorage.getItem(draftKey);
-          if (raw) {
+          const finalKey = 'cunata:final:' + encodeURIComponent(examId) + ':' + encodeURIComponent(version) + ':' + encodeURIComponent(candidateId);
+          const rawDraft = localStorage.getItem(draftKey);
+          const rawFinal = localStorage.getItem(finalKey);
+          let parsed: any = null;
+          if (rawDraft) {
             try {
-              const parsed = JSON.parse(raw);
-              if (parsed && !parsed.submitted && parsed.phase !== 'final') {
-                const draftAssign = parsed.assignment_id || parsed.assignmentId;
-                if ((currentAssignmentId && draftAssign === currentAssignmentId) || (!currentAssignmentId && !draftAssign)) {
-                  foundAttemptId = candidateId;
-                  resumedRecord = parsed;
-                  isDurableRecord = false;
-                }
+              const p = JSON.parse(rawDraft);
+              if (p && !p.submitted && p.phase !== 'final') {
+                parsed = p;
               }
             } catch (_) {}
+          }
+          if (!parsed && (rawFinal || rawDraft)) {
+            try {
+              const p = JSON.parse(rawFinal || rawDraft);
+              if (p) parsed = p;
+            } catch (_) {}
+          }
+          if (parsed) {
+            const draftAssign = parsed.assignment_id || parsed.assignmentId;
+            if ((currentAssignmentId && draftAssign === currentAssignmentId) || (!currentAssignmentId && !draftAssign)) {
+              foundAttemptId = candidateId;
+              resumedRecord = parsed;
+              isDurableRecord = false;
+            }
           }
         }
       }
@@ -3705,6 +3717,11 @@ export async function bootstrap(
   const entryRoute = router.getState();
   if (isTeacherQuery || entryRoute.route === 'teacher') {
     router.navigate('teacher', entryRoute.params);
+  } else if (options?.initialExam || options?.initialRoute === 'exam') {
+    // An embedding caller has already selected the exam. Honor that explicit
+    // entry just as a student selecting an assigned exam, including restoration.
+    if (startScreen) startScreen.style.display = 'none';
+    await loadOrResumeExam(currentExam, false);
   } else if (entryRoute.route === 'report' && entryRoute.params.attemptId) {
     applyRoute(entryRoute);
     await resolveAreaRoute(entryRoute, ++routeGeneration);

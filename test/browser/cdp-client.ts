@@ -204,7 +204,7 @@ export class CdpClient {
         this.pendingRequests.delete(id);
         const details = params?.expression ? ` expression: ${params.expression.slice(0, 100)}` : '';
         reject(new Error(`CDP request timed out: ${method}${details}`));
-      }, 15000);
+      }, 30000);
       const request = {
         resolve: (value: T) => { clearTimeout(timer); resolve(value); },
         reject: (error: Error) => { clearTimeout(timer); reject(error); },

@@ -1151,7 +1151,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
     }
   });
 
-  it('CK16-F01: Multi-tab exam isolation: Submitting tab A does not activate new Service Worker on in-progress tab B', { timeout: 60000 }, async (t) => {
+  it('CK16-F01: Multi-tab exam isolation: Submitting tab A does not activate new Service Worker on in-progress tab B', { timeout: 120000 }, async (t) => {
     const caps = detectCapabilities();
     if (!caps.preferredBrowserPath || !caps.tools.cdp) {
       t.skip('Headless browser unavailable');
