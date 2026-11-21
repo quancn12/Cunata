@@ -194,7 +194,7 @@ export class CdpClient {
     });
   }
 
-  public send<T = any>(method: string, params: Record<string, any> = {}): Promise<T> {
+  public send<T = any>(method: string, params: Record<string, any> = {}, timeoutMs = 15000): Promise<T> {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       return Promise.reject(new Error('WebSocket is not open'));
     }
@@ -204,7 +204,7 @@ export class CdpClient {
         this.pendingRequests.delete(id);
         const details = params?.expression ? ` expression: ${params.expression.slice(0, 100)}` : '';
         reject(new Error(`CDP request timed out: ${method}${details}`));
-      }, 30000);
+      }, timeoutMs);
       const request = {
         resolve: (value: T) => { clearTimeout(timer); resolve(value); },
         reject: (error: Error) => { clearTimeout(timer); reject(error); },
@@ -274,7 +274,7 @@ export class CdpClient {
     return buf;
   }
 
-  public async evaluate<T>(expression: string): Promise<T> {
+  public async evaluate<T>(expression: string, timeoutMs?: number): Promise<T> {
     const res = await this.send<{
       result: { type: string; value?: any; description?: string };
       exceptionDetails?: {
@@ -289,7 +289,8 @@ export class CdpClient {
         expression,
         returnByValue: true,
         awaitPromise: true,
-      }
+      },
+      timeoutMs
     );
     if (res.exceptionDetails) {
       const msg = res.exceptionDetails.exception?.description || res.exceptionDetails.text;

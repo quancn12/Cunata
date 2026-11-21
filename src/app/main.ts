@@ -2453,9 +2453,10 @@ export async function bootstrap(
               }
             } catch (_) {}
           }
-          if (!parsed && (rawFinal || rawDraft)) {
+          const rawToParse = !parsed ? (rawFinal || rawDraft) : null;
+          if (rawToParse) {
             try {
-              const p = JSON.parse(rawFinal || rawDraft);
+              const p = JSON.parse(rawToParse);
               if (p) parsed = p;
             } catch (_) {}
           }

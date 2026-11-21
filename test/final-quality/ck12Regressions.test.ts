@@ -1368,7 +1368,7 @@ describe('CK12 & CK13 Audit Findings Regressions', () => {
             resolve(!!reg.waiting);
           }, 15000);
         });
-      })`);
+      })`, 25000);
       assert.ok(waitingReached, 'Release B worker must be installed into waiting state');
 
       // Now SUBMIT Tab A ONLY! Tab B is STILL in progress!
