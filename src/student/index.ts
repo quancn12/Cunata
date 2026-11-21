@@ -552,7 +552,7 @@ class StudentControllerImpl implements StudentController {
         let curCode = cur.class_code || cur.classCode;
         let curAssign = cur.assignment_id || cur.assignmentId;
         let curOpen = cur.open_at || cur.openAt;
-        let curDue = cur.due_at || cur.dueAt;
+        let curDue = cur.due_at ?? cur.dueAt;
         if ((!curCode || !curAssign) && typeof sessionStorage !== 'undefined') {
           try {
             const raw = sessionStorage.getItem('cunata:active_assignment') || localStorage.getItem('cunata:active_assignment');
@@ -568,8 +568,8 @@ class StudentControllerImpl implements StudentController {
                 if (!curOpen && (parsed.openAt || parsed.open_at)) {
                   curOpen = parsed.openAt || parsed.open_at;
                 }
-                if (!curDue && (parsed.dueAt || parsed.due_at)) {
-                  curDue = parsed.dueAt || parsed.due_at;
+                if (curDue == null && (parsed.dueAt ?? parsed.due_at) != null) {
+                  curDue = parsed.dueAt ?? parsed.due_at;
                 }
               }
             }
@@ -584,7 +584,7 @@ class StudentControllerImpl implements StudentController {
           ...(curCode ? { class_code: String(curCode).trim().toUpperCase(), classCode: String(curCode).trim().toUpperCase() } : {}),
           ...(curAssign ? { assignment_id: String(curAssign).trim(), assignmentId: String(curAssign).trim() } : {}),
           ...(curOpen ? { open_at: String(curOpen).trim(), openAt: String(curOpen).trim() } : {}),
-          ...(curDue ? { due_at: String(curDue).trim(), dueAt: String(curDue).trim() } : {}),
+          ...(curDue != null ? { due_at: String(curDue).trim(), dueAt: String(curDue).trim() } : {}),
         });
 
         let finalizeResult = await this.deps.storage.finalize(
@@ -803,7 +803,7 @@ export async function startAttempt(
     (exam as any).dueAt ??
     (exam as any).due_at;
 
-  if ((!classCode || !assignmentId || !openAt || !dueAt) && typeof sessionStorage !== "undefined") {
+  if ((!classCode || !assignmentId || !openAt || dueAt == null) && typeof sessionStorage !== "undefined") {
     try {
       const raw = sessionStorage.getItem("cunata:active_assignment") || sessionStorage.getItem("cunata_active_assignment");
       if (raw) {
@@ -818,14 +818,14 @@ export async function startAttempt(
           if (!openAt && (parsed.openAt || parsed.open_at)) {
             openAt = parsed.openAt || parsed.open_at;
           }
-          if (!dueAt && (parsed.dueAt || parsed.due_at)) {
-            dueAt = parsed.dueAt || parsed.due_at;
+          if (dueAt == null && (parsed.dueAt ?? parsed.due_at) != null) {
+            dueAt = parsed.dueAt ?? parsed.due_at;
           }
         }
       }
     } catch {}
   }
-  if ((!classCode || !assignmentId || !openAt || !dueAt) && typeof localStorage !== "undefined") {
+  if ((!classCode || !assignmentId || !openAt || dueAt == null) && typeof localStorage !== "undefined") {
     try {
       const raw = localStorage.getItem("cunata:active_assignment") || localStorage.getItem("cunata_active_assignment");
       if (raw) {
@@ -840,8 +840,8 @@ export async function startAttempt(
           if (!openAt && (parsed.openAt || parsed.open_at)) {
             openAt = parsed.openAt || parsed.open_at;
           }
-          if (!dueAt && (parsed.dueAt || parsed.due_at)) {
-            dueAt = parsed.dueAt || parsed.due_at;
+          if (dueAt == null && (parsed.dueAt ?? parsed.due_at) != null) {
+            dueAt = parsed.dueAt ?? parsed.due_at;
           }
         }
       }
@@ -886,7 +886,7 @@ export async function startAttempt(
     ...(classCode ? { classCode: String(classCode).trim().toUpperCase(), class_code: String(classCode).trim().toUpperCase() } : {}),
     ...(assignmentId ? { assignmentId: String(assignmentId).trim(), assignment_id: String(assignmentId).trim() } : {}),
     ...(openAt ? { openAt: String(openAt).trim(), open_at: String(openAt).trim() } : {}),
-    ...(dueAt ? { dueAt: String(dueAt).trim(), due_at: String(dueAt).trim() } : {}),
+    ...(dueAt != null ? { dueAt: String(dueAt).trim(), due_at: String(dueAt).trim() } : {}),
   });
 
   const createResult = await deps.storage.create(initialRecord);

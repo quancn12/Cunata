@@ -1,65 +1,47 @@
+const teacherColumns = 'username, name, salt, hash, active, created_at AS "createdAt"';
+const sessionColumns = 'token_hash AS "tokenHash", role, username, name, expires_at AS "expiresAt"';
+const classColumns = 'class_id AS "classId", code, name, username, created_at AS "createdAt"';
+const assignmentColumns = 'assignment_id AS "assignmentId", class_id AS "classId", exam_id AS "examId", open_at AS "openAt", due_at AS "dueAt", created_at AS "createdAt"';
+const examColumns = 'id, title, subject, grade, duration_minutes AS "durationMinutes", question_count AS "questionCount", "group", revision, updated_at AS "updatedAt", owner, exam_json AS "examJson"';
 export class NeonStore {
     endpoint;
-    authToken;
+    connectionString;
     fetchFn;
     schemaEnsured = false;
-    memoryTeachers = new Map();
-    memorySessions = new Map();
-    memoryClasses = new Map();
-    memoryStudents = new Map();
-    memoryAssignments = new Map();
-    memoryExams = new Map();
-    memoryResults = new Map();
     constructor(options = {}) {
         const conn = options.connectionString || (typeof process !== 'undefined' ? process.env?.DATABASE_URL : '') || '';
-        let host = 'localhost';
-        let token = '';
-        if (conn) {
-            try {
-                const u = new URL(conn.replace(/^postgres(?:ql)?:/, 'https:'));
-                host = u.host;
-                token = u.password || u.username || '';
-            }
-            catch {
-                host = 'localhost';
-            }
-        }
-        this.endpoint = `https://${host}/sql`;
-        this.authToken = token;
-        this.fetchFn = options.fetch ?? options.fetchImpl ?? (typeof fetch === 'function' ? fetch : globalThis.fetch);
-    }
-    async rawQuery(sql) {
-        if (typeof this.fetchFn !== 'function') {
-            throw new Error('fetch is not available');
-        }
-        const headers = {
-            'Content-Type': 'application/json',
-        };
-        if (this.authToken) {
-            headers['Authorization'] = `Bearer ${this.authToken}`;
-        }
-        const res = await this.fetchFn(this.endpoint, {
-            method: 'POST',
-            headers,
-            body: sql,
-        });
-        if (!res || !res.ok) {
-            const status = res ? res.status : 500;
-            const statusText = res ? res.statusText : 'Fetch failed';
-            throw new Error(`Neon HTTP error: ${status} ${statusText}`);
-        }
+        if (!conn)
+            throw new Error('DATABASE_URL is not configured');
+        let host;
         try {
-            const data = await res.json();
-            return (data && Array.isArray(data.rows)) ? data.rows : [];
+            host = new URL(conn).host;
         }
         catch {
-            return [];
+            throw new Error('Invalid DATABASE_URL');
         }
+        this.endpoint = `https://${host}/sql`;
+        this.connectionString = conn;
+        this.fetchFn = options.fetch ?? options.fetchImpl ?? globalThis.fetch;
+    }
+    async rawQuery(query, params = []) {
+        const res = await this.fetchFn(this.endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Neon-Connection-String': this.connectionString,
+            },
+            body: JSON.stringify({ query, params }),
+        }).catch(() => { throw new Error('Neon request failed'); });
+        if (!res.ok)
+            throw new Error(`Neon HTTP error: ${res.status}`);
+        const data = await res.json().catch(() => { throw new Error('Invalid Neon response'); });
+        if (!Array.isArray(data?.rows))
+            throw new Error('Invalid Neon response');
+        return data.rows;
     }
     async ensureSchema() {
         if (this.schemaEnsured)
             return;
-        this.schemaEnsured = true;
         const ddl = `
 CREATE TABLE IF NOT EXISTS teachers (
   username TEXT PRIMARY KEY,
@@ -135,142 +117,97 @@ CREATE TABLE IF NOT EXISTS results (
   recorded_at TEXT NOT NULL
 );
 `.trim();
-        await this.rawQuery(ddl);
+        for (const statement of ddl.split(';').filter(s => s.trim())) {
+            await this.rawQuery(statement);
+        }
+        this.schemaEnsured = true;
     }
-    async execute(sql) {
+    async execute(query, params = []) {
         await this.ensureSchema();
-        return this.rawQuery(sql);
+        return this.rawQuery(query, params);
     }
     async getTeacher(username) {
-        await this.execute(`SELECT * FROM teachers WHERE username = '${username.replace(/'/g, "''")}'`);
-        const mem = this.memoryTeachers.get(username);
-        return mem ? { ...mem } : null;
+        const rows = await this.execute(`SELECT ${teacherColumns} FROM teachers WHERE username = $1`, [username]);
+        return rows[0] ?? null;
     }
     async saveTeacher(teacher) {
-        await this.execute(`INSERT INTO teachers (username, name, salt, hash, active, created_at) VALUES ('${teacher.username.replace(/'/g, "''")}', '${teacher.name.replace(/'/g, "''")}', '${teacher.salt}', '${teacher.hash}', ${teacher.active}, '${teacher.createdAt}') ON CONFLICT (username) DO UPDATE SET name = EXCLUDED.name, salt = EXCLUDED.salt, hash = EXCLUDED.hash, active = EXCLUDED.active`);
-        this.memoryTeachers.set(teacher.username, { ...teacher });
+        await this.execute(`INSERT INTO teachers (username, name, salt, hash, active, created_at) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (username) DO UPDATE SET name = EXCLUDED.name, salt = EXCLUDED.salt, hash = EXCLUDED.hash, active = EXCLUDED.active`, [teacher.username, teacher.name, teacher.salt, teacher.hash, teacher.active, teacher.createdAt]);
     }
     async listTeachers() {
-        await this.execute(`SELECT * FROM teachers ORDER BY created_at ASC`);
-        return Array.from(this.memoryTeachers.values()).map(t => ({ ...t }));
+        return this.execute(`SELECT ${teacherColumns} FROM teachers ORDER BY created_at ASC`);
     }
     async deleteTeacherSessions(username) {
-        await this.execute(`DELETE FROM sessions WHERE username = '${username.replace(/'/g, "''")}'`);
-        for (const [tokenHash, session] of Array.from(this.memorySessions.entries())) {
-            if (session.username === username) {
-                this.memorySessions.delete(tokenHash);
-            }
-        }
+        await this.execute('DELETE FROM sessions WHERE username = $1', [username]);
     }
     async createSession(session) {
-        await this.execute(`INSERT INTO sessions (token_hash, role, username, name, expires_at) VALUES ('${session.tokenHash}', '${session.role}', '${session.username.replace(/'/g, "''")}', '${session.name.replace(/'/g, "''")}', ${session.expiresAt}) ON CONFLICT (token_hash) DO UPDATE SET expires_at = EXCLUDED.expires_at`);
-        this.memorySessions.set(session.tokenHash, { ...session });
+        await this.execute(`INSERT INTO sessions (token_hash, role, username, name, expires_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (token_hash) DO UPDATE SET expires_at = EXCLUDED.expires_at`, [session.tokenHash, session.role, session.username, session.name, session.expiresAt]);
     }
     async getSession(tokenHash) {
-        await this.execute(`SELECT * FROM sessions WHERE token_hash = '${tokenHash}'`);
-        const mem = this.memorySessions.get(tokenHash);
-        return mem ? { ...mem } : null;
+        const rows = await this.execute(`SELECT ${sessionColumns} FROM sessions WHERE token_hash = $1`, [tokenHash]);
+        return rows[0] ? { ...rows[0], expiresAt: Number(rows[0].expiresAt) } : null;
     }
     async deleteSession(tokenHash) {
-        await this.execute(`DELETE FROM sessions WHERE token_hash = '${tokenHash}'`);
-        this.memorySessions.delete(tokenHash);
+        await this.execute('DELETE FROM sessions WHERE token_hash = $1', [tokenHash]);
     }
     async getClassById(classId) {
-        await this.execute(`SELECT * FROM classes WHERE class_id = '${classId.replace(/'/g, "''")}'`);
-        const mem = this.memoryClasses.get(classId);
-        return mem ? { ...mem } : null;
+        const rows = await this.execute(`SELECT ${classColumns} FROM classes WHERE class_id = $1`, [classId]);
+        return rows[0] ?? null;
     }
     async getClassByCode(code) {
-        await this.execute(`SELECT * FROM classes WHERE UPPER(code) = UPPER('${code.replace(/'/g, "''")}')`);
-        const normalized = code.trim().toUpperCase();
-        for (const c of this.memoryClasses.values()) {
-            if (c.code.toUpperCase() === normalized) {
-                return { ...c };
-            }
-        }
-        return null;
+        const rows = await this.execute(`SELECT ${classColumns} FROM classes WHERE UPPER(code) = UPPER($1)`, [code.trim()]);
+        return rows[0] ?? null;
     }
     async saveClass(cls) {
-        await this.execute(`INSERT INTO classes (class_id, code, name, username, created_at) VALUES ('${cls.classId}', '${cls.code}', '${cls.name.replace(/'/g, "''")}', '${cls.username.replace(/'/g, "''")}', '${cls.createdAt}') ON CONFLICT (class_id) DO UPDATE SET name = EXCLUDED.name`);
-        this.memoryClasses.set(cls.classId, { ...cls });
+        await this.execute(`INSERT INTO classes (class_id, code, name, username, created_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (class_id) DO UPDATE SET name = EXCLUDED.name`, [cls.classId, cls.code, cls.name, cls.username, cls.createdAt]);
     }
     async listClassesByTeacher(username) {
-        await this.execute(`SELECT * FROM classes WHERE username = '${username.replace(/'/g, "''")}'`);
-        const out = [];
-        for (const c of this.memoryClasses.values()) {
-            if (c.username === username) {
-                out.push({ ...c });
-            }
-        }
-        return out;
+        return this.execute(`SELECT ${classColumns} FROM classes WHERE username = $1`, [username]);
     }
     async countClasses() {
-        await this.execute(`SELECT COUNT(*) FROM classes`);
-        return this.memoryClasses.size;
+        const rows = await this.execute('SELECT COUNT(*) FROM classes');
+        return Number(rows[0]?.count ?? 0);
     }
     async saveAssignment(assignment) {
-        await this.execute(`INSERT INTO assignments (assignment_id, class_id, exam_id, open_at, due_at, created_at) VALUES ('${assignment.assignmentId}', '${assignment.classId}', '${assignment.examId.replace(/'/g, "''")}', '${assignment.openAt}', ${assignment.dueAt === '' ? 'NULL' : `'${assignment.dueAt}'`}, '${assignment.createdAt}')`);
-        this.memoryAssignments.set(assignment.assignmentId, { ...assignment });
+        await this.execute(`INSERT INTO assignments (assignment_id, class_id, exam_id, open_at, due_at, created_at) VALUES ($1, $2, $3, $4, $5, $6)`, [assignment.assignmentId, assignment.classId, assignment.examId, assignment.openAt, assignment.dueAt === '' ? null : assignment.dueAt, assignment.createdAt]);
     }
     async getAssignment(assignmentId) {
-        await this.execute(`SELECT * FROM assignments WHERE assignment_id = '${assignmentId.replace(/'/g, "''")}'`);
-        const mem = this.memoryAssignments.get(assignmentId);
-        return mem ? { ...mem } : null;
+        const rows = await this.execute(`SELECT ${assignmentColumns} FROM assignments WHERE assignment_id = $1`, [assignmentId]);
+        return rows[0] ? { ...rows[0], dueAt: rows[0].dueAt ?? '' } : null;
     }
     async listAssignmentsByClass(classId) {
-        await this.execute(`SELECT * FROM assignments WHERE class_id = '${classId.replace(/'/g, "''")}'`);
-        const out = [];
-        for (const a of this.memoryAssignments.values()) {
-            if (a.classId === classId) {
-                out.push({ ...a });
-            }
-        }
-        return out;
+        const rows = await this.execute(`SELECT ${assignmentColumns} FROM assignments WHERE class_id = $1`, [classId]);
+        return rows.map(row => ({ ...row, dueAt: row.dueAt ?? '' }));
     }
     async saveExam(exam) {
-        await this.execute(`INSERT INTO exams (id, title, subject, grade, duration_minutes, question_count, "group", revision, updated_at, owner, exam_json) VALUES ('${exam.id.replace(/'/g, "''")}', '${exam.title.replace(/'/g, "''")}', '${(exam.subject || '').replace(/'/g, "''")}', ${exam.grade ?? 'NULL'}, ${exam.durationMinutes ?? 'NULL'}, ${exam.questionCount}, '${(exam.group || '').replace(/'/g, "''")}', ${exam.revision}, '${exam.updatedAt}', '${exam.owner.replace(/'/g, "''")}', '${exam.examJson.replace(/'/g, "''")}') ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, revision = EXCLUDED.revision, updated_at = EXCLUDED.updated_at, exam_json = EXCLUDED.exam_json`);
-        this.memoryExams.set(exam.id, { ...exam });
+        await this.execute(`INSERT INTO exams (id, title, subject, grade, duration_minutes, question_count, "group", revision, updated_at, owner, exam_json) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, revision = EXCLUDED.revision, updated_at = EXCLUDED.updated_at, exam_json = EXCLUDED.exam_json`, [exam.id, exam.title, exam.subject, exam.grade, exam.durationMinutes, exam.questionCount, exam.group, exam.revision, exam.updatedAt, exam.owner, exam.examJson]);
     }
     async getExam(examId) {
-        await this.execute(`SELECT * FROM exams WHERE id = '${examId.replace(/'/g, "''")}'`);
-        const mem = this.memoryExams.get(examId);
-        return mem ? { ...mem } : null;
+        const rows = await this.execute(`SELECT ${examColumns} FROM exams WHERE id = $1`, [examId]);
+        return rows[0] ?? null;
     }
     async listExams() {
-        await this.execute(`SELECT * FROM exams ORDER BY updated_at DESC`);
-        return Array.from(this.memoryExams.values()).map(e => ({ ...e }));
+        return this.execute(`SELECT ${examColumns} FROM exams ORDER BY updated_at DESC`);
     }
     async deleteExam(examId) {
-        await this.execute(`DELETE FROM exams WHERE id = '${examId.replace(/'/g, "''")}'`);
-        this.memoryExams.delete(examId);
+        await this.execute('DELETE FROM exams WHERE id = $1', [examId]);
     }
     async countExams() {
-        await this.execute(`SELECT COUNT(*) FROM exams`);
-        return this.memoryExams.size;
+        const rows = await this.execute('SELECT COUNT(*) FROM exams');
+        return Number(rows[0]?.count ?? 0);
     }
     async saveResult(result) {
-        await this.execute(`INSERT INTO results (attempt_id, exam_id, exam_version_id, candidate_display, started_at, submitted_at, duration_seconds, score_p1, max_p1, score_p2, max_p2, score_p3, max_p3, total, max_total, policy_version, raw_answers_json, class_code, assignment_id, recorded_at) VALUES ('${result.attempt_id}', '${result.exam_id.replace(/'/g, "''")}', '${result.exam_version_id.replace(/'/g, "''")}', '${result.candidate_display.replace(/'/g, "''")}', '${result.started_at}', '${result.submitted_at}', ${result.duration_seconds}, '${result.score_p1}', '${result.max_p1}', '${result.score_p2}', '${result.max_p2}', '${result.score_p3}', '${result.max_p3}', '${result.total}', '${result.maxTotal}', '${result.policy_version}', '${result.raw_answers_json.replace(/'/g, "''")}', '${result.class_code.replace(/'/g, "''")}', '${result.assignment_id.replace(/'/g, "''")}', '${result.recorded_at}')`);
-        this.memoryResults.set(result.attempt_id, { ...result });
+        await this.execute(`INSERT INTO results (attempt_id, exam_id, exam_version_id, candidate_display, started_at, submitted_at, duration_seconds, score_p1, max_p1, score_p2, max_p2, score_p3, max_p3, total, max_total, policy_version, raw_answers_json, class_code, assignment_id, recorded_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) ON CONFLICT (attempt_id) DO NOTHING`, [result.attempt_id, result.exam_id, result.exam_version_id, result.candidate_display, result.started_at, result.submitted_at, result.duration_seconds, result.score_p1, result.max_p1, result.score_p2, result.max_p2, result.score_p3, result.max_p3, result.total, result.maxTotal, result.policy_version, result.raw_answers_json, result.class_code, result.assignment_id, result.recorded_at]);
     }
     async getResult(attemptId) {
-        await this.execute(`SELECT * FROM results WHERE attempt_id = '${attemptId.replace(/'/g, "''")}'`);
-        const mem = this.memoryResults.get(attemptId);
-        return mem ? { ...mem } : null;
+        const rows = await this.execute('SELECT *, max_total AS "maxTotal" FROM results WHERE attempt_id = $1', [attemptId]);
+        return rows[0] ?? null;
     }
     async listResultsByClass(classCode, assignmentId) {
-        await this.execute(`SELECT * FROM results WHERE class_code = '${classCode.replace(/'/g, "''")}'`);
-        const normCode = classCode.trim().toUpperCase();
-        const out = [];
-        for (const r of this.memoryResults.values()) {
-            if (r.class_code.toUpperCase() === normCode && (!assignmentId || r.assignment_id === assignmentId)) {
-                out.push({ ...r });
-            }
-        }
-        return out;
+        return this.execute(`SELECT *, max_total AS "maxTotal" FROM results WHERE UPPER(class_code) = UPPER($1)${assignmentId ? ' AND assignment_id = $2' : ''}`, assignmentId ? [classCode.trim(), assignmentId] : [classCode.trim()]);
     }
     async countResults() {
-        await this.execute(`SELECT COUNT(*) FROM results`);
-        return this.memoryResults.size;
+        const rows = await this.execute('SELECT COUNT(*) FROM results');
+        return Number(rows[0]?.count ?? 0);
     }
 }
 export function createNeonStore(options) {
