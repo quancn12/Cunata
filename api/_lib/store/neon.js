@@ -201,11 +201,7 @@ CREATE TABLE IF NOT EXISTS results (
     async saveExam(exam) {
         const rows = await this.execute(`INSERT INTO exams (id, title, subject, grade, duration_minutes, question_count, "group", revision, updated_at, owner, exam_json) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title, subject = EXCLUDED.subject, grade = EXCLUDED.grade, duration_minutes = EXCLUDED.duration_minutes, question_count = EXCLUDED.question_count, "group" = EXCLUDED."group", revision = exams.revision + 1, updated_at = EXCLUDED.updated_at, exam_json = EXCLUDED.exam_json WHERE exams.owner = EXCLUDED.owner RETURNING revision, owner`, [exam.id, exam.title, exam.subject, exam.grade, exam.durationMinutes, exam.questionCount, exam.group, exam.revision || 1, exam.updatedAt, exam.owner, exam.examJson]);
         if (!rows || rows.length === 0) {
-            const cur = await this.getExam(exam.id);
-            if (cur && cur.owner !== exam.owner) {
-                return { ok: false, revision: 0, error: 'FORBIDDEN' };
-            }
-            return { ok: true, revision: cur ? cur.revision : (exam.revision || 1) };
+            return { ok: false, revision: 0, error: 'FORBIDDEN' };
         }
         return { ok: true, revision: Number(rows[0].revision) };
     }

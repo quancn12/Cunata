@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handle, createMemoryStore, MemoryStore, NeonStore } from '../../src/api/index.ts';
+import { hashToken } from '../../src/api/auth.ts';
 import type { RequestContext, CatalogExam, ResultRecord } from '../../src/api/types.ts';
 
 const ADMIN_PASS = 'TestAdminPass123';
@@ -880,4 +881,177 @@ test('R1-REVIEW1-F03: hai yêu cầu tạo trùng username không ghi đè tài 
   assert.ok(createSql, 'Phải phát câu lệnh INSERT INTO teachers');
   assert.match(createSql.query, /ON\s+CONFLICT\s*\(username\)\s*DO\s+NOTHING\s+RETURNING\s+username/i, 'Phải dùng ON CONFLICT DO NOTHING');
   assert.ok(!/DO\s+UPDATE/i.test(createSql.query), 'Không được có nhánh UPDATE trong đường createTeacher');
+});
+
+test('R1-REVIEW2-F01: Neon saveExam không trả thành công khi UPSERT trả 0 dòng (race delete / competing owner / same owner update)', async () => {
+  const teacher = { username: 'alice', name: 'Alice', active: true, authGen: 1 };
+  const token = 'local-probe-token';
+  const dbExams = new Map<string, any>();
+
+  let reached!: () => void;
+  let release!: () => void;
+  let rejected!: () => void;
+  let afterDelete!: () => void;
+  const atInsert = new Promise<void>(r => { reached = r; });
+  const goInsert = new Promise<void>(r => { release = r; });
+  const atRejected = new Promise<void>(r => { rejected = r; });
+  const goReturn = new Promise<void>(r => { afterDelete = r; });
+
+  const executedQueries: { query: string; params?: unknown[] }[] = [];
+
+  const fakeFetch = async (_url: string | URL | Request, init?: RequestInit) => {
+    const { query: q, params: p } = JSON.parse((init?.body as string) || '{}');
+    executedQueries.push({ query: q, params: p });
+    let rows: any[] = [];
+
+    if (/^SELECT .* FROM sessions WHERE/i.test(q)) {
+      rows = [{
+        tokenHash: hashToken(token),
+        role: 'teacher',
+        username: 'alice',
+        name: 'Alice',
+        expiresAt: 9999999999999,
+        authGen: 1,
+      }];
+    } else if (/^SELECT .* FROM teachers WHERE/i.test(q)) {
+      rows = [teacher];
+    } else if (/^SELECT .* FROM exams WHERE/i.test(q)) {
+      const existing = dbExams.get(p[0]);
+      rows = existing ? [{ ...existing }] : [];
+    } else if (q.startsWith('INSERT INTO exams')) {
+      const examId = p[0];
+      const owner = p[9];
+      if (owner === 'alice' && examId === 'racing-id') {
+        reached();
+        await goInsert;
+      }
+      const existing = dbExams.get(examId);
+      if (!existing || existing.owner === owner) {
+        const revision = (existing?.revision ?? 0) + 1;
+        const newRecord = {
+          id: p[0],
+          title: p[1],
+          subject: p[2],
+          grade: p[3],
+          durationMinutes: p[4],
+          questionCount: p[5],
+          group: p[6],
+          revision,
+          updatedAt: p[8],
+          owner,
+          examJson: p[10],
+        };
+        dbExams.set(examId, newRecord);
+        rows = [{ revision, owner }];
+      }
+      if (owner === 'alice' && examId === 'racing-id' && rows.length === 0) {
+        rejected();
+        await goReturn;
+      }
+    } else if (q.startsWith('WITH deleted AS')) {
+      const examId = p[0];
+      const owner = p[1];
+      const existing = dbExams.get(examId);
+      const isDeleted = existing && existing.owner === owner;
+      if (isDeleted) {
+        dbExams.delete(examId);
+      }
+      rows = [{
+        deletedId: isDeleted ? examId : null,
+        currentOwner: existing?.owner ?? null,
+      }];
+    } else if (!/^\s*(CREATE|ALTER)/.test(q)) {
+      throw new Error('Unexpected SQL: ' + q);
+    }
+
+    return new Response(JSON.stringify({ rows }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+
+  const storeA = new NeonStore({
+    connectionString: 'postgresql://fixture:fixture@local.invalid/db',
+    fetch: fakeFetch as any,
+  });
+  const storeB = new NeonStore({
+    connectionString: 'postgresql://fixture:fixture@local.invalid/db',
+    fetch: fakeFetch as any,
+  });
+
+  // 1. Race scenario (F01 reproduction):
+  // Alice starts publishing racing-id
+  const exam = {
+    schemaVersion: 'web-exam-v1',
+    examId: 'racing-id',
+    title: 'Alice expected content',
+    questions: [{ kind: 'III', questionVersionId: 'q1', answerKey: '1' }],
+  };
+  const pending = handle(
+    { method: 'POST', body: { action: 'publishExam', token, exam } },
+    { store: storeA, now: () => Date.parse('2026-11-22T00:00:00Z') }
+  );
+
+  await atInsert;
+
+  // Bob saves exam first
+  const bobExam = {
+    id: 'racing-id',
+    title: 'Bob content',
+    subject: 'Math',
+    grade: 12,
+    durationMinutes: 30,
+    questionCount: 1,
+    group: '',
+    revision: 1,
+    updatedAt: '2026-11-22T00:00:00Z',
+    owner: 'bob',
+    examJson: '{}',
+  };
+  const bobSave = await storeB.saveExam(bobExam);
+  assert.equal(bobSave.ok, true);
+
+  // Release Alice's insert (which fails because owner is bob -> 0 rows)
+  release();
+  await atRejected;
+
+  // Bob unpublishes racing-id
+  const bobDel = await storeB.deleteExam('racing-id', 'bob');
+  assert.equal(bobDel.ok, true);
+
+  // Resume Alice's handle response after Bob's deletion
+  afterDelete();
+  const response = await pending;
+
+  // Alice must NOT receive success when 0 rows were written!
+  assert.equal(response.body.success, false, 'zero-row conditional UPSERT must fail');
+  assert.equal(response.body.error, 'FORBIDDEN');
+  const storedExam = await storeA.getExam('racing-id');
+  assert.equal(storedExam, null, 'No Alice exam must be stored in DB');
+
+  // 2. Control: Competing owner still exists in DB -> saveExam returns FORBIDDEN
+  dbExams.set('competing-exam', { ...bobExam, id: 'competing-exam' });
+  const aliceCompete = await storeA.saveExam({
+    ...bobExam,
+    id: 'competing-exam',
+    owner: 'alice',
+    title: 'Alice takeover attempt',
+  });
+  assert.equal(aliceCompete.ok, false);
+  assert.equal(aliceCompete.error, 'FORBIDDEN');
+  const stillBob = await storeA.getExam('competing-exam');
+  assert.equal(stillBob?.owner, 'bob');
+
+  // 3. Control: Same owner updates -> succeeds from RETURNING
+  const bobUpdate = await storeB.saveExam({
+    ...bobExam,
+    id: 'competing-exam',
+    owner: 'bob',
+    title: 'Bob updated title',
+  });
+  assert.equal(bobUpdate.ok, true);
+  assert.equal(bobUpdate.revision, 2);
+  const updatedBob = await storeB.getExam('competing-exam');
+  assert.equal(updatedBob?.title, 'Bob updated title');
+  assert.equal(updatedBob?.revision, 2);
 });
