@@ -109,9 +109,10 @@ Environment: Windows/PowerShell, Node v24.14.0, TypeScript 7.0.2, Python 3.11.0,
 | `node --import ./ops/blitz/promoted/_support/runtime.mjs blocks-probe.mjs` | 0 | Valid schema; canonical top-level text/table preserved in exam/review/download; blocks-probe.log/json. |
 | `node --test lc67-regressions.test.mjs` | 1 | 2 tests, 1 pass, 1 fail, 0 cancelled/skip; 70.288 ms; intended-regressions.log. Export isolation fails. |
 | `node --test --test-concurrency=1 --test-timeout=240000 "test/claude-check/**/*.test.mjs"` | 0 | 104 pass, 0 fail/cancel/skip/todo, 5 suites; 81,099.8622 ms; claude.log. Local API/Apps Script/teacher/assignment/build/publish/UI/offline checks. |
-CODEX_ROW
+| `node --test --test-concurrency=1 --test-timeout=240000 "test/codex-check/**/*.test.mjs"` ? initial copy | 1 | 199 tests, 187 pass, 12 fail, 0 cancel/skip; 132,703.4297 ms; codex-initial.log. Missing evidence-output directories (including file-level failure) plus one root DOCX preview timeout. |
+| `node --test --test-concurrency=1 --test-timeout=240000 "test/codex-check/**/*.test.mjs"` ? corrected copy | 0 | 198 pass, 0 fail/cancel/skip/todo, 2 suites; 131,552.7682 ms; codex.log. Full fresh rerun after creating evidence directories. |
 
-Acceptance-suite success does not overwrite the red npm gate or independent failures. No assertions removed/weakened. Supplemental probes were inspected, copied from LC87 evidence and executed afresh. runtime.mjs only acknowledges Browser.close during harness teardown, without changing application responses/assertions. Acceptance snapshot hooks use read-only GIT_DIR=D:/Cunata/.git and GIT_WORK_TREE=D:/Cunata. Local SQL/Google/API simulators are not deployed Neon/Vercel/Google evidence.
+The initial evidence-directory errors are snapshot setup errors, not product findings. The one DOCX preview timeout did not recur in the complete rerun; its initial log remains available and its root cause was not established. Acceptance-suite success does not overwrite the red npm gate or independent failures. No assertions removed/weakened. Supplemental probes were inspected, copied from LC87 evidence and executed afresh. runtime.mjs only acknowledges Browser.close during harness teardown, without changing application responses/assertions. Acceptance snapshot hooks use read-only GIT_DIR=D:/Cunata/.git and GIT_WORK_TREE=D:/Cunata. Local SQL/Google/API simulators are not deployed Neon/Vercel/Google evidence.
 
 ## coverage_gaps
 
@@ -139,3 +140,4 @@ Custom-only presets and manual PDF remain approved choices. No new scoring gramm
 
 recommended_action: F01→src/collect; F02–F04→src/app; F05→src/api; F06→src/domain. Teacher/test owners reconcile metadata fixtures while preserving read-only listing. Product remains CHANGES_REQUESTED; handoff READY_FOR_REVIEW.
 
+Final integrity: `final-snapshot.json` records 1,195 input hashes, unchanged HEAD `2019a03fabd3225b5e8bc3a602d0c37a4a94c74f`, workspaceRuntimeAndTestCodeDrift=[], snapshotRuntimeAndTestCodeDrift=[], app SHA-256 `9441469f8e314b52bba2e4fa778d08e3646930538e0e4e1996729ba945affdcf`. Generated test artifacts in the temporary copy are output, not source drift. This verdict covers the captured snapshot; later code changes require review. Only this report was intentionally written in the workspace.
