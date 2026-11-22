@@ -27,7 +27,25 @@ import { parseFractionString, toDecimalString } from "../domain/index.js";
 export const TEACHER_SESSION_PW_KEY = 'cunata_teacher_pw';
 export const TEACHER_TOKEN_KEY = 'cunata_teacher_token';
 export const TEACHER_NAME_KEY = 'cunata_teacher_name';
+export const TEACHER_USERNAME_KEY = 'cunata_teacher_username';
 export const TEACHER_ROLE_KEY = 'cunata:role';
+export function getStoredTeacherUsername() {
+    try {
+        if (typeof sessionStorage !== 'undefined') {
+            return sessionStorage.getItem(TEACHER_USERNAME_KEY) || sessionStorage.getItem(TEACHER_NAME_KEY);
+        }
+    }
+    catch { }
+    return null;
+}
+export function setStoredTeacherUsername(username) {
+    try {
+        if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.setItem(TEACHER_USERNAME_KEY, username);
+        }
+    }
+    catch { }
+}
 export function getStoredTeacherPassword() {
     try {
         if (typeof sessionStorage !== 'undefined') {
@@ -75,6 +93,7 @@ export function clearStoredTeacherToken() {
         if (typeof sessionStorage !== 'undefined') {
             sessionStorage.removeItem(TEACHER_TOKEN_KEY);
             sessionStorage.removeItem(TEACHER_NAME_KEY);
+            sessionStorage.removeItem(TEACHER_USERNAME_KEY);
             sessionStorage.removeItem(TEACHER_SESSION_PW_KEY);
         }
     }
@@ -737,6 +756,7 @@ export function mountTeacherPortal(root, deps) {
                     setStoredTeacherPassword(p);
                     try {
                         sessionStorage.setItem(TEACHER_NAME_KEY, name);
+                        sessionStorage.setItem(TEACHER_USERNAME_KEY, u);
                         localStorage.setItem(TEACHER_ROLE_KEY, 'teacher');
                     }
                     catch { }
@@ -1438,28 +1458,6 @@ export function mountTeacherPortal(root, deps) {
     const myExamIds = new Set();
     const forbiddenExamIds = new Set();
     let activeEditingExam = null;
-    if (typeof doc.addEventListener === 'function') {
-        doc.addEventListener('click', (e) => {
-            const btn = e.target?.closest ? e.target.closest('.btn-q-edit') : null;
-            if (!btn)
-                return;
-            const idxStr = btn.getAttribute('data-idx');
-            if (idxStr === null)
-                return;
-            const idx = parseInt(idxStr, 10);
-            if (isNaN(idx))
-                return;
-            setTimeout(() => {
-                const origQ = activeEditingExam?.questions?.[idx];
-                if (origQ && origQ.kind === 'I' && origQ.correctOptionId) {
-                    const radios = doc.querySelectorAll(`input[name="editCorrectOpt_${idx}"]`);
-                    radios.forEach((r) => {
-                        r.checked = (r.value === origQ.correctOptionId);
-                    });
-                }
-            }, 0);
-        }, true);
-    }
     async function renderExamsSection(container) {
         clearChildren(container);
         const header = doc.createElement('div');
@@ -1513,6 +1511,7 @@ export function mountTeacherPortal(root, deps) {
                     return;
                 }
                 const tok = getStoredTeacherToken() || '';
+                const myUsername = getStoredTeacherUsername() || '';
                 const visibleExams = [];
                 for (const exam of allExams) {
                     if (exam.source === 'static') {
@@ -1526,20 +1525,35 @@ export function mountTeacherPortal(root, deps) {
                         visibleExams.push(exam);
                         continue;
                     }
+                    const examOwner = exam.owner || exam.settings?.owner;
+                    if (examOwner) {
+                        if (myUsername && examOwner === myUsername) {
+                            myExamIds.add(exam.id);
+                            visibleExams.push(exam);
+                        }
+                        else {
+                            forbiddenExamIds.add(exam.id);
+                        }
+                        continue;
+                    }
+                    // If no owner metadata from list, check fullExam metadata without issuing write requests
                     try {
                         const fullExam = (await exam.load());
-                        if (tok && deps.client.publishExam) {
-                            const checkRes = await deps.client.publishExam(tok, fullExam);
-                            if (!checkRes.ok && checkRes.code === 'FORBIDDEN') {
-                                forbiddenExamIds.add(exam.id);
-                                continue;
+                        const fullOwner = fullExam?.owner || fullExam?.settings?.owner;
+                        if (fullOwner) {
+                            if (myUsername && fullOwner === myUsername) {
+                                myExamIds.add(exam.id);
+                                visibleExams.push(exam);
                             }
-                            myExamIds.add(exam.id);
+                            else {
+                                forbiddenExamIds.add(exam.id);
+                            }
+                            continue;
                         }
-                        visibleExams.push(exam);
                     }
                     catch {
-                        visibleExams.push(exam);
+                        // failed to load -> do not treat as mine
+                        continue;
                     }
                 }
                 if (visibleExams.length === 0) {
@@ -1596,20 +1610,8 @@ export function mountTeacherPortal(root, deps) {
                                     if (fullExam.settings && updatedExam.settings) {
                                         mergedExam.settings = { ...fullExam.settings, ...updatedExam.settings };
                                     }
-                                    if (fullExam.questions && updatedExam.questions) {
-                                        mergedExam.questions = updatedExam.questions.map((q, i) => {
-                                            const origQ = fullExam.questions[i];
-                                            if (origQ && origQ.kind === 'I' && q.kind === 'I') {
-                                                const rad = doc.querySelector(`input[name="editCorrectOpt_${i}"]:checked`);
-                                                if (rad && rad.value) {
-                                                    return { ...q, correctOptionId: rad.value };
-                                                }
-                                                if (origQ.correctOptionId) {
-                                                    return { ...q, correctOptionId: origQ.correctOptionId };
-                                                }
-                                            }
-                                            return q;
-                                        });
+                                    if (updatedExam.questions) {
+                                        mergedExam.questions = updatedExam.questions;
                                     }
                                     const res = await deps.client.publishExam(tok, mergedExam);
                                     if (res.ok) {

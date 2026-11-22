@@ -34,6 +34,7 @@ export interface MergedExamEntry {
   readonly group: string;
   readonly url?: string;
   readonly source: 'static' | 'teacher';
+  readonly owner?: string;
 }
 
 export interface ExamListOptions {
@@ -99,6 +100,7 @@ export async function fetchAndMergeExams(
           questionCount: Number(e.questionCount) || 0,
           group: String(e.group || 'Đề giáo viên xuất bản'),
           source: 'teacher' as const,
+          owner: e.owner ? String(e.owner) : undefined,
         }));
       } else {
         teacherError = 'chưa tải được đề của giáo viên';

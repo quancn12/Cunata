@@ -366,3 +366,92 @@ test('R0-F03 regression: cards have section label derived from kind (Phần I, P
   assert.match(html, /Phần II/);
   assert.match(html, /Phần III/);
 });
+
+test('R0-R2-F03 regression: nested table cell images and markdown images in table cells are embedded as data URIs', async () => {
+  const exam: WebExam = {
+    schemaVersion: 'web-exam-v1',
+    examId: 'exam-table-img',
+    examVersionId: 'v1.0.0',
+    title: 'Đề có bảng chứa ảnh nhúng',
+    subject: 'Vật lí',
+    grade: 12,
+    ruleSetId: 'custom-v1',
+    inputPolicyId: 'sa-charset-v1',
+    settings: {
+      durationMinutes: 50,
+      maxAttempts: null,
+      releasePolicy: 'immediate',
+      shuffleQuestions: false,
+      shuffleOptions: false,
+    },
+    assets: [
+      {
+        assetId: 'public/q01-bbt.svg',
+        mime: 'image/svg+xml',
+        data: 'PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjwvc3ZnPg==',
+        alt: 'Bảng biến thiên',
+      },
+    ],
+    questions: [
+      {
+        kind: 'I',
+        questionVersionId: 'q-tbl-1',
+        title: 'Câu 1',
+        content: 'Bảng số liệu bên dưới',
+        blocks: [
+          {
+            type: 'table',
+            rows: [
+              [
+                {
+                  rowSpan: 1,
+                  colSpan: 1,
+                  blocks: [
+                    { type: 'text', text: 'Hình trong ô: ![Sơ đồ](public/q01-bbt.svg)' },
+                    { type: 'image', assetId: 'public/q01-bbt.svg', alt: 'nested diagram' },
+                  ],
+                },
+              ],
+            ],
+          },
+        ],
+        correctOptionId: 'opt-a',
+        options: [
+          { optionId: 'opt-a', text: 'A', label: 'A' },
+          { optionId: 'opt-b', text: 'B', label: 'B' },
+          { optionId: 'opt-c', text: 'C', label: 'C' },
+          { optionId: 'opt-d', text: 'D', label: 'D' },
+        ],
+      },
+    ],
+  };
+
+  const finalRecord: AttemptRecord = {
+    schemaVersion: 'web-attempt-v1',
+    examId: 'exam-table-img',
+    examVersionId: 'v1.0.0',
+    attemptId: 'att-tbl-1',
+    revision: 1,
+    candidateName: 'Học sinh',
+    startedAt: 1700000000000,
+    deadline: 1700002700000,
+    phase: 'final',
+    submittedAt: 1700001000000,
+    presentationOrder: { seed: 'seed-1', questionOrder: ['q-tbl-1'], optionOrder: [] },
+    responses: {
+      attemptId: 'att-tbl-1',
+      examVersionId: 'v1.0.0',
+      responses: [{ kind: 'I', questionVersionId: 'q-tbl-1', selectedOptionId: 'opt-a' }],
+    },
+    scoreDTO: null,
+    examSnapshot: exam,
+  };
+
+  const reportRes = buildReport(finalRecord, 1700001000000);
+  assert.equal(reportRes.ok, true);
+  if (!reportRes.ok) return;
+
+  const html = renderReportHtml(reportRes.value);
+  assert.equal(html.includes('src="public/q01-bbt.svg"'), false, 'Should not contain raw relative image path');
+  assert.match(html, /data:image\/svg\+xml;base64,PHN2Zy/);
+});

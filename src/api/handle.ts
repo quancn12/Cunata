@@ -544,6 +544,7 @@ export async function handle(request: ApiRequest, ctx: RequestContext): Promise<
             group: e.group,
             revision: e.revision,
             updatedAt: e.updatedAt,
+            owner: e.owner,
           })),
         });
       }

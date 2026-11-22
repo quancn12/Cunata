@@ -56,6 +56,7 @@ export async function fetchAndMergeExams(appsScriptUrl, client) {
                     questionCount: Number(e.questionCount) || 0,
                     group: String(e.group || 'Đề giáo viên xuất bản'),
                     source: 'teacher',
+                    owner: e.owner ? String(e.owner) : undefined,
                 }));
             }
             else {

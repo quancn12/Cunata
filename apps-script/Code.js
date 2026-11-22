@@ -975,7 +975,7 @@ function doGet(e) {
             var lastRow = sheet.getLastRow();
             var exams = [];
             for (var r = 2; r <= lastRow; r++) {
-                var rowVals = sheet.getRange(r, 1, 1, 9).getValues()[0];
+                var rowVals = sheet.getRange(r, 1, 1, 10).getValues()[0];
                 var id = String(rowVals[0] !== undefined && rowVals[0] !== null ? rowVals[0] : '');
                 if (!id) continue;
                 var title = String(rowVals[1] !== undefined && rowVals[1] !== null ? rowVals[1] : '');
@@ -986,6 +986,7 @@ function doGet(e) {
                 var group = String(rowVals[6] !== undefined && rowVals[6] !== null ? rowVals[6] : 'Đề giáo viên xuất bản');
                 var revision = Number(rowVals[7]) || 1;
                 var updatedAt = String(rowVals[8] !== undefined && rowVals[8] !== null ? rowVals[8] : '');
+                var owner = String(sheet.getRange(1, 10, 1, 1).getValue()) === 'owner' ? String(rowVals[9] !== undefined && rowVals[9] !== null ? rowVals[9] : '') : '';
                 exams.push({
                     id: id,
                     title: title,
@@ -995,7 +996,8 @@ function doGet(e) {
                     questionCount: questionCount,
                     group: group,
                     revision: revision,
-                    updatedAt: updatedAt
+                    updatedAt: updatedAt,
+                    owner: owner
                 });
             }
             return ContentService.createTextOutput(JSON.stringify({
@@ -1053,6 +1055,9 @@ function doGet(e) {
             var joinedJson = chunks.join('');
             try {
                 var examObj = JSON.parse(joinedJson);
+                if (examObj && !examObj.owner && foundRow > 0) {
+                    examObj.owner = examOwner(sheet, foundRow);
+                }
                 return ContentService.createTextOutput(JSON.stringify({
                     success: true,
                     exam: examObj
@@ -1129,7 +1134,7 @@ function newSession(role, username, name, credential) {
         name: name, credential: credential, expiresAt: expiresAt });
     CacheService.getScriptCache().put('session:' + token, payload, 21600);
     PropertiesService.getScriptProperties().setProperty('session:' + token, payload);
-    return { success: true, token: token, name: name, expiresAt: expiresAt };
+    return { success: true, token: token, name: name, username: username, expiresAt: expiresAt };
 }
 function sessionPrincipal(token, role) {
     if (typeof token !== 'string' || !/^[a-f0-9]{64}$/i.test(token)) return null;

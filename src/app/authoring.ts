@@ -177,7 +177,7 @@ export function initAuthoring(root: HTMLElement, options: AuthoringOptions): Aut
             <div style="margin-top: 0.5rem;">
               <div style="font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.35rem;">4 Lựa chọn (Chọn nút tròn để chỉ định đáp án đúng):</div>
               ${opts.map((opt: any, oIdx: number) => {
-                const isChecked = opt.optionId === q.correctOptionId || opt.optionId === `opt-${oIdx + 1}` ? 'checked' : '';
+                const isChecked = (q.correctOptionId ? opt.optionId === q.correctOptionId : (oIdx === 0 || opt.optionId === `opt-${oIdx + 1}`)) ? 'checked' : '';
                 return `
                   <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem;">
                     <input type="radio" id="editCorrectOpt_${idx}_${oIdx}" name="editCorrectOpt_${idx}" value="${escapeHtml(opt.optionId)}" ${isChecked} />

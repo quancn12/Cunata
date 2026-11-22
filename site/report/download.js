@@ -117,7 +117,16 @@ function normalizeHistoryEntry(item, policy) {
 }
 function renderBlock(b, assetMap) {
     if (b.type === "text") {
-        const segments = parseMarkdownSegments(b.text);
+        let text = b.text;
+        text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (fullMatch, alt, src) => {
+            const cleanSrc = src.trim();
+            const uri = assetMap.get(cleanSrc) || assetMap.get(cleanSrc.split("/").pop() || "");
+            if (uri) {
+                return `![${alt}](${uri})`;
+            }
+            return fullMatch;
+        });
+        const segments = parseMarkdownSegments(text);
         return segments
             .map((seg) => {
             if (seg.type === "text") {

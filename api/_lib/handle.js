@@ -462,6 +462,7 @@ export async function handle(request, ctx) {
                         group: e.group,
                         revision: e.revision,
                         updatedAt: e.updatedAt,
+                        owner: e.owner,
                     })),
                 });
             }

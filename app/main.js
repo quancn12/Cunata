@@ -363,8 +363,16 @@ function renderQuestionStemHtml(q, resolveSrc) {
                     for (const cell of row) {
                         out += `<td rowspan="${cell.rowSpan || 1}" colspan="${cell.colSpan || 1}">`;
                         for (const cb of cell.blocks || []) {
-                            if (cb.type === 'text')
-                                out += renderMathText(cb.text);
+                            if (cb.type === 'text') {
+                                let text = cb.text || '';
+                                if (resolveSrc) {
+                                    text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (full, alt, src) => {
+                                        const resolved = resolveSrc(src.trim());
+                                        return resolved ? `![${alt}](${resolved})` : full;
+                                    });
+                                }
+                                out += renderMathText(text);
+                            }
                             else if (cb.type === 'image') {
                                 const src = (resolveSrc ? resolveSrc(cb.assetId) : '') || cb.assetId;
                                 out += `<img class="cunata-image" src="${escapeHtml(src)}" alt="${escapeHtml(cb.alt || '')}" />`;
@@ -3076,12 +3084,28 @@ export async function bootstrap(root, options) {
                     if (q.image)
                         allTextSources.push(`![](${q.image})`);
                     if (Array.isArray(q.blocks)) {
-                        for (const b of q.blocks) {
-                            if (b.type === 'text' && b.text)
-                                allTextSources.push(b.text);
-                            if (b.type === 'image' && b.assetId)
-                                allTextSources.push(`![](${b.assetId})`);
-                        }
+                        const collectBlocks = (blocks) => {
+                            for (const b of blocks) {
+                                if (!b)
+                                    continue;
+                                if (b.type === 'text' && b.text)
+                                    allTextSources.push(b.text);
+                                if (b.type === 'image' && b.assetId)
+                                    allTextSources.push(`![](${b.assetId})`);
+                                if (b.type === 'table' && Array.isArray(b.rows)) {
+                                    for (const row of b.rows) {
+                                        if (Array.isArray(row)) {
+                                            for (const cell of row) {
+                                                if (cell && Array.isArray(cell.blocks)) {
+                                                    collectBlocks(cell.blocks);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        };
+                        collectBlocks(q.blocks);
                     }
                     if (q.kind === 'I' && q.options) {
                         for (const o of q.options)

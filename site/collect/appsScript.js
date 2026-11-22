@@ -371,6 +371,7 @@ export function createAppsScriptClient(url, fetchImpl, contentType = 'text/plain
                     group: String(e.group ?? ''),
                     revision: typeof e.revision === 'number' ? e.revision : Number(e.revision) || 1,
                     updatedAt: String(e.updatedAt ?? ''),
+                    owner: e.owner ? String(e.owner) : undefined,
                 }));
                 return { ok: true, value: exams };
             });

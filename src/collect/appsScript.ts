@@ -197,6 +197,7 @@ export interface PublishedExamMeta {
   group: string;
   revision: number;
   updatedAt: string;
+  owner?: string;
 }
 
 /**
@@ -671,6 +672,7 @@ export function createAppsScriptClient(
             group: String(e.group ?? ''),
             revision: typeof e.revision === 'number' ? e.revision : Number(e.revision) || 1,
             updatedAt: String(e.updatedAt ?? ''),
+            owner: e.owner ? String(e.owner) : undefined,
           }));
           return { ok: true, value: exams };
         }
