@@ -1,0 +1,661 @@
+✔ dist: [api] R3: tiền điều kiện R2: giáo viên, lớp, đề và bài giao tồn tại qua handle thật (WEB-contract §23) (698.8309ms)
+✖ dist: [api] R3: thêm và đọc tên Unicode, ID ổn định, PIN 4 chữ số duy nhất trong lớp (WEB-contract §23) (168.0274ms)
+✖ dist: [api] R3: PIN lưu băm và không rò băm hoặc PIN qua GET công khai (WEB-contract §23) (182.9242ms)
+✖ dist: [api] R3: addStudents từ chối token thiếu hoặc sai (WEB-contract §23) (189.5057ms)
+✖ dist: [api] R3: addStudents từ chối giáo viên khác với FORBIDDEN và không đổi dữ liệu (WEB-contract §23) (166.6306ms)
+✖ dist: [api] R3: listStudents từ chối token thiếu hoặc sai (WEB-contract §23) (158.2092ms)
+✖ dist: [api] R3: listStudents từ chối giáo viên khác với FORBIDDEN và không đổi dữ liệu (WEB-contract §23) (144.0569ms)
+✖ dist: [api] R3: resetPin từ chối token thiếu hoặc sai (WEB-contract §23) (148.4164ms)
+✖ dist: [api] R3: resetPin từ chối giáo viên khác với FORBIDDEN và không đổi dữ liệu (WEB-contract §23) (160.5885ms)
+✖ dist: [api] R3: removeStudent từ chối token thiếu hoặc sai (WEB-contract §23) (133.3655ms)
+✖ dist: [api] R3: removeStudent từ chối giáo viên khác với FORBIDDEN và không đổi dữ liệu (WEB-contract §23) (142.6476ms)
+✖ dist: [api] R3: đặt lại PIN, PIN mới đăng nhập được và PIN cũ bị từ chối (WEB-contract §23) (182.5344ms)
+✖ dist: [api] R3: xóa học sinh, đọc lại không còn và không đăng nhập được (WEB-contract §23) (147.7184ms)
+✖ dist: [api] R3: đúng PIN trả studentToken và tên trong danh sách, sai mã/lớp/PIN bị từ chối (WEB-contract §23) (155.8194ms)
+✖ dist: [api] R3: sai 5 lần khóa đủ 10 phút, đổi client không bỏ khóa, không khóa học sinh khác (WEB-contract §23) (406.8828ms)
+✖ dist: [api] R3: đăng nhập đúng ngắt chuỗi sai liên tiếp (WEB-contract §23) (514.2286ms)
+✖ dist: [api] R3: bài nộp lưu student_id và tên danh sách thay tên tự do, retry không nhân bản (WEB-contract §23) (436.4985ms)
+✖ dist: [api] R3: myResults chỉ trả bài của đúng học sinh, đủ dữ liệu để xem lại ở máy khác (WEB-contract §23) (269.3134ms)
+✖ dist: [api] R3: PIN vẫn khác nhau khi thêm nhiều đợt và reset nhiều học sinh (WEB-contract §23) (527.6489ms)
+✖ dist: [api] R3: ID học sinh hợp lệ không đăng nhập được bằng mã của lớp khác (WEB-contract §23) (674.5764ms)
+✖ dist: [api] R3: phiên học sinh không thể gán bài nộp cho ID học sinh khác (WEB-contract §23) (448.9801ms)
+✖ dist: [api] R3: myResults giữ nhiều lượt đã nộp của học sinh đang đăng nhập (WEB-contract §23) (646.852ms)
+✖ dist: [api] R3: myResults không cho token thiếu/sai hoặc phiên giáo viên đọc bài học sinh (WEB-contract §23) (599.6889ms)
+✔ dist: [glue] R3: tiền điều kiện: dist dùng apiBase cục bộ, đăng nhập và mở chi tiết lớp bằng chuột thật (WEB-contract §23) (18146.103ms)
+✖ dist: [teacher] R3: chi tiết lớp hiện rosterPanel, textarea và các nút trong khung nhìn 375px (WEB-contract §23) (32256.027ms)
+✖ dist: [teacher] R3: chi tiết lớp hiện rosterPanel, textarea và các nút trong khung nhìn 768px (WEB-contract §23) (14275.3321ms)
+✖ dist: [teacher] R3: chi tiết lớp hiện rosterPanel, textarea và các nút trong khung nhìn 1440px (WEB-contract §23) (12087.0341ms)
+✖ dist: [teacher] R3: nhập mỗi dòng một tên, hiện PIN mới và tải lại vẫn đủ tên (WEB-contract §23) (11577.325ms)
+✖ dist: [teacher] R3: nút reset PIN và xóa tác động đúng hàng trên máy chủ (WEB-contract §23) (411.5139ms)
+✖ dist: [teacher] R3: in danh sách tên và PIN bằng nút rosterPrint (WEB-contract §23) (298.1711ms)
+✖ dist: [student] R3: lớp chưa có danh sách hiện thông báo nhờ giáo viên thêm tên (WEB-contract §23) (6720.6486ms)
+✖ dist: [student] R3: mã lớp hiện tên để chọn, PIN sai có pinError và không mở bài (WEB-contract §23) (226.1895ms)
+✖ dist: [student] R3: đúng PIN dùng tên danh sách, nộp student_id rồi máy sạch khác dựng lại đầy đủ báo cáo (WEB-contract §23) (276.4683ms)
+✖ dist: [student] R3: PIN sai năm lần hiện khóa do máy chủ, tải lại không bỏ được khóa (WEB-contract §23) (269.9893ms)
+✖ dist: [teacher] R3: bảng kết quả liệt kê cả học sinh chưa nộp, không chỉ các lượt đã gửi (WEB-contract §23) (323.124ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 2
+ℹ fail 33
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 136770.0727
+
+✖ failing tests:
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: thêm và đọc tên Unicode, ID ổn định, PIN 4 chữ số duy nhất trong lớp (WEB-contract §23) (168.0274ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:14:41)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: PIN lưu băm và không rò băm hoặc PIN qua GET công khai (WEB-contract §23) (182.9242ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:23:41)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: addStudents từ chối token thiếu hoặc sai (WEB-contract §23) (189.5057ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents cần phiên giáo viên (§19.2)
+  + actual - expected
+  
+  + 'UNKNOWN_ACTION'
+  - 'UNAUTHORIZED'
+       ^
+  
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:44:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'UNKNOWN_ACTION',
+    expected: 'UNAUTHORIZED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: addStudents từ chối giáo viên khác với FORBIDDEN và không đổi dữ liệu (WEB-contract §23) (166.6306ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:48:44)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: listStudents từ chối token thiếu hoặc sai (WEB-contract §23) (158.2092ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: listStudents cần phiên giáo viên (§19.2)
+  + actual - expected
+  
+  + 'UNKNOWN_ACTION'
+  - 'UNAUTHORIZED'
+       ^
+  
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:44:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'UNKNOWN_ACTION',
+    expected: 'UNAUTHORIZED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: listStudents từ chối giáo viên khác với FORBIDDEN và không đổi dữ liệu (WEB-contract §23) (144.0569ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:48:44)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: resetPin từ chối token thiếu hoặc sai (WEB-contract §23) (148.4164ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: resetPin cần phiên giáo viên (§19.2)
+  + actual - expected
+  
+  + 'UNKNOWN_ACTION'
+  - 'UNAUTHORIZED'
+       ^
+  
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:44:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'UNKNOWN_ACTION',
+    expected: 'UNAUTHORIZED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: resetPin từ chối giáo viên khác với FORBIDDEN và không đổi dữ liệu (WEB-contract §23) (160.5885ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:48:44)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: removeStudent từ chối token thiếu hoặc sai (WEB-contract §23) (133.3655ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: removeStudent cần phiên giáo viên (§19.2)
+  + actual - expected
+  
+  + 'UNKNOWN_ACTION'
+  - 'UNAUTHORIZED'
+       ^
+  
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:44:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'UNKNOWN_ACTION',
+    expected: 'UNAUTHORIZED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: removeStudent từ chối giáo viên khác với FORBIDDEN và không đổi dữ liệu (WEB-contract §23) (142.6476ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:48:44)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: đặt lại PIN, PIN mới đăng nhập được và PIN cũ bị từ chối (WEB-contract §23) (182.5344ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:56:49)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: xóa học sinh, đọc lại không còn và không đăng nhập được (WEB-contract §23) (147.7184ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:65:42)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: đúng PIN trả studentToken và tên trong danh sách, sai mã/lớp/PIN bị từ chối (WEB-contract §23) (155.8194ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:72:42)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: sai 5 lần khóa đủ 10 phút, đổi client không bỏ khóa, không khóa học sinh khác (WEB-contract §23) (406.8828ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:82:49)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: đăng nhập đúng ngắt chuỗi sai liên tiếp (WEB-contract §23) (514.2286ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:93:42)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: bài nộp lưu student_id và tên danh sách thay tên tự do, retry không nhân bản (WEB-contract §23) (436.4985ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:100:42)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: myResults chỉ trả bài của đúng học sinh, đủ dữ liệu để xem lại ở máy khác (WEB-contract §23) (269.3134ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:110:49)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: PIN vẫn khác nhau khi thêm nhiều đợt và reset nhiều học sinh (WEB-contract §23) (527.6489ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:128:30)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: ID học sinh hợp lệ không đăng nhập được bằng mã của lớp khác (WEB-contract §23) (674.5764ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:143:42)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: phiên học sinh không thể gán bài nộp cho ID học sinh khác (WEB-contract §23) (448.9801ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:151:49)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: myResults giữ nhiều lượt đã nộp của học sinh đang đăng nhập (WEB-contract §23) (646.852ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:160:42)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\api.test.mjs:4:28
+✖ dist: [api] R3: myResults không cho token thiếu/sai hoặc phiên giáo viên đọc bài học sinh (WEB-contract §23) (599.6889ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: myResults cần studentToken hợp lệ
+  + actual - expected
+  
+  + 'UNKNOWN_ACTION'
+  - 'UNAUTHORIZED'
+       ^
+  
+      at TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/api.test.mjs:168:70)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'UNKNOWN_ACTION',
+    expected: 'UNAUTHORIZED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\browser.test.mjs:12:3
+✖ dist: [teacher] R3: chi tiết lớp hiện rosterPanel, textarea và các nút trong khung nhìn 375px (WEB-contract §23) (32256.027ms)
+  Error: Quá 10000 ms mà chưa đạt: WEB-contract §23: phần tử #rosterPanel phải hiện
+      at Object.waitFor (file:///D:/Cunata/test/claude-check/harness.mjs:186:13)
+      at async visible (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:115:3)
+      at async file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:53:5
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:24:7)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7)
+
+test at ops\roadmap\tests\R3\browser.test.mjs:12:3
+✖ dist: [teacher] R3: chi tiết lớp hiện rosterPanel, textarea và các nút trong khung nhìn 768px (WEB-contract §23) (14275.3321ms)
+  Error: Quá 10000 ms mà chưa đạt: WEB-contract §23: phần tử #rosterPanel phải hiện
+      at Object.waitFor (file:///D:/Cunata/test/claude-check/harness.mjs:186:13)
+      at async visible (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:115:3)
+      at async file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:53:5
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:24:7)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7)
+
+test at ops\roadmap\tests\R3\browser.test.mjs:12:3
+✖ dist: [teacher] R3: chi tiết lớp hiện rosterPanel, textarea và các nút trong khung nhìn 1440px (WEB-contract §23) (12087.0341ms)
+  Error: Quá 10000 ms mà chưa đạt: WEB-contract §23: phần tử #rosterPanel phải hiện
+      at Object.waitFor (file:///D:/Cunata/test/claude-check/harness.mjs:186:13)
+      at async visible (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:115:3)
+      at async file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:53:5
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:24:7)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7)
+
+test at ops\roadmap\tests\R3\browser.test.mjs:12:3
+✖ dist: [teacher] R3: nhập mỗi dòng một tên, hiện PIN mới và tải lại vẫn đủ tên (WEB-contract §23) (11577.325ms)
+  Error: Quá 10000 ms mà chưa đạt: WEB-contract §23: phần tử #rosterInput phải hiện
+      at Object.waitFor (file:///D:/Cunata/test/claude-check/harness.mjs:186:13)
+      at async visible (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:115:3)
+      at async click (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:122:3)
+      at async type (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:130:3)
+      at async file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:66:3
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:24:7)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7)
+
+test at ops\roadmap\tests\R3\browser.test.mjs:12:3
+✖ dist: [teacher] R3: nút reset PIN và xóa tác động đúng hàng trên máy chủ (WEB-contract §23) (411.5139ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at async file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:77:22
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:24:7)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\browser.test.mjs:12:3
+✖ dist: [teacher] R3: in danh sách tên và PIN bằng nút rosterPrint (WEB-contract §23) (298.1711ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at async file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:92:14
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:24:7)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\browser.test.mjs:12:3
+✖ dist: [student] R3: lớp chưa có danh sách hiện thông báo nhờ giáo viên thêm tên (WEB-contract §23) (6720.6486ms)
+  Error: Quá 5000 ms mà chưa đạt: WEB-contract §23: lớp rỗng hiện thông báo quy định, không cho dùng tên tự do
+      at Object.waitFor (file:///D:/Cunata/test/claude-check/harness.mjs:186:13)
+      at async file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:108:3
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:24:7)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7)
+
+test at ops\roadmap\tests\R3\browser.test.mjs:12:3
+✖ dist: [student] R3: mã lớp hiện tên để chọn, PIN sai có pinError và không mở bài (WEB-contract §23) (226.1895ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at async file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:112:14
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:24:7)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\browser.test.mjs:12:3
+✖ dist: [student] R3: đúng PIN dùng tên danh sách, nộp student_id rồi máy sạch khác dựng lại đầy đủ báo cáo (WEB-contract §23) (276.4683ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at async file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:127:15
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:24:7)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\browser.test.mjs:12:3
+✖ dist: [student] R3: PIN sai năm lần hiện khóa do máy chủ, tải lại không bỏ được khóa (WEB-contract §23) (269.9893ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at async file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:200:15
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:24:7)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ops\roadmap\tests\R3\browser.test.mjs:12:3
+✖ dist: [teacher] R3: bảng kết quả liệt kê cả học sinh chưa nộp, không chỉ các lượt đã gửi (WEB-contract §23) (323.124ms)
+  AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {"success":false,"error":"UNKNOWN_ACTION","message":"Thao tác không hợp lệ"}
+  
+  false !== true
+  
+      at ok (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:33:10)
+      at roster (file:///D:/Cunata/ops/roadmap/tests/R3/support.mjs:61:17)
+      at async file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:222:15
+      at async TestContext.<anonymous> (file:///D:/Cunata/ops/roadmap/tests/R3/browser.test.mjs:24:7)
+      at async Test.run (node:internal/test_runner/test:1125:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:787:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

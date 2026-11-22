@@ -1,0 +1,5 @@
+{
+  "test": "dist: [teacher] R3: in danh sách tên và PIN bằng nút rosterPrint (WEB-contract §23)",
+  "error": "AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {\"success\":false,\"error\":\"UNKNOWN_ACTION\",\"message\":\"Thao tác không hợp lệ\"}\n\nfalse !== true\n",
+  "rpc": []
+}

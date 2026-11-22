@@ -1,0 +1,5 @@
+{
+  "test": "dist: [student] R3: mã lớp hiện tên để chọn, PIN sai có pinError và không mở bài (WEB-contract §23)",
+  "error": "AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {\"success\":false,\"error\":\"UNKNOWN_ACTION\",\"message\":\"Thao tác không hợp lệ\"}\n\nfalse !== true\n",
+  "rpc": []
+}

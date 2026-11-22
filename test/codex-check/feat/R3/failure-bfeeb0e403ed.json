@@ -1,0 +1,37 @@
+{
+  "test": "dist: [teacher] R3: chi tiết lớp hiện rosterPanel, textarea và các nút trong khung nhìn 375px (WEB-contract §23)",
+  "error": "Error: Quá 10000 ms mà chưa đạt: WEB-contract §23: phần tử #rosterPanel phải hiện",
+  "rpc": [
+    {
+      "action": "listExams",
+      "success": true
+    },
+    {
+      "action": "teacherLogin",
+      "success": true
+    },
+    {
+      "action": "listMyClasses",
+      "success": true
+    },
+    {
+      "action": "listMyClasses",
+      "success": true
+    },
+    {
+      "action": "listAssignments",
+      "success": true
+    },
+    {
+      "action": "listExams",
+      "success": true
+    }
+  ],
+  "page": {
+    "text": "Cunata\nGiáo viên\nĐổi vai\nLớp học\nĐề thi\nKết quả\nĐăng xuất\n← Quay lại danh sách lớp\nLớp Lớp R3 mô phỏng (Mã: L28SRU)\nGiao đề thi\nĐề R3 mô phỏng\nMở: 03:09, 23/11/2026 · Hạn nộp: 04:10, 23/11/2026 · 0 bài đã nộp",
+    "url": "http://127.0.0.1:53147/Cunata/#/giao-vien/lop"
+  },
+  "errors": [
+    "log: Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:53147/favicon.ico"
+  ]
+}

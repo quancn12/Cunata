@@ -1,0 +1,21 @@
+{
+  "test": "dist: [student] R3: lớp chưa có danh sách hiện thông báo nhờ giáo viên thêm tên (WEB-contract §23)",
+  "error": "Error: Quá 5000 ms mà chưa đạt: WEB-contract §23: lớp rỗng hiện thông báo quy định, không cho dùng tên tự do",
+  "rpc": [
+    {
+      "action": "listExams",
+      "success": true
+    },
+    {
+      "action": "getClass",
+      "success": true
+    }
+  ],
+  "page": {
+    "text": "Cunata\nHọc sinh\nTên cổng tự do mô phỏng\nĐổi vai\nHọc sinh: Tên cổng tự do mô phỏng\nĐổi tên\nVào lớp học bằng mã\n\nNhập mã gồm 6 ký tự do giáo viên cung cấp để xem danh sách đề được giao.\n\nMã lớp học\nVào lớp\nLớp học của em\nLớp R3 mô phỏng — Giáo viên: GV R3 mô phỏng\nMã lớp: EGB45K\nToán học\nĐề R3 mô phỏng\nĐề luyện tập 3 câu\n3 câu · 50 phút\nMở: 03:10, 23/11/2026\nHạn nộp: 04:11, 23/11/2026\nChưa làm",
+    "url": "http://127.0.0.1:54770/Cunata/#/hoc-sinh"
+  },
+  "errors": [
+    "log: Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:54770/favicon.ico"
+  ]
+}

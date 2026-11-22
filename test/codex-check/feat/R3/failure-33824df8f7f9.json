@@ -1,0 +1,5 @@
+{
+  "test": "dist: [student] R3: PIN sai năm lần hiện khóa do máy chủ, tải lại không bỏ được khóa (WEB-contract §23)",
+  "error": "AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {\"success\":false,\"error\":\"UNKNOWN_ACTION\",\"message\":\"Thao tác không hợp lệ\"}\n\nfalse !== true\n",
+  "rpc": []
+}

@@ -1,0 +1,77 @@
+{
+  "node": "v24.14.0",
+  "cwd": "D:\\Cunata",
+  "before": {
+    "src/api/handle.ts": "67a73e805b0f5afdca33569c89ce5283f99ebdf3f5f1aabf8a57ce0c476d45f1",
+    "src/api/types.ts": "4dc4a877ccd693312262f142b27bca1cea659f3355214046e063af15e9e4c467",
+    "src/api/store/memory.ts": "f76e35f138396e730105f9b5544c7aadcb1922c56f55deaf64198c25aa012b69",
+    "src/teacher/portal.ts": "96ae0ec3334f9b0193d38c432df692213579f1f979d6dee91651bf3e5ac9df23",
+    "src/student/area.ts": "57d9b9486227ab775624dd8e78f8cc37d4eee216e4023030def760a6f5662b8d",
+    "src/app/main.ts": "764d5e089be361a3e91358d2976c019c0d0f92157edc6362726c475d32227d51",
+    "src/collect/appsScript.ts": "e89ddb368fe9c6ce2dd09e74d43dd7415ea17f103a02a412eb938294c9d1a8f3",
+    "dist/index.html": "7abbfeb9df39cdc252de436ef540b9461a4fcc9ce5239218d05e9f7c70543d52",
+    "dist/app/main.js": "c096fb56a86122e8f44f590e6debb3acb2960789c70ae6f38dce309d07e4dd6d",
+    "dist/teacher/portal.js": "fa1d3ded3f508098e4c61f16e70b2b505a689d9d7ea89650544dad9360bfe663",
+    "dist/student/area.js": "2e9900b22920c661378db887749319374462ff8b80d7cd7ed39a174df807fe26",
+    "dist/collect/appsScript.js": "7f869749f63733d1412b83c225ff6b2af44fbc5da9986cceaf24a66a009fa7da",
+    "docs/contracts/WEB-contract.md": "249e25023fa2abaa62d09ec9ad5395f602720a49a77d974b9a147c584c22ca17",
+    "docs/LO-TRINH-V2.md": "dc5e43b80dcff6250b7d2ded795e5aa665e83a352eafc19aee8e908c31c50385",
+    "docs/design/DESIGN.md": "26efe8fa85d9601913c8e899a95e7c4b032896853d2c4b3518b603ca18ee3c6c",
+    "docs/decisions/BANG-QUYET-DINH.md": "63f1549598068fd2b8959037743ad8bd5ae86804728555bb3c672f2786bc88ed",
+    "ops/roadmap/tests/R3/support.mjs": "b2aaf6f87ce423ff9e239e81763de3799a46f24fd9349a827eac3474eb7d21a4",
+    "ops/roadmap/tests/R3/api.test.mjs": "38d93d698fd9012d5b6f64c6d7d899e4e74c4c4094b354f94837fb0710b9ee1e",
+    "ops/roadmap/tests/R3/browser.test.mjs": "9fc7b54083f037988a653682de58c23668557de39b6f57d2d64144f6e27c3670",
+    "ops/roadmap/tests/R3/index.js": "f9efd1cb68f29dca1598160397f384d136a55244a6713575e00672585a42acf0"
+  },
+  "runs": [
+    {
+      "command": "node --test ops/roadmap/tests/R3/",
+      "started": "2026-11-21T15:57:43.419Z",
+      "ended": "2026-11-21T16:00:00.302Z",
+      "exit": 1,
+      "summary": [
+        "ℹ tests 35",
+        "ℹ pass 2",
+        "ℹ fail 33",
+        "ℹ cancelled 0",
+        "ℹ skipped 0"
+      ]
+    },
+    {
+      "command": "node --test ops/roadmap/tests/R3/",
+      "started": "2026-11-21T16:00:00.303Z",
+      "ended": "2026-11-21T16:01:08.422Z",
+      "exit": 1,
+      "summary": [
+        "ℹ tests 35",
+        "ℹ pass 2",
+        "ℹ fail 33",
+        "ℹ cancelled 0",
+        "ℹ skipped 0"
+      ]
+    }
+  ],
+  "after": {
+    "src/api/handle.ts": "67a73e805b0f5afdca33569c89ce5283f99ebdf3f5f1aabf8a57ce0c476d45f1",
+    "src/api/types.ts": "4dc4a877ccd693312262f142b27bca1cea659f3355214046e063af15e9e4c467",
+    "src/api/store/memory.ts": "f76e35f138396e730105f9b5544c7aadcb1922c56f55deaf64198c25aa012b69",
+    "src/teacher/portal.ts": "96ae0ec3334f9b0193d38c432df692213579f1f979d6dee91651bf3e5ac9df23",
+    "src/student/area.ts": "57d9b9486227ab775624dd8e78f8cc37d4eee216e4023030def760a6f5662b8d",
+    "src/app/main.ts": "764d5e089be361a3e91358d2976c019c0d0f92157edc6362726c475d32227d51",
+    "src/collect/appsScript.ts": "e89ddb368fe9c6ce2dd09e74d43dd7415ea17f103a02a412eb938294c9d1a8f3",
+    "dist/index.html": "7abbfeb9df39cdc252de436ef540b9461a4fcc9ce5239218d05e9f7c70543d52",
+    "dist/app/main.js": "c096fb56a86122e8f44f590e6debb3acb2960789c70ae6f38dce309d07e4dd6d",
+    "dist/teacher/portal.js": "fa1d3ded3f508098e4c61f16e70b2b505a689d9d7ea89650544dad9360bfe663",
+    "dist/student/area.js": "2e9900b22920c661378db887749319374462ff8b80d7cd7ed39a174df807fe26",
+    "dist/collect/appsScript.js": "7f869749f63733d1412b83c225ff6b2af44fbc5da9986cceaf24a66a009fa7da",
+    "docs/contracts/WEB-contract.md": "249e25023fa2abaa62d09ec9ad5395f602720a49a77d974b9a147c584c22ca17",
+    "docs/LO-TRINH-V2.md": "dc5e43b80dcff6250b7d2ded795e5aa665e83a352eafc19aee8e908c31c50385",
+    "docs/design/DESIGN.md": "26efe8fa85d9601913c8e899a95e7c4b032896853d2c4b3518b603ca18ee3c6c",
+    "docs/decisions/BANG-QUYET-DINH.md": "63f1549598068fd2b8959037743ad8bd5ae86804728555bb3c672f2786bc88ed",
+    "ops/roadmap/tests/R3/support.mjs": "b2aaf6f87ce423ff9e239e81763de3799a46f24fd9349a827eac3474eb7d21a4",
+    "ops/roadmap/tests/R3/api.test.mjs": "38d93d698fd9012d5b6f64c6d7d899e4e74c4c4094b354f94837fb0710b9ee1e",
+    "ops/roadmap/tests/R3/browser.test.mjs": "9fc7b54083f037988a653682de58c23668557de39b6f57d2d64144f6e27c3670",
+    "ops/roadmap/tests/R3/index.js": "f9efd1cb68f29dca1598160397f384d136a55244a6713575e00672585a42acf0"
+  },
+  "stable": true
+}

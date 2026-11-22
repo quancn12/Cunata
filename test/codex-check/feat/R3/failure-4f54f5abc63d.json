@@ -1,0 +1,5 @@
+{
+  "test": "dist: [teacher] R3: nút reset PIN và xóa tác động đúng hàng trên máy chủ (WEB-contract §23)",
+  "error": "AssertionError [ERR_ASSERTION]: WEB-contract §23: addStudents phải thêm danh sách; nhận {\"success\":false,\"error\":\"UNKNOWN_ACTION\",\"message\":\"Thao tác không hợp lệ\"}\n\nfalse !== true\n",
+  "rpc": []
+}

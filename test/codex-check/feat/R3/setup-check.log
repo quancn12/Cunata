@@ -1,0 +1,11 @@
+﻿Measured preflight, 21/11/2026 (replaces the obsolete failed setup log).
+command: node --test --test-name-pattern='tiền điều kiện' ops/roadmap/tests/R3/
+exit: 0
+tests: 2
+pass: 2
+fail: 0
+cancelled: 0
+skipped: 0
+duration_ms: 42368.4961
+PASS: dist: [api] R3: tiền điều kiện R2: giáo viên, lớp, đề và bài giao tồn tại qua handle thật (WEB-contract §23)
+PASS: dist: [glue] R3: tiền điều kiện: dist dùng apiBase cục bộ, đăng nhập và mở chi tiết lớp bằng chuột thật (WEB-contract §23)
