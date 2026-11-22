@@ -1,100 +1,98 @@
 Verdict: CHANGES_REQUESTED
 
-review_id: R0-REVIEW-0
-task_id: R0-REVIEW-0
-reviewer: Codex
-reviewed_at: 2026-11-22
-base_commit: 14e08df^ (biên kiểm tra mở rộng; xem giả định bên dưới)
-head_commit: 2019a03fabd3225b5e8bc3a602d0c37a4a94c74f
-requirements_version: Shared Product Contract v2.0; WEB-contract hiện tại, trọng tâm §20–21; DESIGN.md; BANG-QUYET-DINH.md; LO-TRINH-V2.md
-risk_level: HIGH (báo cáo bài làm và định danh bài gửi)
+# R0-REVIEW-1 — kiểm định riêng R0
 
-R0 chưa đạt: có bốn lỗi MAJOR đã tái hiện độc lập, dù các ca kiểm định hiện có không phủ được chúng. Không sửa mã sản phẩm hoặc bộ kiểm định.
+reviewer: Codex  
+reviewed_at: 2026-11-22 (Asia/Bangkok)  
+head_commit: `2019a03fabd3225b5e8bc3a602d0c37a4a94c74f`  
+risk_level: MAJOR  
+recommended_action: sửa các finding dưới đây, bổ sung kiểm định trình duyệt qua đường chạy thật, rồi rà soát lại; chưa đóng R0.
 
-## Snapshot, phạm vi và giả định
+files_reviewed (source/diff và caller liên quan): `src/app/main.ts`, `src/app/legacy.ts`, `src/app/authoring.ts`, `src/app/role-shell.ts`, `src/app/routes.ts`, `src/student/area.ts`, `src/student/index.ts`, `src/student/view.ts`, `src/teacher/portal.ts`, `src/report/{index,types,view,download,table}.ts`, `src/collect/{appsScript,export}.ts`, `src/ui/math.ts`, `src/ui/{components,tokens}.css`, `scripts/{build.js,web-build.ts}`, 8 file `test/codex-check/cx/*.test.mjs`, diff kiểm định Claude/helpers liên quan §20–21, các regression worker R0. Đây là review riêng R0, không phải chứng nhận toàn bộ hệ thống.
 
-- Working tree đã có nhiều thay đổi trước phiên review, gồm cả source, dist và test. Đánh giá source đang có trên đĩa cùng lịch sử tới HEAD, không chỉ bản committed. Không tạo branch/worktree Git, không commit, install hoặc deploy.
-- Không tìm được commit mang đúng tên `Lộ trình R0: test kiểm định` bằng tìm kiếm lịch sử tất cả refs. `BLOCKED_QUESTION` về truy vết: điều phối cần cung cấp SHA nếu muốn giới hạn đúng commit mang tên đó. Không suy đoán SHA; để tránh bỏ sót, đã xem lịch sử/diff rộng hơn từ cha của `14e08df` (commit đưa §20 và test vào), gồm `5e26dbf` (CX), `72d0444` (tên đề/tên học sinh), `4fb0d1d` (§21), tới HEAD. Chỉ kết luận hành vi R0; không nghiệm thu R1–R10.
-- §21 và quyết định đợt 11 thay yêu cầu lưới đề công khai trong tài liệu cũ. D08 đã chốt xem ngay lời giải sau nộp. Mức ẩn đề qua lớp là giao diện, không coi file đề tĩnh công khai là lỗ hổng mới.
-- Để giữ đúng ownership một file, build/test chạy trên bản sao tạm của dữ liệu hiện tại tại `%USERPROFILE%\AppData\Local\Temp\cunata-r0-review-dg2pmksb` (gọi là `SNAPSHOT`). Bản sao không chứa `ops/prod_config.json`; giữ nguyên source/test, dùng TypeScript đã có. Build, ảnh kiểm định và log chỉ ghi ở bản sao. Đây không phải branch/worktree Git mới.
-- SHA-256 source chính tại thời điểm kiểm tra: `src/app/main.ts` = `c99e2b779ddb0657e293387d3d717d5e22c993ad88f0e8a898201207a81d10a0`; `src/collect/appsScript.ts` = `e89ddb368fe9c6ce2dd09e74d43dd7415ea17f103a02a412eb938294c9d1a8f3`. Manifest toàn bộ file đã chụp: `SNAPSHOT/snapshot-hashes.json`.
-- Vùng đã đọc/đối chiếu: luồng trong `src/app/main.ts`, `src/student/{area,index,view}.ts`, `src/report/{index,view,download,table,types}.ts`, `src/teacher/portal.ts`, `src/collect/{appsScript,index,export}.ts`, đường render toán/UI liên quan; diff build/typeconfig, test Claude/Codex/CX và các helper được chúng gọi. Không coi renderer module riêng là renderer thực tế của trang nếu composition root đang dựng báo cáo khác.
+## Phạm vi, giả định và mốc lịch sử
 
-## R0-F01 — MAJOR — Chữ cái phương án đổi sau khi nộp đề đã trộn
+- Căn cứ nghiệp vụ: Shared Product Contract v2.0; căn cứ R0: `docs/contracts/WEB-contract.md` (đã đọc toàn bộ, trọng tâm §20–21 và §4.1/§14), `docs/design/DESIGN.md`, `docs/decisions/BANG-QUYET-DINH.md`, `docs/LO-TRINH-V2.md`. Những mục cũ về đề công khai được thay bằng §21; D08 đã chốt công bố lời giải sau nộp. Không tự đặt quyết định nghiệp vụ mới.
+- Không tìm thấy commit có đúng subject `Lộ trình R0: test kiểm định` trong lịch sử Git hiện có. **BLOCKED_QUESTION (chỉ mốc lịch sử):** điều phối cần chỉ ra SHA của subject này nếu nó là một mốc khác. Không khẳng định đã tìm thấy subject đó.
+- Để vẫn kiểm tra được lỗi hiện hữu, đã xem lịch sử/diff từ trước `14e08dffc4718f6e4c58e1ee7509272a223818e7` (commit §20 và test xem lại bài ngày 18/11) tới HEAD; đối chiếu riêng mốc CX `5e26dbf56aa2e502a7654a5a399df99b47c58f19`, thay đổi §21 `4fb0d1d375fa92ce6d2f1e860581ebdecc5d5e51`, và diff chưa commit trong các vùng R0. Đây là khoảng rà soát bổ sung có chủ ý, không thay thế một SHA còn thiếu bằng khẳng định chắc chắn.
+- Working tree ban đầu đã bẩn ở source, dist, test và nhiều tài liệu/vận hành. Review bao gồm source chưa commit vì đó là bản đang được bàn giao; không quy mọi thay đổi cho worker R0. Không sửa hay khôi phục các file có sẵn này.
+- Build/test chạy trên bản sao tạm tại `%USERPROFILE%\AppData\Local\Temp\cunata-r0-review-ee4a61a576ff4a368d2feffa897b80a9` (gọi tắt **E**). Không tạo branch hay Git worktree. Dùng compiler đã có qua junction `node_modules`, không cài dependency. File `ops/prod_config.json` bị loại khỏi bản sao, không mở/đọc. Artifact kiểm định và probe chỉ nằm trong E; file duy nhất tạo/sửa trong workspace là báo cáo này.
+- SHA256 `src/app/main.ts` đã kiểm: `59E318B10701BC4C28AEC4B974BE114D33B618300355D6376005845F69EF29AB`. Đối chiếu cuối toàn bộ file trong `src/`, `scripts/`, `public/`, `apps-script/` giữa E và workspace: **0 khác biệt**, HEAD vẫn như trên. Kết quả không tự áp dụng cho source đổi sau snapshot.
 
-- affected_files: `src/app/main.ts:2952`, `src/app/main.ts:2965`; đối chiếu lúc thi tại `src/app/main.ts:1637`.
-- expected: §20 yêu cầu xem lại đúng thứ tự và nhãn phương án học sinh đã thấy; đáp án/chọn phải giữ mapping bằng ID.
-- actual/evidence: lúc thi nhãn được tính theo vị trí đã trộn A–D, nhưng báo cáo dùng `opt.label` gốc và dùng label gốc trong dòng “Bạn chọn / Đáp án đúng”. Probe quan sát cùng `optionId` đổi chữ; ví dụ `ck-i-04-b` ở vị trí A lúc thi trở thành B trong báo cáo. Điểm vẫn chấm theo ID; lỗi nằm ở diễn giải bài làm.
-- reproduction_steps: nạp đề hợp lệ có bốn phương án mang nhãn gốc A–D, bật `shuffleOptions`; ghi lại DOM `.option-card` theo ID/nhãn; chọn phương án đã chuyển vị trí; nộp; so `.review-option-label` và dòng “Bạn chọn” với nhãn đã hiển thị lúc thi. `SNAPSHOT/r0-independent.mjs` ghi bằng chứng thật vào `r0-independent.json`.
-- impact: học sinh chọn A nhưng báo cáo nói đã chọn chữ khác; đáp án đúng theo chữ trên báo cáo không còn là chữ trên đề đã làm.
-- minimal_fix: tạo mapping optionId → chữ cái theo `presentationOrder.optionOrder` của lượt làm; dùng mapping đó cho nhãn và tóm tắt trong cả xem lại và tải HTML. Giữ key/response ID và cách chấm.
-- regression_test: `R0-F01 report retains displayed option letters` trong `SNAPSHOT/r0-regressions.test.mjs` FAIL; so nhãn theo ID trước/sau với permutation thực, không chỉ so thứ tự ID.
+## Findings đã tái hiện
 
-## R0-F02 — MAJOR — Báo cáo HTML tải về không tự chứa ảnh
+### R0-F01 — MAJOR — Đường báo cáo thật bỏ mất blocks và ảnh câu hỏi
 
-- affected_files: `src/app/main.ts:277`, `src/app/main.ts:3060`, `src/app/main.ts:3068`.
-- expected: §20 và §9 yêu cầu báo cáo HTML tự chứa, ảnh nhúng, mở offline vẫn xem được nội dung câu hỏi.
-- actual/evidence: `renderMathText` giữ nguyên nguồn ảnh tương đối; handler tải HTML tự tạo Blob trực tiếp, không đóng gói ảnh. Fixture `![graph](public/q01-bbt.svg)` hiện ảnh thành công lúc thi (`complete=true`, `naturalWidth>0`), nhưng HTML tải về vẫn chứa `src="public/q01-bbt.svg"`. Mở riêng `SNAPSHOT/r0-portable/report.html`, không có thư mục public cạnh file: `loaded=false`.
-- reproduction_steps: mở đề có ảnh Markdown nội bộ hợp lệ; nộp; tải HTML; chuyển duy nhất file HTML sang thư mục trống; mở file đó. Đừng mở ngay ở gốc repo vì thư mục `public/` cạnh file sẽ che lỗi.
-- impact: học sinh xem lại offline mất hình vẽ/dữ liệu cần giải câu hỏi; tải thành công không đồng nghĩa báo cáo sử dụng được.
-- minimal_fix: giải quyết asset nội bộ đã kiểm vào data URI trước khi tạo Blob, giữ alt; khi thiếu ảnh phải báo lỗi/cho thử lại theo hợp đồng. Áp dụng cho ảnh trong đề, phương án và lời giải; không fetch URL ngoài do đề chỉ định.
-- regression_test: `R0-F02 portable report embeds every image` FAIL trên HTML thật mở bằng trình duyệt từ thư mục riêng; bằng chứng `r0-independent.json` có `offlineImages[0].loaded=false`.
+- **affected_files:lines:** `src/app/main.ts:3009`, `src/app/main.ts:3168`; đối chiếu `src/report/index.ts:357` và `public/exams/toan-full.json:31`.
+- **evidence:** renderer màn xem lại chỉ gọi `renderMathText(q.content)`; renderer tải HTML cũng chỉ gọi `renderPortableMathText(q.content || '')`. Cả hai không render `q.blocks` hoặc `q.image`. Vòng thu ảnh trong handler download có quét `q.image` nhưng không chèn ảnh đó vào thẻ câu. Trong khi đó `buildReport` của module report đã có nhánh giữ blocks/image; regression test gọi module này nên xanh mà chưa chứng minh đường UI.
+- **reproduction_steps:** mở bản build qua HTTP cục bộ, nhập tên; nạp đề hợp lệ có câu I, `blocks` chứa text `BLOCK-CONTENT-REQUIRED` và ảnh asset, đồng thời có trường `image: "public/q01-bbt.svg"`; nộp bài và tải HTML. Có sẵn ví dụ trường image trong đề Toán của repo, không phải schema giả.
+- **expected:** theo §20/§4.1, toàn văn đề, bảng, công thức và ảnh được giữ trong xem lại và HTML tự chứa.
+- **actual:** Chrome báo `imageCount: 0`; không có text của block trong thẻ xem lại; HTML tải về cũng không có block/ảnh. Probe quan sát trong `E/r0-probe-2.log`, HTML ở `E/r0-probe-download.html`; regression độc lập R0-F01 đỏ trong `E/r0-independent.tap`.
+- **impact:** học sinh mất dữ kiện của câu hỏi khi xem lại/offline. Cùng đường render khi làm bài cũng đang bỏ trường này (`src/app/main.ts:1604`), cần giữ parity khi sửa.
+- **minimal_fix:** nối renderer nội dung có hỗ trợ blocks và asset map vào đúng các nhánh đang dùng của app; khi không có blocks thì dựng content + image. Không chỉ sửa module không được UI dùng để vẽ thẻ/download. Ảnh nội bộ phải được nhúng data URI trong HTML.
+- **regression_test:** test trình duyệt trên `dist/`, nạp đề có structured text/table/math/image và đề legacy dùng `q.image`, nộp, kiểm nội dung màn xem lại và mở HTML khi offline; không chỉ kiểm `renderReportHtml()` trực tiếp.
 
-## R0-F03 — MAJOR — File tải về mất thứ tự bài đã trộn và điểm từng câu
+### R0-F02 — MAJOR — Đường URL làm bài vẫn mở đề chưa được giao qua lớp
 
-- affected_files: `src/app/main.ts:3035`, `src/app/main.ts:3041`, `src/app/main.ts:3059`.
-- expected: §20 áp dụng cùng nội dung cho màn kết quả và file HTML: thứ tự học sinh đã làm, phương án theo thứ tự đã hiển thị, điểm và trạng thái từng câu.
-- actual/evidence: màn kết quả dùng `presentationOrder`, còn download lặp `currentExam.questions` và `q.options` nguyên gốc. Probe ghi thứ tự làm `ck-i-04, ck-i-01, ck-i-02, ck-i-03, …`, nhưng file tải về trở lại `ck-i-01, ck-i-02, ck-i-03, ck-i-04, …`. Template thẻ tải về chỉ có tiêu đề/nội dung/đáp án/lời giải; không có điểm đạt/tối đa hay trạng thái câu như trên màn hình.
-- reproduction_steps: bật cả hai cờ shuffle trên đề nhiều câu; nộp; so thứ tự `.review-question-card[data-qid]` của màn hình với file HTML; kiểm thứ tự optionId và điểm/trạng thái từng câu trong file. Không dùng fixture tắt shuffle làm chứng cứ cho nhánh này.
-- impact: file học sinh lưu không tái hiện lượt làm đã xem, khó đối chiếu số câu/phương án và thiếu kết quả chi tiết khi ngoại tuyến.
-- minimal_fix: dùng một projection theo snapshot thứ tự của lượt làm cho cả trang và download, gồm mapping nhãn ở F01, điểm/trạng thái từng câu; không dựng file bằng mảng câu/phương án gốc.
-- regression_test: `R0-F03 portable report retains question order` FAIL trên file tải thật; bổ sung so thứ tự phương án, điểm/trạng thái mỗi câu giữa trang và file sau sửa.
+- **affected_files:lines:** `src/app/main.ts:3794–3804`; alias URL trong `src/app/routes.ts:65`.
+- **evidence:** nhánh route `exam` tìm đề trong toàn bộ catalog rồi gọi `loadOrResumeExam(exam, false)` chỉ với điều kiện có tên. Không yêu cầu lớp đã vào, assignment đã chọn, hoặc durable draft tương ứng. Nhánh này có cả trong HEAD, không chỉ bản sửa chưa commit.
+- **reproduction_steps:** trên context sạch nhập tên ở cổng học sinh, không vào lớp nào; đổi hash thành `#/lam-bai/ly12-hang-tuan-de-10`. Probe xác nhận số `.class-section` trong `#myClasses` bằng 0 trước đổi hash.
+- **expected:** §21: chỉ mở lượt mới qua đề được giao trong lớp; link trực tiếp đưa về khu học sinh với thông báo có chữ "giáo viên giao". Vẫn giữ các đường đã cho phép: nạp file ẩn, mở lại báo cáo local, tiếp tục durable draft theo hợp đồng.
+- **actual:** `examVisible: true`, tiêu đề `Vật lí 12 — Đề số 10 hàng tuần`, đồng hồ khoảng `49:56`; URL chuẩn hóa thành `#/exam?examId=ly12-hang-tuan-de-10`. R0-F02 trong `E/r0-independent.tap` đỏ: `exam started with zero joined classes`; quan sát ở `E/r0-probe-2.log`.
+- **impact:** luồng UI còn mở đề công khai bằng URL thay vì qua lớp. Đây là vi phạm luồng §21, **không** đánh đồng với việc bảo mật file tĩnh: hợp đồng đã chấp nhận file công khai.
+- **minimal_fix:** gate việc tạo lượt mới ở nhánh route chung bằng ngữ cảnh bài giao hợp lệ, hoặc chuyển URL catalog trần về student + notice; giữ resume bằng record đã lưu và luồng thẻ lớp. Không chỉ chặn riêng query `?exam=` lúc bootstrap.
+- **regression_test:** context có tên nhưng chưa có lớp, thử cả đổi hash sau boot và mở URL mới, với alias `#/lam-bai/<id>` và dạng chuẩn `#/exam?examId=<id>`; phải không tạo lượt mới. Thêm control rằng thẻ lớp/draft hợp lệ vẫn mở được.
 
-## R0-F04 — MAJOR — Collector lấy lớp/bài giao hiện tại gắn vào kết quả khác
+### R0-F03 — MINOR — Thẻ xem lại phụ thuộc tiêu đề tác giả để có nhãn phần
 
-- affected_files: `src/collect/appsScript.ts:1349`–`src/collect/appsScript.ts:1358`.
-- expected: WEB-contract §5–7 yêu cầu kết quả immutable và cô lập từng attempt; retry phải gửi lại đúng dữ liệu của attempt. §19.2 gắn kết quả lớp với đúng bài giao.
-- actual/evidence: khi final thiếu `class_code` hoặc `assignment_id`, transport đọc `cunata:active_assignment` từ session/localStorage mà không đối chiếu examId hoặc attemptId. Với final exam `r0-offline-original`, không có metadata lớp, và storage chứa `{examId:'unrelated-exam',classCode:'ABCDEF',assignmentId:'other-assignment'}`, mock fetch nhận payload `exam_id='r0-offline-original'`, `class_code='ABCDEF'`, `assignment_id='other-assignment'`. Không gọi máy chủ thật.
-- reproduction_steps: tạo final hợp lệ không gắn lớp (đề nạp file/legacy); đặt active assignment của đề B; gọi `createAppsScriptCollectorPort(..., mockFetch).send(final, signal)`; kiểm body mà mock fetch nhận. Có thể gặp khi outbox bài cũ được gửi sau khi người dùng đã chuyển đề.
-- impact: gửi sai lớp/bài giao hoặc bị máy chủ từ chối; cùng final có thể sinh metadata gửi khác tùy trạng thái máy. Chưa khẳng định máy chủ production đã nhận sai dòng vì không gọi production.
-- minimal_fix: transport chỉ gửi metadata đã chốt trong final/outbox. Nếu cần migration legacy, xác minh tuple và lưu metadata một lần trước enqueue; không bổ sung từ active assignment ở mỗi lần gửi, không ghép các trường của hai assignment.
-- regression_test: `R0-F04 collector must not borrow another exam assignment` FAIL bằng fetch giả ghi lại payload. Sau sửa kiểm retry sau đổi đề vẫn giữ nguyên body/hash/tuple; bài không thuộc lớp phải tiếp tục không có metadata lớp.
+- **affected_files:lines:** `src/app/main.ts:3005–3010`, `src/app/main.ts:3165–3169`.
+- **evidence:** thẻ màn hình chỉ in `qTitle` và điểm; thẻ HTML thêm trạng thái nhưng không thêm nhãn phần từ `q.kind`. Tiêu đề hợp lệ `Câu 1` không bắt buộc chứa `Phần I`.
+- **reproduction_steps:** nạp đề hợp lệ có câu I với title `Câu 1`, content `Nội dung câu hỏi`; nộp và xem thẻ câu/download.
+- **expected:** §20 yêu cầu mỗi thẻ có số câu, **phần**, điểm câu và trạng thái; nhãn phần phải được suy từ kind, không dựa vào nội dung tác giả.
+- **actual:** thẻ thật có tiêu đề `Câu 1 (0 / 0,25 điểm)` và không có nhãn `Phần I`. R0-F03 độc lập đỏ trong `E/r0-independent.tap` khi kiểm toàn thẻ, không áp đặt nhãn phải nằm ở một vị trí DOM cụ thể.
+- **impact:** thiếu thông tin phân loại phần, đặc biệt với đề giáo viên đặt tiêu đề ngắn.
+- **minimal_fix:** thêm nhãn phần từ `q.kind` cho cả thẻ UI và HTML; giữ thứ tự presentationOrder và điểm hiện hành.
+- **regression_test:** dùng tiêu đề/content không có sẵn chữ chỉ phần; kiểm nhãn I/II/III trong từng thẻ trên màn hình và HTML tải về.
 
-## Kiểm tra sửa giả và độ phủ
+### R0-F04 — MAJOR — Download tự fetch URL ngoài có scheme viết hoa
 
-- Đã so diff tests từ mốc §20 và từ mốc promote CX. Việc bỏ bốn ca CX-student-F03/F04/F08/F09 và thay đường vào đề có căn cứ rõ tại BANG-QUYET-DINH đợt 11/§21; không tính đó là gian lận để test xanh. Các assertion còn lại không bị nới trong diff CX đã xem.
-- `test/claude-check/app.mjs` có đường nạp file ẩn để phục vụ ca kiểm định khi không còn thẻ công khai; đó là thao tác harness, không chứng minh luồng vào lớp. Các ca lớp/§21 và tên học sinh/tên đề được chạy riêng trong suite.
-- Không thấy nhánh production dựa `navigator.webdriver`, test name/id hay host localhost để thay kết quả trong các vùng source R0 đã tìm. `ops/blitz/promoted/_support/runtime.mjs` giả xác nhận `Browser.close` phục vụ teardown, không thay assert/chấm điểm; giới hạn này được phân biệt với bằng chứng hành vi.
-- Test §20 hiện có chủ yếu dùng shuffle=false và chỉ tìm chuỗi nội dung trong HTML. Ca Markdown kiểm có table/header nhưng không mở file tải độc lập khỏi tài nguyên repo. Vì vậy không bắt F01–F03. Test collector hiện có không bao phủ final thiếu metadata khi active assignment thuộc đề khác (F04).
-- Bảo mật: đã đối chiếu escape text/thuộc tính, chặn ảnh host ngoài, auth/CSV/session tests trong bộ CX; chưa phát hiện thêm lỗi bảo mật đã chứng minh trong phạm vi R0. Không suy rộng thành chứng nhận bảo mật toàn hệ thống/API R1.
+- **affected_files:lines:** `src/app/main.ts:3055–3063` (diff chưa commit).
+- **evidence:** chỉ loại bằng `startsWith('http://')`/`startsWith('https://')` có phân biệt hoa thường, sau đó gọi `fetch(rawSrc)`. URL parser của trình duyệt chấp nhận `HTTP://...`/`HTTPS://...`. Renderer thường loại URL đó, nhưng handler download vẫn fetch nó trước khi render.
+- **reproduction_steps:** đặt Markdown trong content là `![tracker](HTTP://127.0.0.1:<cổng giả lập khác>/pixel)`; nạp, nộp và bấm tải HTML. Probe mở server đếm request trên một origin localhost khác; không gọi dịch vụ thật.
+- **expected:** §4.1 không tự fetch ảnh/quan hệ ngoài từ nội dung không tin cậy; chỉ resolve asset nội bộ được chấp nhận để nhúng báo cáo.
+- **actual:** origin giả lập nhận đúng **1 GET** trong thao tác download; R0-F04 trong `E/r0-independent.tap` đỏ (`expected 0, actual 1`). Đó là request thật trong Chrome, không phải suy luận từ regex.
+- **impact:** nội dung đề có thể khiến trình duyệt học sinh gửi request tới host tùy ý khi tải báo cáo, cho phép theo dõi và phá yêu cầu không nạp nguồn ngoài. Chưa chứng minh thực thi JavaScript hay lộ credentials; không gọi đây là SSRF máy chủ.
+- **minimal_fix:** resolve bằng `new URL(rawSrc, document.baseURI)`, chỉ cho phép protocol HTTP(S) và origin nội bộ đã duyệt; từ chối redirect khi fetch asset (chẳng hạn `redirect: 'error'`) để không theo chuyển hướng ra ngoài trước khi kiểm. Data URI chỉ qua whitelist MIME/asset hiện có. Không dùng blacklist chuỗi case-sensitive để xác định asset nội bộ.
+- **regression_test:** server cục bộ khác origin đếm request, thử `HTTP://`, `HTTPS://`, `//`, scheme trộn hoa thường và redirect ra origin ngoài; download không được phát request ngoài. Control ảnh nội bộ vẫn được nhúng.
 
-## Checks chạy thật
+## Chống sửa giả và độ phủ
 
-Môi trường: Windows, Node v24.14.0, TypeScript 7.0.2, Chrome/Edge headless thật qua CDP; HTTP local + Apps Script giả lập. Log dưới `SNAPSHOT`; không thay assert hoặc source để chạy.
+- Đã dò source runtime/diff liên quan R0 với các dấu hiệu `webdriver`, user-agent, `NODE_ENV`, `claude-check`, `codex-check`, ID/tên CX và điểm gắn cứng; không thấy nhánh production phân biệt môi trường kiểm định trong các vùng đã rà soát. Các literal MathML/legacy là chức năng render; không dùng làm bằng chứng tự động rằng mọi source đều an toàn.
+- So sánh 8 file CX từ commit promotion tới HEAD: phần assertion của report/schema/collect/teacher/admin/ui giữ nguyên; `app.test.mjs` đổi đường vào sang lớp; `student.test.mjs` bỏ F03/F04/F08/F09 theo quyết định §21 ghi rõ trong bảng quyết định, giữ F01/F05/F06/F10. Không coi những ca bị thay do quyết định này là gian lận. Không thấy nới assert của CX để che các finding mới ở trên.
+- Diff các kiểm định Claude chuyển luồng đề công khai sang lớp/file phù hợp §21, thêm kiểm định giao diện và chuột thật. Tuy nhiên helper `startFromCard` có fallback nạp file ẩn; kết quả của helper đó không chứng minh đường route hoặc thẻ lớp được kiểm đầy đủ. Đây là lỗ hổng độ phủ, không phải bằng chứng động cơ gian lận.
+- Đã đọc diff vùng report/student/teacher/ui/collect/app, đối chiếu tên đề khi giao lớp, tên học sinh khi nạp file, presentationOrder, Markdown table và các assertion CX; kiểm lại regression worker R0. Không thấy thay đổi package/lockfile trong khoảng đã so. Không sửa code hay bộ kiểm định.
 
-| Lệnh | Kết quả | Bằng chứng |
-| --- | --- | --- |
-| `node scripts/build.js` | exit=0, emit/promote 339 file | `build-review.log` |
-| `node node_modules/typescript/bin/tsc -p tsconfig.json` | exit=0 | `tsc-review.log` |
-| `node node_modules/typescript/bin/tsc -p tsconfig.web.json` | exit=0 | `tsc-web-review.log` |
-| `node --test --test-reporter=tap "test/claude-check/**/*.test.mjs" "test/codex-check/*.test.mjs" "test/codex-check/cx/*.test.mjs"` (lần đầu) | exit=1, pass=263 fail=9 skip=0; 9 lỗi setup/teardown vì snapshot không có .git, không phải 9 bug sản phẩm | `r0-tests.tap` |
-| `$env:GIT_DIR='D:\Cunata\.git'; node --test --test-reporter=tap test/codex-check/cx/admin.test.mjs` | exit=0, pass=8 fail=0 skip=0; chỉ trỏ đọc metadata Git có sẵn cho hàm snapshot của test | `r0-admin-rerun.tap` |
-| Bộ mục chạy lại với GIT_DIR đọc metadata, cùng lệnh ba glob trên | exit=1, pass=266 fail=5 skip=0, 268,857 giây; năm lỗi navigation timeout 20 giây | `r0-tests-rerun.tap` |
-| `node --test --test-reporter=tap "test/claude-check/**/*.test.mjs"` (riêng bộ Claude) | exit=1, pass=101 fail=3 skip=0, 257,813 giây; cả ba lỗi navigation timeout 20 giây | `claude-only.tap` |
-| `node r0-independent.mjs` | exit=0; hoàn tất probe trình duyệt, quan sát ba lỗi F01–F03 | `r0-independent.json`, `r0-independent.log`, `r0-portable/report.html` |
-| `node --test --test-reporter=tap r0-regressions.test.mjs` | exit=1, pass=0 fail=4 skip=0; bốn assertion độc lập tái hiện bốn finding | `r0-regressions.tap` |
+## Lệnh kiểm chứng và artifact
 
-Các probe/regression mới chỉ nằm ở SNAPSHOT, không được thêm vào source/bộ kiểm định của repo. Chạy lại bằng cwd SNAPSHOT với chính các lệnh trong bảng. Log/probe là artifact tạm trên máy này, không phải file được commit.
+Môi trường: Windows, PowerShell; Node `v24.14.0`, TypeScript `7.0.2`, Chrome `157.0.8103.79`, HTTP localhost dưới `/Cunata/`. Lệnh bên dưới chạy tại E. `--import ./ops/blitz/promoted/_support/runtime.mjs` là helper teardown có sẵn, chỉ giải phóng phản hồi CDP `Browser.close`; đã đọc helper, không đổi assert, thao tác sản phẩm hay kết quả. Dùng concurrency giới hạn để tránh quá tải trình duyệt.
 
-Ba lỗi riêng bộ Claude nằm ở `web.test.mjs`: “hai tab cùng bài”, “maxAttempts = 1”, “làm lại (không giới hạn lượt)”; đều báo `Trang không tải xong trong 20000 ms` tại `harness.mjs:162`. Các ca này qua ở lần chạy gộp đầu, nên ghi nhận timeout không ổn định, chưa quy thành ba lỗi logic sản phẩm và không gọi riêng bộ Claude là PASS. Lượt chạy lại có chồng thời gian với suite gộp; chưa đủ bằng chứng xác định nguyên nhân tải máy hay ứng dụng.
+| Kiểm tra | Lệnh / kết quả | Artifact tại E |
+|---|---|---|
+| Build thật | `node scripts/build.js` — exit 0, emit/promote 339 file; có warning DEP0190 của Node | `r0-build.log` |
+| Typecheck Node | `.\node_modules\.bin\tsc.cmd -p tsconfig.json` — exit 0 | `r0-tsc-main.log` |
+| Typecheck web | `.\node_modules\.bin\tsc.cmd -p tsconfig.web.json` — exit 0 | `r0-tsc-web.log` |
+| Regression worker R0 | `node --test --test-reporter=tap test/report/r0-f01-f03-regressions.test.ts test/collect/r0-f04-regression.test.ts` — exit 0, pass 3/fail 0/skip 0 | `r0-worker-regressions.tap` |
+| Bộ mục R0, lần đầu không giới hạn concurrency | `node --test --test-reporter=tap "test/claude-check/**/*.test.mjs" "test/codex-check/*.test.mjs" "test/codex-check/cx/*.test.mjs"` — **INTERRUPTED**, chưa có tổng kết; có timeout page-load 20s, không ghi PASS. Dừng đúng cây tiến trình kiểm định này trước khi chạy lại | `r0-combined.tap` |
+| Bộ mục R0, bounded lần 1 | `node --import ./ops/blitz/promoted/_support/runtime.mjs --test --test-concurrency=2 --test-reporter=tap "test/claude-check/**/*.test.mjs" "test/codex-check/*.test.mjs" "test/codex-check/cx/*.test.mjs"` — exit 1, pass 263/fail 9/skip 0, 272 tests; 8 admin hook failures + file-level failure do bản sao thiếu `.git`, không quy lỗi này cho sản phẩm | `r0-combined-bounded.tap` |
+| CX admin chạy lại sau sửa môi trường | đặt `GIT_DIR=D:\Cunata\.git` chỉ cho tiến trình kiểm định để đọc HEAD, rồi `node --import ./ops/blitz/promoted/_support/runtime.mjs --test --test-concurrency=1 --test-reporter=tap test/codex-check/cx/admin.test.mjs` — exit 0, pass 8/fail 0/skip 0 | `r0-admin-rerun.tap` |
+| Bộ mục R0, bounded đủ môi trường | đặt `GIT_DIR=D:\Cunata\.git`, rồi `node --import ./ops/blitz/promoted/_support/runtime.mjs --test --test-concurrency=2 --test-reporter=tap "test/claude-check/**/*.test.mjs" "test/codex-check/*.test.mjs" "test/codex-check/cx/*.test.mjs"` — **exit 0, pass 271/fail 0/skip 0**, 276,679 giây; không cộng lần chạy admin riêng vào tổng này | `r0-combined-final.tap` |
+| Toàn bộ Claude, chạy riêng | `node --import ./ops/blitz/promoted/_support/runtime.mjs --test --test-concurrency=1 --test-reporter=tap "test/claude-check/**/*.test.mjs"` — exit 0, pass 104/fail 0/skip 0, 110,663 giây | `r0-claude-repeat.tap` |
+| Regression độc lập trên browser thật | `node --test --test-reporter=tap r0-independent.test.mjs` — exit 1, pass 0/fail 5/skip 0; **4 finding/subtest đỏ + 1 parent đỏ**, không phải 5 lỗi độc lập | `r0-independent.test.mjs`, `r0-independent.tap` |
+| Probe quan sát UI/download | `node r0-probe.mjs` — exit 0; exit này chỉ có nghĩa probe chạy xong, **không** có nghĩa sản phẩm PASS | `r0-probe-2.log`, `r0-probe-download.html` |
 
-Năm timeout của lần chạy gộp lại: design/trang học sinh 375px; EX-HS-02 đánh dấu câu; EX-GV-02 lọc hai lần giao; teacher/bấm thẻ bằng chuột thật 390px; teacher/nút về trang học sinh 1366px. Đều là navigation timeout, không có assertion nghiệp vụ chứng minh lỗi mới. Toàn bộ CX và supplemental Codex ở lần chạy gộp lại không có ca fail. Không gộp số pass của các lượt để tuyên bố suite xanh.
+## Giới hạn và bàn giao
 
-Kiểm cuối: HEAD vẫn là SHA nêu trên; so SHA-256 tất cả file đã chụp với working tree gốc không có khác biệt (`snapshot_source_changes=[]`). Chỉ thêm file review này trong workspace; kết quả chưa bao gồm thay đổi source tương lai.
-
-## Giới hạn và bước tiếp theo
-
-- Google/Vercel/Neon thật: NOT_RUN theo cấm của task. Không đọc cấu hình production. Mạng giả lập không chứng minh CORS hoặc nhận kết quả production.
-- OS IME Telex/VNI, thiết bị điện thoại thật, browser engine khác: NOT_RUN; suite có viewport/keyboard/CDP, không thay thế nhập OS hoặc nghiệm thu thiết bị thật.
-- Không yêu cầu quyết định nghiệp vụ mới để sửa bốn lỗi; hợp đồng đã nêu hành vi. Câu hỏi SHA lịch sử ở trên chỉ ảnh hưởng truy vết chính xác mốc task.
-- recommended_action: worker sửa tối thiểu F01–F04, thêm regression bắt các lỗi này, chạy lại build/hai tsc/suite rồi review lại snapshot. Không APPROVED R0 trong tình trạng hiện tại.
+- NOT_RUN: Google/Vercel/Neon thật, deploy, kiểm điện thoại vật lý/Telex-VNI hệ điều hành/trình đọc màn hình thật. Các backend của kiểm định là server cục bộ/giả lập; không gọi đó là nghiệm thu dịch vụ thật.
+- Không chạy toàn bộ các mục R1–R11 hoặc coi kết quả của chúng là verdict R0. Không cập nhật roadmap/state, không commit, không install.
+- Source report-module được sửa chưa đủ để nghiệm thu đường app; các kiểm định chuẩn xanh không phủ bốn ca độc lập này. Cần worker sửa đúng các nhánh runtime được chỉ ra, giữ nguyên bộ kiểm định hiện có, thêm regression trong scope test được điều phối giao, và chạy lại trước khi yêu cầu APPROVED.
+- Tổng kết: build + hai tsc xanh, bộ mục đầy đủ **271/271** và Claude chạy riêng **104/104** xanh; regression độc lập vẫn tái hiện **3 MAJOR + 1 MINOR**. Verdict giữ **CHANGES_REQUESTED**. Chưa xác nhận điều kiện hai lần xanh liên tiếp của roadmap: lần bounded trước đã lỗi môi trường và đã được ghi trung thực, không đổi nó thành PASS.
