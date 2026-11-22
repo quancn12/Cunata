@@ -1,0 +1,135 @@
+[
+  {
+    "id": "ly12-hang-tuan-de-10",
+    "title": "Vật lí 12 — Đề số 10 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-11",
+    "title": "Vật lí 12 — Đề số 11 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-12",
+    "title": "Vật lí 12 — Đề số 12 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-13",
+    "title": "Vật lí 12 — Đề số 13 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-14",
+    "title": "Vật lí 12 — Đề số 14 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-15",
+    "title": "Vật lí 12 — Đề số 15 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-16",
+    "title": "Vật lí 12 — Đề số 16 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-17",
+    "title": "Vật lí 12 — Đề số 17 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-18",
+    "title": "Vật lí 12 — Đề số 18 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-19",
+    "title": "Vật lí 12 — Đề số 19 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-20",
+    "title": "Vật lí 12 — Đề số 20 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-21",
+    "title": "Vật lí 12 — Đề số 21 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-22",
+    "title": "Vật lí 12 — Đề số 22 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-23",
+    "title": "Vật lí 12 — Đề số 23 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-24",
+    "title": "Vật lí 12 — Đề số 24 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "ly12-hang-tuan-de-25",
+    "title": "Vật lí 12 — Đề số 25 hàng tuần",
+    "subject": "Vật lí",
+    "questionCount": 28,
+    "durationMinutes": 50
+  },
+  {
+    "id": "exam-thpt-hoa-repeating-demo",
+    "title": "Đề Tùy Chỉnh Minh Họa Môn Hóa Học — GDPT 2018 (3 Câu Trả Lời Ngắn Phần III)",
+    "subject": "Hóa học",
+    "questionCount": 3,
+    "durationMinutes": 15
+  },
+  {
+    "id": "exam-thpt-ly-part-i-demo",
+    "title": "Đề Tùy Chỉnh Minh Họa Môn Vật Lí — GDPT 2018 (20 Câu Trắc Nghiệm Phần I)",
+    "subject": "Vật lí",
+    "questionCount": 20,
+    "durationMinutes": 30
+  },
+  {
+    "id": "exam-thpt-toan-full-demo",
+    "title": "Đề Tùy Chỉnh Minh Họa Môn Toán — GDPT 2018 (Đầy Đủ Phần I, II, III)",
+    "subject": "Toán học",
+    "questionCount": 8,
+    "durationMinutes": 50
+  }
+]

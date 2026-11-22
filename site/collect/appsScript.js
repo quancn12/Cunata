@@ -987,27 +987,74 @@ export function createAppsScriptCollectorPort(url, fetchImpl, contentType = 'tex
                 const mappedMessage = mapErrorToVietnamese(errCode, raw.message);
                 throw new CollectorError(errCode, 'response', mappedMessage, !is4xx && errCode !== 'NOT_OPEN' && errCode !== 'PAST_DUE' && errCode !== 'PAYLOAD_CONFLICT', typeof raw.status === 'number' ? raw.status : undefined);
             }
-            const rawStatus = String(raw.status || '').toUpperCase();
-            const normalizedStatus = rawStatus === 'ALREADY_RECORDED'
-                ? 'already_recorded'
-                : 'recorded';
+            if (raw.success !== true) {
+                throw new CollectorError('BAD_RESPONSE', 'response', mapErrorToVietnamese('BAD_RESPONSE', typeof raw.message === 'string' ? raw.message : undefined), false);
+            }
+            const serverAttemptId = typeof raw.attempt_id === 'string' && raw.attempt_id.trim()
+                ? raw.attempt_id.trim()
+                : typeof raw.attemptId === 'string' && raw.attemptId.trim()
+                    ? raw.attemptId.trim()
+                    : null;
+            if (!serverAttemptId) {
+                throw new CollectorError('RECEIPT_INVALID', 'attempt_id', mapErrorToVietnamese('RECEIPT_INVALID', 'Phản hồi thiếu attempt_id'), false);
+            }
+            if (serverAttemptId !== final.attemptId) {
+                throw new CollectorError('RECEIPT_INVALID', 'attempt_id', mapErrorToVietnamese('RECEIPT_INVALID', 'attempt_id phản hồi không khớp lượt nộp'), false);
+            }
+            const serverExamId = typeof raw.exam_id === 'string' && raw.exam_id.trim()
+                ? raw.exam_id.trim()
+                : typeof raw.examId === 'string' && raw.examId.trim()
+                    ? raw.examId.trim()
+                    : null;
+            if (serverExamId && serverExamId !== final.examId) {
+                throw new CollectorError('RECEIPT_INVALID', 'exam_id', mapErrorToVietnamese('RECEIPT_INVALID', 'exam_id phản hồi không khớp'), false);
+            }
+            const serverExamVersionId = typeof raw.exam_version_id === 'string' && raw.exam_version_id.trim()
+                ? raw.exam_version_id.trim()
+                : typeof raw.examVersionId === 'string' && raw.examVersionId.trim()
+                    ? raw.examVersionId.trim()
+                    : null;
+            if (serverExamVersionId && serverExamVersionId !== final.examVersionId) {
+                throw new CollectorError('RECEIPT_INVALID', 'exam_version_id', mapErrorToVietnamese('RECEIPT_INVALID', 'exam_version_id phản hồi không khớp'), false);
+            }
+            const expectedPayloadHash = computePayloadHash(final);
+            const serverPayloadHash = typeof raw.payload_hash === 'string' && raw.payload_hash.trim()
+                ? raw.payload_hash.trim()
+                : typeof raw.payloadHash === 'string' && raw.payloadHash.trim()
+                    ? raw.payloadHash.trim()
+                    : null;
+            if (serverPayloadHash && serverPayloadHash !== expectedPayloadHash) {
+                throw new CollectorError('PAYLOAD_CONFLICT', 'payloadHash', mapErrorToVietnamese('PAYLOAD_CONFLICT', 'payloadHash phản hồi không khớp'), false, 409);
+            }
+            const rawStatus = typeof raw.status === 'string' ? raw.status.trim().toUpperCase() : '';
+            let normalizedStatus;
+            if (rawStatus === 'ALREADY_RECORDED') {
+                normalizedStatus = 'already_recorded';
+            }
+            else if (rawStatus === 'NEWLY_RECORDED' || rawStatus === 'RECORDED') {
+                normalizedStatus = 'recorded';
+            }
+            else {
+                throw new CollectorError('RECEIPT_INVALID', 'status', mapErrorToVietnamese('RECEIPT_INVALID', 'Trạng thái phản hồi không hợp lệ'), false);
+            }
             const receivedAt = typeof raw.recorded_at === 'string' && raw.recorded_at.trim() && !isNaN(Date.parse(raw.recorded_at))
                 ? raw.recorded_at.trim()
                 : typeof raw.receivedAt === 'string' && raw.receivedAt.trim() && !isNaN(Date.parse(raw.receivedAt))
                     ? raw.receivedAt.trim()
-                    : new Date().toISOString();
+                    : null;
+            if (!receivedAt) {
+                throw new CollectorError('RECEIPT_INVALID', 'recorded_at', mapErrorToVietnamese('RECEIPT_INVALID', 'Thiếu hoặc sai thời gian máy chủ ghi nhận'), false);
+            }
             const submissionId = typeof raw.submissionId === 'string' && raw.submissionId.trim()
                 ? raw.submissionId.trim()
                 : typeof raw.submission_id === 'string' && raw.submission_id.trim()
                     ? raw.submission_id.trim()
-                    : typeof raw.attempt_id === 'string' && raw.attempt_id.trim()
-                        ? raw.attempt_id.trim()
-                        : final.attemptId;
+                    : serverAttemptId;
             const receipt = {
                 examId: final.examId,
                 examVersionId: final.examVersionId,
-                attemptId: final.attemptId,
-                payloadHash: computePayloadHash(final),
+                attemptId: serverAttemptId,
+                payloadHash: serverPayloadHash || expectedPayloadHash,
                 submissionId,
                 receivedAt,
                 status: normalizedStatus,

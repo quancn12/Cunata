@@ -1,8 +1,8 @@
 // Cunata Web Native Service Worker
-// Build Digest: 307d197603f06665
-const BUILD_VERSION = 'v-307d197603f06665';
+// Build Digest: 2ab73bdc7b2495a3
+const BUILD_VERSION = 'v-2ab73bdc7b2495a3';
 const CACHE_NAME_PREFIX = 'cunata-cache-';
-const CACHE_NAME = 'cunata-cache-v-307d197603f06665';
+const CACHE_NAME = 'cunata-cache-v-2ab73bdc7b2495a3';
 const DEFAULT_PRECACHE_ENTRIES = [
   {
     "url": "index.html",
@@ -1322,9 +1322,10 @@ function resolveScopeUrl(scopeBase, relativePath) {
 
 function isCacheableRequest(requestUrl, method) {
   if (method && method.toUpperCase() !== 'GET') return false;
-  const lower = requestUrl.toLowerCase();
+  const lower = String(requestUrl || '').toLowerCase();
   if (lower.startsWith('chrome-extension:') || lower.startsWith('file:') || lower.startsWith('data:') || lower.startsWith('blob:')) return false;
   if (lower.includes('script.google.com') || lower.includes('macros.google.com') || lower.includes('script.googleusercontent.com')) return false;
+  if (lower.includes('/api/rpc') || lower.includes('/api/') || lower.endsWith('/api/rpc')) return false;
   return true;
 }
 
@@ -1440,6 +1441,11 @@ self.addEventListener('activate', (event) => {
         const oldCache = await caches.open(oldKey);
         const oldRequests = await oldCache.keys();
         for (const req of oldRequests) {
+          const reqUrl = (req && req.url) ? req.url : String(req);
+          if (!isCacheableRequest(reqUrl, 'GET')) {
+            try { await oldCache.delete(req); } catch (_) {}
+            continue;
+          }
           const hasReq = await currentCache.match(req);
           if (!hasReq) {
             const resp = await oldCache.match(req);
@@ -1450,6 +1456,16 @@ self.addEventListener('activate', (event) => {
         }
       } catch (_) {}
     }
+
+    try {
+      const currentRequests = await currentCache.keys();
+      for (const req of currentRequests) {
+        const reqUrl = (req && req.url) ? req.url : String(req);
+        if (!isCacheableRequest(reqUrl, 'GET')) {
+          await currentCache.delete(req);
+        }
+      }
+    } catch (_) {}
 
     // Check which clients are currently open and which caches they might still be referencing
     const windowClients = (self.clients && self.clients.matchAll)

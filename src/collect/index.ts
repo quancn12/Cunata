@@ -241,14 +241,27 @@ export function validateReceipt(input: unknown, expected: OutboxRecord): Result<
     return err('PAYLOAD_CONFLICT', 'receipt.payloadHash', String(r.message || 'Receipt payloadHash conflicts with expected outbox record'), false);
   }
 
+  if (r.success !== undefined && r.success !== true) {
+    return err('RECEIPT_INVALID', 'receipt.success', 'Receipt success must be true', false);
+  }
+
   if (typeof r.examId !== 'string' || r.examId !== expected.examId) {
     return err('RECEIPT_INVALID', 'receipt.examId', 'Receipt examId does not match expected attempt', false);
+  }
+  if (r.exam_id !== undefined && r.exam_id !== expected.examId) {
+    return err('RECEIPT_INVALID', 'receipt.exam_id', 'Receipt exam_id does not match expected attempt', false);
   }
   if (typeof r.examVersionId !== 'string' || r.examVersionId !== expected.examVersionId) {
     return err('RECEIPT_INVALID', 'receipt.examVersionId', 'Receipt examVersionId does not match expected attempt', false);
   }
+  if (r.exam_version_id !== undefined && r.exam_version_id !== expected.examVersionId) {
+    return err('RECEIPT_INVALID', 'receipt.exam_version_id', 'Receipt exam_version_id does not match expected attempt', false);
+  }
   if (typeof r.attemptId !== 'string' || r.attemptId !== expected.attemptId) {
     return err('RECEIPT_INVALID', 'receipt.attemptId', 'Receipt attemptId does not match expected attempt', false);
+  }
+  if (r.attempt_id !== undefined && r.attempt_id !== expected.attemptId) {
+    return err('RECEIPT_INVALID', 'receipt.attempt_id', 'Receipt attempt_id does not match expected attempt', false);
   }
 
   if (typeof r.payloadHash !== 'string' || !r.payloadHash.trim()) {
@@ -256,6 +269,9 @@ export function validateReceipt(input: unknown, expected: OutboxRecord): Result<
   }
   if (r.payloadHash !== expected.payloadHash) {
     return err('PAYLOAD_CONFLICT', 'receipt.payloadHash', 'Receipt payloadHash conflicts with expected outbox record', false);
+  }
+  if (typeof r.payload_hash === 'string' && r.payload_hash !== expected.payloadHash) {
+    return err('PAYLOAD_CONFLICT', 'receipt.payload_hash', 'Receipt payload_hash conflicts with expected outbox record', false);
   }
 
   if (typeof r.submissionId !== 'string' || !r.submissionId.trim()) {
