@@ -289,7 +289,7 @@ export function renderReportHtml(model, options) {
                     .map((o, optIdx) => {
                     const isCorrect = o.optionId === correctId;
                     const isChosen = selectedId === o.optionId;
-                    const letter = o.label || ["A", "B", "C", "D"][optIdx] || "";
+                    const letter = ["A", "B", "C", "D"][optIdx] || o.label || "";
                     return `<div class="review-option" data-option-id="${escapeHtml(o.optionId)}" data-correct="${isCorrect ? "true" : "false"}" data-chosen="${isChosen ? "true" : "false"}"><strong>${escapeHtml(letter)}.</strong> ${escapeHtml(o.text)}${isChosen ? ' <span class="chosen-badge">(Bạn chọn)</span>' : ""}${isCorrect ? ' <span class="correct-badge">&#10004; Đáp án đúng</span>' : ""}</div>`;
                 })
                     .join("");
@@ -309,7 +309,7 @@ export function renderReportHtml(model, options) {
                     const chosenVal = userVal === true ? "true" : userVal === false ? "false" : "none";
                     const chosenText = userVal === true ? "Đúng" : userVal === false ? "Sai" : "Chưa chọn";
                     const keyText = s.answer ? "Đúng" : "Sai";
-                    const letter = s.label || ["a", "b", "c", "d"][stIdx] || "";
+                    const letter = ["a", "b", "c", "d"][stIdx] || s.label || "";
                     return `<div class="review-statement" data-statement-id="${escapeHtml(s.statementId)}" data-key="${s.answer ? "true" : "false"}" data-chosen="${chosenVal}"><strong>${escapeHtml(letter)})</strong> ${escapeHtml(s.text)} — Đáp án: <strong>${keyText}</strong> | Bạn chọn: <strong>${chosenText}</strong></div>`;
                 })
                     .join("");

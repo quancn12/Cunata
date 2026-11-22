@@ -1310,7 +1310,7 @@ export function mount(root, model, actions) {
                     const isChosen = selectedId === o.optionId;
                     optEl.setAttribute("data-correct", String(isCorrect));
                     optEl.setAttribute("data-chosen", String(isChosen));
-                    const letter = o.label || ["A", "B", "C", "D"][optIdx] || "";
+                    const letter = ["A", "B", "C", "D"][optIdx] || o.label || "";
                     optEl.textContent = `${letter}. ${o.text}${isChosen ? " (Bạn chọn)" : ""}${isCorrect ? " (Đáp án đúng)" : ""}`;
                     optsContainer.appendChild(optEl);
                 });
@@ -1339,7 +1339,7 @@ export function mount(root, model, actions) {
                     const userVal = userRespMap.get(s.statementId);
                     const chosenVal = userVal === true ? "true" : userVal === false ? "false" : "none";
                     stEl.setAttribute("data-chosen", chosenVal);
-                    const letter = s.label || ["a", "b", "c", "d"][stIdx] || "";
+                    const letter = ["a", "b", "c", "d"][stIdx] || s.label || "";
                     const chosenText = userVal === true ? "Đúng" : userVal === false ? "Sai" : "Chưa chọn";
                     const keyText = s.answer ? "Đúng" : "Sai";
                     stEl.textContent = `${letter}) ${s.text} — Đáp án: ${keyText} | Bạn chọn: ${chosenText}`;

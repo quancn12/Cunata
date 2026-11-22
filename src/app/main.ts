@@ -2942,14 +2942,21 @@ export async function bootstrap(
           const optionsOrder = optOrderEntry ? optOrderEntry.optionIds : q.options.map((o) => o.optionId);
           const optMap = new Map(q.options.map((o) => [o.optionId, o]));
 
+          const letterMap = new Map<string, string>();
+          optionsOrder.forEach((optId: string, oIdx: number) => {
+            const letter = ['A', 'B', 'C', 'D'][oIdx] || optMap.get(optId)?.label || 'A';
+            letterMap.set(optId, letter);
+          });
+
           let optsHtml = '<div class="review-options-list" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem;">';
           for (const optId of optionsOrder) {
             const opt = optMap.get(optId);
             if (!opt) continue;
             const isCorrect = opt.optionId === q.correctOptionId;
             const isChosen = userOptionId === opt.optionId;
+            const optLetter = letterMap.get(opt.optionId) || opt.label || '';
             optsHtml += `<div class="review-option" data-option-id="${escapeHtml(opt.optionId)}" data-correct="${isCorrect ? 'true' : 'false'}" data-chosen="${isChosen ? 'true' : 'false'}" style="padding:0.5rem; border-radius:6px; border:1px solid ${isCorrect ? 'var(--c-correct)' : isChosen ? 'var(--c-wrong)' : 'var(--c-border)'}; background:${isChosen ? (isCorrect ? 'var(--c-correct-bg)' : 'var(--c-wrong-bg)') : 'transparent'};">`;
-            optsHtml += `<strong class="review-option-label">${escapeHtml(opt.label ? opt.label + '.' : '')}</strong> `;
+            optsHtml += `<strong class="review-option-label">${escapeHtml(optLetter ? optLetter + '.' : '')}</strong> `;
             optsHtml += `<span class="review-option-text">${renderMathText(opt.text)}</span>`;
             if (isChosen) {
               optsHtml += isCorrect
@@ -2961,8 +2968,9 @@ export async function bootstrap(
             optsHtml += '</div>';
           }
           optsHtml += '</div>';
-          const chosenText = userOptionId ? (optMap.get(userOptionId)?.label ?? userOptionId) : 'Chưa chọn';
-          answerHtml = `<div>Bạn chọn: <strong>${escapeHtml(chosenText)}</strong> | Đáp án đúng: <strong>${escapeHtml(optMap.get(q.correctOptionId)?.label ?? q.correctOptionId)}</strong></div>` + optsHtml;
+          const chosenText = userOptionId ? (letterMap.get(userOptionId) ?? optMap.get(userOptionId)?.label ?? userOptionId) : 'Chưa chọn';
+          const correctText = letterMap.get(q.correctOptionId) ?? optMap.get(q.correctOptionId)?.label ?? q.correctOptionId;
+          answerHtml = `<div>Bạn chọn: <strong>${escapeHtml(chosenText)}</strong> | Đáp án đúng: <strong>${escapeHtml(correctText)}</strong></div>` + optsHtml;
         } else if (q.kind === 'II') {
           const userSts = (responses && responses[q.questionVersionId]) || {};
           let stListHtml = '<div class="statement-review-list" style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem;">';
@@ -3008,12 +3016,162 @@ export async function bootstrap(
     // Download Report HTML Handler
     const btnDownloadHtml = root.querySelector('#btnDownloadReportHtml');
     if (btnDownloadHtml) {
-      (btnDownloadHtml as HTMLElement).onclick = () => {
+      (btnDownloadHtml as HTMLElement).onclick = async () => {
         // Quyết định D08 (16/11/2026): sau khi nộp, luôn hiện lời giải chi tiết mọi câu
         const isAnswersReleased = true;
         const safeName = escapeHtml(candidateName);
         const startStr = startedAt ? new Date(startedAt).toLocaleTimeString() : '';
         const subStr = subTime ? new Date(subTime).toLocaleTimeString() : new Date().toLocaleTimeString();
+
+        // R0-F02: resolve internal assets to data URIs
+        const assetMap = new Map<string, string>();
+        if (currentExam && Array.isArray(currentExam.assets)) {
+          for (const a of currentExam.assets) {
+            if (a.assetId && a.data) {
+              const mime = a.mime || 'image/svg+xml';
+              const uri = a.data.startsWith('data:') ? a.data : `data:${mime};base64,${a.data}`;
+              assetMap.set(a.assetId, uri);
+              const bName = a.assetId.split('/').pop();
+              if (bName) assetMap.set(bName, uri);
+            }
+          }
+        }
+
+        const allTextSources: string[] = [];
+        for (const q of currentExam.questions) {
+          if (q.content) allTextSources.push(q.content);
+          if (q.explanation) allTextSources.push(q.explanation);
+          if (q.image) allTextSources.push(`![](${q.image})`);
+          if (q.kind === 'I' && q.options) {
+            for (const o of q.options) if (o.text) allTextSources.push(o.text);
+          } else if (q.kind === 'II' && q.statements) {
+            for (const s of q.statements) {
+              if (s.text) allTextSources.push(s.text);
+              if (s.explanation) allTextSources.push(s.explanation);
+            }
+          }
+        }
+
+        const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+        for (const txt of allTextSources) {
+          let m: RegExpExecArray | null;
+          while ((m = imgRegex.exec(txt)) !== null) {
+            const rawSrc = (m[2] || '').trim();
+            if (rawSrc && !rawSrc.startsWith('//') && !rawSrc.startsWith('http://') && !rawSrc.startsWith('https://')) {
+              if (!assetMap.has(rawSrc) && !rawSrc.startsWith('data:image/')) {
+                try {
+                  const res = await fetch(rawSrc);
+                  if (res.ok) {
+                    const blob = await res.blob();
+                    const dataUri = await new Promise<string>((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onloadend = () => resolve(reader.result as string);
+                      reader.onerror = reject;
+                      reader.readAsDataURL(blob);
+                    });
+                    assetMap.set(rawSrc, dataUri);
+                    const bName = rawSrc.split('/').pop();
+                    if (bName) assetMap.set(bName, dataUri);
+                  }
+                } catch {}
+              }
+            }
+          }
+        }
+
+        const renderPortableMathText = (text: string): string => {
+          if (!text) return '';
+          const replaced = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (fullMatch, alt, src) => {
+            const cleanSrc = src.trim();
+            const uri = assetMap.get(cleanSrc) || assetMap.get(cleanSrc.split('/').pop() || '');
+            if (uri) {
+              return `![${alt}](${uri})`;
+            }
+            return fullMatch;
+          });
+          return renderMathText(replaced);
+        };
+
+        // R0-F03: question order & option order must follow presentationOrder
+        const orderQIds = (presentationOrder && Array.isArray(presentationOrder.questionOrder) && presentationOrder.questionOrder.length > 0)
+          ? presentationOrder.questionOrder
+          : currentExam.questions.map((q) => q.questionVersionId);
+        const qMap = new Map(currentExam.questions.map((q) => [q.questionVersionId, q]));
+        const qrMap = new Map((scoredResult?.questionResults || []).map((qr) => [qr.questionVersionId, qr]));
+
+        const questionsCardsHtml = orderQIds.map((qid, idx) => {
+          const q = qMap.get(qid);
+          const qr = qrMap.get(qid);
+          if (!q) return '';
+
+          const qTitle = escapeHtml(q.title || `Câu ${idx + 1}`);
+          const qPoints = qr ? `${formatRationalScore(qr.pointsFraction)} / ${formatRationalScore(qr.maxPointsFraction)} điểm` : '';
+          const qStatus = qr ? qr.status : 'unanswered';
+          const statusText = qStatus === 'full' ? 'Đúng hoàn toàn' : qStatus === 'partial' ? 'Đúng một phần' : qStatus === 'wrong' ? 'Sai' : 'Chưa làm';
+          const statusBadge = `<span class="review-status-badge badge-${qStatus}">(${statusText})</span>`;
+
+          let qAns = '';
+          if (q.kind === 'I') {
+            const uOptId = responses && responses[q.questionVersionId];
+            const optOrderEntry = presentationOrder && Array.isArray(presentationOrder.optionOrder)
+              ? presentationOrder.optionOrder.find((e) => e.questionVersionId === q.questionVersionId)
+              : null;
+            const optionsOrder = optOrderEntry ? optOrderEntry.optionIds : q.options.map((o) => o.optionId);
+            const optMap = new Map(q.options.map((o) => [o.optionId, o]));
+
+            const letterMap = new Map<string, string>();
+            optionsOrder.forEach((optId: string, oIdx: number) => {
+              const letter = ['A', 'B', 'C', 'D'][oIdx] || optMap.get(optId)?.label || 'A';
+              letterMap.set(optId, letter);
+            });
+
+            const chosenText = uOptId ? (letterMap.get(uOptId) ?? optMap.get(uOptId)?.label ?? uOptId) : 'Chưa chọn';
+            const correctText = letterMap.get(q.correctOptionId) ?? optMap.get(q.correctOptionId)?.label ?? q.correctOptionId;
+            qAns = `<div>Bạn chọn: <strong>${escapeHtml(chosenText)}</strong> | Đáp án đúng: <strong>${escapeHtml(correctText)}</strong></div>`;
+
+            let optsHtml = '<ul class="review-options-list">';
+            for (const optId of optionsOrder) {
+              const opt = optMap.get(optId);
+              if (!opt) continue;
+              const isCorrect = opt.optionId === q.correctOptionId;
+              const isChosen = uOptId === opt.optionId;
+              const optLetter = letterMap.get(opt.optionId) || opt.label || '';
+              optsHtml += `<li class="review-option" data-option-id="${escapeHtml(opt.optionId)}" data-correct="${isCorrect ? 'true' : 'false'}" data-chosen="${isChosen ? 'true' : 'false'}"><strong class="review-option-label">${escapeHtml(optLetter ? optLetter + '.' : '')}</strong> ${renderPortableMathText(opt.text)}${isChosen ? (isCorrect ? ' <span class="badge-chosen-correct">✔ Bạn chọn đúng</span>' : ' <span class="badge-chosen-wrong">✖ Bạn chọn sai</span>') : (isCorrect ? ' <span class="badge-correct">✔ Đáp án đúng</span>' : '')}</li>`;
+            }
+            optsHtml += '</ul>';
+            qAns += optsHtml;
+          } else if (q.kind === 'II') {
+            const uSts = (responses && responses[q.questionVersionId]) || {};
+            qAns = '<ul class="statement-review-list">' + q.statements.map((s, sIdx) => {
+              const u = Object.hasOwn(uSts, s.statementId) ? uSts[s.statementId] : undefined;
+              const hasAnswered = typeof u === 'boolean';
+              const uStr = hasAnswered ? (u ? 'Đúng' : 'Sai') : 'Chưa chọn';
+              const chosenStr = hasAnswered ? (u ? 'true' : 'false') : 'none';
+              const correctStr = s.answer ? 'Đúng' : 'Sai';
+              const stLetter = s.label || ['a', 'b', 'c', 'd'][sIdx] || '';
+              return `<li class="review-statement" data-statement-id="${escapeHtml(s.statementId)}" data-key="${s.answer ? 'true' : 'false'}" data-chosen="${chosenStr}"><strong class="review-statement-label">${escapeHtml(stLetter ? stLetter + ')' : '')}</strong> ${renderPortableMathText(s.text)} — Bạn chọn: <strong>${escapeHtml(uStr)}</strong> | Đáp án: <strong>${correctStr}</strong></li>`;
+            }).join('') + '</ul>';
+          } else if (q.kind === 'III') {
+            const val = responses && responses[q.questionVersionId];
+            const hasAns = val !== undefined && val !== null && String(val).trim() !== '';
+            qAns = `<div class="review-short-answer">Bạn điền: <strong>${escapeHtml(hasAns ? String(val) : 'Chưa làm')}</strong> | Đáp án đúng: <strong>${escapeHtml(q.answerKey)}</strong></div>`;
+          }
+
+          let expl = q.explanation;
+          if (!expl && q.kind === 'II') {
+            expl = q.statements.map((s) => `**${s.label || ''})** ${s.explanation || ''}`).join('\n\n');
+          }
+
+          return `
+            <div class="review-question-card" data-qid="${escapeHtml(q.questionVersionId)}">
+              <h3>${qTitle} ${qPoints ? `(${escapeHtml(qPoints)})` : ''} ${statusBadge}</h3>
+              <div>${renderPortableMathText(q.content || '')}</div>
+              <div>${qAns}</div>
+              ${expl ? `<div><strong>Lời giải:</strong> ${renderPortableMathText(expl)}</div>` : ''}
+            </div>
+          `;
+        }).join('');
+
         const reportHtmlDoc = `<!doctype html>
 <html lang="vi">
 <head>
@@ -3032,37 +3190,7 @@ export async function bootstrap(
   <p><strong>Phần II:</strong> ${formatRationalScore(scoredResult!.scoreIIFraction)} / ${formatRationalScore(scoredResult!.maxIIFraction)}</p>
   <p><strong>Phần III:</strong> ${formatRationalScore(scoredResult!.scoreIIIFraction)} / ${formatRationalScore(scoredResult!.maxIIIFraction)}</p>
   <hr/>
-  ${currentExam.questions.map((q, idx) => {
-    let qAns = '';
-    if (q.kind === 'I') {
-      const uOptId = responses && responses[q.questionVersionId];
-      const optMap = new Map(q.options.map(o => [o.optionId, o]));
-      qAns = `<div>Bạn chọn: <strong>${escapeHtml(uOptId ? (optMap.get(uOptId)?.label ?? uOptId) : 'Chưa chọn')}</strong> | Đáp án đúng: <strong>${escapeHtml(optMap.get(q.correctOptionId)?.label ?? q.correctOptionId)}</strong></div>`;
-      qAns += '<ul>' + q.options.map(o => `<li><strong>${escapeHtml(o.label || '')}.</strong> ${renderMathText(o.text)}</li>`).join('') + '</ul>';
-    } else if (q.kind === 'II') {
-      const uSts = (responses && responses[q.questionVersionId]) || {};
-      qAns = '<ul>' + q.statements.map(s => {
-        const u = Object.hasOwn(uSts, s.statementId) ? uSts[s.statementId] : undefined;
-        const uStr = typeof u === 'boolean' ? (u ? 'Đúng' : 'Sai') : 'Chưa chọn';
-        return `<li><strong>${escapeHtml(s.label || '')})</strong> ${renderMathText(s.text)} — Bạn chọn: ${escapeHtml(uStr)} | Đáp án: ${s.answer ? 'Đúng' : 'Sai'}</li>`;
-      }).join('') + '</ul>';
-    } else if (q.kind === 'III') {
-      const val = responses && responses[q.questionVersionId];
-      qAns = `<div>Bạn điền: <strong>${escapeHtml(val ? String(val) : 'Chưa làm')}</strong> | Đáp án đúng: <strong>${escapeHtml(q.answerKey)}</strong></div>`;
-    }
-    let expl = q.explanation;
-    if (!expl && q.kind === 'II') {
-      expl = q.statements.map(s => `**${s.label || ''})** ${s.explanation || ''}`).join('\n\n');
-    }
-    return `
-      <div class="review-question-card" data-qid="${escapeHtml(q.questionVersionId)}">
-        <h3>${escapeHtml(q.title || `Câu ${idx + 1}`)}</h3>
-        <div>${renderMathText(q.content)}</div>
-        <div>${qAns}</div>
-        ${expl ? `<div><strong>Lời giải:</strong> ${renderMathText(expl)}</div>` : ''}
-      </div>
-    `;
-  }).join('')}
+  ${questionsCardsHtml}
 </body>
 </html>`;
         const blob = new Blob([reportHtmlDoc], { type: 'text/html;charset=utf-8' });

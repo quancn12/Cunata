@@ -1346,21 +1346,6 @@ export function createAppsScriptCollectorPort(
         (final as any).metadata?.studentId ??
         basePayload.student_id;
 
-      if ((!classCode || !assignmentId) && typeof sessionStorage !== 'undefined') {
-        try {
-          const raw = sessionStorage.getItem('cunata:active_assignment') || localStorage.getItem('cunata:active_assignment');
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (!classCode && (parsed.classCode || parsed.class_code)) {
-              classCode = parsed.classCode || parsed.class_code;
-            }
-            if (!assignmentId && (parsed.assignmentId || parsed.assignment_id)) {
-              assignmentId = parsed.assignmentId || parsed.assignment_id;
-            }
-          }
-        } catch {}
-      }
-
       const payload = {
         action: 'submitResult',
         ...basePayload,
