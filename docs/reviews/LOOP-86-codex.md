@@ -93,7 +93,27 @@ LC84-F07 remains fixed: Apps Script getExam no longer modifies the published pay
 
 Environment: Windows/PowerShell, Node v24.14.0, TypeScript 7.0.2, Python 3.11.0, installed Chromium/CDP. No installs. Commands use the captured local snapshot, never production. PowerShell redirected logs are UTF-16. Probe exit 0 indicates a successfully asserted observation, not product approval.
 
-CHECK_RESULTS_PENDING
+| Command | Exit | Actual result / artifact relative to evidence directory |
+| --- | --- | --- |
+| `node scripts/build.js` | 0 | 339 files staged/promoted/verified; build.log. Existing DEP0190 shell-child-process warning remains. |
+| `npx --no-install tsc -p tsconfig.json` | 0 | No diagnostics; tsc.log. |
+| `npx --no-install tsc -p tsconfig.web.json` | 0 | No diagnostics; tsc-web.log. |
+| `npm test` — initial temporary setup | 1 | 1,608 tests, 345 suites: 1,606 pass, 2 fail, 0 cancelled/skip; 29,856.3487 ms; npm-initial.log. Missing README causes a failed test and a suite-construction error; teacher assertion also fails. Not a complete valid snapshot gate. |
+| `npm test` — README restored | 1 | 1,617 tests, 345 suites: 1,614 pass, 2 fail, 1 cancelled, 0 skipped/todo; 169,584.3001 ms; npm.log. Teacher fixture and CK15-F01 Page.enable failure; CDP executable-exit test cancelled at its 20-second timeout. |
+| `node --test test/browser/cdpLifecycle.test.ts` | 0 | 4 pass, 0 fail/cancel/skip; 16,898.0724 ms; cdp-recheck.log. Includes executable-exit cleanup that timed out in npm. |
+| `node --test --test-name-pattern='CK15-F01' test/final-quality/ck12Regressions.test.ts` | 0 | 1 pass, 0 fail/cancel/skip; 1 suite; 13,152.7633 ms; sw-recheck.log. Selected service-worker upgrade test only. |
+| `node LC51-probes.mjs` | 0 | probes.log: six concurrent dispatches/retryCount=0; unknown exam assignment persisted; canonical fraction inverse failure; six roster/PIN/history actions UNKNOWN_ACTION. |
+| `node LC51-differential.mjs` | 0 | All 1,632 product total/max and section score/max values match independent expected fixtures; differential.log. |
+| `python -B test/oracle/oracle.py --check` | 0 | 11 pass, 0 fail/skip; 1,632 fixtures, 5,849 maxima configurations, 9 negative controls; oracle.log. Independent oracle, separate from product differential. |
+| `node --test lc83-independent.test.mjs` | 1 | 5 tests: 3 pass, 2 fail, 0 cancelled/skip; 2,817.2569 ms; independent.log / lc83-independent.json. Nested-math child and parent represent one defect. |
+| `node --import ./ops/blitz/promoted/_support/runtime.mjs download-race.mjs` | 0 | Null totalFraction TypeError, zero downloads; download-race.log/json. |
+| `node --import ./ops/blitz/promoted/_support/runtime.mjs LC51-browser-probe.mjs` | 0 | Two cards; filter/nav/retry all absent; browser-probe.log. |
+| `node --import ./ops/blitz/promoted/_support/runtime.mjs blocks-probe.mjs` | 0 | Valid schema; top-level Block-only text/table retained through exam/review/download; blocks-probe.log/json. |
+| `node --test lc67-regressions.test.mjs` | 1 | 2 tests: 1 pass, 1 fail, 0 cancelled/skip; 1,033.0808 ms; intended-regressions.log. Expected download isolation fails. |
+| `node --test --test-concurrency=1 --test-timeout=240000 "test/claude-check/**/*.test.mjs"` | 0 | 104 pass, 0 fail/cancel/skip; 5 suites; 260,581.2733 ms; claude.log. Includes local Apps Script large-payload roundtrip, design, assignment UI, local service and offline acceptance. |
+| `node --test --test-concurrency=1 --test-timeout=240000 "test/codex-check/**/*.test.mjs"` | 0 | 198 pass, 0 fail/cancel/skip; 2 suites; 136,846.517 ms; codex.log. Complete fresh run with prepared artifact directories. |
+
+The corrected npm run remains red; successful selected-file rechecks are not combined into an invented green full run. The CDP launch cancellation and service-worker failure did not reproduce in the targeted rechecks. Concurrent unrelated test processes were observed on the machine; timing contention is a possible explanation, not a proven root cause. The persistent teacher fixture/contract mismatch remains independently actionable. No second full npm run after those rechecks was performed.
 
 Supplemental browser probes preload the existing inspected `ops/blitz/promoted/_support/runtime.mjs`, which acknowledges Browser.close solely for harness teardown and does not change app responses/assertions. Acceptance snapshot hooks use read-only GIT_DIR=D:/Cunata/.git and GIT_WORK_TREE=D:/Cunata. Security/student/teacher temporary evidence directories were prepared. Local Google/SQL/API simulators are not deployed Google/Vercel/Neon proof.
 
@@ -122,4 +142,4 @@ Custom-only presets and manual PDF remain approved choices. No new scoring gramm
 
 recommended_action: F01→src/collect; F02–F04→src/app; F05→src/api; F06→src/domain. Teacher/test owners reconcile metadata fixtures while retaining read-only listing assertions; repeat final stable gates after fixes. Delivery READY_FOR_REVIEW; product CHANGES_REQUESTED.
 
-INTEGRITY_PENDING
+Final integrity: final-snapshot.json records 1,366 captured input hashes, unchanged HEAD `2019a03fabd3225b5e8bc3a602d0c37a4a94c74f`, runtimeDrift=[], otherDrift=[], and app SHA-256 `9441469f8e314b52bba2e4fa778d08e3646930538e0e4e1996729ba945affdcf`. This audit covers that snapshot; later changes require review. The only intentional workspace write is this report.
