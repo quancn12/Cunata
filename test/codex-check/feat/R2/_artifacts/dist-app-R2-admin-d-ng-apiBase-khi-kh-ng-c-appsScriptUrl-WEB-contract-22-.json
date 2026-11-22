@@ -1,0 +1,74 @@
+{
+  "errors": [
+    "log: Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:49238/favicon.ico"
+  ],
+  "badRequests": [
+    "404 http://127.0.0.1:49238/favicon.ico"
+  ],
+  "requests": [
+    "http://127.0.0.1:49238/Cunata/admin.html",
+    "http://127.0.0.1:49238/Cunata/ui/tokens.css",
+    "http://127.0.0.1:49238/Cunata/ui/components.css",
+    "http://127.0.0.1:49238/Cunata/admin/main.js",
+    "http://127.0.0.1:49238/Cunata/collect/appsScript.js",
+    "http://127.0.0.1:49238/Cunata/ui/components.js",
+    "http://127.0.0.1:49238/Cunata/admin/view.js",
+    "http://127.0.0.1:49238/Cunata/collect/index.js",
+    "http://127.0.0.1:49238/Cunata/collect/export.js",
+    "http://127.0.0.1:49238/Cunata/ui/icons.js",
+    "http://127.0.0.1:49238/Cunata/collect/transport.js",
+    "http://127.0.0.1:49238/Cunata/domain/index.js",
+    "http://127.0.0.1:49238/Cunata/schema/index.js",
+    "http://127.0.0.1:49238/Cunata/domain/rational.js",
+    "http://127.0.0.1:49238/Cunata/domain/shortAnswer.js",
+    "http://127.0.0.1:49238/Cunata/domain/validate.js",
+    "http://127.0.0.1:49238/Cunata/domain/judge.js",
+    "http://127.0.0.1:49238/Cunata/domain/shuffle.js",
+    "http://127.0.0.1:49238/Cunata/domain/examMax.js",
+    "http://127.0.0.1:49238/Cunata/domain/scoreAttempt.js",
+    "http://127.0.0.1:49238/Cunata/domain/serialize.js",
+    "http://127.0.0.1:49238/Cunata/schema/exam.js",
+    "http://127.0.0.1:49238/Cunata/admin/admin.css",
+    "http://127.0.0.1:49238/Cunata/public/config.json",
+    "http://127.0.0.1:49238/Cunata/public/fonts/google-sans-flex-latin.woff2",
+    "http://127.0.0.1:49238/Cunata/public/fonts/google-sans-flex-vietnamese.woff2",
+    "http://127.0.0.1:49238/Cunata/public/fonts/google-sans-flex-latin-ext.woff2",
+    "http://127.0.0.1:49238/favicon.ico",
+    "http://127.0.0.1:49238/api/rpc",
+    "http://127.0.0.1:49238/api/rpc",
+    "http://127.0.0.1:49238/api/rpc"
+  ],
+  "serverLog": [
+    {
+      "method": "POST",
+      "path": "/api/rpc",
+      "query": {},
+      "contentType": "application/json",
+      "body": {
+        "action": "adminLogin",
+        "password": "R2-local-admin-123"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/rpc",
+      "query": {},
+      "contentType": "application/json",
+      "body": {
+        "action": "adminStats",
+        "token": "a990668c1f764bc8fd0598483f82468b60bc8c5ebd96a096b233359be7b28ab8"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/rpc",
+      "query": {},
+      "contentType": "application/json",
+      "body": {
+        "action": "adminListTeachers",
+        "token": "a990668c1f764bc8fd0598483f82468b60bc8c5ebd96a096b233359be7b28ab8"
+      }
+    }
+  ],
+  "text": "Cunata\nQuản trị hệ thống\nĐăng xuất\n0\nGiáo viên\n0\nLớp học\n0\nĐề thi\n0\nBài nộp\n0 giáo viên · 0 lớp học · 0 đề thi · 0 bài nộp\nTạo tài khoản giáo viên\nLàm mới\nDanh sách tài khoản giáo viên\n\nChưa có tài khoản giáo viên nào. Bấm nút \"Tạo tài khoản giáo viên\" để tạo tài khoản đầu tiên."
+}

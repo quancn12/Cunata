@@ -1,0 +1,242 @@
+{
+  "schemaVersion": "web-exam-v1",
+  "examId": "r4-review",
+  "examVersionId": "v1.0.0",
+  "title": "Kiểm định R4 — lọc và thanh số câu",
+  "subject": "Toán học",
+  "grade": 12,
+  "ruleSetId": "custom-v1",
+  "inputPolicyId": "sa-charset-v1",
+  "settings": {
+    "durationMinutes": 50,
+    "maxAttempts": null,
+    "releasePolicy": "immediate",
+    "shuffleQuestions": false,
+    "shuffleOptions": false
+  },
+  "assets": [],
+  "questions": [
+    {
+      "kind": "I",
+      "questionVersionId": "ck-i-01",
+      "title": "Câu 1 (Phần I)",
+      "content": "Câu hỏi kiểm định Phần I số 1: chọn phương án A.",
+      "options": [
+        {
+          "optionId": "ck-i-01-a",
+          "label": "A",
+          "text": "Phương án A của câu 1"
+        },
+        {
+          "optionId": "ck-i-01-b",
+          "label": "B",
+          "text": "Phương án B của câu 1"
+        },
+        {
+          "optionId": "ck-i-01-c",
+          "label": "C",
+          "text": "Phương án C của câu 1"
+        },
+        {
+          "optionId": "ck-i-01-d",
+          "label": "D",
+          "text": "Phương án D của câu 1"
+        }
+      ],
+      "correctOptionId": "ck-i-01-a",
+      "explanation": "GIAITHICH-BIMAT-7Q2 đáp án A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ck-i-02",
+      "title": "Câu 2 (Phần I)",
+      "content": "Câu hỏi kiểm định Phần I số 2: chọn phương án A.",
+      "options": [
+        {
+          "optionId": "ck-i-02-a",
+          "label": "A",
+          "text": "Phương án A của câu 2"
+        },
+        {
+          "optionId": "ck-i-02-b",
+          "label": "B",
+          "text": "Phương án B của câu 2"
+        },
+        {
+          "optionId": "ck-i-02-c",
+          "label": "C",
+          "text": "Phương án C của câu 2"
+        },
+        {
+          "optionId": "ck-i-02-d",
+          "label": "D",
+          "text": "Phương án D của câu 2"
+        }
+      ],
+      "correctOptionId": "ck-i-02-a",
+      "explanation": "GIAITHICH-BIMAT-7Q2 đáp án A."
+    },
+    {
+      "kind": "I",
+      "questionVersionId": "ck-i-03",
+      "title": "Câu 3 (Phần I)",
+      "content": "Câu hỏi kiểm định Phần I số 3: chọn phương án A.",
+      "options": [
+        {
+          "optionId": "ck-i-03-a",
+          "label": "A",
+          "text": "Phương án A của câu 3"
+        },
+        {
+          "optionId": "ck-i-03-b",
+          "label": "B",
+          "text": "Phương án B của câu 3"
+        },
+        {
+          "optionId": "ck-i-03-c",
+          "label": "C",
+          "text": "Phương án C của câu 3"
+        },
+        {
+          "optionId": "ck-i-03-d",
+          "label": "D",
+          "text": "Phương án D của câu 3"
+        }
+      ],
+      "correctOptionId": "ck-i-03-a",
+      "explanation": "GIAITHICH-BIMAT-7Q2 đáp án A."
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ck-ii-01",
+      "title": "Câu 4 (Phần II - Đúng / Sai)",
+      "content": "Câu hỏi kiểm định Phần II số 1.",
+      "statements": [
+        {
+          "statementId": "ck-ii-01-a",
+          "label": "a",
+          "text": "Mệnh đề a của câu II.1",
+          "answer": true,
+          "explanation": "GIAITHICH-BIMAT-7Q2 mệnh đề đúng."
+        },
+        {
+          "statementId": "ck-ii-01-b",
+          "label": "b",
+          "text": "Mệnh đề b của câu II.1",
+          "answer": true,
+          "explanation": "GIAITHICH-BIMAT-7Q2 mệnh đề đúng."
+        },
+        {
+          "statementId": "ck-ii-01-c",
+          "label": "c",
+          "text": "Mệnh đề c của câu II.1",
+          "answer": true,
+          "explanation": "GIAITHICH-BIMAT-7Q2 mệnh đề đúng."
+        },
+        {
+          "statementId": "ck-ii-01-d",
+          "label": "d",
+          "text": "Mệnh đề d của câu II.1",
+          "answer": true,
+          "explanation": "GIAITHICH-BIMAT-7Q2 mệnh đề đúng."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ck-ii-02",
+      "title": "Câu 5 (Phần II - Đúng / Sai)",
+      "content": "Câu hỏi kiểm định Phần II số 2.",
+      "statements": [
+        {
+          "statementId": "ck-ii-02-a",
+          "label": "a",
+          "text": "Mệnh đề a của câu II.2",
+          "answer": true,
+          "explanation": "GIAITHICH-BIMAT-7Q2 mệnh đề đúng."
+        },
+        {
+          "statementId": "ck-ii-02-b",
+          "label": "b",
+          "text": "Mệnh đề b của câu II.2",
+          "answer": true,
+          "explanation": "GIAITHICH-BIMAT-7Q2 mệnh đề đúng."
+        },
+        {
+          "statementId": "ck-ii-02-c",
+          "label": "c",
+          "text": "Mệnh đề c của câu II.2",
+          "answer": true,
+          "explanation": "GIAITHICH-BIMAT-7Q2 mệnh đề đúng."
+        },
+        {
+          "statementId": "ck-ii-02-d",
+          "label": "d",
+          "text": "Mệnh đề d của câu II.2",
+          "answer": true,
+          "explanation": "GIAITHICH-BIMAT-7Q2 mệnh đề đúng."
+        }
+      ]
+    },
+    {
+      "kind": "II",
+      "questionVersionId": "ck-ii-03",
+      "title": "Câu 6 (Phần II - Đúng / Sai)",
+      "content": "Câu hỏi kiểm định Phần II số 3.",
+      "statements": [
+        {
+          "statementId": "ck-ii-03-a",
+          "label": "a",
+          "text": "Mệnh đề a của câu II.3",
+          "answer": true,
+          "explanation": "GIAITHICH-BIMAT-7Q2 mệnh đề đúng."
+        },
+        {
+          "statementId": "ck-ii-03-b",
+          "label": "b",
+          "text": "Mệnh đề b của câu II.3",
+          "answer": true,
+          "explanation": "GIAITHICH-BIMAT-7Q2 mệnh đề đúng."
+        },
+        {
+          "statementId": "ck-ii-03-c",
+          "label": "c",
+          "text": "Mệnh đề c của câu II.3",
+          "answer": true,
+          "explanation": "GIAITHICH-BIMAT-7Q2 mệnh đề đúng."
+        },
+        {
+          "statementId": "ck-ii-03-d",
+          "label": "d",
+          "text": "Mệnh đề d của câu II.3",
+          "answer": true,
+          "explanation": "GIAITHICH-BIMAT-7Q2 mệnh đề đúng."
+        }
+      ]
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ck-iii-01",
+      "title": "Câu 7 (Phần III - Trả lời ngắn)",
+      "content": "Câu hỏi kiểm định Phần III số 1.",
+      "answerKey": "1,5",
+      "explanation": "GIAITHICH-BIMAT-7Q2 đáp án ngắn."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ck-iii-02",
+      "title": "Câu 8 (Phần III - Trả lời ngắn)",
+      "content": "Câu hỏi kiểm định Phần III số 2.",
+      "answerKey": "1,5",
+      "explanation": "GIAITHICH-BIMAT-7Q2 đáp án ngắn."
+    },
+    {
+      "kind": "III",
+      "questionVersionId": "ck-iii-03",
+      "title": "Câu 9 (Phần III - Trả lời ngắn)",
+      "content": "Câu hỏi kiểm định Phần III số 3.",
+      "answerKey": "-0,5",
+      "explanation": "GIAITHICH-BIMAT-7Q2 đáp án ngắn."
+    }
+  ]
+}
