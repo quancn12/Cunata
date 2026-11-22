@@ -1055,9 +1055,6 @@ function doGet(e) {
             var joinedJson = chunks.join('');
             try {
                 var examObj = JSON.parse(joinedJson);
-                if (examObj && !examObj.owner && foundRow > 0) {
-                    examObj.owner = examOwner(sheet, foundRow);
-                }
                 return ContentService.createTextOutput(JSON.stringify({
                     success: true,
                     exam: examObj
