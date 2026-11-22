@@ -10,12 +10,12 @@
 [OK] index.html markup & styling linked properly (legacy demo retained)
 [OK] apps-script/Code.js syntax valid
 --- Executing Modular Web Build (ES2022 Staged Emit) ---
-[web-build] Starting build in staging: D:\Cunata\test\codex-check\feat\R2\_artifacts\build-input-jiYmCr\.dist-staging
-[web-build] Successfully promoted 339 files to D:\Cunata\test\codex-check\feat\R2\_artifacts\build-input-jiYmCr\dist
+[web-build] Starting build in staging: D:\Cunata\test\codex-check\feat\R2\_artifacts\build-input-Zr1Ddh\.dist-staging
+[web-build] Successfully promoted 339 files to D:\Cunata\test\codex-check\feat\R2\_artifacts\build-input-Zr1Ddh\dist
 [OK] Modular web build emitted and verified (339 files in dist/)
 --- Build & Asset Verification Complete: READY (W5) ---
 
-(node:35116) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(node:22772) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 
 exit=0
