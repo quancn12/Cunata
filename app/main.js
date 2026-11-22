@@ -320,6 +320,84 @@ function renderMathText(text) {
     flushParagraph();
     return blocks.length > 0 ? blocks.join('') : '<p></p>';
 }
+function resolveAssetSrc(assetId, assets) {
+    if (!assetId)
+        return '';
+    if (assets) {
+        const found = assets.find((a) => a.assetId === assetId || a.assetId?.split('/').pop() === assetId);
+        if (found) {
+            if (found.data?.startsWith('data:'))
+                return found.data;
+            if (found.data)
+                return found.data;
+        }
+    }
+    return assetId;
+}
+function renderQuestionStemHtml(q, resolveSrc) {
+    if (Array.isArray(q.blocks) && q.blocks.length > 0) {
+        let out = '<div class="blocks-container">';
+        for (const b of q.blocks) {
+            if (b.type === 'text') {
+                let text = b.text || '';
+                if (resolveSrc) {
+                    text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (full, alt, src) => {
+                        const resolved = resolveSrc(src.trim());
+                        return resolved ? `![${alt}](${resolved})` : full;
+                    });
+                }
+                out += `<div class="block-text">${renderMathText(text)}</div>`;
+            }
+            else if (b.type === 'math') {
+                const ml = latexToMathML(b.source);
+                out += `<div class="block-math">${ml ? `<span class="math-expr">${ml}</span>` : `<code class="cunata-math-source">${escapeHtml(b.source)}</code>`}</div>`;
+            }
+            else if (b.type === 'image') {
+                const src = (resolveSrc ? resolveSrc(b.assetId) : '') || b.assetId;
+                out += `<figure class="cunata-image-container"><img class="cunata-image" src="${escapeHtml(src)}" alt="${escapeHtml(b.alt || '')}" /></figure>`;
+            }
+            else if (b.type === 'table') {
+                out += '<div class="cunata-table-wrapper"><table class="exam-table"><tbody>';
+                for (const row of b.rows || []) {
+                    out += '<tr>';
+                    for (const cell of row) {
+                        out += `<td rowspan="${cell.rowSpan || 1}" colspan="${cell.colSpan || 1}">`;
+                        for (const cb of cell.blocks || []) {
+                            if (cb.type === 'text')
+                                out += renderMathText(cb.text);
+                            else if (cb.type === 'image') {
+                                const src = (resolveSrc ? resolveSrc(cb.assetId) : '') || cb.assetId;
+                                out += `<img class="cunata-image" src="${escapeHtml(src)}" alt="${escapeHtml(cb.alt || '')}" />`;
+                            }
+                        }
+                        out += '</td>';
+                    }
+                    out += '</tr>';
+                }
+                out += '</tbody></table></div>';
+            }
+        }
+        if (q.image && !q.blocks.some((b) => b.type === 'image' && b.assetId === q.image)) {
+            const src = (resolveSrc ? resolveSrc(q.image) : '') || q.image;
+            out += `<figure class="cunata-image-container"><img class="cunata-image" src="${escapeHtml(src)}" alt="${escapeHtml(q.title || '')}" /></figure>`;
+        }
+        out += '</div>';
+        return out;
+    }
+    let text = q.content || '';
+    if (resolveSrc) {
+        text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (full, alt, src) => {
+            const resolved = resolveSrc(src.trim());
+            return resolved ? `![${alt}](${resolved})` : full;
+        });
+    }
+    let out = renderMathText(text);
+    if (q.image && !text.includes(q.image)) {
+        const src = (resolveSrc ? resolveSrc(q.image) : '') || q.image;
+        out += `<figure class="cunata-image-container"><img class="cunata-image" src="${escapeHtml(src)}" alt="${escapeHtml(q.title || '')}" /></figure>`;
+    }
+    return out;
+}
 function getStorageKey(exam, state) {
     const examId = (exam && exam.examId) || (state && state.examId) || 'exam';
     const version = (exam && exam.examVersionId) || (state && state.examVersionId) || 'v1';
@@ -1562,7 +1640,7 @@ export async function bootstrap(root, options) {
             card.appendChild(cardHeader);
             const stem = docObj.createElement('div');
             stem.className = 'question-stem';
-            stem.innerHTML = renderMathText(q.content);
+            stem.innerHTML = renderQuestionStemHtml(q, (src) => resolveAssetSrc(src, currentExam?.assets));
             card.appendChild(stem);
             if (q.kind === 'I') {
                 const optGrid = docObj.createElement('div');
@@ -2958,9 +3036,9 @@ export async function bootstrap(root, options) {
                 }
                 item.innerHTML = `
           <div class="review-q-header">
-            <h4>${qTitle} (${qPoints})</h4>
+            <h4>${qTitle} <span class="review-part-tag">(Phần ${escapeHtml(q.kind)})</span> (${qPoints})</h4>
           </div>
-          <div class="review-q-content">${renderMathText(q.content)}</div>
+          <div class="review-q-content">${renderQuestionStemHtml(q, (src) => resolveAssetSrc(src, currentExam?.assets))}</div>
           <div class="review-q-answers">${answerHtml}</div>
         `;
                 reviewList.appendChild(item);
@@ -2997,6 +3075,14 @@ export async function bootstrap(root, options) {
                         allTextSources.push(q.explanation);
                     if (q.image)
                         allTextSources.push(`![](${q.image})`);
+                    if (Array.isArray(q.blocks)) {
+                        for (const b of q.blocks) {
+                            if (b.type === 'text' && b.text)
+                                allTextSources.push(b.text);
+                            if (b.type === 'image' && b.assetId)
+                                allTextSources.push(`![](${b.assetId})`);
+                        }
+                    }
                     if (q.kind === 'I' && q.options) {
                         for (const o of q.options)
                             if (o.text)
@@ -3016,10 +3102,19 @@ export async function bootstrap(root, options) {
                     let m;
                     while ((m = imgRegex.exec(txt)) !== null) {
                         const rawSrc = (m[2] || '').trim();
-                        if (rawSrc && !rawSrc.startsWith('//') && !rawSrc.startsWith('http://') && !rawSrc.startsWith('https://')) {
-                            if (!assetMap.has(rawSrc) && !rawSrc.startsWith('data:image/')) {
+                        if (rawSrc && !assetMap.has(rawSrc) && !rawSrc.startsWith('data:image/')) {
+                            let isInternal = false;
+                            try {
+                                const base = new URL((root.ownerDocument || document).baseURI);
+                                const resolved = new URL(rawSrc, base);
+                                if (resolved.origin === base.origin && (resolved.protocol === 'http:' || resolved.protocol === 'https:')) {
+                                    isInternal = true;
+                                }
+                            }
+                            catch { }
+                            if (isInternal) {
                                 try {
-                                    const res = await fetch(rawSrc);
+                                    const res = await fetch(rawSrc, { redirect: 'error' });
                                     if (res.ok) {
                                         const blob = await res.blob();
                                         const dataUri = await new Promise((resolve, reject) => {
@@ -3120,8 +3215,8 @@ export async function bootstrap(root, options) {
                     }
                     return `
             <div class="review-question-card" data-qid="${escapeHtml(q.questionVersionId)}">
-              <h3>${qTitle} ${qPoints ? `(${escapeHtml(qPoints)})` : ''} ${statusBadge}</h3>
-              <div>${renderPortableMathText(q.content || '')}</div>
+              <h3>${qTitle} <span class="review-part-tag">(Phần ${escapeHtml(q.kind)})</span> ${qPoints ? `(${escapeHtml(qPoints)})` : ''} ${statusBadge}</h3>
+              <div class="review-q-content">${renderQuestionStemHtml(q, (src) => assetMap.get(src) || assetMap.get(src.split('/').pop() || '') || resolveAssetSrc(src, currentExam?.assets))}</div>
               <div>${qAns}</div>
               ${expl ? `<div><strong>Lời giải:</strong> ${renderPortableMathText(expl)}</div>` : ''}
             </div>
@@ -3782,6 +3877,80 @@ export async function bootstrap(root, options) {
             }
         }
         if (state.route === 'exam' && state.params.examId && state.params.examId !== loadedExamId) {
+            let hasPerm = false;
+            try {
+                const raw = sessionStorage.getItem('cunata:active_assignment') || localStorage.getItem('cunata:active_assignment');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed && (parsed.examId === state.params.examId || parsed.assignmentId === state.params.examId))
+                        hasPerm = true;
+                }
+            }
+            catch { }
+            if (!hasPerm) {
+                try {
+                    const rawClasses = localStorage.getItem('cunata:classes');
+                    if (rawClasses) {
+                        const classes = JSON.parse(rawClasses);
+                        if (Array.isArray(classes)) {
+                            for (const cls of classes) {
+                                if (Array.isArray(cls.assignments)) {
+                                    if (cls.assignments.some((a) => a.examId === state.params.examId || a.id === state.params.examId)) {
+                                        hasPerm = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+            if (!hasPerm) {
+                try {
+                    const attRes = await storage.listAttempts(state.params.examId, '');
+                    if (attRes.ok && attRes.value.some((a) => a.phase === 'draft')) {
+                        hasPerm = true;
+                    }
+                }
+                catch { }
+            }
+            if (!hasPerm) {
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        if (k && (k.startsWith('cunata:attempt:') || k.startsWith('cunata:draft:'))) {
+                            const rec = JSON.parse(localStorage.getItem(k) || '{}');
+                            if (rec.examId === state.params.examId && rec.phase === 'draft') {
+                                hasPerm = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+            if (!hasPerm) {
+                router.navigate('student', { exam: state.params.examId });
+                applyRoute(router.getState());
+                const preview = root.querySelector('#examPreview');
+                if (preview)
+                    preview.style.display = 'none';
+                let noticeEl = root.querySelector('#examNotAllowedNotice');
+                if (!noticeEl) {
+                    noticeEl = document.createElement('div');
+                    noticeEl.id = 'examNotAllowedNotice';
+                    noticeEl.className = 'ui-alert ui-alert--info student-exam-notice';
+                    noticeEl.textContent = 'Đề này chỉ làm được khi giáo viên giao cho lớp của em.';
+                    const mainArea = root.querySelector('#studentMainArea') || root.querySelector('#startScreen');
+                    if (mainArea)
+                        mainArea.prepend(noticeEl);
+                }
+                else {
+                    noticeEl.style.display = '';
+                }
+                return;
+            }
             const { exams } = await fetchAndMergeExams(appsScriptUrl, appsScriptClient);
             if (generation !== routeGeneration)
                 return;

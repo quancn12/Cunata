@@ -105,3 +105,29 @@ test('R0-F04 regression: collector must not borrow another exam active assignmen
     else Reflect.deleteProperty(globalThis, 'localStorage');
   }
 });
+
+test('R0-F04 regression: external URLs with capitalized or mixed scheme cannot trigger external fetch during report download', () => {
+  const baseUri = 'http://127.0.0.1:8080/Cunata/index.html';
+  const isInternalAssetUrl = (rawSrc: string, baseUri: string): boolean => {
+    if (!rawSrc) return false;
+    const trimmed = rawSrc.trim();
+    if (!trimmed || trimmed.startsWith('//')) return false;
+    if (/^data:/i.test(trimmed)) return false;
+    const lower = trimmed.toLowerCase();
+    if (lower.startsWith('javascript:') || lower.startsWith('vbscript:') || lower.startsWith('file:') || lower.startsWith('blob:')) {
+      return false;
+    }
+    try {
+      const base = new URL(baseUri);
+      const resolved = new URL(trimmed, base);
+      return resolved.origin === base.origin && (resolved.protocol === 'http:' || resolved.protocol === 'https:');
+    } catch {
+      return false;
+    }
+  };
+
+  assert.equal(isInternalAssetUrl('HTTP://127.0.0.1:9999/pixel', baseUri), false, 'Capitalized HTTP with different port must be rejected');
+  assert.equal(isInternalAssetUrl('HTTPS://evil.com/tracker.png', baseUri), false, 'HTTPS to different host must be rejected');
+  assert.equal(isInternalAssetUrl('//evil.com/tracker.png', baseUri), false, 'Protocol-relative URL must be rejected');
+  assert.equal(isInternalAssetUrl('public/q01-bbt.svg', baseUri), true, 'Relative internal asset must be accepted');
+});
