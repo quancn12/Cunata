@@ -10,9 +10,9 @@ requirements_version: Shared Product Contract v2.0 (precedence), WEB-contract.md
 
 Only intentional workspace write: `docs/reviews/LOOP-106-codex.md`. No code/test changes, install, dependency change, commit, branch/worktree creation, or deployment. Existing changes preserved. Project AGENTS.md search returned none.
 
-Fresh execution evidence: `%USERPROFILE%/AppData/Local/Temp/LC106-checked-kira2en4/`. Current working-tree files were copied to an ordinary temporary execution directory with a physical copy of already-installed node_modules. Tests and build ran there to keep generated output outside the task's workspace scope. No live production configuration was copied or used; browser services and records are synthetic/local.
+Execution evidence: `%USERPROFILE%/AppData/Local/Temp/LC106-checked-kira2en4/` (E1), and `%USERPROFILE%/AppData/Local/Temp/LC106-final-gates-49t8vvz3/` (E2). The existing LC106 draft and temporary execution copy were found at entry. They were not accepted as completed execution evidence: the commands below were rerun in this invocation. E1 was reused only after comparing **572 current product/build/test inputs**, with zero differences. E2 is a separate physical copy using the already-installed dependencies, built before its authoritative isolated npm run. No installation, branch/worktree, live endpoint or production configuration was used. Repository `public/config.json` and the execution configuration both contain only an empty Apps Script URL.
 
-HEAD is unchanged since LC105. Fresh byte comparison covers **349 product/build/public/style/Apps Script files**, all identical to the LC105 execution copy (product-comparison.json). The wider initial inventory contains 1,588 files, including documentation and generated test artifacts; changes-since-LC105.json lists 26 differing generated artifact files, no executable input. This comparison is bounded to inventoried files. git-status.txt, git-log.txt and git-diff.txt preserve the actual dirty-source boundary against HEAD, including the 18-file source/build/Apps Script diff. Package/lock changes were checked; none introduced. The previous review was used as a finding index, not as fresh test evidence.
+HEAD is unchanged since LC105. Fresh comparison of current src/scripts/public/styles/Apps Script files against the LC105 execution copy found no product change. The existing dirty diff against HEAD is still relevant: 18 product/build/Apps Script files, 949 insertions and 170 deletions. Fresh git boundary evidence is `resume-git-status.txt`, `resume-git-log.txt`, `resume-git-diff.txt`; exact SHA-256 input inventory is `resume-inputs.json`. `resume-input-comparison.json` and `resume-final-snapshot.json` record matching inputs and HEAD. Package/lock bytes match the execution copy; their git diff is empty. Prior review findings were used as an index, then checked against current source and fresh probes. No unrelated private agent prompts were read.
 
 files_reviewed: git log/status/diff and focused paths through domain/rational/serialization, schema and assets, transactional storage/finalization/outbox CAS, student snapshot/timer/assignment metadata, collector transport/receipts/export, app report rendering/download, teacher builder/bank/ownership, API auth/assignments and Memory/Neon writes, DOCX/PDF/manual preview, UI/offline/build/publisher. Wider behavior is exercised by current tests. This is risk-based whole-product coverage, not a new line-by-line reading of every unchanged file or exhaustive acceptance. Existing temporary reproductions were read and rerun on this snapshot.
 
@@ -22,7 +22,7 @@ files_reviewed: git log/status/diff and focused paths through domain/rational/se
 
 - status: VERIFIED; LC105-F01 persists. **VÙNG chịu trách nhiệm: src/collect.**
 - affected_files: `src/collect/index.ts:424`, `:454–469`, `:491`, `:640`; CAS boundary `src/storage/index.ts:977`.
-- evidence: fresh probes.log records six transport calls with outbox state `sending`, `retryCount=0`, `generation=8`. An existing sending state is accepted, and retry consumption is recorded only after a response/error.
+- evidence: fresh resume-probes.log records six transport calls with outbox state `sending`, `retryCount=0`, `generation=8`. An existing sending state is accepted, and retry consumption is recorded only after a response/error.
 - reproduction_steps: in the evidence directory, `node LC51-probes.mjs`; finalize synthetic hoa-repeating with MemoryTransactionAdapter, enqueue, call drainOutbox six times five milliseconds apart with unresolved transport promises, inspect durable outbox, then resolve all with HTTP 503.
 - expected: Shared §3 / WEB §7 require bounded durable retries, including concurrent callers and recovery.
 - actual/impact: more than the allowed five requests start without consuming the durable send budget. Repeated callers/crashes before responses evade the bound. Duplicate live database rows were not demonstrated.
@@ -33,7 +33,7 @@ files_reviewed: git log/status/diff and focused paths through domain/rational/se
 
 - status: VERIFIED; LC105-F02 persists. **VÙNG chịu trách nhiệm: src/app.**
 - affected_files: `src/app/main.ts:3104`, `:3177–3185`, `:3210–3216`, `:3282–3315`.
-- evidence: fresh download-race.json/log contains `TypeError: Cannot read properties of null (reading 'totalFraction')`, zero downloads, and active title `New exam B`. intended-regressions.log fails the no-error invariant.
+- evidence: fresh download-race.json / resume-download-race.log contains `TypeError: Cannot read properties of null (reading 'totalFraction')`, zero downloads, and active title `New exam B`. resume-intended-regressions.log fails the no-error invariant.
 - reproduction_steps: `node --import ./ops/blitz/promoted/_support/runtime.mjs download-race.mjs`; submit A with an internal image, defer its fetch during export, load B through the retained hidden file input, then release A's image fetch. Run `node --test lc67-regressions.test.mjs` after blocks-probe.mjs to evaluate the captured invariants.
 - expected: Shared §2 / WEB §§3,20: export A's complete immutable report or explicitly cancel with recoverable feedback.
 - actual/impact: the asynchronous handler reads mutable currentExam/order/responses/scoredResult after awaiting. Opening B clears A's score and causes an unhandled export rejection. Mixed-identity output remains a source risk; no mixed downloaded file was observed.
@@ -55,7 +55,7 @@ files_reviewed: git log/status/diff and focused paths through domain/rational/se
 
 - status: VERIFIED; LC105-F04 persists. **VÙNG chịu trách nhiệm: src/app.**
 - affected_files: `src/app/main.ts:535–573`, `:2992–3097`; isolated controls in `src/report/view.ts:922`, `:1097`, `:1170`.
-- evidence: fresh browser-probe.log: `cards=2, filter=false, nav=false, retry=false`. App constructs its own report instead of mounting the report module's controls. Source search finds these IDs only in the isolated report view.
+- evidence: fresh resume-browser-probe.log: `cards=2, filter=false, nav=false, retry=false`. App constructs its own report instead of mounting the report module's controls. Source search finds these IDs only in the isolated report view.
 - reproduction_steps: `node --import ./ops/blitz/promoted/_support/runtime.mjs LC51-browser-probe.mjs`; under local `/Cunata/`, submit synthetic I+III and inspect `#reviewFilter`, `#reviewNav`, `#btnRetryWrong` on the actual result page. R4 acceptance tests inspect this submitted page at desktop/mobile widths.
 - expected: WEB §§24.1,24.5 require all/wrong/blank filters with aria-pressed, question navigation and independent local retry practice without teacher submission.
 - actual/impact: approved controls are unreachable despite isolated implementation and tests. Filters/navigation are R4 debt; full retry also depends on R7 in the roadmap.
@@ -66,7 +66,7 @@ files_reviewed: git log/status/diff and focused paths through domain/rational/se
 
 - status: VERIFIED; LC105-F05 persists. **VÙNG chịu trách nhiệm: src/api.**
 - affected_files: `src/api/handle.ts:396–405`.
-- evidence: fresh probes.log: HTTP 200 / success=true and one persisted assignment for `does-not-exist` with an empty trusted catalog. A null getExam result bypasses the ownership condition.
+- evidence: fresh resume-probes.log: HTTP 200 / success=true and one persisted assignment for `does-not-exist` with an empty trusted catalog. A null getExam result bypasses the ownership condition.
 - reproduction_steps: `node LC51-probes.mjs`; seed an active synthetic teacher/session/owned class in MemoryStore; assign an unknown exam ID with valid openAt and `dueAt:""`; inspect assignments.
 - expected: reject nonexistent/deleted exams before persistence; allow authorized published or trusted catalog exams.
 - actual/impact: orphan assignment is accepted although students cannot load its exam. No cross-owner write was demonstrated.
@@ -85,7 +85,7 @@ files_reviewed: git log/status/diff and focused paths through domain/rational/se
 
 ### LC106-F07 - MAJOR - Required npm gate remains red
 
-status: VERIFIED. Fresh `npm.cmd test`: **1,625 tests, 345 suites; pass=1,622, fail=3; exit 1.** No skipped/cancelled/todo tests. Each failure independently keeps the required gate red:
+status: VERIFIED. Authoritative isolated `npm.cmd test`: **1,625 tests, 345 suites; pass=1,622, fail=3; exit 1.** No skipped/cancelled/todo tests. Each failure independently keeps the required gate red:
 
 - `test/collect/apiBase.test.ts:41` / send at `:66`: RECEIPT_INVALID; fixture omits attempt_id and recorded_at.
 - `test/collect/r0-f04-regression.test.ts:6` / send at `:96`: BAD_RESPONSE; fixture returns ok:true rather than success:true.
@@ -95,32 +95,33 @@ status: VERIFIED. Fresh `npm.cmd test`: **1,625 tests, 345 suites; pass=1,622, f
 
 ## checks_run
 
-Environment: Windows/PowerShell; Node v24.14.0, installed TypeScript 7.0.2, Python 3.11.0, local Chromium via existing native CDP harness. `npm.cmd`/`npx.cmd` are the Windows executables for the requested npm/npx commands. Diagnostic exit 0 means a probe completed, not that the product is defect-free. Evidence paths below are relative to the temporary directory.
+Environment: Windows/PowerShell, Node v24.14.0, installed TypeScript 7.0.2, Python 3.11.0; local Chromium through the existing native CDP harness. `npm.cmd`/`npx.cmd` are the Windows executables for the requested npm/npx commands. E1/E2 refer to the evidence directories above. Every row below was executed again during this invocation. Diagnostic exit 0 confirms the probe completed, not product approval. Test totals include parent failures where reported by node:test; do not add suite/probe counts together as unique cases.
 
-| Command | Exit | Fresh result | Log / seconds |
+| Command | Exit | Fresh result | Evidence / seconds |
 | --- | ---: | --- | --- |
-| `node scripts/build.js` | 0 | PASS; module web/API output emitted and verified | build.log / 2.156 |
-| `npm.cmd test` | 1 | FAIL; 1,625 tests, 345 suites; 1,622 pass, 3 fail, 0 skip/cancel/todo | npm-final.log / 33.813 |
-| `npx.cmd --no-install tsc -p tsconfig.json` | 0 | PASS | tsc.log / 7.015 |
-| `npx.cmd --no-install tsc -p tsconfig.web.json` | 0 | PASS | tsc-web.log / 6.984 |
-| `python -B test/oracle/oracle.py --check` | 0 | PASS; 11 tests; 1,632 fixtures, 5,849 maxima configs, 9 negative controls; independent oracle only | oracle.log / 2.703 |
-| `node LC51-probes.mjs` | 0 | Diagnostic: six sends with retryCount=0; orphan assignment accepted; rational inverse rejected; six roster/PIN actions UNKNOWN_ACTION | probes.log / 0.625 |
-| `node LC51-differential.mjs` | 0 | PASS; 1,632 product total/max and section score/max comparisons against independent expected values | differential.log / 0.453 |
-| `node --test lc83-independent.test.mjs` | 1 | FAIL; 5 tests, 3 pass, 2 fail (nested math assertion and parent) | independent.log / 2.719 |
-| `node download-race.mjs` | 0 | Diagnostic; null totalFraction TypeError, zero downloads, B active | download-race.log / 3.312 |
-| `node blocks-probe.mjs` | 0 | PASS diagnostic; top-level canonical text/table retained in exam/review/download | blocks.log / 2.016 |
-| `node --test lc67-regressions.test.mjs` | 1 | FAIL; 2 tests, 1 pass, 1 fail (download invariant) | intended-regressions.log / 0.109 |
-| `node LC51-browser-probe.mjs` | 0 | Diagnostic; two cards, missing filter/navigation/retry | browser-probe.log / 1.641 |
-| `node --test --test-timeout=90000 test/app/r2-f01-service-worker.test.mjs` | 0 | PASS; 3 tests, local RPC cache exclusion/update | sw.log / 1.703 |
-| `node --test --test-concurrency=1 --test-timeout=240000 test/claude-check/**/*.test.mjs` | 0 | PASS; 104 tests, 5 suites | claude.log / 83.219 |
+| `node scripts/build.js` | 0 | PASS; web modules and API emitted and verified | E2/build.log / 3.250; also E1/resume-build.log / 9.390 |
+| `npm.cmd test` | 1 | FAIL; 1,625 tests, 345 suites; 1,622 pass, 3 fail, 0 skipped/cancelled/todo | **E2/npm-final.log / 37.078** |
+| `npx.cmd --no-install tsc -p tsconfig.json` | 0 | PASS | E1/resume-tsc.log / 6.687 |
+| `npx.cmd --no-install tsc -p tsconfig.web.json` | 0 | PASS | E1/resume-tsc-web.log / 7.343 |
+| `python -B test/oracle/oracle.py --check` | 0 | PASS; 11 tests, 1,632 fixtures, 5,849 maxima configurations, 9 negative controls | E1/resume-oracle.log / 4.203 |
+| `node LC51-differential.mjs` | 0 | PASS; product total/max and section score/max against independent expected values, 1,632 cases | E1/resume-differential.log / 0.391 |
+| `node LC51-probes.mjs` | 0 | Diagnostic: six sends with retryCount=0; orphan assignment accepted; fraction inverse rejected; six R3 actions UNKNOWN_ACTION | E1/resume-probes.log / 0.422 |
+| `node --test lc83-independent.test.mjs` | 1 | FAIL; 5 tests, 3 pass, 2 fail (nested math assertion plus parent) | E1/resume-independent.log / 2.718 |
+| `node download-race.mjs` | 0 | Diagnostic: null totalFraction TypeError, zero downloads, B active | E1/resume-download-race.log / 3.657 |
+| `node blocks-probe.mjs` | 0 | Diagnostic: top-level canonical text/table preserved in exam/review/download | E1/resume-blocks.log / 2.093 |
+| `node --test lc67-regressions.test.mjs` | 1 | FAIL; 2 tests, 1 pass, 1 fail (download invariant) | E1/resume-intended-regressions.log / 0.110 |
+| `node LC51-browser-probe.mjs` | 0 | Diagnostic: two cards; filter/navigation/retry absent | E1/resume-browser-probe.log / 1.703 |
+| `node --test --test-timeout=90000 test/app/r2-f01-service-worker.test.mjs` | 0 | PASS; 3 tests, including local browser RPC cache exclusion | E1/resume-sw.log / 1.656 |
+| `node --test --test-concurrency=1 --test-timeout=240000 test/claude-check/**/*.test.mjs` | 0 | PASS; 104 tests, 5 suites, 0 skipped/cancelled/todo | E1/resume-claude.log / 71.500 |
+| `node --test --test-concurrency=1 --test-timeout=240000 test/codex-check/**/*.test.mjs` | 1 | FAIL; 264 tests, 2 suites; 223 pass, 41 fail, 0 skipped/cancelled/todo | E1/resume-codex.log / 226.813 |
 
-Full Codex acceptance execution: RUNNING at draft creation; final result will be recorded before handoff.
+Full Codex acceptance is **finished**. The 41 failures group into 22 R3 API tests (`test/codex-check/feat/R3/api.test.mjs:4`, wrappers; missing actions), 11 R3 browser tests (`test/codex-check/feat/R3/browser.test.mjs:12`, wrappers; missing roster/PIN/history flows), and 8 R4 report tests (`test/codex-check/feat/R4/review.test.mjs:112`, :125, :132, :142, :153, :168; absent filters/navigation). These establish unfinished approved roadmap behavior, not 41 separately proven security bugs. R4 maps to F04; R3 is the highest missing-feature priority. No other test file failed in this run.
 
-Execution correction: initial npm.log ran with README.md accidentally omitted from the temporary copy, causing additional ENOENT setup failures. Root Markdown files were then copied without changing product/test bytes, and the complete npm suite rerun: npm-final.log is the authoritative 1,622/3 result. The initial setup error is not a product finding and is not reported as PASS.
+Execution corrections, excluded from the authoritative product result: the first fresh E1 npm run overlapped a standalone build, adding one staging-directory assertion failure (1,621 pass/4 fail). E2 initially had no dist output, producing setup/parity failures. After building E2 and running npm separately, only the three F07 failures remain (1,622/3). Neither setup condition is represented as a product defect or a PASS. E2/final-gates.json and E1/resume-gates.json/resume-browser-results.json retain actual exits and timings.
 
-Browser execution uses the existing runtime.mjs teardown preload and the inspected temporary teardown-http.mjs (closes lingering HTTP connections after server close). NODE_OPTIONS uses absolute file URLs so child builds changing cwd retain the preloads. These affect teardown, not product assertions. GIT_DIR/GIT_WORK_TREE provide original read-only repository provenance. Raw outputs and screenshots stay in the temporary directory. No production endpoint was used.
+Browser commands use the inspected existing `ops/blitz/promoted/_support/runtime.mjs` teardown preload and E1/teardown-http.mjs (releases lingering HTTP connections on close). NODE_OPTIONS contains absolute file URLs so child builds retain the teardown preloads. They alter teardown only; no assertions or product source were changed. GIT_DIR/GIT_WORK_TREE point to the original repository for read-only provenance. Browser records/services are synthetic and local. Generated artifacts remain outside the working tree.
 
-Fresh positive probes: browsing an owned exam leaves revision 1 -> 1 with zero publish requests; a saved B answer key survives publication; nested images export as data URLs; top-level canonical text/table remains in exam/review/download. These do not repair F02-F04. Scoped nested downloaded content has mathPreserved=false. Bounded secret-pattern scan covers 136 code/data files, zero private-key marker, Google/GitHub-token-pattern or credentialed PostgreSQL URL matches (bounded-secret-scan.json); no comprehensive history or dependency audit claimed.
+Fresh positive probes: browsing an owned exam keeps revision 1 -> 1 with zero publish requests; a saved B answer key survives publication; nested image export is portable; top-level canonical text/table remains present. These do not fix F02-F04. The nested math visibility assertion still reads only NESTED-TEXT instead of the math source. A bounded fresh scan of 133 TS/JS/JSON files in src/scripts/apps-script/public found zero private-key markers, Google/GitHub-token patterns or credentialed PostgreSQL URLs (`resume-secret-scan.json`); this is not a comprehensive secret/history/dependency audit.
 
 ## coverage_gaps
 
@@ -128,7 +129,7 @@ Fresh positive probes: browsing an owned exam leaves revision 1 -> 1 with zero p
 - M2/M3: fresh unit/local browser checks. Exhaustive quota/private browsing, migration/quarantine/recovery, clock shifts, route/assignment races and real multi-tab interleavings NOT_RUN in this audit; data-integrity risk remains outside exercised cases.
 - M4/R1/R2: local handle/store/transport/publisher simulations. Live Google CORS/redirect/write/readback and deployed Neon concurrency/deduplication NOT_RUN: no live configuration or write authorization used. Client-side keys/scores are suitable for practice; trusted-assessment security is not certified.
 - M5: synthetic importer coverage and rich-content probes, including F03. Broad real multi-column/merged-cell/media/unsupported-equation/corrupt/encrypted/scan corpus NOT_RUN; no comprehensive import-fidelity claim. Approved manual PDF is not missing automatic parsing.
-- M6: browser responsive/keyboard checks and component light/dark checks do not replace full manual product acceptance at 375/768/1440px. Physical phones, Firefox/WebKit, OS Telex/VNI, screen reader, independent axe/Lighthouse and input-to-paint p95 NOT_RUN; no full WCAG/performance certification.
+- M6: fresh Claude/Codex browser responsive/keyboard checks and component light/dark checks do not replace full manual product acceptance at 375/768/1440px. Physical phones, Firefox/WebKit, OS Telex/VNI, screen reader, independent axe/Lighthouse and input-to-paint p95 NOT_RUN; no full WCAG/performance certification.
 - Offline: local RPC bypass/cache purge and acceptance coverage; complete two-version cache migration across active attempts/tabs NOT_RUN.
 - Comprehensive dependency advisory/license/history audit and owner milestone/production acceptance NOT_RUN. Deployment, live activation and old-service retirement are outside LC106.
 
@@ -148,4 +149,4 @@ Custom-only presets and manual PDF remain approved choices. No new grammar, roun
 
 tools_research: NOT_REQUESTED. privacy_notes: synthetic local records only; no real student data, credentials or private instruction content in the report.
 
-recommended_action: F01 -> src/collect; F02-F04 -> src/app; F05 -> src/api; F06 -> src/domain; F07 -> glue with collect/teacher owners. Preserve receipt rejection and ownership checks when repairing fixtures. Keep product CHANGES_REQUESTED. Report READY_FOR_REVIEW.
+recommended_action: F01 -> src/collect; F02-F04 -> src/app; F05 -> src/api; F06 -> src/domain; F07 -> glue with collect/teacher owners. Preserve receipt rejection and ownership checks when repairing fixtures. Keep product CHANGES_REQUESTED. Report READY_FOR_REVIEW. No deployment or milestone approval; no new business decision required for the documented local repairs.
