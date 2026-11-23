@@ -12,10 +12,10 @@
     }
   ],
   "page": {
-    "text": "Cunata\nHọc sinh\nTên cổng tự do mô phỏng\nĐổi vai\nHọc sinh: Tên cổng tự do mô phỏng\nĐổi tên\nVào lớp học bằng mã\n\nNhập mã gồm 6 ký tự do giáo viên cung cấp để xem danh sách đề được giao.\n\nMã lớp học\nVào lớp\nLớp học của em\nLớp R3 mô phỏng — Giáo viên: GV R3 mô phỏng\nMã lớp: VAXY6A\nToán học\nĐề R3 mô phỏng\nĐề luyện tập 3 câu\n3 câu · 50 phút\nMở: 08:10, 23/11/2026\nHạn nộp: 09:11, 23/11/2026\nChưa làm",
-    "url": "http://127.0.0.1:57441/Cunata/#/hoc-sinh"
+    "text": "Cunata\nHọc sinh\nTên cổng tự do mô phỏng\nĐổi vai\nHọc sinh: Tên cổng tự do mô phỏng\nĐổi tên\nVào lớp học bằng mã\n\nNhập mã gồm 6 ký tự do giáo viên cung cấp để xem danh sách đề được giao.\n\nMã lớp học\nVào lớp\nLớp học của em\nLớp R3 mô phỏng — Giáo viên: GV R3 mô phỏng\nMã lớp: 7FYEHC\nToán học\nĐề R3 mô phỏng\nĐề luyện tập 3 câu\n3 câu · 50 phút\nMở: 08:44, 23/11/2026\nHạn nộp: 09:45, 23/11/2026\nChưa làm",
+    "url": "http://127.0.0.1:61942/Cunata/#/hoc-sinh"
   },
   "errors": [
-    "log: Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:57441/favicon.ico"
+    "log: Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:61942/favicon.ico"
   ]
 }
