@@ -28,10 +28,10 @@
     }
   ],
   "page": {
-    "text": "Cunata\nGiáo viên\nĐổi vai\nLớp học\nĐề thi\nKết quả\nĐăng xuất\n← Quay lại danh sách lớp\nLớp Lớp R3 mô phỏng (Mã: PHABZS)\nGiao đề thi\nĐề R3 mô phỏng\nMở: 10:12, 23/11/2026 · Hạn nộp: 11:13, 23/11/2026 · 0 bài đã nộp",
-    "url": "http://127.0.0.1:49581/Cunata/#/giao-vien/lop"
+    "text": "Cunata\nGiáo viên\nĐổi vai\nLớp học\nĐề thi\nKết quả\nĐăng xuất\n← Quay lại danh sách lớp\nLớp Lớp R3 mô phỏng (Mã: 6PT2CX)\nGiao đề thi\nĐề R3 mô phỏng\nMở: 10:46, 23/11/2026 · Hạn nộp: 11:47, 23/11/2026 · 0 bài đã nộp",
+    "url": "http://127.0.0.1:54115/Cunata/#/giao-vien/lop"
   },
   "errors": [
-    "log: Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:49581/favicon.ico"
+    "log: Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:54115/favicon.ico"
   ]
 }
